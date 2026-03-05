@@ -37,43 +37,45 @@ export default function SettingsPage() {
             Choose a strong, unique password to keep your account secure.
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-6">
-          <form className="space-y-8" onSubmit={handlePasswordSubmit}>
-            <div className="grid gap-2">
-              <Label htmlFor="currentPassword">Current password</Label>
-              <Input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                autoComplete="current-password"
-                required
-              />
+        <form onSubmit={handlePasswordSubmit}>
+          <CardContent className="px-6">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-6">
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="currentPassword">Current password</Label>
+                <Input
+                  id="currentPassword"
+                  name="currentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="newPassword">New password</Label>
+                <Input
+                  id="newPassword"
+                  name="newPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="confirmPassword">Confirm new password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="newPassword">New password</Label>
-              <Input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="confirmPassword">Confirm new password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button type="submit">Update password</Button>
-            </div>
-          </form>
-        </CardContent>
+          </CardContent>
+          <CardFooter className="flex justify-end mt-5">
+            <Button type="submit">Update password</Button>
+          </CardFooter>
+        </form>
       </Card>
 
       <Card>
