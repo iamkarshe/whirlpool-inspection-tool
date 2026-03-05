@@ -18,7 +18,8 @@ import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
-import type { ChangeEvent, SubmitEvent } from "react";
+import { FileDown, Upload } from "lucide-react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
 
 type ProductCategoryFormValues = {
@@ -51,13 +52,13 @@ export default function ProductCategoriesPage() {
     fetchCategories();
   }, []);
 
-  const handleCsvSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+  const handleCsvSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock CSV upload", csvFile);
   };
 
-  const handleCreateCategory = (event: SubmitEvent<HTMLFormElement>) => {
+  const handleCreateCategory = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real create call; for now this is mocked.
     console.log("Mock create product category", formValues);
@@ -70,6 +71,25 @@ export default function ProductCategoriesPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
+  const handleDownloadTemplate = () => {
+    const header = "name,code,description\n";
+    const exampleRow =
+      "Front Load Washing Machines,WM-FL,Front load washing machines for residential laundry.\n";
+    const csvContent = `${header}${exampleRow}`;
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "product-categories-template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <PageActionBar
@@ -78,7 +98,10 @@ export default function ProductCategoriesPage() {
       >
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">Upload CSV</Button>
+            <Button variant="outline">
+              <Upload className="mr-1 h-4 w-4" />
+              Upload CSV
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -102,11 +125,17 @@ export default function ProductCategoriesPage() {
                     setCsvFile(file);
                   }}
                 />
-                <p className="text-muted-foreground text-xs">
-                  Expected columns: Name, Code, Description.
-                </p>
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadTemplate}
+                >
+                  <FileDown className="mr-1 h-4 w-4" />
+                  Template CSV
+                </Button>
                 <Button type="submit" disabled={!csvFile}>
                   Upload
                 </Button>

@@ -28,6 +28,7 @@ import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
+import { FileDown, Upload } from "lucide-react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
 
@@ -46,6 +47,7 @@ export default function ProductsPage() {
     price: "",
   });
 
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,12 +80,85 @@ export default function ProductsPage() {
     console.log("Mock create product", formValues);
   };
 
+  const handleCsvSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // TODO: wire real CSV upload; for now this is mocked.
+    console.log("Mock products CSV upload", csvFile);
+  };
+
+  const handleDownloadTemplate = () => {
+    const header = "name,sku,category,price\n";
+    const exampleRow =
+      "Front Load Washer,WH-FL-1001,Front Load Washing Machines,799\n";
+    const csvContent = `${header}${exampleRow}`;
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "products-template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <PageActionBar
         title="Products"
         description="Manage master data for all products."
       >
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Upload className="mr-1 h-4 w-4" />
+              Upload CSV
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Upload products CSV</DialogTitle>
+              <DialogDescription>
+                Select a CSV file containing products to import.
+              </DialogDescription>
+            </DialogHeader>
+            <form className="space-y-4" onSubmit={handleCsvSubmit}>
+              <div className="space-y-2">
+                <Label htmlFor="productsCsv">CSV file</Label>
+                <Input
+                  id="productsCsv"
+                  type="file"
+                  accept=".csv"
+                  onChange={(event) => {
+                    const file =
+                      event.target.files && event.target.files[0]
+                        ? event.target.files[0]
+                        : null;
+                    setCsvFile(file);
+                  }}
+                />
+              </div>
+              <DialogFooter className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadTemplate}
+                >
+                  <FileDown className="mr-1 h-4 w-4" />
+                  Template CSV
+                </Button>
+                <Button type="submit" disabled={!csvFile}>
+                  Upload
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <Dialog>
           <DialogTrigger asChild>
             <Button>
