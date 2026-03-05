@@ -2,6 +2,7 @@ from functools import wraps
 from typing import Callable, List, Optional
 
 from fastapi import HTTPException, Request, status
+from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse
 
 from utils.log import debug_rich_console
@@ -15,6 +16,16 @@ def exception_handler_decorator(func: Callable):
             if callable(getattr(result, "__await__", None)):
                 return await result
             return result
+        except ResponseValidationError as ex:
+            debug_rich_console()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={
+                    "success": False,
+                    "error": "Response validation failed against response_model",
+                    "errors": ex.errors(),
+                },
+            )
         except HTTPException:
             raise
         except Exception as ex:

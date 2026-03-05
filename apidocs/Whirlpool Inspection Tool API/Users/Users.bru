@@ -1,13 +1,18 @@
 meta {
-  name: Create User
+  name: Users
   type: http
-  seq: 1
+  seq: 2
 }
 
-post {
-  url: {{baseUrl}}/api/users
+get {
+  url: {{baseUrl}}/api/users?page=1&per_page=20
   body: json
   auth: inherit
+}
+
+params:query {
+  page: 1
+  per_page: 20
 }
 
 body:json {
