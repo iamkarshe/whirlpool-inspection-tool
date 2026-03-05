@@ -41,9 +41,9 @@ export default function UserMenu() {
         <DropdownMenuLabel className="p-0">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">Toby Belhome</span>
+              <span className="truncate font-semibold">Devesh Verma</span>
               <span className="text-muted-foreground truncate text-xs">
-                hello@tobybelhome.com
+                connect@whirlpool.com
               </span>
             </div>
           </div>

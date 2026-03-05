@@ -1,5 +1,4 @@
 import { NavMain } from "@/components/layout/sidebar/nav-main";
-import { NavUser } from "@/components/layout/sidebar/nav-user";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -52,8 +51,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavMain />
         </ScrollArea>
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser />
+        <div className="bg-muted mt-1.5 rounded-md border">
+          <div className="space-y-3 p-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium">Release Version</h4>
+              <div className="text-muted-foreground flex cursor-pointer items-center text-sm">
+                <span>v1.0.0</span>
+              </div>
+            </div>
+            <div className="text-muted-foreground flex items-center text-xs">
+              Last updated: 2026-03-05
+            </div>
+          </div>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
