@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 
 export default function EmptyComponent() {
   return (
-    <div className="flex min-h-screen items-start justify-center bg-muted/40 p-4 pt-[10vh]">
+    <div className="flex min-h-screen items-start justify-center bg-muted/40 p-4 pt-[10vh] rounded-lg">
       <div className="w-full max-w-md rounded-lg border bg-background p-6 shadow-sm">
         <Empty>
           <EmptyHeader>

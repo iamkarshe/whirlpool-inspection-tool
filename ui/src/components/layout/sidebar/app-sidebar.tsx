@@ -29,6 +29,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     setOpen(!isTablet);
   }, [isTablet]);
 
+  const lightLogo = <img src="/logo.svg" alt="Whirlpool" />;
+  const darkLogo = <img src="/logo-dark.svg" alt="Whirlpool" />;
+  const isDark =
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("dark");
+  const logo = isDark ? darkLogo : lightLogo;
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -38,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="hover:text-foreground h-10 group-data-[collapsible=icon]:px-0!">
                   <div className="flex items-center text-foreground font-semibold text-xl">
-                    <img src="/logo.svg" alt="Whirlpool" />
+                    {logo}
                     <span className="-ml-4">Insights</span>
                   </div>
                 </SidebarMenuButton>
@@ -54,10 +61,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="bg-muted mt-1.5 rounded-md border group-data-[collapsible=icon]:hidden">
+        <div className="bg-muted mt-1.5 rounded-md border group-data-[collapsible=icon]:hidden transition-none">
           <div className="space-y-3 p-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium">Release Version</h4>
+              <h4 className="text-sm font-medium">Release</h4>
               <div className="text-muted-foreground flex cursor-pointer items-center text-sm">
                 <span>v1.0.0</span>
               </div>
