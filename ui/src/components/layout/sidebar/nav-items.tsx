@@ -37,15 +37,15 @@ export const navItems: NavGroup[] = [
       },
       {
         title: "Masters",
-        href: PAGES.DASHBOARD_MASTERS,
+        href: PAGES.DASHBOARD_MASTERS_PRODUCT_CATEGORIES,
         icon: FolderIcon,
         items: [
           {
             title: "Product Categories",
-            href: PAGES.DASHBOARD_MASTERS,
+            href: PAGES.DASHBOARD_MASTERS_PRODUCT_CATEGORIES,
           },
-          { title: "Products", href: PAGES.DASHBOARD_MASTERS },
-          { title: "Warehouses", href: PAGES.DASHBOARD_MASTERS },
+          { title: "Products", href: PAGES.DASHBOARD_MASTERS_PRODUCTS },
+          { title: "Warehouses", href: PAGES.DASHBOARD_MASTERS_WAREHOUSES },
         ],
       },
       {

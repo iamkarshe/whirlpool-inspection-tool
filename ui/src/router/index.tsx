@@ -25,6 +25,12 @@ const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
 const ProductCategoriesPage = lazy(
   () => import("@/pages/dashboard/admin/product-categories/page"),
 );
+const ProductsPage = lazy(
+  () => import("@/pages/dashboard/admin/products/page"),
+);
+const WarehousesPage = lazy(
+  () => import("@/pages/dashboard/admin/warehouses/page"),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -107,11 +113,29 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "masters",
+        path: "masters/product-categories",
         handle: { title: "Product Categories" },
         element: (
           <Suspense fallback={<PageLoader />}>
             <ProductCategoriesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "masters/products",
+        handle: { title: "Products" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProductsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "masters/warehouses",
+        handle: { title: "Warehouses" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <WarehousesPage />
           </Suspense>
         ),
       },

@@ -7,7 +7,9 @@ export const PAGES = {
   VERIFY_EMAIL: "/verify-email",
 
   DASHBOARD: "/dashboard",
-  DASHBOARD_MASTERS: "/dashboard/masters",
+  DASHBOARD_MASTERS_PRODUCT_CATEGORIES: "/dashboard/masters/product-categories",
+  DASHBOARD_MASTERS_PRODUCTS: "/dashboard/masters/products",
+  DASHBOARD_MASTERS_WAREHOUSES: "/dashboard/masters/warehouses",
 
   DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/transactions/inspections",
   DASHBOARD_TRANSACTIONS_CHECKLISTS: "/dashboard/transactions/checklists",
