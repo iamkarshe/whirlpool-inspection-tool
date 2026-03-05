@@ -38,7 +38,9 @@ const categoryColumns: ColumnDef<ProductCategory>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-xs uppercase">{row.getValue("code")}</span>
+      <span className="font-mono text-xs uppercase">
+        {row.getValue("code")}
+      </span>
     ),
   },
   {
@@ -85,4 +87,3 @@ export default function ProductCategoriesDataTable({
     />
   );
 }
-

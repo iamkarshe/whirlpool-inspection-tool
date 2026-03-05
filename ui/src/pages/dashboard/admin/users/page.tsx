@@ -80,7 +80,7 @@ export default function UsersPage() {
   };
 
   return (
-    <>
+    <div className="space-y-6">
       <PageActionBar
         title="Users"
         description="Manage user accounts and roles."
@@ -170,6 +170,6 @@ export default function UsersPage() {
         </Dialog>
       </PageActionBar>
       {isLoading ? <SkeletonTable /> : <UsersDataTable data={users} />}
-    </>
+    </div>
   );
 }

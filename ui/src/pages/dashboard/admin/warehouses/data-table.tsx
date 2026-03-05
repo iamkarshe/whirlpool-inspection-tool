@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Warehouse } from "./data";
+import type { Warehouse } from "./warehouse-service";
 
 const warehouseColumns: ColumnDef<Warehouse>[] = [
   {

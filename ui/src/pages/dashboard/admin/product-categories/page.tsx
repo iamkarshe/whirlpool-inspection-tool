@@ -1,10 +1,5 @@
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
-import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
-import {
-  getProductCategories,
-  type ProductCategory,
-} from "@/pages/dashboard/admin/product-categories/product-category-service";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,7 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { ChangeEvent, FormEvent } from "react";
+import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
+import {
+  getProductCategories,
+  type ProductCategory,
+} from "@/pages/dashboard/admin/product-categories/product-category-service";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 
 type ProductCategoryFormValues = {
@@ -29,13 +29,11 @@ type ProductCategoryFormValues = {
 
 export default function ProductCategoriesPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [formValues, setFormValues] = useState<ProductCategoryFormValues>(
-    {
-      name: "",
-      code: "",
-      description: "",
-    },
-  );
+  const [formValues, setFormValues] = useState<ProductCategoryFormValues>({
+    name: "",
+    code: "",
+    description: "",
+  });
 
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,13 +51,13 @@ export default function ProductCategoriesPage() {
     fetchCategories();
   }, []);
 
-  const handleCsvSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleCsvSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock CSV upload", csvFile);
   };
 
-  const handleCreateCategory = (event: FormEvent<HTMLFormElement>) => {
+  const handleCreateCategory = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real create call; for now this is mocked.
     console.log("Mock create product category", formValues);

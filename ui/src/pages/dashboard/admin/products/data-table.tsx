@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Product } from "./data";
+import type { Product } from "./product-service";
 
 const productColumns: ColumnDef<Product>[] = [
   {

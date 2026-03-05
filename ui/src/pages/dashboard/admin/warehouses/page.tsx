@@ -1,5 +1,5 @@
-import * as React from "react";
-
+import PageActionBar from "@/components/page-action-bar";
+import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,8 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { warehouses } from "./data";
 import WarehousesDataTable from "./data-table";
+import {
+  getWarehouses,
+  type Warehouse,
+} from "@/pages/dashboard/admin/warehouses/warehouse-service";
+import type { ChangeEvent, FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 type WarehouseFormValues = {
   name: string;
@@ -23,30 +28,46 @@ type WarehouseFormValues = {
 };
 
 export default function WarehousesPage() {
-  const [formValues, setFormValues] = React.useState<WarehouseFormValues>({
+  const [formValues, setFormValues] = useState<WarehouseFormValues>({
     name: "",
     code: "",
     location: "",
     capacity: "",
   });
 
-  const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        const data = await getWarehouses();
+        setWarehouses(data);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWarehouses();
+  }, []);
+
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real create warehouse; mocked for now.
     console.log("Mock create warehouse", formValues);
   };
 
   return (
-    <>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Warehouses</h1>
+    <div className="space-y-6">
+      <PageActionBar
+        title="Warehouses"
+        description="Manage master data for all warehouses."
+      >
         <Dialog>
           <DialogTrigger asChild>
             <Button>
@@ -111,9 +132,10 @@ export default function WarehousesPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
-      <WarehousesDataTable data={warehouses} />
-    </>
+      </PageActionBar>
+
+      {isLoading ? <SkeletonTable /> : <WarehousesDataTable data={warehouses} />}
+    </div>
   );
 }
 
