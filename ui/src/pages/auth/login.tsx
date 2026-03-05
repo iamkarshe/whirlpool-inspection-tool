@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +13,14 @@ import { PAGES } from "@/endpoints";
 import AuthLayout from "@/pages/auth/layout";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // Mocked auth: always send user to dashboard.
+    navigate(PAGES.DASHBOARD);
+  };
+
   return (
     <AuthLayout title="Login">
       <Card className="mx-auto w-96">
@@ -24,7 +32,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
+          <form className="grid gap-4" onSubmit={handleSubmit}>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -61,11 +69,11 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" type="button">
                 Okta SSO Login
               </Button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </AuthLayout>

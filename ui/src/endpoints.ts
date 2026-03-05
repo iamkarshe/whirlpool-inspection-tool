@@ -5,4 +5,6 @@ export const PAGES = {
   REGISTER: "/register",
   RESET_PASSWORD: "/reset-password",
   VERIFY_EMAIL: "/verify-email",
+
+  DASHBOARD: "/dashboard",
 };
