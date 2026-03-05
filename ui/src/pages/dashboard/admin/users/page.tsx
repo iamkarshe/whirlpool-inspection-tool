@@ -1,5 +1,4 @@
 import * as React from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,23 +11,42 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { users } from "./data";
+import { getUsers, type User } from "./user-service";
 import UsersDataTable from "./data-table";
+import SkeletonTable from "@/components/skeleton7";
 
 type UserFormValues = {
   name: string;
   email: string;
+  mobile_number: string;
   role: string;
-  country: string;
+  designation: string;
 };
 
 export default function UsersPage() {
   const [formValues, setFormValues] = React.useState<UserFormValues>({
     name: "",
     email: "",
+    mobile_number: "",
     role: "",
-    country: "",
+    designation: "",
   });
+
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = (await getUsers()) as User[];
+        setUsers(data);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -37,7 +55,6 @@ export default function UsersPage() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // TODO: wire real create user; mocked for now.
     console.log("Mock create user", formValues);
   };
 
@@ -82,6 +99,17 @@ export default function UsersPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="mobile_number">Mobile number</Label>
+                <Input
+                  id="mobile_number"
+                  name="mobile_number"
+                  type="tel"
+                  value={formValues.mobile_number}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Input
                   id="role"
@@ -92,11 +120,11 @@ export default function UsersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="designation">Designation</Label>
                 <Input
-                  id="country"
-                  name="country"
-                  value={formValues.country}
+                  id="designation"
+                  name="designation"
+                  value={formValues.designation}
                   onChange={handleInputChange}
                   required
                 />
@@ -108,7 +136,7 @@ export default function UsersPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <UsersDataTable data={users} />
+      {isLoading ? <SkeletonTable /> : <UsersDataTable data={users} />}
     </>
   );
 }

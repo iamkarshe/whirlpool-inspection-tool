@@ -9,9 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getAvatarImage } from "@/lib/utils";
+import type { User } from "@/pages/dashboard/admin/users/user-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import type { User } from "./data";
 
 const userColumns: ColumnDef<User>[] = [
   {
