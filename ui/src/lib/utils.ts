@@ -10,3 +10,7 @@ export function generateAvatarFallback(string: string) {
   const mapped = names.map((name: string) => name.charAt(0).toUpperCase());
   return mapped.join("");
 }
+
+export function getAvatarImage() {
+  return `/assets/avatar/default.svg`;
+}

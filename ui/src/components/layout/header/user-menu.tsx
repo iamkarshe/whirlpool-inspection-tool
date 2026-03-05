@@ -1,13 +1,3 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,9 +9,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PAGES } from "@/endpoints";
+import { getAvatarImage } from "@/lib/utils";
 import { BadgeCheck, Bell, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { PAGES } from "@/endpoints";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -30,8 +31,7 @@ export default function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar>
-          <AvatarImage src={`/assets/avatar/default.svg`} alt="shadcn ui kit" />
-          <AvatarFallback className="rounded-lg">TB</AvatarFallback>
+          <AvatarImage src={getAvatarImage()} alt="" />
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent
