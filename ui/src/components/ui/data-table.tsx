@@ -1,20 +1,3 @@
-import * as React from "react";
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-} from "@tanstack/react-table";
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { Columns, PlusCircle } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -45,6 +28,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from "@tanstack/react-table";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { Columns, PlusCircle } from "lucide-react";
+import * as React from "react";
 
 export type DataTableFilterOption = {
   label: string;
@@ -101,7 +100,7 @@ export function DataTable<TData>({
   return (
     <div className="w-full">
       <div className="flex items-center gap-4 py-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
           {searchKey ? (
             <Input
               placeholder="Search..."
@@ -111,18 +110,14 @@ export function DataTable<TData>({
               onChange={(event) =>
                 table.getColumn(searchKey)?.setFilterValue(event.target.value)
               }
-              className="max-w-sm"
+              className="max-w-xs"
             />
           ) : null}
 
           {filters?.map((filter) => (
             <Popover key={filter.id}>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2"
-                >
+                <Button variant="outline" size="sm" className="h-8 px-2">
                   <PlusCircle className="mr-1 h-3 w-3" />
                   {filter.title}
                 </Button>
