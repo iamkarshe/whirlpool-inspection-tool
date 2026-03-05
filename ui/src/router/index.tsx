@@ -2,6 +2,9 @@ import { PageLoader } from "@/components/layout/page-loader";
 import { Suspense, lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 
+// Components
+import EmptyComponent from "@/components/empty4";
+
 // Routers
 import PrivateRouter from "@/router/PrivateRouter";
 const PublicRouter = lazy(() =>
@@ -97,6 +100,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <UsersPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "*",
+        handle: { title: "Resource Not Found" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <EmptyComponent />
           </Suspense>
         ),
       },
