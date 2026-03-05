@@ -1,0 +1,105 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "arun@whirlpool.com",
+    "password": "admin@cmp"
+  }
+}
+
+example {
+  name: 200 Response
+  description: Successful Response
+  
+  request: {
+    url: {{baseUrl}}/auth/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email": "",
+        "password": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": 0,
+          "name": "",
+          "email": "",
+          "role": "",
+          "designation": "",
+          "is_active": false
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 Response
+  description: Validation Error
+  
+  request: {
+    url: {{baseUrl}}/auth/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email": "",
+        "password": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "detail": [
+            {
+              "loc": [],
+              "msg": "",
+              "type": "",
+              "input": "",
+              "ctx": {}
+            }
+          ]
+        }
+      '''
+    }
+  }
+}

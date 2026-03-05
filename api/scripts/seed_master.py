@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from mod.model import ProductCategory, Role, User
 from utils.db import SessionLocal
 from utils.env import get_env
+from utils.password import hash_password
 
 
 def truncate_all(db: Session):
@@ -79,26 +80,28 @@ def seed_users(db: Session):
     users = [
         {
             "name": "Arun Dev Kumar",
-            "email": "arun@company.com",
+            "email": "arun@whirlpool.com",
             "mobile": "9000000001",
             "designation": "Super Administrator",
             "role": "superadmin",
         },
         {
             "name": "Ramsharan Yadav",
-            "email": "ramsharan@company.com",
+            "email": "ramsharan@whirlpool.com",
             "mobile": "9000000002",
             "designation": "Field Operator",
             "role": "operator",
         },
         {
             "name": "Devesh Verma",
-            "email": "devesh@company.com",
+            "email": "devesh@whirlpool.com",
             "mobile": "9000000003",
             "designation": "Operations Manager",
             "role": "manager",
         },
     ]
+
+    default_password = hash_password("admin@cmp")
 
     for u in users:
         user = User(
@@ -106,7 +109,7 @@ def seed_users(db: Session):
             name=u["name"],
             email=u["email"].lower(),
             mobile_number=u["mobile"],
-            password="change_me",
+            password=default_password,
             designation=u["designation"],
             role_id=role_map[u["role"]],
             is_active=True,

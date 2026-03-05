@@ -120,20 +120,8 @@ uv run alembic current
 After the schema exists (after `alembic upgrade head`), seed master data:
 
 ```bash
-uv run python scripts/seed_master_data.py
+uv run python -m scripts.seed_master
 ```
-
-This seed is **idempotent** (safe to run multiple times):
-
-- roles: `operator`, `manager`, `superadmin`
-- product categories:
-  - Refrigerator
-  - Washing Machine
-  - Microwave
-  - Dishwasher
-  - Air Conditioner
-
-## Daily developer workflow
 
 ### Run API in dev mode
 
