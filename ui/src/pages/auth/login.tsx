@@ -17,9 +17,10 @@ export default function LoginPage() {
     <AuthLayout title="Login">
       <Card className="mx-auto w-96">
         <CardHeader>
+          <img src="/logo.svg" alt="Whirlpool" />
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your email below to login to your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -61,18 +62,9 @@ export default function LoginPage() {
 
             <div className="grid grid-cols-1 gap-3">
               <Button variant="outline" className="w-full">
-                Google
-              </Button>
-              <Button variant="outline" className="w-full">
-                GitHub
+                Okta SSO Login
               </Button>
             </div>
-          </div>
-          <div className="mt-4 text-center text-sm">
-            Don't have an account?
-            <Link to={PAGES.REGISTER} className="underline ml-1">
-              Sign up
-            </Link>
           </div>
         </CardContent>
       </Card>
