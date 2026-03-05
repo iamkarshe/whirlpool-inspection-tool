@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import ProductsDataTable from "./data-table";
 import {
   getProducts,
   type Product,
 } from "@/pages/dashboard/admin/products/product-service";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
+import ProductsDataTable from "./data-table";
 
 type ProductFormValues = {
   name: string;
@@ -56,7 +56,7 @@ export default function ProductsPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real create product; mocked for now.
     console.log("Mock create product", formValues);
@@ -138,4 +138,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-

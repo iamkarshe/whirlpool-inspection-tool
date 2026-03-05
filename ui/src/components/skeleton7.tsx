@@ -10,7 +10,7 @@ import {
 
 export default function SkeletonTable() {
   return (
-    <div className="rounded-lg border bg-background p-6 text-sm text-muted-foreground my-5 rounded-lg">
+    <div className="rounded-lg border bg-background px-4 py-2 pb-6 text-sm text-muted-foreground my-3">
       <div className="space-y-4">
         <div className="flex items-center gap-4 py-4">
           <div className="flex flex-1 items-center gap-2">

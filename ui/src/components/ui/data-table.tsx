@@ -98,167 +98,172 @@ export function DataTable<TData>({
   });
 
   return (
-    <div className="w-full">
-      <div className="flex items-center gap-4 py-4">
-        <div className="flex flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
-          {searchKey ? (
-            <Input
-              placeholder="Search..."
-              value={
-                (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
-              }
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
-              }
-              className="max-w-xs"
-            />
-          ) : null}
+    <div className="rounded-lg border bg-background px-4 py-2 text-sm text-muted-foreground my-3">
+      <div className="w-full">
+        <div className="flex items-center gap-4 py-4">
+          <div className="flex flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
+            {searchKey ? (
+              <Input
+                placeholder="Search..."
+                value={
+                  (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
+                }
+                onChange={(event) =>
+                  table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                }
+                className="max-w-xs"
+              />
+            ) : null}
 
-          {filters?.map((filter) => (
-            <Popover key={filter.id}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 px-2">
-                  <PlusCircle className="mr-1 h-3 w-3" />
-                  {filter.title}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-52 p-0">
-                <Command>
-                  <CommandInput placeholder={filter.title} className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>No options found.</CommandEmpty>
-                    <CommandGroup>
-                      {filter.options.map((option) => (
-                        <CommandItem
-                          key={option.value}
-                          value={option.value}
-                          onSelect={(value) => {
-                            const column = table.getColumn(filter.id);
-                            const current = column?.getFilterValue() as
-                              | string
-                              | undefined;
-                            column?.setFilterValue(
-                              current === value ? "" : value,
-                            );
-                          }}
-                        >
-                          <div className="flex items-center space-x-3 py-1">
-                            <Checkbox
-                              checked={
-                                (table
-                                  .getColumn(filter.id)
-                                  ?.getFilterValue() as string | undefined) ===
-                                option.value
-                              }
-                              aria-label={option.label}
-                            />
-                            <span className="leading-none">{option.label}</span>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          ))}
+            {filters?.map((filter) => (
+              <Popover key={filter.id}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 px-2">
+                    <PlusCircle className="mr-1 h-3 w-3" />
+                    {filter.title}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-52 p-0">
+                  <Command>
+                    <CommandInput placeholder={filter.title} className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>No options found.</CommandEmpty>
+                      <CommandGroup>
+                        {filter.options.map((option) => (
+                          <CommandItem
+                            key={option.value}
+                            value={option.value}
+                            onSelect={(value) => {
+                              const column = table.getColumn(filter.id);
+                              const current = column?.getFilterValue() as
+                                | string
+                                | undefined;
+                              column?.setFilterValue(
+                                current === value ? "" : value,
+                              );
+                            }}
+                          >
+                            <div className="flex items-center space-x-3 py-1">
+                              <Checkbox
+                                checked={
+                                  (table
+                                    .getColumn(filter.id)
+                                    ?.getFilterValue() as
+                                    | string
+                                    | undefined) === option.value
+                                }
+                                aria-label={option.label}
+                              />
+                              <span className="leading-none">
+                                {option.label}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            ))}
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                <Columns /> <span className="hidden md:inline">Columns</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) => column.toggleVisibility(value)}
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              <Columns /> <span className="hidden md:inline">Columns</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="capitalize"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(value)}
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="flex items-center justify-end space-x-2 pt-4">
-        <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+
+        <div className="flex items-center justify-end space-x-2 pt-4">
+          <div className="text-muted-foreground flex-1 text-sm">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,19 +1,15 @@
-import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DataTable,
-  type DataTableFilter,
-} from "@/components/ui/data-table";
+import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Product } from "./product-service";
+import type { Product } from "@/pages/dashboard/admin/products/product-service";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 
 const productColumns: ColumnDef<Product>[] = [
   {
@@ -148,4 +144,3 @@ export default function ProductsDataTable({ data }: ProductsDataTableProps) {
     />
   );
 }
-
