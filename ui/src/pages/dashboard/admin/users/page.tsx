@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import PageActionBar from "@/components/page-action-bar";
 import { getUsers, type User } from "./user-service";
 import UsersDataTable from "./data-table";
 import SkeletonTable from "@/components/skeleton7";
@@ -60,8 +61,10 @@ export default function UsersPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Users</h1>
+      <PageActionBar
+        title="Users"
+        description="Manage user accounts and roles."
+      >
         <Dialog>
           <DialogTrigger asChild>
             <Button>
@@ -135,7 +138,7 @@ export default function UsersPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </PageActionBar>
       {isLoading ? <SkeletonTable /> : <UsersDataTable data={users} />}
     </>
   );
