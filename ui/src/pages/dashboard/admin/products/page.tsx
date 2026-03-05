@@ -39,6 +39,8 @@ type ProductFormValues = {
   price: string;
 };
 
+type SubmitEvent = FormEvent<HTMLFormElement>;
+
 export default function ProductsPage() {
   const [formValues, setFormValues] = useState<ProductFormValues>({
     name: "",
@@ -74,13 +76,13 @@ export default function ProductsPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     // TODO: wire real create product; mocked for now.
     console.log("Mock create product", formValues);
   };
 
-  const handleCsvSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleCsvSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock products CSV upload", csvFile);

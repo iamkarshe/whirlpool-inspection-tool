@@ -28,6 +28,8 @@ type WarehouseFormValues = {
   capacity: string;
 };
 
+type SubmitEvent = FormEvent<HTMLFormElement>;
+
 export default function WarehousesPage() {
   const [formValues, setFormValues] = useState<WarehouseFormValues>({
     name: "",
@@ -58,13 +60,13 @@ export default function WarehousesPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     // TODO: wire real create warehouse; mocked for now.
     console.log("Mock create warehouse", formValues);
   };
 
-  const handleCsvSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleCsvSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock warehouses CSV upload", csvFile);

@@ -39,6 +39,8 @@ type UserFormValues = {
   designation: string;
 };
 
+type SubmitEvent = FormEvent<HTMLFormElement>;
+
 export default function UsersPage() {
   const [formValues, setFormValues] = useState<UserFormValues>({
     name: "",
@@ -74,7 +76,7 @@ export default function UsersPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     console.log("Mock create user", formValues);
   };

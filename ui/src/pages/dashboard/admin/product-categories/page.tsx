@@ -28,6 +28,8 @@ type ProductCategoryFormValues = {
   description: string;
 };
 
+type SubmitEvent = FormEvent<HTMLFormElement>;
+
 export default function ProductCategoriesPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [formValues, setFormValues] = useState<ProductCategoryFormValues>({
@@ -52,13 +54,13 @@ export default function ProductCategoriesPage() {
     fetchCategories();
   }, []);
 
-  const handleCsvSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleCsvSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock CSV upload", csvFile);
   };
 
-  const handleCreateCategory = (event: FormEvent<HTMLFormElement>) => {
+  const handleCreateCategory = (event: SubmitEvent) => {
     event.preventDefault();
     // TODO: wire real create call; for now this is mocked.
     console.log("Mock create product category", formValues);
