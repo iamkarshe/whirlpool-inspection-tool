@@ -11,3 +11,7 @@ class LoginResponse(BaseModel):
     role: str
     designation: str
     is_active: bool
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str

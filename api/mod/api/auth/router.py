@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from mod.api.auth.request import LoginRequest
-from mod.api.auth.response import LoginResponse
+from mod.api.auth.request import ForgotPasswordRequest, LoginRequest
+from mod.api.auth.response import ForgotPasswordResponse, LoginResponse
 from mod.model import Role, User
 from utils.db import get_db
 from utils.password import verify_password
@@ -44,3 +44,18 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse
         designation=user.designation,
         is_active=user.is_active,
     )
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+def forgot_password(
+    payload: ForgotPasswordRequest, db: Session = Depends(get_db)
+) -> ForgotPasswordResponse:
+    user: User | None = db.query(User).filter(User.email == str(payload.email)).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid email",
+        )
+
+    return ForgotPasswordResponse(message="Password reset request accepted")
