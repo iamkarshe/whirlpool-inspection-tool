@@ -5,14 +5,17 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/users?page=1&per_page=20
+  url: {{baseUrl}}/api/users?page=1&per_page=10&search&sort_by=id&sort_dir=desc
   body: json
   auth: inherit
 }
 
 params:query {
   page: 1
-  per_page: 20
+  per_page: 10
+  search: 
+  sort_by: id
+  sort_dir: desc
 }
 
 body:json {

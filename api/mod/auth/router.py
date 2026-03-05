@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from mod.auth.actions import log_login_action, upsert_device_action
 from mod.auth.request import ForgotPasswordRequest, LoginRequest
 from mod.auth.response import ForgotPasswordResponse, LoginResponse
 from mod.model import Role, User
@@ -12,7 +13,11 @@ router = APIRouter(tags=["Auth"], prefix="/auth")
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
+def login(
+    request: Request,
+    payload: LoginRequest,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
     user: User | None = db.query(User).filter(User.email == str(payload.email)).first()
 
     if user is None:
@@ -37,6 +42,31 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse
     role_name = role.role
 
     access_token = create_access_token(user_id=user.id)
+
+    # Capture client metadata
+    client_ip = request.client.host if request.client else None
+    proxy_ip = request.headers.get("X-Forwarded-For")
+    user_agent = request.headers.get("User-Agent")
+
+    # Create / update device and audit log
+    device = upsert_device_action(
+        db=db,
+        user=user,
+        device_payload=payload.device,
+        client_ip=client_ip,
+        proxy_ip=proxy_ip,
+    )
+    log_login_action(
+        db=db,
+        user=user,
+        device=device,
+        access_token=access_token,
+        client_ip=client_ip,
+        proxy_ip=proxy_ip,
+        user_agent=user_agent,
+    )
+
+    db.commit()
 
     return LoginResponse(
         id=user.id,

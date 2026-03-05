@@ -139,7 +139,7 @@ class Device(TimestampSoftDeleteMixin, Base):
         index=True,
     )
 
-    imei: Mapped[str] = mapped_column(String(32), nullable=False)
+    imei: Mapped[str] = mapped_column(String(48), nullable=False)
     device_type: Mapped[DeviceType] = mapped_column(String(16), nullable=False)
 
     device_fingerprint: Mapped[str] = mapped_column(String(255), nullable=False)
