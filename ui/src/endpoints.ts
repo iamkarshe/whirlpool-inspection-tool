@@ -11,6 +11,10 @@ export const PAGES = {
   DASHBOARD_MASTERS_PRODUCTS: "/dashboard/masters/products",
   DASHBOARD_MASTERS_WAREHOUSES: "/dashboard/masters/warehouses",
 
+  DASHBOARD_SETTINGS: "/dashboard/settings",
+  DASHBOARD_NOTIFICATIONS: "/dashboard/notifications",
+  DASHBOARD_RELEASE_NOTES: "/dashboard/release-notes",
+
   DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/transactions/inspections",
   DASHBOARD_TRANSACTIONS_CHECKLISTS: "/dashboard/transactions/checklists",
   DASHBOARD_TRANSACTIONS_REPORTS: "/dashboard/transactions/reports",

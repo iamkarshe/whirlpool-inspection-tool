@@ -31,6 +31,13 @@ const ProductsPage = lazy(
 const WarehousesPage = lazy(
   () => import("@/pages/dashboard/admin/warehouses/page"),
 );
+const SettingsPage = lazy(() => import("@/pages/dashboard/settings/page"));
+const NotificationsPage = lazy(
+  () => import("@/pages/dashboard/notifications/page"),
+);
+const ReleaseNotesPage = lazy(
+  () => import("@/pages/dashboard/release-notes/page"),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -136,6 +143,33 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <WarehousesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings",
+        handle: { title: "Settings" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <SettingsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "notifications",
+        handle: { title: "Notifications" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <NotificationsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "release-notes",
+        handle: { title: "Release Notes" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ReleaseNotesPage />
           </Suspense>
         ),
       },

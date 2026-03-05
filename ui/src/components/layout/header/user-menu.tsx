@@ -50,15 +50,30 @@ export default function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              navigate(PAGES.DASHBOARD_SETTINGS);
+            }}
+          >
             <BadgeCheck />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              navigate(PAGES.DASHBOARD_NOTIFICATIONS);
+            }}
+          >
             <Bell />
             Notifications
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              navigate(PAGES.DASHBOARD_RELEASE_NOTES);
+            }}
+          >
             <Info />
             Release Notes
           </DropdownMenuItem>
