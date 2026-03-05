@@ -1,5 +1,6 @@
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from mod.api.middleware import auth_dependency
@@ -8,7 +9,12 @@ from mod.api.user.response import UserListResponse, UserResponse
 from mod.model import Role, User
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
-from utils.pagination import build_paginated_response
+from utils.pagination import (
+    PaginationParams,
+    apply_standard_filters,
+    build_paginated_response,
+    get_pagination_params,
+)
 
 router = APIRouter(
     tags=["Users"],
@@ -27,11 +33,28 @@ router = APIRouter(
 @check_api_role(["superadmin"])
 def get_users(
     request: Request,
-    page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=100),
+    params: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
-    query = db.query(User).order_by(User.id.asc())
+    query = db.query(User)
+
+    query = apply_standard_filters(
+        query=query,
+        params=params,
+        search_columns=[User.name, User.email, User.mobile_number],
+        date_fields={
+            "created_at": User.created_at,
+            "updated_at": User.updated_at,
+        },
+        sort_fields={
+            "id": User.id,
+            "name": User.name,
+            "email": User.email,
+            "created_at": User.created_at,
+            "updated_at": User.updated_at,
+        },
+        default_sort_field="id",
+    )
 
     def mapper(user: User) -> UserResponse:
         return UserResponse(
@@ -47,8 +70,8 @@ def get_users(
 
     return build_paginated_response(
         query=query,
-        page=page,
-        per_page=per_page,
+        page=params.page,
+        per_page=params.per_page,
         mapper=mapper,
     )
 
