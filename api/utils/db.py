@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
-from utils.env import get_env
+from utils.env import get_env, get_env_optional
 
 
 def build_database_url() -> str:
@@ -15,10 +15,17 @@ def build_database_url() -> str:
 
 
 DATABASE_URL = build_database_url()
+APP_ENV = get_env_optional("APP_ENV", "dev") or "dev"
 
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_recycle=1800,
+    echo=APP_ENV == "dev",
+    echo_pool=APP_ENV == "dev",
 )
 
 
