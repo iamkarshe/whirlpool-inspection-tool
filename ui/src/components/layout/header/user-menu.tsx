@@ -1,12 +1,3 @@
-import {
-  BadgeCheck,
-  Bell,
-  ChevronRightIcon,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,15 +8,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
-import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { BadgeCheck, Bell, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { PAGES } from "@/endpoints";
 
 export default function UserMenu() {
+  const navigate = useNavigate();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar>
-          <AvatarImage src={`/images/avatars/01.png`} alt="shadcn ui kit" />
+          <AvatarImage src={`/assets/avatar/default.svg`} alt="shadcn ui kit" />
           <AvatarFallback className="rounded-lg">TB</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -35,10 +40,6 @@ export default function UserMenu() {
       >
         <DropdownMenuLabel className="p-0">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-            <Avatar>
-              <AvatarImage src={`/images/avatars/01.png`} alt="shadcn ui kit" />
-              <AvatarFallback className="rounded-lg">TB</AvatarFallback>
-            </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-semibold">Toby Belhome</span>
               <span className="text-muted-foreground truncate text-xs">
@@ -49,20 +50,9 @@ export default function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link to="https://shadcnuikit.com/pricing" target="_blank">
-              <Sparkles /> Upgrade to Pro
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuGroup>
           <DropdownMenuItem>
             <BadgeCheck />
             Account
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCard />
-            Billing
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Bell />
@@ -70,25 +60,37 @@ export default function UserMenu() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <LogOut />
-          Log out
-        </DropdownMenuItem>
-        <div className="bg-muted mt-1.5 rounded-md border">
-          <div className="space-y-3 p-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium">Credits</h4>
-              <div className="text-muted-foreground flex cursor-pointer items-center text-sm">
-                <span>5 left</span>
-                <ChevronRightIcon className="ml-1 h-4 w-4" />
-              </div>
-            </div>
-            <Progress value={40} indicatorColor="bg-primary" />
-            <div className="text-muted-foreground flex items-center text-sm">
-              Daily credits used first
-            </div>
-          </div>
-        </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+              }}
+            >
+              <LogOut />
+              Log out
+            </DropdownMenuItem>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Log out</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to log out? You will be returned to the
+                login page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  navigate(PAGES.LOGIN);
+                }}
+              >
+                Log out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DropdownMenuContent>
     </DropdownMenu>
   );
