@@ -37,9 +37,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="hover:text-foreground h-10 group-data-[collapsible=icon]:px-0!">
-                  <span className="text-foreground font-semibold text-xl">
-                    Whirlpool Insights
-                  </span>
+                  <div className="flex items-center text-foreground font-semibold text-xl">
+                    <img src="/logo.svg" alt="Whirlpool" />
+                    <span className="-ml-4">Insights</span>
+                  </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
             </DropdownMenu>

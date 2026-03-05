@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
     <div className="space-y-4">
       <div className="flex flex-row items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
-          Website Analytics
+          Dashboard
         </h1>
         <div className="flex items-center space-x-2">
           <div className="grow">
