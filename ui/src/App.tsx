@@ -4,7 +4,7 @@ import { PrivateRouter } from "./router/PrivateRouter";
 import LoginPage from "@/pages/auth/login";
 import ForgotPasswordPage from "./pages/auth/forgot-password";
 import ResetPasswordConfirmationPage from "./pages/auth/reset-password";
-import DashboardPage from "./pages/dashboard";
+import AnalyticsPage from "./pages/dashboard/analytics/page";
 import ErrorBoundary from "./pages/error-boundary";
 import NotFoundPage from "./pages/not-found";
 
@@ -35,7 +35,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: <AnalyticsPage />,
       },
     ],
   },

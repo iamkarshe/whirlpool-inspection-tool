@@ -2,7 +2,7 @@
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { VariantProps } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 
 export type PromptSuggestionProps = {
   children: React.ReactNode;
@@ -29,7 +29,8 @@ function Suggestion({
         variant={variant || "outline"}
         size={size || "lg"}
         className={cn("rounded-full", className)}
-        {...props}>
+        {...props}
+      >
         {children}
       </Button>
     );
@@ -43,9 +44,10 @@ function Suggestion({
         className={cn(
           "w-full cursor-pointer justify-start rounded-xl py-2",
           "hover:bg-muted",
-          className
+          className,
         )}
-        {...props}>
+        {...props}
+      >
         {children}
       </Button>
     );
@@ -63,16 +65,24 @@ function Suggestion({
       className={cn(
         "w-full cursor-pointer justify-start gap-0 rounded-xl py-2",
         "hover:bg-muted",
-        className
+        className,
       )}
-      {...props}>
+      {...props}
+    >
       {shouldHighlight ? (
         (() => {
           const index = contentLower.indexOf(highlightLower);
           if (index === -1)
-            return <span className="text-muted-foreground whitespace-pre-wrap">{content}</span>;
+            return (
+              <span className="text-muted-foreground whitespace-pre-wrap">
+                {content}
+              </span>
+            );
 
-          const actualHighlightedText = content.substring(index, index + highlightLower.length);
+          const actualHighlightedText = content.substring(
+            index,
+            index + highlightLower.length,
+          );
 
           const before = content.substring(0, index);
           const after = content.substring(index + actualHighlightedText.length);
@@ -80,17 +90,25 @@ function Suggestion({
           return (
             <>
               {before && (
-                <span className="text-muted-foreground whitespace-pre-wrap">{before}</span>
+                <span className="text-muted-foreground whitespace-pre-wrap">
+                  {before}
+                </span>
               )}
               <span className="text-primary font-medium whitespace-pre-wrap">
                 {actualHighlightedText}
               </span>
-              {after && <span className="text-muted-foreground whitespace-pre-wrap">{after}</span>}
+              {after && (
+                <span className="text-muted-foreground whitespace-pre-wrap">
+                  {after}
+                </span>
+              )}
             </>
           );
         })()
       ) : (
-        <span className="text-muted-foreground whitespace-pre-wrap">{content}</span>
+        <span className="text-muted-foreground whitespace-pre-wrap">
+          {content}
+        </span>
       )}
     </Button>
   );

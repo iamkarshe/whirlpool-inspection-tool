@@ -1,6 +1,6 @@
-import { Outlet } from "react-router-dom";
+import DashboardLayout from "@/pages/dashboard/layout";
 
 export function PrivateRouter() {
-  return <Outlet />;
+  return <DashboardLayout />;
 }
 
