@@ -51,37 +51,44 @@
    ```
 
 6. Form submissions:
-   - For React `<form onSubmit={...}>`, type the handler event as `FormEvent<HTMLFormElement>`.
-   - If you need the native submit details (e.g., the clicked submit button), read `event.nativeEvent` as `SubmitEvent`.
+   - Use **`SubmitEvent`** for form submission handlers.
+   - Do not use `FormEvent`.
+   - Prefer DOM-native event typing for submit handlers.
 
    Preferred:
 
    ```ts
-   import type { FormEvent } from "react";
-
-   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+   const handleSubmit = (event: SubmitEvent) => {
      event.preventDefault();
    };
    ```
 
-   When you need the native submitter:
+   If the handler is attached via React `onSubmit`, cast when necessary:
+
+   ```ts
+   const handleSubmit = (event: SubmitEvent) => {
+     event.preventDefault();
+     const submitter = event.submitter;
+   };
+   ```
+
+   Avoid:
 
    ```ts
    import type { FormEvent } from "react";
-
-   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-     event.preventDefault();
-
-     const native = event.nativeEvent as SubmitEvent;
-     const submitter = native.submitter;
-   };
    ```
-
-   Do not type React `onSubmit` as DOM `SubmitEvent`.
 
 7. Generated/modified code quality:
    - Ensure the code compiles.
+
    - Ensure types are correct before introducing new functions/components.
+
+   - Prefer explicit types for event handlers (e.g., `ChangeEvent`, `SubmitEvent`) over untyped `event`.
+
+   - Ensure the code compiles.
+
+   - Ensure types are correct before introducing new functions/components.
+
    - Prefer explicit types for event handlers (e.g., `ChangeEvent`, `FormEvent`) over untyped `event`.
 
 8. Commit messages must follow this format:

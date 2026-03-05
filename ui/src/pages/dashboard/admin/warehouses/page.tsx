@@ -105,7 +105,7 @@ export default function WarehousesPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Upload warehouses CSV</DialogTitle>
+              <DialogTitle>Upload Warehouses</DialogTitle>
               <DialogDescription>
                 Select a CSV file containing warehouses to import.
               </DialogDescription>
@@ -210,8 +210,11 @@ export default function WarehousesPage() {
         </Dialog>
       </PageActionBar>
 
-      {isLoading ? <SkeletonTable /> : <WarehousesDataTable data={warehouses} />}
+      {isLoading ? (
+        <SkeletonTable />
+      ) : (
+        <WarehousesDataTable data={warehouses} />
+      )}
     </div>
   );
 }
-

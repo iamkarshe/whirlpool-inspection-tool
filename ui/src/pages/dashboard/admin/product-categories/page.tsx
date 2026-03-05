@@ -107,7 +107,7 @@ export default function ProductCategoriesPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Upload product categories CSV</DialogTitle>
+              <DialogTitle>Upload Product Categories</DialogTitle>
               <DialogDescription>
                 Select a CSV file containing product categories to import.
               </DialogDescription>
@@ -148,7 +148,10 @@ export default function ProductCategoriesPage() {
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button>Add Product Category</Button>
+            <Button>
+              <span className="mr-1">+</span>
+              Add Product Category
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

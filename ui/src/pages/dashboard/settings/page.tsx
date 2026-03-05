@@ -9,9 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { FormEvent } from "react";
-
-type SubmitEvent = FormEvent<HTMLFormElement>;
+import type { SubmitEvent } from "react";
 
 export default function SettingsPage() {
   const handlePasswordSubmit = (event: SubmitEvent) => {
@@ -32,16 +30,16 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Card>
+      <Card className="flex flex-col gap-6">
         <CardHeader>
           <CardTitle>Update password</CardTitle>
           <CardDescription>
             Choose a strong, unique password to keep your account secure.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handlePasswordSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+        <CardContent className="px-6">
+          <form className="space-y-8" onSubmit={handlePasswordSubmit}>
+            <div className="grid gap-2">
               <Label htmlFor="currentPassword">Current password</Label>
               <Input
                 id="currentPassword"
@@ -51,7 +49,7 @@ export default function SettingsPage() {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="newPassword">New password</Label>
               <Input
                 id="newPassword"
@@ -61,7 +59,7 @@ export default function SettingsPage() {
                 required
               />
             </div>
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="confirmPassword">Confirm new password</Label>
               <Input
                 id="confirmPassword"
@@ -71,11 +69,11 @@ export default function SettingsPage() {
                 required
               />
             </div>
-          </CardContent>
-          <CardFooter className="mt-2 flex justify-end gap-2 pt-2">
-            <Button type="submit">Update password</Button>
-          </CardFooter>
-        </form>
+            <div className="flex justify-end">
+              <Button type="submit">Update password</Button>
+            </div>
+          </form>
+        </CardContent>
       </Card>
 
       <Card>

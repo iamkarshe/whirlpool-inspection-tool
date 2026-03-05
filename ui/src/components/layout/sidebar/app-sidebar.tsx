@@ -54,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="bg-muted mt-1.5 rounded-md border">
+        <div className="bg-muted mt-1.5 rounded-md border group-data-[collapsible=icon]:hidden">
           <div className="space-y-3 p-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium">Release Version</h4>

@@ -122,7 +122,7 @@ export default function ProductsPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Upload products CSV</DialogTitle>
+              <DialogTitle>Upload Products</DialogTitle>
               <DialogDescription>
                 Select a CSV file containing products to import.
               </DialogDescription>

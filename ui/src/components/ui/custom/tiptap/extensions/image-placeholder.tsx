@@ -11,7 +11,7 @@ import {
   type NodeViewProps,
   NodeViewWrapper,
   ReactNodeViewRenderer,
-  mergeAttributes
+  mergeAttributes,
 } from "@tiptap/react";
 import { Image, Link, Upload, Loader2, X } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -42,7 +42,7 @@ export const ImagePlaceholder = Node.create<ImagePlaceholderOptions>({
     return {
       HTMLAttributes: {},
       onUpload: () => {},
-      onError: () => {}
+      onError: () => {},
     };
   },
 
@@ -58,7 +58,7 @@ export const ImagePlaceholder = Node.create<ImagePlaceholderOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(ImagePlaceholderComponent, {
-      className: NODE_HANDLES_SELECTED_STYLE_CLASSNAME
+      className: NODE_HANDLES_SELECTED_STYLE_CLASSNAME,
     });
   },
 
@@ -66,11 +66,11 @@ export const ImagePlaceholder = Node.create<ImagePlaceholderOptions>({
     return {
       insertImagePlaceholder: () => (props: CommandProps) => {
         return props.commands.insertContent({
-          type: "image-placeholder"
+          type: "image-placeholder",
         });
-      }
+      },
     };
-  }
+  },
 });
 
 function ImagePlaceholderComponent(props: NodeViewProps) {
@@ -82,21 +82,27 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
   const [urlError, setUrlError] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
 
-  const { previewUrl, fileInputRef, handleFileChange, handleRemove, uploading, error } =
-    useImageUpload({
-      onUpload: (imageUrl) => {
-        editor
-          .chain()
-          .focus()
-          .setImage({
-            src: imageUrl,
-            alt: altText || fileInputRef.current?.files?.[0]?.name
-          })
-          .run();
-        handleRemove();
-        setIsExpanded(false);
-      }
-    });
+  const {
+    previewUrl,
+    fileInputRef,
+    handleFileChange,
+    handleRemove,
+    uploading,
+    error,
+  } = useImageUpload({
+    onUpload: (imageUrl) => {
+      editor
+        .chain()
+        .focus()
+        .setImage({
+          src: imageUrl,
+          alt: altText || fileInputRef.current?.files?.[0]?.name,
+        })
+        .run();
+      handleRemove();
+      setIsExpanded(false);
+    },
+  });
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -157,26 +163,39 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
               "group hover:bg-accent relative flex cursor-pointer flex-col items-center gap-4 rounded-lg border-2 border-dashed p-8 transition-all",
               selected && "border-primary bg-primary/5",
               isDragActive && "border-primary bg-primary/5",
-              error && "border-destructive bg-destructive/5"
-            )}>
+              error && "border-destructive bg-destructive/5",
+            )}
+          >
             <div className="bg-background group-hover:bg-accent rounded-full p-4 shadow-sm transition-colors">
               <Image className="h-6 w-6" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium">Click to upload or drag and drop</p>
-              <p className="text-muted-foreground text-xs">SVG, PNG, JPG or GIF</p>
+              <p className="text-sm font-medium">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-muted-foreground text-xs">
+                SVG, PNG, JPG or GIF
+              </p>
             </div>
           </div>
         ) : (
           <div className="bg-card rounded-lg border p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">Add Image</h3>
-              <Button variant="ghost" size="icon" onClick={() => setIsExpanded(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsExpanded(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
-            <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v: any) => setActiveTab(v)}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="upload">
                   <Upload className="mr-2 h-4 w-4" />
@@ -197,8 +216,9 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                   className={cn(
                     "my-4 rounded-lg border-2 border-dashed p-8 text-center transition-colors",
                     isDragActive && "border-primary bg-primary/10",
-                    error && "border-destructive bg-destructive/10"
-                  )}>
+                    error && "border-destructive bg-destructive/10",
+                  )}
+                >
                   {previewUrl ? (
                     <div className="space-y-4">
                       <img
@@ -213,11 +233,17 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                           placeholder="Alt text (optional)"
                         />
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" onClick={handleRemove} disabled={uploading}>
+                          <Button
+                            variant="outline"
+                            onClick={handleRemove}
+                            disabled={uploading}
+                          >
                             Remove
                           </Button>
                           <Button disabled={uploading}>
-                            {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {uploading && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
                             Upload
                           </Button>
                         </div>
@@ -235,16 +261,23 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                       />
                       <label
                         htmlFor="image-upload"
-                        className="flex cursor-pointer flex-col items-center gap-4">
+                        className="flex cursor-pointer flex-col items-center gap-4"
+                      >
                         <Upload className="text-muted-foreground h-8 w-8" />
                         <div>
-                          <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                          <p className="text-muted-foreground text-xs">SVG, PNG, JPG or GIF</p>
+                          <p className="text-sm font-medium">
+                            Click to upload or drag and drop
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            SVG, PNG, JPG or GIF
+                          </p>
                         </div>
                       </label>
                     </>
                   )}
-                  {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
+                  {error && (
+                    <p className="text-destructive mt-2 text-sm">{error}</p>
+                  )}
                 </div>
               </TabsContent>
 
@@ -260,7 +293,9 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                       placeholder="Enter image URL..."
                     />
                     {urlError && (
-                      <p className="text-destructive text-xs">Please enter a valid URL</p>
+                      <p className="text-destructive text-xs">
+                        Please enter a valid URL
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -270,7 +305,11 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
                       placeholder="Alt text (optional)"
                     />
                   </div>
-                  <Button onClick={handleInsertEmbed} className="w-full" disabled={!url}>
+                  <Button
+                    onClick={handleInsertEmbed}
+                    className="w-full"
+                    disabled={!url}
+                  >
                     Add Image
                   </Button>
                 </div>
