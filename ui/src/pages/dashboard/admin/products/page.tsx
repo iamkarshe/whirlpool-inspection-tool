@@ -13,12 +13,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import ProductsDataTable from "./data-table";
+import {
   getProducts,
   type Product,
 } from "@/pages/dashboard/admin/products/product-service";
-import type { ChangeEvent, SubmitEvent } from "react";
+import {
+  getProductCategories,
+  type ProductCategory,
+} from "@/pages/dashboard/admin/product-categories/product-category-service";
+import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
-import ProductsDataTable from "./data-table";
 
 type ProductFormValues = {
   name: string;
@@ -36,19 +47,24 @@ export default function ProductsPage() {
   });
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProductsAndCategories = async () => {
       try {
-        const data = await getProducts();
-        setProducts(data);
+        const [productsData, categoriesData] = await Promise.all([
+          getProducts(),
+          getProductCategories(),
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchProductsAndCategories();
   }, []);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +72,7 @@ export default function ProductsPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real create product; mocked for now.
     console.log("Mock create product", formValues);
@@ -105,13 +121,26 @@ export default function ProductsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  name="category"
+                <Select
                   value={formValues.category}
-                  onChange={handleInputChange}
-                  required
-                />
+                  onValueChange={(value) =>
+                    setFormValues((previous) => ({
+                      ...previous,
+                      category: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="category" className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Price</Label>
