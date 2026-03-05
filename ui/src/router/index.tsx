@@ -22,6 +22,9 @@ const ResetPasswordConfirmationPage = lazy(
 // Dashboard Pages
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
+const ProductCategoriesPage = lazy(
+  () => import("@/pages/dashboard/admin/product-categories/page"),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -100,6 +103,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <UsersPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "masters",
+        handle: { title: "Product Categories" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProductCategoriesPage />
           </Suspense>
         ),
       },
