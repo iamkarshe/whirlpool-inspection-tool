@@ -1,4 +1,3 @@
-import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,13 +10,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PAGES } from "@/endpoints";
 import AuthLayout from "@/pages/auth/layout";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [email, setEmail] = useState(
+    import.meta.env.DEV ? import.meta.env.VITE_DEFAULT_EMAIL : "",
+  );
+  const [password, setPassword] = useState(
+    import.meta.env.DEV ? import.meta.env.VITE_DEFAULT_PASSWORD : "",
+  );
+
+  const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Mocked auth: always send user to dashboard.
     navigate(PAGES.DASHBOARD);
   };
 
@@ -38,6 +45,9 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 placeholder="user@whirlpool.com"
                 required
               />
@@ -52,7 +62,13 @@ export default function LoginPage() {
                   Forgot your password?
                 </Link>
               </div>
-              <Input id="password" type="password" required />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
             <Button type="submit" className="w-full">
               Login
