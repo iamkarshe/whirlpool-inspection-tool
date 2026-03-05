@@ -1,5 +1,3 @@
-"use client";
-
 import Notifications from "@/components/layout/header/notifications";
 import Search from "@/components/layout/header/search";
 import ThemeSwitch from "@/components/layout/header/theme-switch";

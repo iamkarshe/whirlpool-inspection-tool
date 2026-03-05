@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
-import { BadgeCheck, Bell, LogOut } from "lucide-react";
+import { BadgeCheck, Bell, Info, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function UserMenu() {
@@ -52,11 +52,15 @@ export default function UserMenu() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <BadgeCheck />
-            Account
+            Settings
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Bell />
             Notifications
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Info />
+            Release Notes
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
