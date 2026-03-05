@@ -1,7 +1,7 @@
 import bcrypt
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from mod.api.middleware import auth_dependency
 from mod.api.user.request import UserCreateRequest
@@ -36,7 +36,7 @@ def get_users(
     params: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
-    query = db.query(User)
+    query = db.query(User).options(joinedload(User.role))
 
     query = apply_standard_filters(
         query=query,
