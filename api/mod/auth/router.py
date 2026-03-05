@@ -8,7 +8,7 @@ from utils.db import get_db
 from utils.jwt import create_access_token
 from utils.password import verify_password
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter(tags=["Auth"], prefix="/auth")
 
 
 @router.post("/login", response_model=LoginResponse)

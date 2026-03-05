@@ -160,6 +160,12 @@ uv run alembic upgrade head
 uv run alembic downgrade -1
 ```
 
+## JWT Secret Key
+
+```
+openssl rand -hex 32
+```
+
 ## Troubleshooting
 
 ### 1) Alembic cannot connect
