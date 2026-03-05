@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from mod.auth.actions import log_login_action, upsert_device_action
+from mod.auth.actions import (
+    log_login_action,
+    log_login_failure_action,
+    upsert_device_action,
+)
 from mod.auth.request import ForgotPasswordRequest, LoginRequest
 from mod.auth.response import ForgotPasswordResponse, LoginResponse
 from mod.model import Role, User
@@ -18,21 +22,52 @@ def login(
     payload: LoginRequest,
     db: Session = Depends(get_db),
 ) -> LoginResponse:
+    client_ip = request.client.host if request.client else None
+    proxy_ip = request.headers.get("X-Forwarded-For")
+    user_agent = request.headers.get("User-Agent")
+
     user: User | None = db.query(User).filter(User.email == str(payload.email)).first()
 
     if user is None:
+        log_login_failure_action(
+            db=db,
+            user=None,
+            client_ip=client_ip,
+            proxy_ip=proxy_ip,
+            user_agent=user_agent,
+            reason="user_not_found",
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
 
     if not user.is_active:
+        log_login_failure_action(
+            db=db,
+            user=user,
+            client_ip=client_ip,
+            proxy_ip=proxy_ip,
+            user_agent=user_agent,
+            reason="inactive_user",
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User is inactive",
         )
 
     if not verify_password(payload.password, user.password):
+        log_login_failure_action(
+            db=db,
+            user=user,
+            client_ip=client_ip,
+            proxy_ip=proxy_ip,
+            user_agent=user_agent,
+            reason="invalid_password",
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -42,11 +77,6 @@ def login(
     role_name = role.role
 
     access_token = create_access_token(user_id=user.id)
-
-    # Capture client metadata
-    client_ip = request.client.host if request.client else None
-    proxy_ip = request.headers.get("X-Forwarded-For")
-    user_agent = request.headers.get("User-Agent")
 
     # Create / update device and audit log
     device = upsert_device_action(

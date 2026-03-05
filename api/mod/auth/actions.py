@@ -88,3 +88,33 @@ def log_login_action(
     )
     db.add(log)
 
+
+def log_login_failure_action(
+    db: Session,
+    user: Optional[User],
+    client_ip: Optional[str],
+    proxy_ip: Optional[str],
+    user_agent: Optional[str],
+    reason: str,
+) -> None:
+    """
+    Persist an audit log entry for failed login attempts.
+    """
+    payload = {
+        "event": "login_failed",
+        "reason": reason,
+        "ip": client_ip,
+        "proxy_ip": proxy_ip,
+        "user_agent": user_agent,
+        "email": getattr(user, "email", None),
+        "user_id": getattr(user, "id", None),
+    }
+
+    log = Log(
+        user_id=getattr(user, "id", None),
+        device_id=None,
+        log_level=LogLevel.warning.value,
+        log_value=json.dumps(payload),
+    )
+    db.add(log)
+
