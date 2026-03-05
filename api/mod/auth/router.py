@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from mod.api.auth.request import ForgotPasswordRequest, LoginRequest
-from mod.api.auth.response import ForgotPasswordResponse, LoginResponse
+from mod.auth.request import ForgotPasswordRequest, LoginRequest
+from mod.auth.response import ForgotPasswordResponse, LoginResponse
 from mod.model import Role, User
 from utils.db import get_db
+from utils.jwt import create_access_token
 from utils.password import verify_password
 
 router = APIRouter(tags=["Auth"])
@@ -35,6 +36,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse
     role: Role | None = db.query(Role).filter(Role.id == user.role_id).first()
     role_name = role.role
 
+    access_token = create_access_token(user_id=user.id)
+
     return LoginResponse(
         id=user.id,
         uuid=user.uuid,
@@ -43,6 +46,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse
         role=role_name,
         designation=user.designation,
         is_active=user.is_active,
+        access_token=access_token,
     )
 
 

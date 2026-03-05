@@ -11,6 +11,8 @@ class LoginResponse(BaseModel):
     role: str
     designation: str
     is_active: bool
+    access_token: str
+    token_type: str = "bearer"
 
 
 class ForgotPasswordResponse(BaseModel):

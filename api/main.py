@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from mod.api.auth.router import router as auth_router
 from mod.api.user.router import router as user_router
+from mod.auth.router import router as auth_router
 from mod.tagmetadata import tags_metadata
 from utils.log import setup_logging
 
