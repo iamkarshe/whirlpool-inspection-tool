@@ -8,6 +8,7 @@ import {
   SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
+import { PAGES } from "@/endpoints";
 
 export type NavItem = {
   title: string;
@@ -31,20 +32,20 @@ export const navItems: NavGroup[] = [
     items: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: PAGES.DASHBOARD,
         icon: GaugeIcon,
       },
       {
         title: "Masters",
-        href: "/dashboard/project-management",
+        href: PAGES.DASHBOARD_MASTERS,
         icon: FolderIcon,
         items: [
           {
             title: "Product Categories",
-            href: "/dashboard/project-management",
+            href: PAGES.DASHBOARD_MASTERS,
           },
-          { title: "Products", href: "/dashboard/project-management" },
-          { title: "Warehouses", href: "/dashboard/project-management" },
+          { title: "Products", href: PAGES.DASHBOARD_MASTERS },
+          { title: "Warehouses", href: PAGES.DASHBOARD_MASTERS },
         ],
       },
       {
@@ -52,9 +53,18 @@ export const navItems: NavGroup[] = [
         href: "#",
         icon: ClipboardCheckIcon,
         items: [
-          { title: "Inspections", href: "/dashboard/ecommerce" },
-          { title: "Checklists", href: "/dashboard/pages/products" },
-          { title: "Reports", href: "/dashboard/pages/products" },
+          {
+            title: "Inspections",
+            href: PAGES.DASHBOARD_TRANSACTIONS_INSPECTIONS,
+          },
+          {
+            title: "Checklists",
+            href: PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS,
+          },
+          {
+            title: "Reports",
+            href: PAGES.DASHBOARD_TRANSACTIONS_REPORTS,
+          },
         ],
       },
       {
@@ -62,8 +72,14 @@ export const navItems: NavGroup[] = [
         href: "#",
         icon: ChartBarDecreasingIcon,
         items: [
-          { title: "Daily Inspections", href: "/dashboard/ecommerce" },
-          { title: "Daily Logins", href: "/dashboard/pages/products" },
+          {
+            title: "Daily Inspections",
+            href: PAGES.DASHBOARD_REPORTS_DAILY_INSPECTIONS,
+          },
+          {
+            title: "Daily Logins",
+            href: PAGES.DASHBOARD_REPORTS_DAILY_LOGINS,
+          },
         ],
       },
       {
@@ -71,11 +87,14 @@ export const navItems: NavGroup[] = [
         href: "#",
         icon: SettingsIcon,
         items: [
-          { title: "Users", href: "/dashboard/ecommerce" },
-          { title: "Devices", href: "/dashboard/ecommerce" },
-          { title: "Logins", href: "/dashboard/ecommerce" },
-          { title: "Integrations", href: "/dashboard/pages/products" },
-          { title: "Logs", href: "/dashboard/pages/products" },
+          { title: "Users", href: PAGES.DASHBOARD_ADMIN_USERS },
+          { title: "Devices", href: PAGES.DASHBOARD_ADMIN_DEVICES },
+          { title: "Logins", href: PAGES.DASHBOARD_ADMIN_LOGINS },
+          {
+            title: "Integrations",
+            href: PAGES.DASHBOARD_ADMIN_INTEGRATIONS,
+          },
+          { title: "Logs", href: PAGES.DASHBOARD_ADMIN_LOGS },
         ],
       },
     ],
