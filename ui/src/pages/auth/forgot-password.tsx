@@ -1,5 +1,3 @@
-import { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,20 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PAGES } from "@/endpoints";
 import AuthLayout from "@/pages/auth/layout";
+import { ArrowRightIcon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
+    ev.preventDefault();
     navigate(PAGES.RESET_PASSWORD);
   };
 
   return (
-    <AuthLayout title="Forgot password">
+    <AuthLayout title="Forgot Password">
       <Card className="mx-auto w-96">
         <CardHeader>
-          <CardTitle className="text-2xl">Forgot password</CardTitle>
+          <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>
             Enter your email and we&apos;ll send you a reset link.
           </CardDescription>
@@ -37,17 +37,23 @@ export default function ForgotPasswordPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="contact@bundui.com"
+                placeholder="user@whirlpool.com"
                 required
               />
             </div>
             <Button type="submit" className="w-full">
-              Send reset link
+              Send Reset Link
+              <ArrowRightIcon className="ml-2 h-4 w-4" />
             </Button>
+
+            <div className="mt-4 text-center text-sm">
+              <Link to={PAGES.LOGIN} className="underline ml-1">
+                Back to Login
+              </Link>
+            </div>
           </form>
         </CardContent>
       </Card>
     </AuthLayout>
   );
 }
-

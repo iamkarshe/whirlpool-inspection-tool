@@ -29,7 +29,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="contact@bundui.com"
+                placeholder="user@whirlpool.com"
                 required
               />
             </div>
@@ -70,7 +70,7 @@ export default function LoginPage() {
           </div>
           <div className="mt-4 text-center text-sm">
             Don't have an account?
-            <Link to={PAGES.REGISTER} className="underline">
+            <Link to={PAGES.REGISTER} className="underline ml-1">
               Sign up
             </Link>
           </div>
