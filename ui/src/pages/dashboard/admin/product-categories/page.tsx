@@ -18,7 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import * as React from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 type ProductCategoryFormValues = {
   name: string;
@@ -27,8 +28,8 @@ type ProductCategoryFormValues = {
 };
 
 export default function ProductCategoriesPage() {
-  const [csvFile, setCsvFile] = React.useState<File | null>(null);
-  const [formValues, setFormValues] = React.useState<ProductCategoryFormValues>(
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [formValues, setFormValues] = useState<ProductCategoryFormValues>(
     {
       name: "",
       code: "",
@@ -36,10 +37,10 @@ export default function ProductCategoriesPage() {
     },
   );
 
-  const [categories, setCategories] = React.useState<ProductCategory[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
         const data = await getProductCategories();
@@ -52,20 +53,20 @@ export default function ProductCategoriesPage() {
     fetchCategories();
   }, []);
 
-  const handleCsvSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleCsvSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock CSV upload", csvFile);
   };
 
-  const handleCreateCategory = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateCategory = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // TODO: wire real create call; for now this is mocked.
     console.log("Mock create product category", formValues);
   };
 
   const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
     setFormValues((previous) => ({ ...previous, [name]: value }));

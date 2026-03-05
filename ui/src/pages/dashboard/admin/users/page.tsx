@@ -1,4 +1,5 @@
-import * as React from "react";
+import PageActionBar from "@/components/page-action-bar";
+import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,10 +12,24 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import PageActionBar from "@/components/page-action-bar";
-import { getUsers, type User } from "./user-service";
-import UsersDataTable from "./data-table";
-import SkeletonTable from "@/components/skeleton7";
+import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
+import {
+  getRoles,
+  type Role,
+} from "@/pages/dashboard/admin/users/role-service";
+import {
+  getUsers,
+  type User,
+} from "@/pages/dashboard/admin/users/user-service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { ChangeEvent, FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 type UserFormValues = {
   name: string;
@@ -25,7 +40,7 @@ type UserFormValues = {
 };
 
 export default function UsersPage() {
-  const [formValues, setFormValues] = React.useState<UserFormValues>({
+  const [formValues, setFormValues] = useState<UserFormValues>({
     name: "",
     email: "",
     mobile_number: "",
@@ -33,28 +48,33 @@ export default function UsersPage() {
     designation: "",
   });
 
-  const [users, setUsers] = React.useState<User[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [roles, setRoles] = useState<Role[]>([]);
 
-  React.useEffect(() => {
-    const fetchUsers = async () => {
+  useEffect(() => {
+    const fetchUsersAndRoles = async () => {
       try {
-        const data = (await getUsers()) as User[];
-        setUsers(data);
+        const [usersData, rolesData] = await Promise.all([
+          getUsers() as Promise<User[]>,
+          getRoles() as Promise<Role[]>,
+        ]);
+        setUsers(usersData);
+        setRoles(rolesData);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUsers();
+    fetchUsersAndRoles();
   }, []);
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log("Mock create user", formValues);
   };
@@ -114,13 +134,23 @@ export default function UsersPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <Input
-                  id="role"
-                  name="role"
+                <Select
                   value={formValues.role}
-                  onChange={handleInputChange}
-                  required
-                />
+                  onValueChange={(value) =>
+                    setFormValues((previous) => ({ ...previous, role: value }))
+                  }
+                >
+                  <SelectTrigger id="role" className="w-full">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="designation">Designation</Label>

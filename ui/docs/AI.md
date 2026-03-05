@@ -6,13 +6,85 @@
    - `pnpm lint`
    - `pnpm typecheck`
 
-3. Do not use the `any` type in TypeScript.
+3. TypeScript strictness:
+   - Do not use `any`.
+   - Do not leave TypeScript errors or `@ts-ignore` in the code.
 
-4. All generated or modified code must compile without TypeScript errors.
+4. Hooks:
+   - Do not use `React.useState`, `React.useEffect`, etc.
+   - Import hooks directly and use `useState`, `useEffect`, etc.
 
-5. Verify TypeScript types before suggesting or implementing any function, method, or component.
+   Correct:
 
-6. Commit messages must follow this format:
+   ```ts
+   import { useState } from "react";
+
+   const [count, setCount] = useState(0);
+   ```
+
+   Incorrect:
+
+   ```ts
+   const [count, setCount] = React.useState(0);
+   ```
+
+5. React types:
+   - Prefer direct type imports instead of the `React.` namespace.
+   - Use type-only imports when possible.
+
+   Correct:
+
+   ```ts
+   import type { ChangeEvent } from "react";
+
+   const handleInputChange = (
+     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+   ) => {};
+   ```
+
+   Avoid:
+
+   ```ts
+   const handleInputChange = (
+     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+   ) => {};
+   ```
+
+6. Form submissions:
+   - For React `<form onSubmit={...}>`, type the handler event as `FormEvent<HTMLFormElement>`.
+   - If you need the native submit details (e.g., the clicked submit button), read `event.nativeEvent` as `SubmitEvent`.
+
+   Preferred:
+
+   ```ts
+   import type { FormEvent } from "react";
+
+   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+     event.preventDefault();
+   };
+   ```
+
+   When you need the native submitter:
+
+   ```ts
+   import type { FormEvent } from "react";
+
+   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+     event.preventDefault();
+
+     const native = event.nativeEvent as SubmitEvent;
+     const submitter = native.submitter;
+   };
+   ```
+
+   Do not type React `onSubmit` as DOM `SubmitEvent`.
+
+7. Generated/modified code quality:
+   - Ensure the code compiles.
+   - Ensure types are correct before introducing new functions/components.
+   - Prefer explicit types for event handlers (e.g., `ChangeEvent`, `FormEvent`) over untyped `event`.
+
+8. Commit messages must follow this format:
 
    ```
    [module] concise message (15–20 words)
