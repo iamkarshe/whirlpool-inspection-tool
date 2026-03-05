@@ -3,11 +3,9 @@ import { Suspense, lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 
 // Routers
+import PrivateRouter from "@/router/PrivateRouter";
 const PublicRouter = lazy(() =>
   import("@/router/PublicRouter").then((m) => ({ default: m.PublicRouter })),
-);
-const PrivateRouter = lazy(() =>
-  import("@/router/PrivateRouter").then((m) => ({ default: m.PrivateRouter })),
 );
 
 // Auth Pages
@@ -82,9 +80,11 @@ export const router = createBrowserRouter([
         <ErrorBoundary />
       </Suspense>
     ),
+    handle: { title: "Dashboard" },
     children: [
       {
         index: true,
+        handle: { title: "Analytics" },
         element: (
           <Suspense fallback={<PageLoader />}>
             <AnalyticsPage />
@@ -93,6 +93,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "admin/users",
+        handle: { title: "Users" },
         element: (
           <Suspense fallback={<PageLoader />}>
             <UsersPage />

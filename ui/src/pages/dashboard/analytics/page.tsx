@@ -12,7 +12,7 @@ import {
 } from "@/pages/dashboard/analytics/components";
 import StatCards from "@/pages/dashboard/analytics/components/stat-cards";
 
-export default function Page() {
+export default function AnalyticsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-row items-center justify-between">

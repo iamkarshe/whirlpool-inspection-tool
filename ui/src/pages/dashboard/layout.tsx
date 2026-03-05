@@ -1,12 +1,27 @@
-import React from "react";
-import { Outlet } from "react-router-dom";
-
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/sidebar/app-sidebar";
 import { SiteHeader } from "@/components/layout/header";
+import { AppSidebar } from "@/components/layout/sidebar/app-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { setPageTitle } from "@/lib/core";
+import React, { useEffect, useMemo } from "react";
+import { Outlet, useMatches } from "react-router-dom";
+
+type RouteHandle = { title?: string };
 
 export default function DashboardLayout() {
   const defaultOpen = true;
+
+  const matches = useMatches();
+
+  const title = useMemo(() => {
+    const match = [...matches]
+      .reverse()
+      .find((m) => (m.handle as RouteHandle)?.title);
+    return ((match?.handle as RouteHandle)?.title ?? "").toString();
+  }, [matches]);
+
+  useEffect(() => {
+    if (title) setPageTitle(title);
+  }, [title]);
 
   return (
     <SidebarProvider
