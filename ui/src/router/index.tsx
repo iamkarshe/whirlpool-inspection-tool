@@ -48,6 +48,9 @@ const DeviceViewDetailsPage = lazy(
 const DeviceViewInspectionsPage = lazy(
   () => import("@/pages/dashboard/admin/devices/device-view/inspections-page"),
 );
+const DeviceViewLoginsPage = lazy(
+  () => import("@/pages/dashboard/admin/devices/device-view/logins-page"),
+);
 const ProductCategoriesPage = lazy(
   () => import("@/pages/dashboard/admin/product-categories/page"),
 );
@@ -270,6 +273,15 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <DeviceViewInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "logins",
+            handle: { title: "Device logins" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DeviceViewLoginsPage />
               </Suspense>
             ),
           },

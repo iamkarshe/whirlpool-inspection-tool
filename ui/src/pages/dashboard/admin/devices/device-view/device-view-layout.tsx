@@ -57,6 +57,7 @@ export default function DeviceViewLayout() {
 
   const basePath = PAGES.deviceViewPath(device.id);
   const inspectionsPath = PAGES.deviceInspectionsPath(device.id);
+  const loginsPath = PAGES.deviceLoginsPath(device.id);
 
   return (
     <div className="space-y-6">
@@ -104,6 +105,19 @@ export default function DeviceViewLayout() {
             }
           >
             Inspections
+          </NavLink>
+          <NavLink
+            to={loginsPath}
+            className={({ isActive }) =>
+              cn(
+                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                isActive
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )
+            }
+          >
+            Logins
           </NavLink>
         </nav>
 
