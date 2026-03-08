@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export default function DeviceViewLayout() {
   const params = useParams<{ id: string }>();
-  const id = params.id ? Number(params.id) : NaN;
+  const id = params.id ?? "";
   const [device, setDevice] = useState<Device | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 

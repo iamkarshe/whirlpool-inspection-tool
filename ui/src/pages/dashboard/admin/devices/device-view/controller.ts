@@ -4,11 +4,11 @@ import {
 } from "@/pages/dashboard/admin/devices/device-service";
 
 /**
- * Load device for the view page by id.
+ * Load device for the view page by id (UUID string).
  * Returns null if id is invalid or device not found.
  */
-export async function loadDeviceView(id: number): Promise<Device | null> {
-  if (Number.isNaN(id) || id < 1) {
+export async function loadDeviceView(id: string): Promise<Device | null> {
+  if (!id || typeof id !== "string" || id.trim() === "") {
     return null;
   }
   return getDeviceById(id);

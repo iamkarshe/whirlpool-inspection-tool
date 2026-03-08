@@ -181,6 +181,11 @@ function buildDeviceColumns(
                 View device
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={PAGES.deviceInspectionsPath(row.original.id)}>
+                View inspections
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onLockClick(row.original)}>
               Lock device
             </DropdownMenuItem>

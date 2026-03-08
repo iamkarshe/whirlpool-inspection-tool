@@ -104,12 +104,17 @@
 
    - Inlining `<AlertDialog>...</AlertDialog>` or `<Dialog>...</Dialog>` inside a page or data-table with large blocks of JSX.
 
-8. Generated/modified code quality:
+8. Entity IDs as UUID (string):
+   - Where an entity identifier is a **UUID** (e.g. device id from backend), use **`string`** in TypeScript, not `number`.
+   - Route params, endpoint path helpers, service functions, and entity types should accept/use `id: string` for such entities.
+   - Example: `deviceViewPath(id: string)`, `Device.id: string`, `getDeviceById(id: string)`.
+
+9. Generated/modified code quality:
    - Ensure the code compiles.
    - Ensure types are correct before introducing new functions/components.
    - Prefer explicit types for event handlers (e.g., `ChangeEvent`, `SubmitEvent`) over untyped `event`.
 
-9. Commit messages must follow this format:
+10. Commit messages must follow this format:
 
    ```
    [module] concise message (15–20 words)

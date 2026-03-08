@@ -1,12 +1,13 @@
 /**
- * Aligned with backend Device: id, user_id, imei, device_type, device_fingerprint,
+ * Aligned with backend Device: id (UUID), user_id, imei, device_type, device_fingerprint,
  * device_info, ip_address, proxy_ip_address, current_lat, current_lng, is_locked
  * (+ mixin). user_name for display only.
  */
 export type DeviceType = "desktop" | "mobile";
 
 export interface Device {
-  id: number;
+  /** Device ID is UUID (string). */
+  id: string;
   user_id: number;
   user_name: string;
   imei: string;
@@ -19,7 +20,7 @@ export interface Device {
 
 export const devices: Device[] = [
   {
-    id: 1,
+    id: "550e8400-e29b-41d4-a716-446655440001",
     user_id: 1,
     user_name: "Amit Sharma",
     imei: "354789012345678",
@@ -30,7 +31,7 @@ export const devices: Device[] = [
     is_active: true,
   },
   {
-    id: 2,
+    id: "550e8400-e29b-41d4-a716-446655440002",
     user_id: 2,
     user_name: "Priya Verma",
     imei: "861234567890123",
@@ -41,7 +42,7 @@ export const devices: Device[] = [
     is_active: true,
   },
   {
-    id: 3,
+    id: "550e8400-e29b-41d4-a716-446655440003",
     user_id: 1,
     user_name: "Amit Sharma",
     imei: "N/A",
@@ -61,7 +62,7 @@ export const getDevices = async (): Promise<Device[]> => {
   });
 };
 
-export const getDeviceById = async (id: number): Promise<Device | null> => {
+export const getDeviceById = async (id: string): Promise<Device | null> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const device = devices.find((d) => d.id === id) ?? null;
