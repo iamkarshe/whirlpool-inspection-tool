@@ -11,12 +11,13 @@ import { Label } from "@/components/ui/label";
 import { PAGES } from "@/endpoints";
 import AuthLayout from "@/pages/auth/layout";
 import { ArrowRightIcon } from "lucide-react";
+import type { SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
 
-  const handleSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (ev: SubmitEvent) => {
     ev.preventDefault();
     navigate(PAGES.RESET_PASSWORD);
   };

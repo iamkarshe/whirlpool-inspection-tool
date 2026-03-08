@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PAGES } from "@/endpoints";
 import AuthLayout from "@/pages/auth/layout";
+import type { SubmitEvent } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -23,7 +24,7 @@ export default function LoginPage() {
     import.meta.env.DEV ? import.meta.env.VITE_DEFAULT_PASSWORD : "",
   );
 
-  const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent) => {
     event.preventDefault();
     navigate(PAGES.DASHBOARD);
   };

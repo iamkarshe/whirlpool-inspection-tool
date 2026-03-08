@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 
 type UserFormValues = {
@@ -38,8 +38,6 @@ type UserFormValues = {
   role_id: number;
   designation: string;
 };
-
-type SubmitEvent = FormEvent<HTMLFormElement>;
 
 export default function UsersPage() {
   const [formValues, setFormValues] = useState<UserFormValues>({

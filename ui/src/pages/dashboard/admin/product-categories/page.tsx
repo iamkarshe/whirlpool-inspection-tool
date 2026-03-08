@@ -18,14 +18,12 @@ import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 
 type ProductCategoryFormValues = {
   name: string;
 };
-
-type SubmitEvent = FormEvent<HTMLFormElement>;
 
 export default function ProductCategoriesPage() {
   const [formValues, setFormValues] = useState<ProductCategoryFormValues>({

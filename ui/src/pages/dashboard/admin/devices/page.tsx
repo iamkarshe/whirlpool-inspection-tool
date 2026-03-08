@@ -28,7 +28,7 @@ import {
   type DeviceType,
 } from "@/pages/dashboard/admin/devices/device-service";
 import { getUsers, type User } from "@/pages/dashboard/admin/users/user-service";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 
 type DeviceFormValues = {
@@ -39,8 +39,6 @@ type DeviceFormValues = {
   device_info: string;
   is_locked: boolean;
 };
-
-type SubmitEvent = FormEvent<HTMLFormElement>;
 
 export default function DevicesPage() {
   const [formValues, setFormValues] = useState<DeviceFormValues>({

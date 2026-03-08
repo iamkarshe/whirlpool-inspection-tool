@@ -29,7 +29,7 @@ import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 
 type ProductFormValues = {
@@ -38,8 +38,6 @@ type ProductFormValues = {
   manufacturing_date: string;
   batch_number: string;
 };
-
-type SubmitEvent = FormEvent<HTMLFormElement>;
 
 export default function ProductsPage() {
   const [formValues, setFormValues] = useState<ProductFormValues>({

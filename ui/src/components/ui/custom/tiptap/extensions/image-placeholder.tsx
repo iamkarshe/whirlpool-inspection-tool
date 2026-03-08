@@ -14,7 +14,7 @@ import {
   mergeAttributes,
 } from "@tiptap/react";
 import { Image, Link, Upload, Loader2, X } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { useImageUpload } from "../hooks/use-image-upload";
 import { cn } from "@/lib/utils";
 
@@ -138,7 +138,7 @@ function ImagePlaceholderComponent(props: NodeViewProps) {
     }
   };
 
-  const handleInsertEmbed = (e: FormEvent) => {
+  const handleInsertEmbed = (e: SubmitEvent) => {
     e.preventDefault();
     const valid = isValidUrl(url);
     if (!valid) {

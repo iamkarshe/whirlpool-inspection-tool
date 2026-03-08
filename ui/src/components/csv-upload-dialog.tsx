@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileDown, Upload } from "lucide-react";
-import type { FormEvent, ReactNode } from "react";
+import type { ReactNode, SubmitEvent } from "react";
 import { useId, useState } from "react";
 
 export type CsvUploadDialogProps = {
@@ -30,8 +30,6 @@ export type CsvUploadDialogProps = {
   /** File input accept attribute (default ".csv") */
   accept?: string;
 };
-
-type SubmitEvent = FormEvent<HTMLFormElement>;
 
 const defaultTrigger = (
   <Button variant="outline" type="button">
