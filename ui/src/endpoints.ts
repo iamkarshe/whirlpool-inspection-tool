@@ -29,6 +29,13 @@ export const PAGES = {
   deviceInspectionsPath: (id: string) =>
     `/dashboard/admin/devices/${id}/inspections`,
 
+  /** Warehouse ID is UUID (string). */
+  warehouseViewPath: (id: string) => `/dashboard/masters/warehouses/${id}`,
+  warehouseUsersPath: (id: string) =>
+    `/dashboard/masters/warehouses/${id}/users`,
+  warehouseDevicesPath: (id: string) =>
+    `/dashboard/masters/warehouses/${id}/devices`,
+
   DASHBOARD_ADMIN_LOGINS: "/dashboard/admin/logins",
   DASHBOARD_ADMIN_INTEGRATIONS: "/dashboard/admin/integrations",
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",

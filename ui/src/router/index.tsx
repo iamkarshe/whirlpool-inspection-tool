@@ -44,6 +44,30 @@ const ProductsPage = lazy(
 const WarehousesPage = lazy(
   () => import("@/pages/dashboard/admin/warehouses/page"),
 );
+const WarehouseViewLayout = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/warehouses/warehouse-view/warehouse-view-layout"
+    ),
+);
+const WarehouseViewDetailsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/warehouses/warehouse-view/details-page"
+    ),
+);
+const WarehouseViewUsersPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/warehouses/warehouse-view/users-page"
+    ),
+);
+const WarehouseViewDevicesPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/warehouses/warehouse-view/devices-page"
+    ),
+);
 const SettingsPage = lazy(() => import("@/pages/dashboard/settings/page"));
 const NotificationsPage = lazy(
   () => import("@/pages/dashboard/notifications/page"),
@@ -207,6 +231,43 @@ export const router = createBrowserRouter([
             <WarehousesPage />
           </Suspense>
         ),
+      },
+      {
+        path: "masters/warehouses/:id",
+        handle: { title: "Warehouse details" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <WarehouseViewLayout />
+          </Suspense>
+        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <WarehouseViewDetailsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "users",
+            handle: { title: "Warehouse users" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <WarehouseViewUsersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "devices",
+            handle: { title: "Warehouse devices" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <WarehouseViewDevicesPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "settings",

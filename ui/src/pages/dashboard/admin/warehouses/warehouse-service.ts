@@ -1,8 +1,9 @@
 /**
- * Aligned with backend Warehouse: id, warehouse_code, name, lat, lng, address.
+ * Aligned with backend Warehouse: id (UUID), warehouse_code, name, lat, lng, address.
  */
 export interface Warehouse {
-  id: number;
+  /** Warehouse ID is UUID (string). */
+  id: string;
   warehouse_code: string;
   name: string;
   lat: number | null;
@@ -12,7 +13,7 @@ export interface Warehouse {
 
 export const warehouses: Warehouse[] = [
   {
-    id: 1,
+    id: "770e8400-e29b-41d4-a716-446655440001",
     warehouse_code: "WH-PUN-01",
     name: "Pune North Hub",
     lat: 18.5204,
@@ -20,7 +21,7 @@ export const warehouses: Warehouse[] = [
     address: "Hinjawadi, Pune, Maharashtra",
   },
   {
-    id: 2,
+    id: "770e8400-e29b-41d4-a716-446655440002",
     warehouse_code: "WH-PUN-02",
     name: "Pune South Hub",
     lat: 18.4432,
@@ -28,7 +29,7 @@ export const warehouses: Warehouse[] = [
     address: "Hadapsar, Pune, Maharashtra",
   },
   {
-    id: 3,
+    id: "770e8400-e29b-41d4-a716-446655440003",
     warehouse_code: "WH-FAR-01",
     name: "Faridabad Distribution",
     lat: 28.4089,
@@ -42,5 +43,16 @@ export const getWarehouses = async (): Promise<Warehouse[]> => {
     setTimeout(() => {
       resolve(warehouses);
     }, 1500);
+  });
+};
+
+export const getWarehouseById = async (
+  id: string,
+): Promise<Warehouse | null> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const warehouse = warehouses.find((w) => w.id === id) ?? null;
+      resolve(warehouse);
+    }, 600);
   });
 };
