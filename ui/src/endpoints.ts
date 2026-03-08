@@ -25,6 +25,7 @@ export const PAGES = {
 
   DASHBOARD_REPORTS_DAILY_INSPECTIONS: "/dashboard/reports/daily-inspections",
   DASHBOARD_REPORTS_DAILY_LOGINS: "/dashboard/reports/daily-logins",
+  DASHBOARD_REPORTS_LIVE_DEVICES: "/dashboard/reports/live-devices",
 
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",

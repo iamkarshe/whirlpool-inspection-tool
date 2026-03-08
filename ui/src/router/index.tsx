@@ -79,6 +79,12 @@ const WarehouseViewInspectionsPage = lazy(
 const DailyInspectionsReportPage = lazy(
   () => import("@/pages/dashboard/reports/daily-inspections/page"),
 );
+const DailyLoginsReportPage = lazy(
+  () => import("@/pages/dashboard/reports/daily-logins/page"),
+);
+const LiveDevicesReportPage = lazy(
+  () => import("@/pages/dashboard/reports/live-devices/page"),
+);
 const SettingsLayout = lazy(
   () => import("@/pages/dashboard/settings/settings-layout"),
 );
@@ -440,6 +446,24 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <DailyInspectionsReportPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "reports/daily-logins",
+        handle: { title: "Daily Logins" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <DailyLoginsReportPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "reports/live-devices",
+        handle: { title: "Live Devices" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <LiveDevicesReportPage />
           </Suspense>
         ),
       },

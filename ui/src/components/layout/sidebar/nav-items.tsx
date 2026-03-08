@@ -82,7 +82,7 @@ export const navItems: NavGroup[] = [
           },
           {
             title: "Live Devices",
-            href: PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS,
+            href: PAGES.DASHBOARD_REPORTS_LIVE_DEVICES,
           },
         ],
       },
