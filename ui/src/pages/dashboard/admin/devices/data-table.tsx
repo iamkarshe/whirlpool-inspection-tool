@@ -7,12 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PAGES } from "@/endpoints";
+import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import DialogDeleteDevice from "@/pages/dashboard/admin/devices/dialog-delete-device";
 import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device";
-import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PAGES } from "@/endpoints";
-import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
+import { ArrowUpDown, Monitor, MoreHorizontal, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -21,6 +21,34 @@ function buildDeviceColumns(
   onDeleteClick: (device: Device) => void,
 ): ColumnDef<Device>[] {
   return [
+    {
+      accessorKey: "id",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Device ID
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const device = row.original;
+        const Icon = device.device_type === "mobile" ? Smartphone : Monitor;
+        return (
+          <Link to={PAGES.deviceViewPath(device.id)} className="inline-block">
+            <Badge
+              variant="secondary"
+              className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {row.getValue("id")}
+            </Badge>
+          </Link>
+        );
+      },
+    },
     {
       accessorKey: "user_name",
       header: ({ column }) => (
@@ -148,9 +176,11 @@ function buildDeviceColumns(
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link to={PAGES.deviceViewPath(row.original.id)}>View device</Link>
-          </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={PAGES.deviceViewPath(row.original.id)}>
+                View device
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onLockClick(row.original)}>
               Lock device
             </DropdownMenuItem>
