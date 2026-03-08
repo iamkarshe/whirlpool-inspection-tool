@@ -1,6 +1,5 @@
 import { PAGES } from "@/endpoints";
 import {
-  ActivityIcon,
   ChartBarDecreasingIcon,
   ClipboardCheckIcon,
   FolderIcon,
@@ -35,11 +34,6 @@ export const navItems: NavGroup[] = [
         icon: GaugeIcon,
       },
       {
-        title: "Ops Dashboard",
-        href: PAGES.DASHBOARD,
-        icon: ActivityIcon,
-      },
-      {
         title: "Masters",
         href: PAGES.DASHBOARD_MASTERS_PRODUCT_CATEGORIES,
         icon: FolderIcon,
@@ -71,7 +65,12 @@ export const navItems: NavGroup[] = [
         title: "Reports",
         href: "#",
         icon: ChartBarDecreasingIcon,
-        items: [],
+        items: [
+          {
+            title: "Operations Analytics",
+            href: "#",
+          },
+        ],
       },
       {
         title: "Administration",
@@ -83,7 +82,7 @@ export const navItems: NavGroup[] = [
           { title: "Logins", href: PAGES.DASHBOARD_ADMIN_LOGINS },
           {
             title: "Integrations",
-            href: PAGES.DASHBOARD_ADMIN_INTEGRATIONS,
+            href: PAGES.integrationsOktaPath(),
           },
           { title: "Logs", href: PAGES.DASHBOARD_ADMIN_LOGS },
         ],
