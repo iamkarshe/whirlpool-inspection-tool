@@ -25,6 +25,8 @@ export const PAGES = {
   DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/inspections",
   /** @deprecated Use DASHBOARD_INSPECTIONS */
   DASHBOARD_REPORTS_DAILY_INSPECTIONS: "/dashboard/inspections",
+  DASHBOARD_REPORTS_OPERATIONS_ANALYTICS: "/dashboard/reports/operations-analytics",
+  DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS: "/dashboard/reports/executive-analytics",
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 

@@ -97,6 +97,14 @@ const NotificationsPage = lazy(
 const ReleaseNotesPage = lazy(
   () => import("@/pages/dashboard/release-notes/page"),
 );
+const OperationsAnalyticsPage = lazy(
+  () =>
+    import("@/pages/dashboard/reports/operations-analytics/page"),
+);
+const ExecutiveAnalyticsPage = lazy(
+  () =>
+    import("@/pages/dashboard/reports/executive-analytics/page"),
+);
 const InspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/page"),
 );
@@ -378,6 +386,24 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <InspectionViewPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "reports/operations-analytics",
+        handle: { title: "Operations Analytics" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <OperationsAnalyticsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "reports/executive-analytics",
+        handle: { title: "Executive Analytics" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ExecutiveAnalyticsPage />
           </Suspense>
         ),
       },

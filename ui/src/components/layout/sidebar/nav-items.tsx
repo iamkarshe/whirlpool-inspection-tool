@@ -68,7 +68,11 @@ export const navItems: NavGroup[] = [
         items: [
           {
             title: "Operations Analytics",
-            href: "#",
+            href: PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS,
+          },
+          {
+            title: "Executive Analytics",
+            href: PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS,
           },
         ],
       },
