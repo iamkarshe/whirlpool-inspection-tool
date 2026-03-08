@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,13 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { loadDeviceView } from "@/pages/dashboard/admin/devices/device-view/controller";
-import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import { PAGES } from "@/endpoints";
+import type { Device } from "@/pages/dashboard/admin/devices/device-service";
+import { loadDeviceView } from "@/pages/dashboard/admin/devices/device-view/controller";
 import { ArrowLeft, Loader2, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 
 function DeviceDetailCard({ device }: { device: Device }) {
   return (
@@ -76,13 +76,18 @@ export default function DeviceViewPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    loadDeviceView(id).then((d) => {
-      if (!cancelled) {
-        setDevice(d);
-        setLoading(false);
-      }
+    queueMicrotask(() => {
+      if (!cancelled) setLoading(true);
     });
+
+    loadDeviceView(id)
+      .then((d) => {
+        if (!cancelled) setDevice(d);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
     return () => {
       cancelled = true;
     };
