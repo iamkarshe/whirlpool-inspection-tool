@@ -17,7 +17,7 @@ import {
   getWarehouses,
   type Warehouse,
 } from "@/pages/dashboard/admin/warehouses/warehouse-service";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 import WarehousesDataTable from "./data-table";
 
@@ -28,8 +28,6 @@ type WarehouseFormValues = {
   lat: string;
   lng: string;
 };
-
-type SubmitEvent = FormEvent<HTMLFormElement>;
 
 export default function WarehousesPage() {
   const [formValues, setFormValues] = useState<WarehouseFormValues>({
