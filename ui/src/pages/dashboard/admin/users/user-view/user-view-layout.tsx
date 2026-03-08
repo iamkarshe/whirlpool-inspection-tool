@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
+import { UserBadges } from "@/pages/dashboard/admin/users/user-badge";
 import {
   getUserById,
   type User,
@@ -75,12 +75,7 @@ export default function UserViewLayout() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <Badge variant="secondary" className="font-normal">
-              {user.role}
-            </Badge>
-            <Badge variant="outline" className="font-normal">
-              {user.designation}
-            </Badge>
+            <UserBadges user={user} />
           </div>
         </div>
       </div>

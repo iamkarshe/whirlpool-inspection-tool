@@ -1,5 +1,4 @@
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
+import { UserStatusBadge } from "@/pages/dashboard/admin/users/user-badge";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
@@ -87,14 +87,7 @@ const userColumns: ColumnDef<User>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => {
-      const active = row.original.is_active;
-      return (
-        <Badge variant={active ? "success" : "destructive"}>
-          {active ? "Active" : "Inactive"}
-        </Badge>
-      );
-    },
+    cell: ({ row }) => <UserStatusBadge isActive={row.original.is_active} />,
     filterFn: (row, _columnId, filterValue) => {
       const v = row.getValue("is_active") as boolean;
       if (filterValue === "true") return v === true;

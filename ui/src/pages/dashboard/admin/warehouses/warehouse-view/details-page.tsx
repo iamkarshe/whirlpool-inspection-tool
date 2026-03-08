@@ -5,6 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  WarehouseAddressBadge,
+  WarehouseCodeBadge,
+} from "@/pages/dashboard/admin/warehouses/warehouse-badge";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import { MapPin } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
@@ -24,10 +28,8 @@ export default function WarehouseViewDetailsPage() {
           <div>
             <CardTitle>{warehouse.name}</CardTitle>
             <div className="mt-1 flex flex-wrap gap-1.5">
-              <Badge variant="secondary" className="font-mono text-xs font-normal uppercase">
-                {warehouse.warehouse_code}
-              </Badge>
-              <Badge variant="outline" className="font-mono text-xs font-normal">
+              <WarehouseCodeBadge code={warehouse.warehouse_code} />
+              <Badge variant="outline" className="text-xs font-normal">
                 ID {warehouse.id.slice(0, 8)}…
               </Badge>
             </div>
@@ -37,9 +39,7 @@ export default function WarehouseViewDetailsPage() {
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Code</p>
-          <Badge variant="secondary" className="font-mono text-xs font-normal uppercase">
-            {warehouse.warehouse_code}
-          </Badge>
+          <WarehouseCodeBadge code={warehouse.warehouse_code} />
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Address</p>

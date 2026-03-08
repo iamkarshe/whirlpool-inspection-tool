@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
@@ -8,11 +7,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
+import {
+  DeviceIdBadge,
+  DeviceLockedBadge,
+  DeviceStatusBadge,
+  DeviceTypeBadge,
+} from "@/pages/dashboard/admin/devices/device-badge";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import DialogDeleteDevice from "@/pages/dashboard/admin/devices/dialog-delete-device";
 import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Monitor, MoreHorizontal, Smartphone } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -33,21 +38,12 @@ function buildDeviceColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const device = row.original;
-        const Icon = device.device_type === "mobile" ? Smartphone : Monitor;
-        return (
-          <Link to={PAGES.deviceViewPath(device.id)} className="inline-block">
-            <Badge
-              variant="secondary"
-              className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {row.getValue("id")}
-            </Badge>
-          </Link>
-        );
-      },
+      cell: ({ row }) => (
+        <DeviceIdBadge
+          id={row.original.id}
+          deviceType={row.original.device_type}
+        />
+      ),
     },
     {
       accessorKey: "user_name",
@@ -91,15 +87,9 @@ function buildDeviceColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const type = row.original.device_type;
-        return (
-          <span className="inline-flex items-center gap-1 capitalize">
-            <Smartphone className="h-3.5 w-3.5" />
-            {type}
-          </span>
-        );
-      },
+      cell: ({ row }) => (
+        <DeviceTypeBadge deviceType={row.original.device_type} />
+      ),
     },
     {
       accessorKey: "device_fingerprint",
@@ -122,14 +112,9 @@ function buildDeviceColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const locked = row.original.is_locked;
-        return (
-          <Badge variant={locked ? "destructive" : "secondary"}>
-            {locked ? "Locked" : "Unlocked"}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <DeviceLockedBadge isLocked={row.original.is_locked} />
+      ),
       filterFn: (row, _columnId, filterValue) => {
         const v = row.getValue("is_locked") as boolean;
         if (filterValue === "true") return v === true;
@@ -149,14 +134,9 @@ function buildDeviceColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const active = row.original.is_active;
-        return (
-          <Badge variant={active ? "success" : "destructive"}>
-            {active ? "Active" : "Inactive"}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <DeviceStatusBadge isActive={row.original.is_active} />
+      ),
       filterFn: (row, _columnId, filterValue) => {
         const v = row.getValue("is_active") as boolean;
         if (filterValue === "true") return v === true;

@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -6,6 +5,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  UserDesignationBadge,
+  UserRoleBadge,
+  UserStatusBadge,
+} from "@/pages/dashboard/admin/users/user-badge";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
 import { User as UserIcon } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
@@ -39,21 +43,15 @@ export default function UserViewDetailsPage() {
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Role</p>
-          <Badge variant="secondary" className="font-normal">
-            {user.role}
-          </Badge>
+          <UserRoleBadge role={user.role} />
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Designation</p>
-          <Badge variant="outline" className="font-normal">
-            {user.designation}
-          </Badge>
+          <UserDesignationBadge designation={user.designation} />
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Status</p>
-          <Badge variant={user.is_active ? "default" : "secondary"}>
-            {user.is_active ? "Active" : "Inactive"}
-          </Badge>
+          <UserStatusBadge isActive={user.is_active} />
         </div>
       </CardContent>
     </Card>

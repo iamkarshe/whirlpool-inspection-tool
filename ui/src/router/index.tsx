@@ -141,6 +141,10 @@ const IntegrationsAwsS3Page = lazy(
       "@/pages/dashboard/admin/integrations/aws-s3/page"
     ),
 );
+const LogsPage = lazy(() => import("@/pages/dashboard/admin/log/page"));
+const LogViewPage = lazy(
+  () => import("@/pages/dashboard/admin/log/log-view-page"),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -350,6 +354,24 @@ export const router = createBrowserRouter([
             ),
           },
         ],
+      },
+      {
+        path: "admin/logs",
+        handle: { title: "Logs" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <LogsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "admin/logs/:id",
+        handle: { title: "Log details" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <LogViewPage />
+          </Suspense>
+        ),
       },
       {
         path: "transactions/inspections",

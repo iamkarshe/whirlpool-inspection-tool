@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
@@ -8,6 +7,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
+import {
+  InspectionIdLinkBadge,
+  InspectionTypeBadge,
+} from "@/pages/dashboard/transactions/inspections/inspection-badge";
 import type { Inspection } from "@/pages/dashboard/transactions/inspections/inspection-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
@@ -48,15 +51,12 @@ const deviceColumn: ColumnDef<Inspection> = {
   cell: ({ row }) => (
     <Link
       to={PAGES.deviceViewPath(row.original.device_id)}
-      className="inline-block"
+      className="text-primary hover:underline"
     >
-      <Badge
-        variant="secondary"
-        className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
-      >
+      <span className="inline-flex items-center gap-1.5 text-sm">
         <Smartphone className="h-3.5 w-3.5" />
         {row.original.device_fingerprint}
-      </Badge>
+      </span>
     </Link>
   ),
 };
@@ -79,17 +79,7 @@ export default function InspectionsDataTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <Link
-          to={PAGES.inspectionViewPath(row.original.id)}
-          className="inline-block"
-        >
-          <Badge
-            variant="secondary"
-            className="inline-flex cursor-pointer font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
-          >
-            {String(row.getValue("id")).slice(0, 8)}…
-          </Badge>
-        </Link>
+        <InspectionIdLinkBadge id={row.original.id} />
       ),
     },
     {
@@ -173,17 +163,9 @@ export default function InspectionsDataTable({
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const type = row.original.inspection_type;
-        return (
-          <Badge
-            variant={type === "inbound" ? "secondary" : "default"}
-            className="uppercase"
-          >
-            {type}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <InspectionTypeBadge inspectionType={row.original.inspection_type} />
+      ),
       filterFn: (row, _columnId, filterValue) => {
         const v = row.getValue("inspection_type") as string;
         if (filterValue === "inbound") return v === "inbound";

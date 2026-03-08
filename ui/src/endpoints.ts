@@ -59,4 +59,5 @@ export const PAGES = {
   integrationsAwsS3Path: () =>
     `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/aws-s3`,
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
+  logViewPath: (id: string) => `${PAGES.DASHBOARD_ADMIN_LOGS}/${id}`,
 };

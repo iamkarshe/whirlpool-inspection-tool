@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,13 +8,17 @@ import {
 } from "@/components/ui/card";
 import { PAGES } from "@/endpoints";
 import {
+  InspectionChecklistBadge,
+  InspectionProductBadge,
+  InspectionTypeBadge,
+} from "@/pages/dashboard/transactions/inspections/inspection-badge";
+import {
   getInspectionById,
   type Inspection,
 } from "@/pages/dashboard/transactions/inspections/inspection-service";
 import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 
 function formatDate(iso: string) {
   try {
@@ -88,13 +93,8 @@ export default function InspectionViewPage() {
             Inspection {inspection.id.slice(0, 8)}…
           </h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <Badge
-              variant={inspection.inspection_type === "inbound" ? "secondary" : "default"}
-              className="font-normal uppercase"
-            >
-              {inspection.inspection_type}
-            </Badge>
-            <Badge variant="outline" className="font-mono text-xs font-normal">
+            <InspectionTypeBadge inspectionType={inspection.inspection_type} />
+            <Badge variant="outline" className="text-xs font-normal">
               {formatDate(inspection.created_at)}
             </Badge>
           </div>
@@ -108,16 +108,12 @@ export default function InspectionViewPage() {
               <ClipboardCheck className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle className="font-mono text-base">
+              <CardTitle className="text-base">
                 {inspection.id.slice(0, 8)}…
               </CardTitle>
               <div className="mt-1 flex flex-wrap gap-1.5">
-                <Badge variant="secondary" className="font-normal">
-                  {inspection.checklist_name}
-                </Badge>
-                <Badge variant="outline" className="font-mono text-xs font-normal">
-                  {inspection.product_serial}
-                </Badge>
+                <InspectionChecklistBadge name={inspection.checklist_name} />
+                <InspectionProductBadge serial={inspection.product_serial} />
               </div>
             </div>
           </div>
@@ -157,12 +153,7 @@ export default function InspectionViewPage() {
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground text-sm">Type</p>
-            <Badge
-              variant={inspection.inspection_type === "inbound" ? "secondary" : "default"}
-              className="uppercase"
-            >
-              {inspection.inspection_type}
-            </Badge>
+            <InspectionTypeBadge inspectionType={inspection.inspection_type} />
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground text-sm">Date</p>

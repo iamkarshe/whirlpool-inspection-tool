@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,16 +6,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { PAGES } from "@/endpoints";
+import {
+  LoginNaBadge,
+  LoginStatusBadge,
+} from "@/pages/dashboard/admin/logins/login-badge";
 import type { LoginActivity } from "@/pages/dashboard/admin/logins/login-service";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Info, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -73,22 +70,7 @@ function buildLoginColumns(
           );
         }
         return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="secondary"
-                  className="inline-flex cursor-help items-center gap-1 font-normal"
-                >
-                  N/A
-                  <Info className="h-3 w-3" />
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[240px]">
-                <p>User information was not available for this login.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <LoginNaBadge tooltip="User information was not available for this login." />
         );
       },
     },
@@ -155,25 +137,7 @@ function buildLoginColumns(
           deviceInfo === "Unknown";
         if (isUnknown) {
           return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="secondary"
-                    className="inline-flex cursor-help items-center gap-1 font-normal"
-                  >
-                    N/A
-                    <Info className="h-3 w-3" />
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[240px]">
-                  <p>
-                    Device or browser information was not available for this
-                    login.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <LoginNaBadge tooltip="Device or browser information was not available for this login." />
           );
         }
         return (
@@ -195,14 +159,9 @@ function buildLoginColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => {
-        const success = row.original.success;
-        return (
-          <Badge variant={success ? "default" : "destructive"}>
-            {success ? "Success" : "Failed"}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => (
+        <LoginStatusBadge success={row.original.success} />
+      ),
       filterFn: (row, _columnId, filterValue) => {
         const v = row.getValue("success") as boolean;
         if (filterValue === "true") return v === true;
@@ -324,11 +283,7 @@ export default function LoginsDataTable({ data }: LoginsDataTableProps) {
               ) : null}
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">Status</span>
-                <Badge
-                  variant={selectedLogin.success ? "default" : "destructive"}
-                >
-                  {selectedLogin.success ? "Success" : "Failed"}
-                </Badge>
+                <LoginStatusBadge success={selectedLogin.success} />
               </div>
             </div>
           )}

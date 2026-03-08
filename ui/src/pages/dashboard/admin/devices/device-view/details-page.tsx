@@ -1,10 +1,17 @@
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DeviceFingerprintBadge,
+  DeviceHeaderBadges,
+  DeviceLockedBadge,
+  DeviceStatusBadge,
+  DeviceTypeBadge,
+  DeviceUserBadge,
+} from "@/pages/dashboard/admin/devices/device-badge";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import { Smartphone } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
@@ -23,29 +30,20 @@ function DeviceDetailCard({ device }: { device: Device }) {
             <div>
               <CardTitle>Device {device.id.slice(0, 8)}…</CardTitle>
               <div className="mt-1 flex flex-wrap gap-1.5">
-                <Badge variant="secondary" className="font-normal">
-                  {device.user_name}
-                </Badge>
-                <Badge variant="outline" className="font-mono text-xs font-normal">
-                  {device.device_fingerprint}
-                </Badge>
+                <DeviceHeaderBadges device={device} />
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <Badge variant={device.is_active ? "success" : "destructive"}>
-              {device.is_active ? "Active" : "Inactive"}
-            </Badge>
-            <Badge variant={device.is_locked ? "destructive" : "secondary"}>
-              {device.is_locked ? "Locked" : "Unlocked"}
-            </Badge>
+            <DeviceStatusBadge isActive={device.is_active} />
+            <DeviceLockedBadge isLocked={device.is_locked} />
           </div>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">User</p>
-          <p className="font-medium">{device.user_name}</p>
+          <DeviceUserBadge userName={device.user_name} />
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">IMEI</p>
@@ -53,15 +51,11 @@ function DeviceDetailCard({ device }: { device: Device }) {
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Type</p>
-          <Badge variant="outline" className="capitalize font-normal">
-            {device.device_type}
-          </Badge>
+          <DeviceTypeBadge deviceType={device.device_type} />
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Fingerprint</p>
-          <p className="max-w-[240px] truncate font-mono text-xs">
-            {device.device_fingerprint}
-          </p>
+          <DeviceFingerprintBadge fingerprint={device.device_fingerprint} />
         </div>
         <div className="space-y-1 sm:col-span-2">
           <p className="text-muted-foreground text-sm">Device info</p>
