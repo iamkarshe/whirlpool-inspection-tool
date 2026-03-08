@@ -5,7 +5,27 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckCircle, Info, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CheckCircle, Globe, Info, XCircle } from "lucide-react";
+
+const TECH_BADGE_CLASS = "font-mono text-xs font-normal";
+
+export function LoginIdBadge({ id }: { id: string }) {
+  return (
+    <Badge variant="outline" className={cn(TECH_BADGE_CLASS, "max-w-full truncate")}>
+      {id}
+    </Badge>
+  );
+}
+
+export function LoginIpBadge({ ip }: { ip: string }) {
+  return (
+    <Badge variant="outline" className={TECH_BADGE_CLASS}>
+      <Globe className="mr-1 h-3 w-3 shrink-0 opacity-70" />
+      {ip}
+    </Badge>
+  );
+}
 
 export function LoginStatusBadge({ success }: { success: boolean }) {
   const Icon = success ? CheckCircle : XCircle;

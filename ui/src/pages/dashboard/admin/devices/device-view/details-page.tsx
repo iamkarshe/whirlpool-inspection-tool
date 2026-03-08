@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DeviceFingerprintBadge,
   DeviceHeaderBadges,
@@ -28,7 +23,7 @@ function DeviceDetailCard({ device }: { device: Device }) {
               <Smartphone className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle>Device {device.id.slice(0, 8)}…</CardTitle>
+              <CardTitle>Device {device.id}</CardTitle>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 <DeviceHeaderBadges device={device} />
               </div>

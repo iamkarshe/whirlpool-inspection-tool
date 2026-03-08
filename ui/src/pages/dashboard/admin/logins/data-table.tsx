@@ -8,6 +8,8 @@ import {
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import { PAGES } from "@/endpoints";
 import {
+  LoginIdBadge,
+  LoginIpBadge,
   LoginNaBadge,
   LoginStatusBadge,
 } from "@/pages/dashboard/admin/logins/login-badge";
@@ -123,7 +125,7 @@ function buildLoginColumns(
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="font-mono text-xs">{row.getValue("ip_address")}</span>
+        <LoginIpBadge ip={row.original.ip_address} />
       ),
     },
     {
@@ -159,9 +161,7 @@ function buildLoginColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <LoginStatusBadge success={row.original.success} />
-      ),
+      cell: ({ row }) => <LoginStatusBadge success={row.original.success} />,
       filterFn: (row, _columnId, filterValue) => {
         const v = row.getValue("success") as boolean;
         if (filterValue === "true") return v === true;
@@ -228,13 +228,13 @@ export default function LoginsDataTable({ data }: LoginsDataTableProps) {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Login details</DialogTitle>
+            <DialogTitle>Login Details</DialogTitle>
           </DialogHeader>
           {selectedLogin && (
             <div className="grid gap-3 py-2 text-sm">
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">ID</span>
-                <span className="font-mono text-xs">{selectedLogin.id}</span>
+                <LoginIdBadge id={selectedLogin.id} />
               </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">User</span>
@@ -263,9 +263,7 @@ export default function LoginsDataTable({ data }: LoginsDataTableProps) {
               </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">IP address</span>
-                <span className="font-mono text-xs">
-                  {selectedLogin.ip_address}
-                </span>
+                <LoginIpBadge ip={selectedLogin.ip_address} />
               </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">Device / Source</span>
@@ -276,7 +274,7 @@ export default function LoginsDataTable({ data }: LoginsDataTableProps) {
               {selectedLogin.user_agent ? (
                 <div className="grid grid-cols-[120px_1fr] gap-2">
                   <span className="text-muted-foreground">User agent</span>
-                  <span className="break-all font-mono text-xs">
+                  <span className="break-all">
                     {selectedLogin.user_agent}
                   </span>
                 </div>

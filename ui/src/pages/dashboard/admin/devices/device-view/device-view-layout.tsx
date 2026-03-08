@@ -62,7 +62,10 @@ export default function DeviceViewLayout() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div
+        className="flex items-center gap-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
+        style={{ animationFillMode: "backwards" }}
+      >
         <Button variant="ghost" size="icon" asChild>
           <Link to={PAGES.DASHBOARD_ADMIN_DEVICES} aria-label="Back to devices">
             <ArrowLeft className="h-4 w-4" />
@@ -70,7 +73,7 @@ export default function DeviceViewLayout() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Device {device.id}
+            Device [{device.id}]
           </h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <DeviceHeaderBadges device={device} />
@@ -92,20 +95,7 @@ export default function DeviceViewLayout() {
               )
             }
           >
-            Device details
-          </NavLink>
-          <NavLink
-            to={usersPath}
-            className={({ isActive }) =>
-              cn(
-                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            User
+            Device Details
           </NavLink>
           <NavLink
             to={inspectionsPath}
@@ -132,6 +122,19 @@ export default function DeviceViewLayout() {
             }
           >
             Logins
+          </NavLink>
+          <NavLink
+            to={usersPath}
+            className={({ isActive }) =>
+              cn(
+                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                isActive
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )
+            }
+          >
+            Previous Users
           </NavLink>
         </nav>
 
