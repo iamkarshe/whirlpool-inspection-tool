@@ -24,6 +24,8 @@ export const PAGES = {
 
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
+  /** Build path for device view by id (e.g. deviceViewPath(1) => "/dashboard/admin/devices/1") */
+  deviceViewPath: (id: number) => `/dashboard/admin/devices/${id}`,
   DASHBOARD_ADMIN_LOGINS: "/dashboard/admin/logins",
   DASHBOARD_ADMIN_INTEGRATIONS: "/dashboard/admin/integrations",
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",

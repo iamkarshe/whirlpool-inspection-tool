@@ -11,8 +11,10 @@ import DialogDeleteDevice from "@/pages/dashboard/admin/devices/dialog-delete-de
 import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { ColumnDef } from "@tanstack/react-table";
+import { PAGES } from "@/endpoints";
 import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 function buildDeviceColumns(
   onLockClick: (device: Device) => void,
@@ -146,13 +148,15 @@ function buildDeviceColumns(
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>View device</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onLockClick(row.original)}>
-            Lock device
+          <DropdownMenuItem asChild>
+            <Link to={PAGES.deviceViewPath(row.original.id)}>View device</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onDeleteClick(row.original)}>
-            Delete device
-          </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onLockClick(row.original)}>
+              Lock device
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDeleteClick(row.original)}>
+              Delete device
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),

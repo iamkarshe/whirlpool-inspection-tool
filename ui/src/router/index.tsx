@@ -23,6 +23,9 @@ const ResetPasswordConfirmationPage = lazy(
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
 const DevicesPage = lazy(() => import("@/pages/dashboard/admin/devices/page"));
+const DeviceViewPage = lazy(
+  () => import("@/pages/dashboard/admin/devices/device-view/page"),
+);
 const ProductCategoriesPage = lazy(
   () => import("@/pages/dashboard/admin/product-categories/page"),
 );
@@ -126,6 +129,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <DevicesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "admin/devices/:id",
+        handle: { title: "Device details" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <DeviceViewPage />
           </Suspense>
         ),
       },

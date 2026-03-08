@@ -60,3 +60,12 @@ export const getDevices = async (): Promise<Device[]> => {
     }, 1500);
   });
 };
+
+export const getDeviceById = async (id: number): Promise<Device | null> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const device = devices.find((d) => d.id === id) ?? null;
+      resolve(device);
+    }, 800);
+  });
+};
