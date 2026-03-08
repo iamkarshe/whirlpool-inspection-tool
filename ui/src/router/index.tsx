@@ -76,6 +76,9 @@ const WarehouseViewInspectionsPage = lazy(
   () =>
     import("@/pages/dashboard/admin/warehouses/warehouse-view/inspections-page"),
 );
+const DailyInspectionsReportPage = lazy(
+  () => import("@/pages/dashboard/reports/daily-inspections/page"),
+);
 const SettingsLayout = lazy(
   () => import("@/pages/dashboard/settings/settings-layout"),
 );
@@ -430,6 +433,15 @@ export const router = createBrowserRouter([
             ),
           },
         ],
+      },
+      {
+        path: "reports/daily-inspections",
+        handle: { title: "Daily Inspections" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <DailyInspectionsReportPage />
+          </Suspense>
+        ),
       },
       {
         path: "settings",
