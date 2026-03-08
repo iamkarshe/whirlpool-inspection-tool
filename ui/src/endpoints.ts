@@ -12,6 +12,8 @@ export const PAGES = {
   DASHBOARD_MASTERS_WAREHOUSES: "/dashboard/masters/warehouses",
 
   DASHBOARD_SETTINGS: "/dashboard/settings",
+  settingsPasswordPath: () => `${PAGES.DASHBOARD_SETTINGS}/password`,
+  settingsSessionsPath: () => `${PAGES.DASHBOARD_SETTINGS}/sessions`,
   DASHBOARD_NOTIFICATIONS: "/dashboard/notifications",
   DASHBOARD_RELEASE_NOTES: "/dashboard/release-notes",
 

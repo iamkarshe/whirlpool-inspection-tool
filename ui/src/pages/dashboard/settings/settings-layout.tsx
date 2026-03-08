@@ -1,31 +1,27 @@
 import { PAGES } from "@/endpoints";
 import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { CloudCog, KeyRound } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 
-const services = [
-  { title: "Okta SSO", href: PAGES.integrationsOktaPath(), icon: KeyRound },
-  {
-    title: "AWS S3",
-    href: PAGES.integrationsAwsS3Path(),
-    icon: CloudCog,
-  },
+const items = [
+  { title: "Update password", href: PAGES.settingsPasswordPath(), icon: KeyRound },
+  { title: "Logout sessions", href: PAGES.settingsSessionsPath(), icon: LogOut },
 ] as const;
 
-export default function IntegrationsLayout() {
+export default function SettingsLayout() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Integrations</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-muted-foreground text-sm">
-          Configure external services and single sign-on.
+          Manage your account security and active sessions.
         </p>
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
         <aside className="lg:w-56 shrink-0">
           <nav className="flex flex-col gap-0.5">
-            {services.map(({ title, href, icon: Icon }) => (
+            {items.map(({ title, href, icon: Icon }) => (
               <NavLink
                 key={href}
                 to={href}

@@ -23,34 +23,19 @@ const ResetPasswordConfirmationPage = lazy(
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
 const UserViewLayout = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/users/user-view/user-view-layout"
-    ),
+  () => import("@/pages/dashboard/admin/users/user-view/user-view-layout"),
 );
 const UserViewDetailsPage = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/users/user-view/details-page"
-    ),
+  () => import("@/pages/dashboard/admin/users/user-view/details-page"),
 );
 const UserViewDevicesPage = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/users/user-view/devices-page"
-    ),
+  () => import("@/pages/dashboard/admin/users/user-view/devices-page"),
 );
 const UserViewInspectionsPage = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/users/user-view/inspections-page"
-    ),
+  () => import("@/pages/dashboard/admin/users/user-view/inspections-page"),
 );
 const UserViewLoginsPage = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/users/user-view/logins-page"
-    ),
+  () => import("@/pages/dashboard/admin/users/user-view/logins-page"),
 );
 const DevicesPage = lazy(() => import("@/pages/dashboard/admin/devices/page"));
 const DeviceViewLayout = lazy(
@@ -58,12 +43,10 @@ const DeviceViewLayout = lazy(
     import("@/pages/dashboard/admin/devices/device-view/device-view-layout"),
 );
 const DeviceViewDetailsPage = lazy(
-  () =>
-    import("@/pages/dashboard/admin/devices/device-view/details-page"),
+  () => import("@/pages/dashboard/admin/devices/device-view/details-page"),
 );
 const DeviceViewInspectionsPage = lazy(
-  () =>
-    import("@/pages/dashboard/admin/devices/device-view/inspections-page"),
+  () => import("@/pages/dashboard/admin/devices/device-view/inspections-page"),
 );
 const ProductCategoriesPage = lazy(
   () => import("@/pages/dashboard/admin/product-categories/page"),
@@ -76,35 +59,32 @@ const WarehousesPage = lazy(
 );
 const WarehouseViewLayout = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/warehouses/warehouse-view/warehouse-view-layout"
-    ),
+    import("@/pages/dashboard/admin/warehouses/warehouse-view/warehouse-view-layout"),
 );
 const WarehouseViewDetailsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/warehouses/warehouse-view/details-page"
-    ),
+    import("@/pages/dashboard/admin/warehouses/warehouse-view/details-page"),
 );
 const WarehouseViewUsersPage = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/warehouses/warehouse-view/users-page"
-    ),
+  () => import("@/pages/dashboard/admin/warehouses/warehouse-view/users-page"),
 );
 const WarehouseViewDevicesPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/warehouses/warehouse-view/devices-page"
-    ),
+    import("@/pages/dashboard/admin/warehouses/warehouse-view/devices-page"),
 );
 const WarehouseViewInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/warehouses/warehouse-view/inspections-page"
-    ),
+    import("@/pages/dashboard/admin/warehouses/warehouse-view/inspections-page"),
 );
-const SettingsPage = lazy(() => import("@/pages/dashboard/settings/page"));
+const SettingsLayout = lazy(
+  () => import("@/pages/dashboard/settings/settings-layout"),
+);
+const SettingsPasswordPage = lazy(
+  () => import("@/pages/dashboard/settings/password/page"),
+);
+const SettingsSessionsPage = lazy(
+  () => import("@/pages/dashboard/settings/sessions/page"),
+);
 const NotificationsPage = lazy(
   () => import("@/pages/dashboard/notifications/page"),
 );
@@ -116,30 +96,17 @@ const InspectionsPage = lazy(
 );
 const InspectionViewPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/transactions/inspections/inspection-view-page"
-    ),
+    import("@/pages/dashboard/transactions/inspections/inspection-view-page"),
 );
-const LoginsPage = lazy(
-  () => import("@/pages/dashboard/admin/logins/page"),
-);
+const LoginsPage = lazy(() => import("@/pages/dashboard/admin/logins/page"));
 const IntegrationsLayout = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/integrations/integrations-layout"
-    ),
+  () => import("@/pages/dashboard/admin/integrations/integrations-layout"),
 );
 const IntegrationsOktaPage = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/integrations/okta/page"
-    ),
+  () => import("@/pages/dashboard/admin/integrations/okta/page"),
 );
 const IntegrationsAwsS3Page = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/integrations/aws-s3/page"
-    ),
+  () => import("@/pages/dashboard/admin/integrations/aws-s3/page"),
 );
 const LogsPage = lazy(() => import("@/pages/dashboard/admin/log/page"));
 const LogViewPage = lazy(
@@ -346,7 +313,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "aws-s3",
-            handle: { title: "AWS S3 Bucket config" },
+            handle: { title: "AWS S3" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <IntegrationsAwsS3Page />
@@ -469,9 +436,37 @@ export const router = createBrowserRouter([
         handle: { title: "Settings" },
         element: (
           <Suspense fallback={<PageLoader />}>
-            <SettingsPage />
+            <SettingsLayout />
           </Suspense>
         ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPasswordPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "password",
+            handle: { title: "Update password" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPasswordPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "sessions",
+            handle: { title: "Logout sessions" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SettingsSessionsPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "notifications",

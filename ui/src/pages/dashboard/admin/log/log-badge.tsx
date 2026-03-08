@@ -1,6 +1,6 @@
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
 import type { Log } from "@/pages/dashboard/admin/log/log-service";
-import { AlertTriangle, Info, Tag } from "lucide-react";
+import { AlertTriangle, CircleAlert, Info, Tag } from "lucide-react";
 
 type BadgeVariant =
   | "default"
@@ -17,7 +17,10 @@ const levelVariant: Record<Log["level"], BadgeVariant> = {
   error: "destructive",
 };
 
-const levelIcon: Record<Log["level"], React.ComponentType<{ className?: string }>> = {
+const levelIcon: Record<
+  Log["level"],
+  React.ComponentType<{ className?: string }>
+> = {
   info: Info,
   warn: AlertTriangle,
   error: CircleAlert,

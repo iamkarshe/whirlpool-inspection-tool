@@ -22,9 +22,9 @@ export default function IntegrationsAwsS3Page() {
   return (
     <Card className="flex flex-col gap-6">
       <CardHeader>
-        <CardTitle>AWS S3 Bucket config</CardTitle>
+        <CardTitle>AWS S3</CardTitle>
         <CardDescription>
-          Configure S3 buckets for storage (e.g. inspection attachments,
+          Configure AWS S3 buckets for storage (e.g. inspection attachments,
           exports).
         </CardDescription>
       </CardHeader>
