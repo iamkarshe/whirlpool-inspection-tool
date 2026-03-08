@@ -93,6 +93,9 @@ const InspectionViewPage = lazy(
       "@/pages/dashboard/transactions/inspections/inspection-view-page"
     ),
 );
+const LoginsPage = lazy(
+  () => import("@/pages/dashboard/admin/logins/page"),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -219,6 +222,15 @@ export const router = createBrowserRouter([
             ),
           },
         ],
+      },
+      {
+        path: "admin/logins",
+        handle: { title: "Login activity" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <LoginsPage />
+          </Suspense>
+        ),
       },
       {
         path: "transactions/inspections",

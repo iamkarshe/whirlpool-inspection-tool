@@ -32,7 +32,6 @@ export const PAGES = {
   deviceInspectionsPath: (id: string) =>
     `/dashboard/admin/devices/${id}/inspections`,
 
-  /** Warehouse ID is UUID (string). */
   warehouseViewPath: (id: string) => `/dashboard/masters/warehouses/${id}`,
   warehouseUsersPath: (id: string) =>
     `/dashboard/masters/warehouses/${id}/users`,
