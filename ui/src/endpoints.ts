@@ -16,6 +16,8 @@ export const PAGES = {
   DASHBOARD_RELEASE_NOTES: "/dashboard/release-notes",
 
   DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/transactions/inspections",
+  inspectionViewPath: (id: string) =>
+    `/dashboard/transactions/inspections/${id}`,
   DASHBOARD_TRANSACTIONS_CHECKLISTS: "/dashboard/transactions/checklists",
   DASHBOARD_TRANSACTIONS_REPORTS: "/dashboard/transactions/reports",
 
@@ -25,6 +27,7 @@ export const PAGES = {
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 
+  userViewPath: (id: number) => `/dashboard/admin/users/${id}`,
   deviceViewPath: (id: string) => `/dashboard/admin/devices/${id}`,
   deviceInspectionsPath: (id: string) =>
     `/dashboard/admin/devices/${id}/inspections`,

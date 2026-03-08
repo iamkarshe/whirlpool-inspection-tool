@@ -22,6 +22,9 @@ const ResetPasswordConfirmationPage = lazy(
 // Dashboard Pages
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
+const UserViewPage = lazy(
+  () => import("@/pages/dashboard/admin/users/user-view-page"),
+);
 const DevicesPage = lazy(() => import("@/pages/dashboard/admin/devices/page"));
 const DeviceViewLayout = lazy(
   () =>
@@ -83,6 +86,12 @@ const ReleaseNotesPage = lazy(
 );
 const InspectionsPage = lazy(
   () => import("@/pages/dashboard/transactions/inspections/page"),
+);
+const InspectionViewPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/transactions/inspections/inspection-view-page"
+    ),
 );
 // Dashboard Pages ENDS
 
@@ -166,6 +175,15 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "admin/users/:id",
+        handle: { title: "User details" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <UserViewPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "admin/devices",
         handle: { title: "Devices" },
         element: (
@@ -208,6 +226,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <InspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "transactions/inspections/:id",
+        handle: { title: "Inspection details" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <InspectionViewPage />
           </Suspense>
         ),
       },

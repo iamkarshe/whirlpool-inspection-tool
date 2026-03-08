@@ -54,3 +54,12 @@ export const getUsers = async (): Promise<User[]> => {
     }, 3000);
   });
 };
+
+export const getUserById = async (id: number): Promise<User | null> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const found = users.find((u) => u.id === id) ?? null;
+      resolve(found);
+    }, 400);
+  });
+};

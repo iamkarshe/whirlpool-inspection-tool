@@ -10,7 +10,8 @@ import {
 import { PAGES } from "@/endpoints";
 import type { Inspection } from "@/pages/dashboard/transactions/inspections/inspection-service";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 export type InspectionsDataTableProps = {
@@ -47,9 +48,15 @@ const deviceColumn: ColumnDef<Inspection> = {
   cell: ({ row }) => (
     <Link
       to={PAGES.deviceViewPath(row.original.device_id)}
-      className="font-mono text-xs text-primary hover:underline"
+      className="inline-block"
     >
-      {row.original.device_fingerprint}
+      <Badge
+        variant="secondary"
+        className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
+      >
+        <Smartphone className="h-3.5 w-3.5" />
+        {row.original.device_fingerprint}
+      </Badge>
     </Link>
   ),
 };
@@ -72,9 +79,17 @@ export default function InspectionsDataTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="max-w-[120px] truncate font-mono text-xs">
-          {String(row.getValue("id")).slice(0, 8)}…
-        </span>
+        <Link
+          to={PAGES.inspectionViewPath(row.original.id)}
+          className="inline-block"
+        >
+          <Badge
+            variant="secondary"
+            className="inline-flex cursor-pointer font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
+          >
+            {String(row.getValue("id")).slice(0, 8)}…
+          </Badge>
+        </Link>
       ),
     },
     {
@@ -89,7 +104,16 @@ export default function InspectionsDataTable({
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => row.getValue("inspector_name"),
+      cell: ({ row }) => (
+        <Link
+          to={PAGES.userViewPath(row.original.inspector_id)}
+          className="text-primary hover:underline"
+        >
+          {row.getValue("inspector_name")}
+        </Link>
+      ),
+      filterFn: (row, _columnId, filterValue) =>
+        row.getValue("inspector_name") === filterValue,
     },
     ...(hideDeviceColumn ? [] : [deviceColumn]),
     {
@@ -109,6 +133,28 @@ export default function InspectionsDataTable({
           {row.getValue("product_serial")}
         </span>
       ),
+      filterFn: (row, _columnId, filterValue) =>
+        row.getValue("product_serial") === filterValue,
+    },
+    {
+      accessorKey: "product_category_name",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Product category
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="text-sm">
+          {row.original.product_category_name ?? "—"}
+        </span>
+      ),
+      filterFn: (row, _columnId, filterValue) =>
+        (row.getValue("product_category_name") ?? "") === filterValue,
     },
     {
       accessorKey: "checklist_name",
@@ -162,7 +208,7 @@ export default function InspectionsDataTable({
     {
       id: "actions",
       enableHiding: false,
-      cell: () => (
+      cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -171,23 +217,63 @@ export default function InspectionsDataTable({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>View inspection</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={PAGES.inspectionViewPath(row.original.id)}>
+                View inspection
+              </Link>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     },
   ];
 
-  const filters: DataTableFilter<Inspection>[] = [
-    {
-      id: "inspection_type",
-      title: "Type",
-      options: [
-        { value: "inbound", label: "Inbound" },
-        { value: "outbound", label: "Outbound" },
-      ],
-    },
-  ];
+  const filters: DataTableFilter<Inspection>[] = useMemo(() => {
+    const inspectorOptions = Array.from(
+      new Set(data.map((i) => i.inspector_name).filter(Boolean)),
+    )
+      .sort()
+      .map((name) => ({ value: name, label: name }));
+    const categoryOptions = Array.from(
+      new Set(
+        data
+          .map((i) => i.product_category_name)
+          .filter((n): n is string => Boolean(n)),
+      ),
+    )
+      .sort()
+      .map((name) => ({ value: name, label: name }));
+    const productOptions = Array.from(
+      new Set(data.map((i) => i.product_serial).filter(Boolean)),
+    )
+      .sort()
+      .map((serial) => ({ value: serial, label: serial }));
+    return [
+      {
+        id: "inspection_type",
+        title: "Type",
+        options: [
+          { value: "inbound", label: "Inbound" },
+          { value: "outbound", label: "Outbound" },
+        ],
+      },
+      ...(inspectorOptions.length > 0
+        ? [{ id: "inspector_name" as const, title: "Inspector", options: inspectorOptions }]
+        : []),
+      ...(categoryOptions.length > 0
+        ? [
+            {
+              id: "product_category_name" as const,
+              title: "Product category",
+              options: categoryOptions,
+            },
+          ]
+        : []),
+      ...(productOptions.length > 0
+        ? [{ id: "product_serial" as const, title: "Product", options: productOptions }]
+        : []),
+    ];
+  }, [data]);
 
   return (
     <DataTable<Inspection>

@@ -14,6 +14,8 @@ export interface Inspection {
   device_fingerprint: string;
   product_id: number;
   product_serial: string;
+  product_category_id?: number;
+  product_category_name?: string;
   checklist_id: number;
   checklist_name: string;
   inspection_type: InspectionType;
@@ -29,6 +31,8 @@ const inspections: Inspection[] = [
     device_fingerprint: "fp-android-abc123",
     product_id: 1,
     product_serial: "WH-FL-2024-001234",
+    product_category_id: 1,
+    product_category_name: "Front Load Washing Machines",
     checklist_id: 1,
     checklist_name: "Front Load Pre-Dispatch",
     inspection_type: "outbound",
@@ -42,6 +46,8 @@ const inspections: Inspection[] = [
     device_fingerprint: "fp-android-def456",
     product_id: 2,
     product_serial: "WH-TL-2024-002456",
+    product_category_id: 2,
+    product_category_name: "Top Load Washing Machines",
     checklist_id: 1,
     checklist_name: "Front Load Pre-Dispatch",
     inspection_type: "inbound",
@@ -55,6 +61,8 @@ const inspections: Inspection[] = [
     device_fingerprint: "fp-android-abc123",
     product_id: 3,
     product_serial: "WH-REF-DD-2024-003789",
+    product_category_id: 3,
+    product_category_name: "Double Door Refrigerators",
     checklist_id: 2,
     checklist_name: "Refrigerator QC",
     inspection_type: "outbound",
@@ -68,6 +76,8 @@ const inspections: Inspection[] = [
     device_fingerprint: "fp-chrome-win-xyz789",
     product_id: 1,
     product_serial: "WH-FL-2024-001234",
+    product_category_id: 1,
+    product_category_name: "Front Load Washing Machines",
     checklist_id: 1,
     checklist_name: "Front Load Pre-Dispatch",
     inspection_type: "inbound",
@@ -92,5 +102,16 @@ export const getInspectionsByDeviceId = async (
       const list = inspections.filter((i) => i.device_id === deviceId);
       resolve([...list]);
     }, 800);
+  });
+};
+
+export const getInspectionById = async (
+  id: string,
+): Promise<Inspection | null> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const found = inspections.find((i) => i.id === id) ?? null;
+      resolve(found);
+    }, 400);
   });
 };
