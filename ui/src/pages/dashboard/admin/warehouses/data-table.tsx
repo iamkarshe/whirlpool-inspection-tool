@@ -1,14 +1,3 @@
-import type { ColumnDef } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  Building2,
-  ClipboardCheck,
-  MoreHorizontal,
-  Smartphone,
-  Users,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -19,6 +8,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  Building2,
+  ClipboardCheck,
+  MoreHorizontal,
+  Smartphone,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Warehouse } from "./warehouse-service";
 
 const warehouseColumns: ColumnDef<Warehouse>[] = [

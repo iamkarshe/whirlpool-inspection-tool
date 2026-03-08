@@ -1,37 +1,40 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import InspectionsDataTable from "@/pages/dashboard/transactions/inspections/inspections-data-table";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
-import { ClipboardCheck } from "lucide-react";
+import { getInspectionsByWarehouseId } from "@/pages/dashboard/admin/warehouses/warehouse-view/warehouse-view-service";
+import type { Inspection } from "@/pages/dashboard/transactions/inspections/inspection-service";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 type WarehouseViewContext = { warehouse: Warehouse };
 
 export default function WarehouseViewInspectionsPage() {
   const { warehouse } = useOutletContext<WarehouseViewContext>();
+  const [inspections, setInspections] = useState<Inspection[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ClipboardCheck className="h-5 w-5" />
-          Inspections
-        </CardTitle>
-        <CardDescription>
-          Inspections carried out at this warehouse ({warehouse.name}). Will be
-          wired to the API.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground text-sm">
-          No inspections linked yet. This section will list inspections for
-          warehouse {warehouse.warehouse_code}.
-        </p>
-      </CardContent>
-    </Card>
-  );
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getInspectionsByWarehouseId(warehouse.id)
+      .then((data) => {
+        if (!cancelled) setInspections(data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [warehouse.id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[200px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return <InspectionsDataTable data={inspections} />;
 }
