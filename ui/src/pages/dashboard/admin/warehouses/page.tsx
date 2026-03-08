@@ -51,10 +51,6 @@ export default function WarehousesPage() {
         setIsLoading(false);
       }
     };
-
-    toast.success("CSV uploaded successfully.");
-    console.log("CSV uploaded successfully.");
-
     fetchWarehouses();
   }, []);
 
