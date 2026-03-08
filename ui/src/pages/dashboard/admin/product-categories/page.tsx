@@ -1,3 +1,4 @@
+import CsvUploadDialog from "@/components/csv-upload-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,6 @@ import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
-import { FileDown, Upload } from "lucide-react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
 
@@ -28,7 +28,6 @@ type ProductCategoryFormValues = {
 type SubmitEvent = FormEvent<HTMLFormElement>;
 
 export default function ProductCategoriesPage() {
-  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [formValues, setFormValues] = useState<ProductCategoryFormValues>({
     name: "",
   });
@@ -49,10 +48,9 @@ export default function ProductCategoriesPage() {
     fetchCategories();
   }, []);
 
-  const handleCsvSubmit = (event: SubmitEvent) => {
-    event.preventDefault();
+  const handleCsvSubmit = (file: File) => {
     // TODO: wire real CSV upload; for now this is mocked.
-    console.log("Mock CSV upload", csvFile);
+    console.log("Mock CSV upload", file);
   };
 
   const handleCreateCategory = (event: SubmitEvent) => {
@@ -66,23 +64,8 @@ export default function ProductCategoriesPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleDownloadTemplate = () => {
-    const header = "name\n";
-    const exampleRow = "Front Load Washing Machines\n";
-    const csvContent = `${header}${exampleRow}`;
-
-    const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "product-categories-template.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+  const categoryCsvTemplate =
+    "name\n" + "Front Load Washing Machines\n";
 
   return (
     <div className="space-y-6">
@@ -90,53 +73,13 @@ export default function ProductCategoriesPage() {
         title="Product Categories"
         description="Manage master data for all product categories."
       >
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <Upload className="mr-1 h-4 w-4" />
-              Upload CSV
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload Product Categories</DialogTitle>
-              <DialogDescription>
-                Select a CSV file containing product categories to import.
-              </DialogDescription>
-            </DialogHeader>
-            <form className="space-y-4" onSubmit={handleCsvSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="categoriesCsv">CSV file</Label>
-                <Input
-                  id="categoriesCsv"
-                  type="file"
-                  accept=".csv"
-                  onChange={(event) => {
-                    const file =
-                      event.target.files && event.target.files[0]
-                        ? event.target.files[0]
-                        : null;
-                    setCsvFile(file);
-                  }}
-                />
-              </div>
-              <DialogFooter className="flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadTemplate}
-                >
-                  <FileDown className="mr-1 h-4 w-4" />
-                  Template CSV
-                </Button>
-                <Button type="submit" disabled={!csvFile}>
-                  Upload
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CsvUploadDialog
+          title="Upload Product Categories"
+          description="Select a CSV file containing product categories to import."
+          templateFilename="product-categories-template.csv"
+          templateContent={categoryCsvTemplate}
+          onSubmit={handleCsvSubmit}
+        />
 
         <Dialog>
           <DialogTrigger asChild>
