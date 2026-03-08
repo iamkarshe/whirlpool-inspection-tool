@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
-import { BadgeCheck, Bell, Info, LogOut } from "lucide-react";
+import { Activity, BadgeCheck, Bell, Info, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function UserMenu() {
@@ -58,6 +58,15 @@ export default function UserMenu() {
           >
             <BadgeCheck />
             Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              navigate(PAGES.DASHBOARD_NOTIFICATIONS);
+            }}
+          >
+            <Activity />
+            Activity Log
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(event) => {
