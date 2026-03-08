@@ -68,6 +68,12 @@ const WarehouseViewDevicesPage = lazy(
       "@/pages/dashboard/admin/warehouses/warehouse-view/devices-page"
     ),
 );
+const WarehouseViewInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/warehouses/warehouse-view/inspections-page"
+    ),
+);
 const SettingsPage = lazy(() => import("@/pages/dashboard/settings/page"));
 const NotificationsPage = lazy(
   () => import("@/pages/dashboard/notifications/page"),
@@ -264,6 +270,15 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <WarehouseViewDevicesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections",
+            handle: { title: "Warehouse inspections" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <WarehouseViewInspectionsPage />
               </Suspense>
             ),
           },

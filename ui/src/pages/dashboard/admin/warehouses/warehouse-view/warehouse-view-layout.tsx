@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import { loadWarehouseView } from "@/pages/dashboard/admin/warehouses/warehouse-view/controller";
-import { ArrowLeft, Loader2, MapPin } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -59,6 +59,7 @@ export default function WarehouseViewLayout() {
   const basePath = PAGES.warehouseViewPath(warehouse.id);
   const usersPath = PAGES.warehouseUsersPath(warehouse.id);
   const devicesPath = PAGES.warehouseDevicesPath(warehouse.id);
+  const inspectionsPath = PAGES.warehouseInspectionsPath(warehouse.id);
 
   return (
     <div className="space-y-6">
@@ -121,6 +122,19 @@ export default function WarehouseViewLayout() {
           }
         >
           Devices
+        </NavLink>
+        <NavLink
+          to={inspectionsPath}
+          className={({ isActive }) =>
+            cn(
+              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+              isActive
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )
+          }
+        >
+          Inspections
         </NavLink>
       </nav>
 

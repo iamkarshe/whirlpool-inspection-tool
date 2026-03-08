@@ -35,6 +35,8 @@ export const PAGES = {
     `/dashboard/masters/warehouses/${id}/users`,
   warehouseDevicesPath: (id: string) =>
     `/dashboard/masters/warehouses/${id}/devices`,
+  warehouseInspectionsPath: (id: string) =>
+    `/dashboard/masters/warehouses/${id}/inspections`,
 
   DASHBOARD_ADMIN_LOGINS: "/dashboard/admin/logins",
   DASHBOARD_ADMIN_INTEGRATIONS: "/dashboard/admin/integrations",

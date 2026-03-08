@@ -1,5 +1,12 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Building2, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  Building2,
+  ClipboardCheck,
+  MoreHorizontal,
+  Smartphone,
+  Users,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
@@ -97,6 +104,66 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
     },
   },
   {
+    id: "users",
+    header: "Users",
+    cell: ({ row }) => {
+      const w = row.original;
+      const count = w.users_count ?? 0;
+      return (
+        <Link to={PAGES.warehouseUsersPath(w.id)} className="inline-block">
+          <Badge
+            variant="secondary"
+            className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
+          >
+            <Users className="h-3.5 w-3.5" />
+            {count}
+          </Badge>
+        </Link>
+      );
+    },
+  },
+  {
+    id: "devices",
+    header: "Devices",
+    cell: ({ row }) => {
+      const w = row.original;
+      const count = w.devices_count ?? 0;
+      return (
+        <Link to={PAGES.warehouseDevicesPath(w.id)} className="inline-block">
+          <Badge
+            variant="secondary"
+            className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
+          >
+            <Smartphone className="h-3.5 w-3.5" />
+            {count}
+          </Badge>
+        </Link>
+      );
+    },
+  },
+  {
+    id: "inspections",
+    header: "Inspections",
+    cell: ({ row }) => {
+      const w = row.original;
+      const count = w.inspections_count ?? 0;
+      return (
+        <Link
+          to={PAGES.warehouseInspectionsPath(w.id)}
+          className="inline-block"
+        >
+          <Badge
+            variant="secondary"
+            className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm transition-colors hover:bg-primary/15 hover:text-primary"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" />
+            {count}
+          </Badge>
+        </Link>
+      );
+    },
+  },
+  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
@@ -118,6 +185,11 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to={PAGES.warehouseDevicesPath(id)}>View devices</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={PAGES.warehouseInspectionsPath(id)}>
+                View inspections
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>Delete</DropdownMenuItem>
           </DropdownMenuContent>
