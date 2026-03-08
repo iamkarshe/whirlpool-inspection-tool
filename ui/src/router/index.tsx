@@ -23,8 +23,17 @@ const ResetPasswordConfirmationPage = lazy(
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
 const DevicesPage = lazy(() => import("@/pages/dashboard/admin/devices/page"));
-const DeviceViewPage = lazy(
-  () => import("@/pages/dashboard/admin/devices/device-view/page"),
+const DeviceViewLayout = lazy(
+  () =>
+    import("@/pages/dashboard/admin/devices/device-view/device-view-layout"),
+);
+const DeviceViewDetailsPage = lazy(
+  () =>
+    import("@/pages/dashboard/admin/devices/device-view/details-page"),
+);
+const DeviceViewInspectionsPage = lazy(
+  () =>
+    import("@/pages/dashboard/admin/devices/device-view/inspections-page"),
 );
 const ProductCategoriesPage = lazy(
   () => import("@/pages/dashboard/admin/product-categories/page"),
@@ -137,9 +146,28 @@ export const router = createBrowserRouter([
         handle: { title: "Device details" },
         element: (
           <Suspense fallback={<PageLoader />}>
-            <DeviceViewPage />
+            <DeviceViewLayout />
           </Suspense>
         ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DeviceViewDetailsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections",
+            handle: { title: "Device inspections" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DeviceViewInspectionsPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "masters/product-categories",
