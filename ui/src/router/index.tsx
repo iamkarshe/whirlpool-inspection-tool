@@ -51,6 +51,9 @@ const NotificationsPage = lazy(
 const ReleaseNotesPage = lazy(
   () => import("@/pages/dashboard/release-notes/page"),
 );
+const InspectionsPage = lazy(
+  () => import("@/pages/dashboard/transactions/inspections/page"),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -168,6 +171,15 @@ export const router = createBrowserRouter([
             ),
           },
         ],
+      },
+      {
+        path: "transactions/inspections",
+        handle: { title: "Inspections" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <InspectionsPage />
+          </Suspense>
+        ),
       },
       {
         path: "masters/product-categories",
