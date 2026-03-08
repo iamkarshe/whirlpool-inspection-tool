@@ -68,6 +68,21 @@ export const loginActivities: LoginActivity[] = [
   },
 ];
 
+export interface LoginKpis {
+  totalLogins: number;
+  totalChange: string;
+  totalChangeType: "positive" | "negative";
+  successfulLogins: number;
+  successChange: string;
+  successChangeType: "positive" | "negative";
+  failedLogins: number;
+  failedChange: string;
+  failedChangeType: "positive" | "negative";
+  uniqueUsers: number;
+  usersChange: string;
+  usersChangeType: "positive" | "negative";
+}
+
 export const getLogins = async (): Promise<LoginActivity[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -75,6 +90,30 @@ export const getLogins = async (): Promise<LoginActivity[]> => {
     }, 1000);
   });
 };
+
+export async function getLoginKpis(
+  _dateFrom?: string,
+  _dateTo?: string,
+): Promise<LoginKpis> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        totalLogins: 342,
+        totalChange: "+18.2%",
+        totalChangeType: "positive",
+        successfulLogins: 328,
+        successChange: "+19.1%",
+        successChangeType: "positive",
+        failedLogins: 14,
+        failedChange: "-5.2%",
+        failedChangeType: "positive",
+        uniqueUsers: 24,
+        usersChange: "+3",
+        usersChangeType: "positive",
+      });
+    }, 400);
+  });
+}
 
 export const getLoginsByUserId = async (
   userId: number,

@@ -3,7 +3,7 @@ import { PAGES } from "@/endpoints";
 import type {
   Inspection,
   InspectionType,
-} from "@/pages/dashboard/transactions/inspections/inspection-service";
+} from "@/pages/dashboard/inspections/inspection-service";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,

@@ -1,11 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { DailyInspectionKpis } from "@/pages/dashboard/reports/daily-inspections/daily-inspection-service";
+import type { LoginKpis } from "@/pages/dashboard/admin/logins/login-service";
 import {
-  ClipboardCheck,
-  ArrowDownToLine,
-  ArrowUpFromLine,
+  LogIn,
+  CheckCircle,
+  XCircle,
   Users,
   TrendingDown,
   TrendingUp,
@@ -13,44 +13,40 @@ import {
 
 const statConfig = [
   {
-    key: "total" as const,
-    name: "Total inspections",
-    stat: (k: DailyInspectionKpis) => k.total.toLocaleString(),
-    change: (k: DailyInspectionKpis) => k.totalChange,
-    changeType: (k: DailyInspectionKpis) => k.totalChangeType,
-    icon: ClipboardCheck,
+    name: "Total logins",
+    stat: (k: LoginKpis) => k.totalLogins.toLocaleString(),
+    change: (k: LoginKpis) => k.totalChange,
+    changeType: (k: LoginKpis) => k.totalChangeType,
+    icon: LogIn,
   },
   {
-    key: "inbound" as const,
-    name: "Inbound",
-    stat: (k: DailyInspectionKpis) => k.inbound.toLocaleString(),
-    change: (k: DailyInspectionKpis) => k.inboundChange,
-    changeType: (k: DailyInspectionKpis) => k.inboundChangeType,
-    icon: ArrowDownToLine,
+    name: "Successful",
+    stat: (k: LoginKpis) => k.successfulLogins.toLocaleString(),
+    change: (k: LoginKpis) => k.successChange,
+    changeType: (k: LoginKpis) => k.successChangeType,
+    icon: CheckCircle,
   },
   {
-    key: "outbound" as const,
-    name: "Outbound",
-    stat: (k: DailyInspectionKpis) => k.outbound.toLocaleString(),
-    change: (k: DailyInspectionKpis) => k.outboundChange,
-    changeType: (k: DailyInspectionKpis) => k.outboundChangeType,
-    icon: ArrowUpFromLine,
+    name: "Failed",
+    stat: (k: LoginKpis) => k.failedLogins.toLocaleString(),
+    change: (k: LoginKpis) => k.failedChange,
+    changeType: (k: LoginKpis) => k.failedChangeType,
+    icon: XCircle,
   },
   {
-    key: "inspectors" as const,
-    name: "Active inspectors",
-    stat: (k: DailyInspectionKpis) => k.uniqueInspectors.toLocaleString(),
-    change: (k: DailyInspectionKpis) => k.inspectorsChange,
-    changeType: (k: DailyInspectionKpis) => k.inspectorsChangeType,
+    name: "Unique users",
+    stat: (k: LoginKpis) => k.uniqueUsers.toLocaleString(),
+    change: (k: LoginKpis) => k.usersChange,
+    changeType: (k: LoginKpis) => k.usersChangeType,
     icon: Users,
   },
 ];
 
-interface DailyInspectionStatCardsProps {
-  kpis: DailyInspectionKpis;
+interface LoginStatCardsProps {
+  kpis: LoginKpis;
 }
 
-export function DailyInspectionStatCards({ kpis }: DailyInspectionStatCardsProps) {
+export function LoginStatCards({ kpis }: LoginStatCardsProps) {
   return (
     <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {statConfig.map(({ name, stat, change, changeType, icon: Icon }) => {

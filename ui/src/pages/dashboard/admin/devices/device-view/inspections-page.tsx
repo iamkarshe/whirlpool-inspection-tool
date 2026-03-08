@@ -1,8 +1,8 @@
-import InspectionsDataTable from "@/pages/dashboard/transactions/inspections/inspections-data-table";
+import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import {
   getInspectionsByDeviceId,
   type Inspection,
-} from "@/pages/dashboard/transactions/inspections/inspection-service";
+} from "@/pages/dashboard/inspections/inspection-service";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";

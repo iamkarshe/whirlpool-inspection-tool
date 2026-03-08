@@ -1,7 +1,7 @@
-import InspectionsDataTable from "@/pages/dashboard/transactions/inspections/inspections-data-table";
+import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import { getInspectionsByWarehouseId } from "@/pages/dashboard/admin/warehouses/warehouse-view/warehouse-view-service";
-import type { Inspection } from "@/pages/dashboard/transactions/inspections/inspection-service";
+import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";

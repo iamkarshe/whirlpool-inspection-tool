@@ -1,52 +1,52 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { LiveDevicesKpis } from "@/pages/dashboard/reports/live-devices/live-devices-service";
+import type { InspectionKpis } from "@/pages/dashboard/inspections/inspection-service";
 import {
-  Smartphone,
-  Monitor,
-  CircleDot,
-  LayoutGrid,
+  ClipboardCheck,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Users,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 
 const statConfig = [
   {
-    name: "Total devices",
-    stat: (k: LiveDevicesKpis) => k.totalDevices.toLocaleString(),
-    change: (k: LiveDevicesKpis) => k.totalChange,
-    changeType: (k: LiveDevicesKpis) => k.totalChangeType,
-    icon: LayoutGrid,
+    name: "Total inspections",
+    stat: (k: InspectionKpis) => k.total.toLocaleString(),
+    change: (k: InspectionKpis) => k.totalChange,
+    changeType: (k: InspectionKpis) => k.totalChangeType,
+    icon: ClipboardCheck,
   },
   {
-    name: "Active now",
-    stat: (k: LiveDevicesKpis) => k.activeDevices.toLocaleString(),
-    change: (k: LiveDevicesKpis) => k.activeChange,
-    changeType: (k: LiveDevicesKpis) => k.activeChangeType,
-    icon: CircleDot,
+    name: "Inbound",
+    stat: (k: InspectionKpis) => k.inbound.toLocaleString(),
+    change: (k: InspectionKpis) => k.inboundChange,
+    changeType: (k: InspectionKpis) => k.inboundChangeType,
+    icon: ArrowDownToLine,
   },
   {
-    name: "Mobile",
-    stat: (k: LiveDevicesKpis) => k.mobileDevices.toLocaleString(),
-    change: (k: LiveDevicesKpis) => k.mobileChange,
-    changeType: (k: LiveDevicesKpis) => k.mobileChangeType,
-    icon: Smartphone,
+    name: "Outbound",
+    stat: (k: InspectionKpis) => k.outbound.toLocaleString(),
+    change: (k: InspectionKpis) => k.outboundChange,
+    changeType: (k: InspectionKpis) => k.outboundChangeType,
+    icon: ArrowUpFromLine,
   },
   {
-    name: "Desktop",
-    stat: (k: LiveDevicesKpis) => k.desktopDevices.toLocaleString(),
-    change: (k: LiveDevicesKpis) => k.desktopChange,
-    changeType: (k: LiveDevicesKpis) => k.desktopChangeType,
-    icon: Monitor,
+    name: "Active inspectors",
+    stat: (k: InspectionKpis) => k.uniqueInspectors.toLocaleString(),
+    change: (k: InspectionKpis) => k.inspectorsChange,
+    changeType: (k: InspectionKpis) => k.inspectorsChangeType,
+    icon: Users,
   },
 ];
 
-interface LiveDevicesStatCardsProps {
-  kpis: LiveDevicesKpis;
+interface InspectionStatCardsProps {
+  kpis: InspectionKpis;
 }
 
-export function LiveDevicesStatCards({ kpis }: LiveDevicesStatCardsProps) {
+export function InspectionStatCards({ kpis }: InspectionStatCardsProps) {
   return (
     <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {statConfig.map(({ name, stat, change, changeType, icon: Icon }) => {

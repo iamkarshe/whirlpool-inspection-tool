@@ -11,11 +11,11 @@ import {
   InspectionChecklistBadge,
   InspectionProductBadge,
   InspectionTypeBadge,
-} from "@/pages/dashboard/transactions/inspections/inspection-badge";
+} from "@/pages/dashboard/inspections/inspection-badge";
 import {
   getInspectionById,
   type Inspection,
-} from "@/pages/dashboard/transactions/inspections/inspection-service";
+} from "@/pages/dashboard/inspections/inspection-service";
 import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -68,7 +68,7 @@ export default function InspectionViewPage() {
       <div className="space-y-4">
         <p className="text-muted-foreground">Inspection not found.</p>
         <Button variant="outline" asChild>
-          <Link to={PAGES.DASHBOARD_TRANSACTIONS_INSPECTIONS}>
+          <Link to={PAGES.DASHBOARD_INSPECTIONS}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to inspections
           </Link>
@@ -82,7 +82,7 @@ export default function InspectionViewPage() {
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link
-            to={PAGES.DASHBOARD_TRANSACTIONS_INSPECTIONS}
+            to={PAGES.DASHBOARD_INSPECTIONS}
             aria-label="Back to inspections"
           >
             <ArrowLeft className="h-4 w-4" />

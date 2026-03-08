@@ -1,52 +1,52 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { DailyLoginKpis } from "@/pages/dashboard/reports/daily-logins/daily-login-service";
+import type { DeviceKpis } from "@/pages/dashboard/admin/devices/device-service";
 import {
-  LogIn,
-  CheckCircle,
-  XCircle,
-  Users,
+  Smartphone,
+  Monitor,
+  CircleDot,
+  LayoutGrid,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 
 const statConfig = [
   {
-    name: "Total logins",
-    stat: (k: DailyLoginKpis) => k.totalLogins.toLocaleString(),
-    change: (k: DailyLoginKpis) => k.totalChange,
-    changeType: (k: DailyLoginKpis) => k.totalChangeType,
-    icon: LogIn,
+    name: "Total devices",
+    stat: (k: DeviceKpis) => k.totalDevices.toLocaleString(),
+    change: (k: DeviceKpis) => k.totalChange,
+    changeType: (k: DeviceKpis) => k.totalChangeType,
+    icon: LayoutGrid,
   },
   {
-    name: "Successful",
-    stat: (k: DailyLoginKpis) => k.successfulLogins.toLocaleString(),
-    change: (k: DailyLoginKpis) => k.successChange,
-    changeType: (k: DailyLoginKpis) => k.successChangeType,
-    icon: CheckCircle,
+    name: "Active now",
+    stat: (k: DeviceKpis) => k.activeDevices.toLocaleString(),
+    change: (k: DeviceKpis) => k.activeChange,
+    changeType: (k: DeviceKpis) => k.activeChangeType,
+    icon: CircleDot,
   },
   {
-    name: "Failed",
-    stat: (k: DailyLoginKpis) => k.failedLogins.toLocaleString(),
-    change: (k: DailyLoginKpis) => k.failedChange,
-    changeType: (k: DailyLoginKpis) => k.failedChangeType,
-    icon: XCircle,
+    name: "Mobile",
+    stat: (k: DeviceKpis) => k.mobileDevices.toLocaleString(),
+    change: (k: DeviceKpis) => k.mobileChange,
+    changeType: (k: DeviceKpis) => k.mobileChangeType,
+    icon: Smartphone,
   },
   {
-    name: "Unique users",
-    stat: (k: DailyLoginKpis) => k.uniqueUsers.toLocaleString(),
-    change: (k: DailyLoginKpis) => k.usersChange,
-    changeType: (k: DailyLoginKpis) => k.usersChangeType,
-    icon: Users,
+    name: "Desktop",
+    stat: (k: DeviceKpis) => k.desktopDevices.toLocaleString(),
+    change: (k: DeviceKpis) => k.desktopChange,
+    changeType: (k: DeviceKpis) => k.desktopChangeType,
+    icon: Monitor,
   },
 ];
 
-interface DailyLoginStatCardsProps {
-  kpis: DailyLoginKpis;
+interface DeviceStatCardsProps {
+  kpis: DeviceKpis;
 }
 
-export function DailyLoginStatCards({ kpis }: DailyLoginStatCardsProps) {
+export function DeviceStatCards({ kpis }: DeviceStatCardsProps) {
   return (
     <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {statConfig.map(({ name, stat, change, changeType, icon: Icon }) => {

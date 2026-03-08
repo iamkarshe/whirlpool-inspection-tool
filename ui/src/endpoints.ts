@@ -17,16 +17,14 @@ export const PAGES = {
   DASHBOARD_NOTIFICATIONS: "/dashboard/notifications",
   DASHBOARD_RELEASE_NOTES: "/dashboard/release-notes",
 
-  DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/transactions/inspections",
-  inspectionViewPath: (id: string) =>
-    `/dashboard/transactions/inspections/${id}`,
+  DASHBOARD_INSPECTIONS: "/dashboard/inspections",
+  inspectionViewPath: (id: string) => `${PAGES.DASHBOARD_INSPECTIONS}/${id}`,
   DASHBOARD_TRANSACTIONS_CHECKLISTS: "/dashboard/transactions/checklists",
   DASHBOARD_TRANSACTIONS_REPORTS: "/dashboard/transactions/reports",
-
-  DASHBOARD_REPORTS_DAILY_INSPECTIONS: "/dashboard/reports/daily-inspections",
-  DASHBOARD_REPORTS_DAILY_LOGINS: "/dashboard/reports/daily-logins",
-  DASHBOARD_REPORTS_LIVE_DEVICES: "/dashboard/reports/live-devices",
-
+  /** @deprecated Use DASHBOARD_INSPECTIONS */
+  DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/inspections",
+  /** @deprecated Use DASHBOARD_INSPECTIONS */
+  DASHBOARD_REPORTS_DAILY_INSPECTIONS: "/dashboard/inspections",
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 
@@ -42,7 +40,7 @@ export const PAGES = {
     `/dashboard/admin/devices?user_id=${userId}`,
   /** Inspections list filtered by user (query param). */
   userInspectionsPath: (userId: number) =>
-    `/dashboard/transactions/inspections?user_id=${userId}`,
+    `${PAGES.DASHBOARD_INSPECTIONS}?user_id=${userId}`,
   deviceViewPath: (id: string) => `/dashboard/admin/devices/${id}`,
   deviceInspectionsPath: (id: string) =>
     `/dashboard/admin/devices/${id}/inspections`,

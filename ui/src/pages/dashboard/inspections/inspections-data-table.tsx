@@ -10,8 +10,8 @@ import { PAGES } from "@/endpoints";
 import {
   InspectionIdLinkBadge,
   InspectionTypeBadge,
-} from "@/pages/dashboard/transactions/inspections/inspection-badge";
-import type { Inspection } from "@/pages/dashboard/transactions/inspections/inspection-service";
+} from "@/pages/dashboard/inspections/inspection-badge";
+import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
 import { useMemo } from "react";

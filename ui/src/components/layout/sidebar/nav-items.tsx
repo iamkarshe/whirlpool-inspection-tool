@@ -59,7 +59,7 @@ export const navItems: NavGroup[] = [
         items: [
           {
             title: "Inspections",
-            href: PAGES.DASHBOARD_TRANSACTIONS_INSPECTIONS,
+            href: PAGES.DASHBOARD_INSPECTIONS,
           },
           {
             title: "Checklists",
@@ -71,20 +71,7 @@ export const navItems: NavGroup[] = [
         title: "Reports",
         href: "#",
         icon: ChartBarDecreasingIcon,
-        items: [
-          {
-            title: "Daily Inspections",
-            href: PAGES.DASHBOARD_REPORTS_DAILY_INSPECTIONS,
-          },
-          {
-            title: "Daily Logins",
-            href: PAGES.DASHBOARD_REPORTS_DAILY_LOGINS,
-          },
-          {
-            title: "Live Devices",
-            href: PAGES.DASHBOARD_REPORTS_LIVE_DEVICES,
-          },
-        ],
+        items: [],
       },
       {
         title: "Administration",

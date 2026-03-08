@@ -59,6 +59,21 @@ export const devices: Device[] = [
   },
 ];
 
+export interface DeviceKpis {
+  totalDevices: number;
+  totalChange: string;
+  totalChangeType: "positive" | "negative";
+  activeDevices: number;
+  activeChange: string;
+  activeChangeType: "positive" | "negative";
+  mobileDevices: number;
+  mobileChange: string;
+  mobileChangeType: "positive" | "negative";
+  desktopDevices: number;
+  desktopChange: string;
+  desktopChangeType: "positive" | "negative";
+}
+
 export const getDevices = async (): Promise<Device[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -66,6 +81,27 @@ export const getDevices = async (): Promise<Device[]> => {
     }, 1500);
   });
 };
+
+export async function getDeviceKpis(): Promise<DeviceKpis> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        totalDevices: 48,
+        totalChange: "+6.7%",
+        totalChangeType: "positive",
+        activeDevices: 42,
+        activeChange: "+8.2%",
+        activeChangeType: "positive",
+        mobileDevices: 35,
+        mobileChange: "+5.1%",
+        mobileChangeType: "positive",
+        desktopDevices: 13,
+        desktopChange: "+11.2%",
+        desktopChangeType: "positive",
+      });
+    }, 400);
+  });
+}
 
 export const getDeviceById = async (id: string): Promise<Device | null> => {
   return new Promise((resolve) => {

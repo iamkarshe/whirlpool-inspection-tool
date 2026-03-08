@@ -22,6 +22,21 @@ export interface Inspection {
   created_at: string;
 }
 
+export interface InspectionKpis {
+  total: number;
+  totalChange: string;
+  totalChangeType: "positive" | "negative";
+  inbound: number;
+  inboundChange: string;
+  inboundChangeType: "positive" | "negative";
+  outbound: number;
+  outboundChange: string;
+  outboundChangeType: "positive" | "negative";
+  uniqueInspectors: number;
+  inspectorsChange: string;
+  inspectorsChangeType: "positive" | "negative";
+}
+
 const inspections: Inspection[] = [
   {
     id: "a1b2c3d4-e5f6-7890-abcd-111111111111",
@@ -93,18 +108,6 @@ export const getInspections = async (): Promise<Inspection[]> => {
   });
 };
 
-/** Inspections for a given device (service layer filters by device_id). */
-export const getInspectionsByDeviceId = async (
-  deviceId: string,
-): Promise<Inspection[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const list = inspections.filter((i) => i.device_id === deviceId);
-      resolve([...list]);
-    }, 800);
-  });
-};
-
 export const getInspectionById = async (
   id: string,
 ): Promise<Inspection | null> => {
@@ -116,7 +119,17 @@ export const getInspectionById = async (
   });
 };
 
-/** Inspections by inspector (user) id. */
+export const getInspectionsByDeviceId = async (
+  deviceId: string,
+): Promise<Inspection[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const list = inspections.filter((i) => i.device_id === deviceId);
+      resolve([...list]);
+    }, 800);
+  });
+};
+
 export const getInspectionsByUserId = async (
   userId: number,
 ): Promise<Inspection[]> => {
@@ -126,3 +139,28 @@ export const getInspectionsByUserId = async (
     }, 600);
   });
 };
+
+/** KPI stats for inspections (e.g. list header / reports). */
+export async function getInspectionKpis(
+  _dateFrom?: string,
+  _dateTo?: string,
+): Promise<InspectionKpis> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        total: 156,
+        totalChange: "+12.4%",
+        totalChangeType: "positive",
+        inbound: 62,
+        inboundChange: "+8.2%",
+        inboundChangeType: "positive",
+        outbound: 94,
+        outboundChange: "+15.1%",
+        outboundChangeType: "positive",
+        uniqueInspectors: 12,
+        inspectorsChange: "+2",
+        inspectorsChangeType: "positive",
+      });
+    }, 400);
+  });
+}

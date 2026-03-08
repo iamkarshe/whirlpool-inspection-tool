@@ -1,6 +1,6 @@
-import InspectionsDataTable from "@/pages/dashboard/transactions/inspections/inspections-data-table";
-import type { Inspection } from "@/pages/dashboard/transactions/inspections/inspection-service";
-import { getInspectionsByUserId } from "@/pages/dashboard/transactions/inspections/inspection-service";
+import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
+import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
+import { getInspectionsByUserId } from "@/pages/dashboard/inspections/inspection-service";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";

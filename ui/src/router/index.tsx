@@ -76,15 +76,6 @@ const WarehouseViewInspectionsPage = lazy(
   () =>
     import("@/pages/dashboard/admin/warehouses/warehouse-view/inspections-page"),
 );
-const DailyInspectionsReportPage = lazy(
-  () => import("@/pages/dashboard/reports/daily-inspections/page"),
-);
-const DailyLoginsReportPage = lazy(
-  () => import("@/pages/dashboard/reports/daily-logins/page"),
-);
-const LiveDevicesReportPage = lazy(
-  () => import("@/pages/dashboard/reports/live-devices/page"),
-);
 const SettingsLayout = lazy(
   () => import("@/pages/dashboard/settings/settings-layout"),
 );
@@ -101,11 +92,10 @@ const ReleaseNotesPage = lazy(
   () => import("@/pages/dashboard/release-notes/page"),
 );
 const InspectionsPage = lazy(
-  () => import("@/pages/dashboard/transactions/inspections/page"),
+  () => import("@/pages/dashboard/inspections/page"),
 );
 const InspectionViewPage = lazy(
-  () =>
-    import("@/pages/dashboard/transactions/inspections/inspection-view-page"),
+  () => import("@/pages/dashboard/inspections/inspection-view-page"),
 );
 const LoginsPage = lazy(() => import("@/pages/dashboard/admin/logins/page"));
 const IntegrationsLayout = lazy(
@@ -350,7 +340,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "transactions/inspections",
+        path: "inspections",
         handle: { title: "Inspections" },
         element: (
           <Suspense fallback={<PageLoader />}>
@@ -359,7 +349,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "transactions/inspections/:id",
+        path: "inspections/:id",
         handle: { title: "Inspection details" },
         element: (
           <Suspense fallback={<PageLoader />}>
@@ -439,33 +429,6 @@ export const router = createBrowserRouter([
             ),
           },
         ],
-      },
-      {
-        path: "reports/daily-inspections",
-        handle: { title: "Daily Inspections" },
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <DailyInspectionsReportPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "reports/daily-logins",
-        handle: { title: "Daily Logins" },
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <DailyLoginsReportPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "reports/live-devices",
-        handle: { title: "Live Devices" },
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <LiveDevicesReportPage />
-          </Suspense>
-        ),
       },
       {
         path: "settings",

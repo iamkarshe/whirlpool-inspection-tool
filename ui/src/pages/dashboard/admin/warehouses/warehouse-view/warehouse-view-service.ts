@@ -6,8 +6,8 @@ import { devices } from "@/pages/dashboard/admin/devices/device-service";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
 import { users } from "@/pages/dashboard/admin/users/user-service";
-import type { Inspection } from "@/pages/dashboard/transactions/inspections/inspection-service";
-import { getInspections } from "@/pages/dashboard/transactions/inspections/inspection-service";
+import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
+import { getInspections } from "@/pages/dashboard/inspections/inspection-service";
 
 /** Mock: warehouse_id -> user ids assigned to that warehouse. */
 const warehouseUserIds: Record<string, number[]> = {
