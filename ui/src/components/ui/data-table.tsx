@@ -1,3 +1,4 @@
+import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -28,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { filterByCalendarDateRange } from "@/lib/date-range-filter";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -44,6 +46,7 @@ import {
 } from "@tanstack/react-table";
 import { Columns, PlusCircle } from "lucide-react";
 import * as React from "react";
+import type { DateRange } from "react-day-picker";
 
 export type DataTableFilterOption = {
   label: string;
@@ -56,11 +59,19 @@ export type DataTableFilter<TData> = {
   options: DataTableFilterOption[];
 };
 
+/** When set, the table shows CalendarDateRangePicker in the toolbar and filters rows by the selected range. */
+export type DataTableDateRangeFilter<TData> = {
+  /** Accessor key on TData that holds the date (ISO string or parseable date). */
+  dateAccessorKey: keyof TData & string;
+};
+
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
   data: TData[];
   searchKey?: keyof TData & string;
   filters?: DataTableFilter<TData>[];
+  /** When set, enables the calendar date range picker in the toolbar and filters data by the selected range. */
+  dateRangeFilter?: DataTableDateRangeFilter<TData>;
 }
 
 export function DataTable<TData>({
@@ -68,6 +79,7 @@ export function DataTable<TData>({
   data,
   searchKey,
   filters,
+  dateRangeFilter,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -76,10 +88,25 @@ export function DataTable<TData>({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(
+    undefined,
+  );
+
+  const filteredData = React.useMemo(() => {
+    if (!dateRangeFilter || !dateRange?.from) return data;
+    return filterByCalendarDateRange(
+      data,
+      (row) => {
+        const v = row[dateRangeFilter.dateAccessorKey];
+        return v as string | Date | undefined | null;
+      },
+      dateRange,
+    );
+  }, [data, dateRange, dateRangeFilter]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -102,6 +129,13 @@ export function DataTable<TData>({
       <div className="w-full">
         <div className="flex items-center gap-4 py-4">
           <div className="flex flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
+            {dateRangeFilter ? (
+              <CalendarDateRangePicker
+                value={dateRange}
+                onChange={setDateRange}
+                className="shrink-0"
+              />
+            ) : null}
             {searchKey ? (
               <Input
                 placeholder="Search..."

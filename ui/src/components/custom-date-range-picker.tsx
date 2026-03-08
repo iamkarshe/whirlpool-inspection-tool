@@ -10,7 +10,7 @@ import {
   startOfDay,
   endOfDay,
   startOfYear,
-  startOfWeek
+  startOfWeek,
 } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
@@ -18,15 +18,24 @@ import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -38,23 +47,50 @@ const dateFilterPresets = [
   { name: "Last 28 Days", value: "last28Days" },
   { name: "This Month", value: "thisMonth" },
   { name: "Last Month", value: "lastMonth" },
-  { name: "This Year", value: "thisYear" }
+  { name: "This Year", value: "thisYear" },
 ];
 
-export default function CalendarDateRangePicker({
-  className
-}: React.HTMLAttributes<HTMLDivElement>) {
-  const isMobile = useIsMobile();
+const defaultRange: DateRange = (() => {
   const today = new Date();
-  const twentyEightDaysAgo = startOfDay(subDays(today, 27));
+  return {
+    from: startOfDay(subDays(today, 27)),
+    to: endOfDay(today),
+  };
+})();
 
-  // Initialize with "Last 28 days" as default
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: twentyEightDaysAgo,
-    to: endOfDay(today)
-  });
+export interface CalendarDateRangePickerProps
+  extends React.HTMLAttributes<HTMLDivElement> {
+  /** Controlled: selected range (use with onChange). */
+  value?: DateRange | undefined;
+  /** Controlled: called when range changes. */
+  onChange?: (range: DateRange | undefined) => void;
+}
+
+export default function CalendarDateRangePicker({
+  className,
+  value,
+  onChange,
+}: CalendarDateRangePickerProps) {
+  const isMobile = useIsMobile();
+  const isControlled = value !== undefined && onChange !== undefined;
+
+  const [internalDate, setInternalDate] = React.useState<DateRange | undefined>(
+    () => (isControlled ? undefined : defaultRange),
+  );
   const [open, setOpen] = React.useState(false);
   const [currentMonth, setCurrentMonth] = React.useState<Date>(new Date());
+
+  const date = isControlled ? value : internalDate;
+  const setDate = React.useCallback(
+    (next: DateRange | undefined) => {
+      if (isControlled) {
+        onChange?.(next);
+      } else {
+        setInternalDate(next);
+      }
+    },
+    [isControlled, onChange],
+  );
 
   const handleQuickSelect = (from: Date, to: Date) => {
     setDate({ from, to });

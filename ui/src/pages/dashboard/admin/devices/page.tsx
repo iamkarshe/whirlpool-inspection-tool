@@ -211,7 +211,11 @@ export default function DevicesPage() {
           </DialogContent>
         </Dialog>
       </PageActionBar>
-      {isLoading ? <SkeletonTable /> : <DevicesDataTable data={devices} />}
+      {isLoading ? (
+        <SkeletonTable />
+      ) : (
+        <DevicesDataTable data={devices} />
+      )}
     </div>
   );
 }

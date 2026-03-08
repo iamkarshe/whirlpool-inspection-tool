@@ -16,6 +16,8 @@ export interface Device {
   device_info: string;
   is_locked: boolean;
   is_active: boolean;
+  /** Last activity / last seen (for date range filter). */
+  last_active_at?: string;
 }
 
 export const devices: Device[] = [
@@ -29,6 +31,7 @@ export const devices: Device[] = [
     device_info: "Android 14, Samsung Galaxy",
     is_locked: false,
     is_active: true,
+    last_active_at: "2024-03-05T09:00:00Z",
   },
   {
     id: "550e8400-e29b-41d4-a716-446655440002",
@@ -40,6 +43,7 @@ export const devices: Device[] = [
     device_info: "Android 13, OnePlus",
     is_locked: false,
     is_active: true,
+    last_active_at: "2024-03-04T14:30:00Z",
   },
   {
     id: "550e8400-e29b-41d4-a716-446655440003",
@@ -51,6 +55,7 @@ export const devices: Device[] = [
     device_info: "Chrome 120, Windows 11",
     is_locked: false,
     is_active: true,
+    last_active_at: "2024-03-05T08:15:00Z",
   },
 ];
 

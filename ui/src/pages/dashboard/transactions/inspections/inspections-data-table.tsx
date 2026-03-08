@@ -281,6 +281,7 @@ export default function InspectionsDataTable({
       data={data}
       searchKey="product_serial"
       filters={filters}
+      dateRangeFilter={{ dateAccessorKey: "created_at" }}
     />
   );
 }

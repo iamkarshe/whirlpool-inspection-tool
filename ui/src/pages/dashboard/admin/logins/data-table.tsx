@@ -159,6 +159,7 @@ export default function LoginsDataTable({ data }: LoginsDataTableProps) {
       data={data}
       searchKey="user_name"
       filters={loginFilters}
+      dateRangeFilter={{ dateAccessorKey: "logged_at" }}
     />
   );
 }
