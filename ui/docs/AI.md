@@ -78,20 +78,38 @@
    import type { FormEvent } from "react";
    ```
 
-7. Generated/modified code quality:
+7. Dialogs and modals — component-driven design:
+   - Every dialog and modal must be implemented as a **dedicated component**, not inlined in pages, tables, or layout components.
+   - Use a clear naming convention: `dialog-<purpose>.tsx` (e.g. `dialog-lock-device.tsx`, `dialog-delete-device.tsx`) or `modal-<purpose>.tsx` for modal-only flows.
+   - Each component should:
+     - Accept **controlled props**: `open`, `onOpenChange`, and any entity/callback needed (e.g. `device`, `onConfirm`).
+     - Own its **AlertDialog/Dialog/Modal** UI, content, and footer actions.
+     - Call `onConfirm` (or equivalent) then `onOpenChange(false)` on confirm so the parent can handle side effects and close state.
+   - Parents (pages, data-tables, etc.) should only hold **state** (e.g. `entityToLock: Device | null`) and **render** the dialog component with that state and callbacks.
+
+   Preferred:
+
+   ```ts
+   // dialog-lock-device.tsx
+   export type DialogLockDeviceProps = {
+     open: boolean;
+     onOpenChange: (open: boolean) => void;
+     device: Device | null;
+     onConfirm: (device: Device) => void;
+   };
+   export default function DialogLockDevice({ open, onOpenChange, device, onConfirm }: DialogLockDeviceProps) { ... }
+   ```
+
+   Avoid:
+
+   - Inlining `<AlertDialog>...</AlertDialog>` or `<Dialog>...</Dialog>` inside a page or data-table with large blocks of JSX.
+
+8. Generated/modified code quality:
    - Ensure the code compiles.
-
    - Ensure types are correct before introducing new functions/components.
-
    - Prefer explicit types for event handlers (e.g., `ChangeEvent`, `SubmitEvent`) over untyped `event`.
 
-   - Ensure the code compiles.
-
-   - Ensure types are correct before introducing new functions/components.
-
-   - Prefer explicit types for event handlers (e.g., `ChangeEvent`, `FormEvent`) over untyped `event`.
-
-8. Commit messages must follow this format:
+9. Commit messages must follow this format:
 
    ```
    [module] concise message (15–20 words)
