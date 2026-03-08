@@ -121,3 +121,99 @@ export const getDevicesByUserId = async (
     }, 600);
   });
 };
+
+/** Current or previous user assignment for a device (for device view "User" tab). */
+export interface DeviceUserAssignment {
+  user_id: number;
+  user_name: string;
+  email: string;
+  role: string;
+  assigned_at: string;
+  unassigned_at: string | null;
+  is_current: boolean;
+}
+
+/** Mock: device_id -> list of user assignments (current + previous). */
+const deviceUserAssignments: Record<string, DeviceUserAssignment[]> = {
+  "550e8400-e29b-41d4-a716-446655440001": [
+    {
+      user_id: 1,
+      user_name: "Amit Sharma",
+      email: "amit.sharma@whirlpool.com",
+      role: "Manager",
+      assigned_at: "2024-01-15T00:00:00Z",
+      unassigned_at: null,
+      is_current: true,
+    },
+    {
+      user_id: 2,
+      user_name: "Priya Verma",
+      email: "priya.verma@whirlpool.com",
+      role: "Operator",
+      assigned_at: "2023-06-01T00:00:00Z",
+      unassigned_at: "2024-01-14T23:59:59Z",
+      is_current: false,
+    },
+  ],
+  "550e8400-e29b-41d4-a716-446655440002": [
+    {
+      user_id: 2,
+      user_name: "Priya Verma",
+      email: "priya.verma@whirlpool.com",
+      role: "Operator",
+      assigned_at: "2023-09-01T00:00:00Z",
+      unassigned_at: null,
+      is_current: true,
+    },
+  ],
+  "550e8400-e29b-41d4-a716-446655440003": [
+    {
+      user_id: 1,
+      user_name: "Amit Sharma",
+      email: "amit.sharma@whirlpool.com",
+      role: "Manager",
+      assigned_at: "2024-02-01T00:00:00Z",
+      unassigned_at: null,
+      is_current: true,
+    },
+    {
+      user_id: 3,
+      user_name: "Rahul Gupta",
+      email: "rahul.gupta@whirlpool.com",
+      role: "Operator",
+      assigned_at: "2023-11-01T00:00:00Z",
+      unassigned_at: "2024-01-31T23:59:59Z",
+      is_current: false,
+    },
+  ],
+};
+
+export async function getDeviceUsers(
+  deviceId: string,
+): Promise<DeviceUserAssignment[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const list = deviceUserAssignments[deviceId];
+      if (list) {
+        resolve([...list]);
+        return;
+      }
+      const device = devices.find((d) => d.id === deviceId);
+      if (device) {
+        resolve([
+          {
+            user_id: device.user_id,
+            user_name: device.user_name,
+            email: "",
+            role: "",
+            assigned_at: new Date().toISOString(),
+            unassigned_at: null,
+            is_current: true,
+          },
+        ]);
+        return;
+      }
+      resolve([]);
+    }, 500);
+  });
+}

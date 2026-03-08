@@ -56,6 +56,7 @@ export default function DeviceViewLayout() {
   }
 
   const basePath = PAGES.deviceViewPath(device.id);
+  const usersPath = PAGES.deviceUsersPath(device.id);
   const inspectionsPath = PAGES.deviceInspectionsPath(device.id);
   const loginsPath = PAGES.deviceLoginsPath(device.id);
 
@@ -92,6 +93,19 @@ export default function DeviceViewLayout() {
             }
           >
             Device details
+          </NavLink>
+          <NavLink
+            to={usersPath}
+            className={({ isActive }) =>
+              cn(
+                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                isActive
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )
+            }
+          >
+            User
           </NavLink>
           <NavLink
             to={inspectionsPath}
