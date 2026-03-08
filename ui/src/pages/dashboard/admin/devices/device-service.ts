@@ -75,3 +75,13 @@ export const getDeviceById = async (id: string): Promise<Device | null> => {
     }, 800);
   });
 };
+
+export const getDevicesByUserId = async (
+  userId: number,
+): Promise<Device[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(devices.filter((d) => d.user_id === userId));
+    }, 600);
+  });
+};

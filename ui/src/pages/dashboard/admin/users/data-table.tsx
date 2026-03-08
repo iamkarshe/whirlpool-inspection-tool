@@ -8,10 +8,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const userColumns: ColumnDef<User>[] = [
   {
@@ -103,20 +105,34 @@ const userColumns: ColumnDef<User>[] = [
   {
     id: "actions",
     enableHiding: false,
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>View user</DropdownMenuItem>
-          <DropdownMenuItem>Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => {
+      const user = row.original;
+      const userId = user.id;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={PAGES.userViewPath(userId)}>View user</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={PAGES.userViewDevicesPath(userId)}>View devices</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={PAGES.userViewInspectionsPath(userId)}>
+                View inspections
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
 ];
 

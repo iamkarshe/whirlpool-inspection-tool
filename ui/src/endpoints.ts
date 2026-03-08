@@ -28,6 +28,18 @@ export const PAGES = {
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 
   userViewPath: (id: number) => `/dashboard/admin/users/${id}`,
+  userViewDevicesPath: (userId: number) =>
+    `/dashboard/admin/users/${userId}/devices`,
+  userViewInspectionsPath: (userId: number) =>
+    `/dashboard/admin/users/${userId}/inspections`,
+  userViewLoginsPath: (userId: number) =>
+    `/dashboard/admin/users/${userId}/logins`,
+  /** Devices list filtered by user (query param). */
+  userDevicesPath: (userId: number) =>
+    `/dashboard/admin/devices?user_id=${userId}`,
+  /** Inspections list filtered by user (query param). */
+  userInspectionsPath: (userId: number) =>
+    `/dashboard/transactions/inspections?user_id=${userId}`,
   deviceViewPath: (id: string) => `/dashboard/admin/devices/${id}`,
   deviceInspectionsPath: (id: string) =>
     `/dashboard/admin/devices/${id}/inspections`,

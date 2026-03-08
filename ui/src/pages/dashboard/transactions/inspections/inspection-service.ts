@@ -115,3 +115,14 @@ export const getInspectionById = async (
     }, 400);
   });
 };
+
+/** Inspections by inspector (user) id. */
+export const getInspectionsByUserId = async (
+  userId: number,
+): Promise<Inspection[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(inspections.filter((i) => i.inspector_id === userId));
+    }, 600);
+  });
+};

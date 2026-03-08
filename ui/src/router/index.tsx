@@ -22,8 +22,35 @@ const ResetPasswordConfirmationPage = lazy(
 // Dashboard Pages
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
-const UserViewPage = lazy(
-  () => import("@/pages/dashboard/admin/users/user-view-page"),
+const UserViewLayout = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/users/user-view/user-view-layout"
+    ),
+);
+const UserViewDetailsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/users/user-view/details-page"
+    ),
+);
+const UserViewDevicesPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/users/user-view/devices-page"
+    ),
+);
+const UserViewInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/users/user-view/inspections-page"
+    ),
+);
+const UserViewLoginsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/users/user-view/logins-page"
+    ),
 );
 const DevicesPage = lazy(() => import("@/pages/dashboard/admin/devices/page"));
 const DeviceViewLayout = lazy(
@@ -182,9 +209,46 @@ export const router = createBrowserRouter([
         handle: { title: "User details" },
         element: (
           <Suspense fallback={<PageLoader />}>
-            <UserViewPage />
+            <UserViewLayout />
           </Suspense>
         ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <UserViewDetailsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "devices",
+            handle: { title: "User devices" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <UserViewDevicesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections",
+            handle: { title: "User inspections" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <UserViewInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "logins",
+            handle: { title: "User login history" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <UserViewLoginsPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "admin/devices",

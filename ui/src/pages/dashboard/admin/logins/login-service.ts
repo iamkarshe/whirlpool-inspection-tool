@@ -75,3 +75,13 @@ export const getLogins = async (): Promise<LoginActivity[]> => {
     }, 1000);
   });
 };
+
+export const getLoginsByUserId = async (
+  userId: number,
+): Promise<LoginActivity[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(loginActivities.filter((l) => l.user_id === userId));
+    }, 600);
+  });
+};
