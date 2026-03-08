@@ -1,4 +1,12 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PAGES } from "@/endpoints";
 import {
   DeviceFingerprintBadge,
   DeviceHeaderBadges,
@@ -8,12 +16,23 @@ import {
   DeviceUserBadge,
 } from "@/pages/dashboard/admin/devices/device-badge";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
-import { Smartphone } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
+import DialogDeleteDevice from "@/pages/dashboard/admin/devices/dialog-delete-device";
+import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device";
+import { Lock, MoreHorizontal, Smartphone, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 type DeviceViewContext = { device: Device };
 
-function DeviceDetailCard({ device }: { device: Device }) {
+function DeviceDetailCard({
+  device,
+  onLockClick,
+  onDeleteClick,
+}: {
+  device: Device;
+  onLockClick: () => void;
+  onDeleteClick: () => void;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -29,9 +48,30 @@ function DeviceDetailCard({ device }: { device: Device }) {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <DeviceStatusBadge isActive={device.is_active} />
             <DeviceLockedBadge isLocked={device.is_locked} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <span className="sr-only">Actions</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onLockClick}>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Lock device
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={onDeleteClick}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete device
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
@@ -63,5 +103,36 @@ function DeviceDetailCard({ device }: { device: Device }) {
 
 export default function DeviceViewDetailsPage() {
   const { device } = useOutletContext<DeviceViewContext>();
-  return <DeviceDetailCard device={device} />;
+  const [lockDialogOpen, setLockDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <DeviceDetailCard
+        device={device}
+        onLockClick={() => setLockDialogOpen(true)}
+        onDeleteClick={() => setDeleteDialogOpen(true)}
+      />
+      <DialogLockDevice
+        open={lockDialogOpen}
+        onOpenChange={setLockDialogOpen}
+        device={device}
+        onConfirm={(d) => {
+          // TODO: wire lock device API
+          console.log("Lock device", d);
+        }}
+      />
+      <DialogDeleteDevice
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        device={device}
+        onConfirm={(d) => {
+          // TODO: wire delete device API
+          console.log("Delete device", d);
+          navigate(PAGES.DASHBOARD_ADMIN_DEVICES);
+        }}
+      />
+    </>
+  );
 }
