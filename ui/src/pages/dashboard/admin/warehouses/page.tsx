@@ -19,6 +19,7 @@ import {
 } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import WarehousesDataTable from "./data-table";
 
 type WarehouseFormValues = {
@@ -51,6 +52,9 @@ export default function WarehousesPage() {
       }
     };
 
+    toast.success("CSV uploaded successfully.");
+    console.log("CSV uploaded successfully.");
+
     fetchWarehouses();
   }, []);
 
@@ -68,6 +72,7 @@ export default function WarehousesPage() {
   const handleCsvSubmit = (file: File) => {
     // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock warehouses CSV upload", file);
+    toast.success("CSV uploaded successfully.");
   };
 
   const warehouseCsvTemplate =
