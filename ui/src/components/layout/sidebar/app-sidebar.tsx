@@ -14,11 +14,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { PAGES } from "@/endpoints";
 import { useIsTablet } from "@/hooks/use-mobile";
 import { CalendarClock, Globe, Tag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PAGES } from "@/endpoints";
 
 const RELEASE_CODE = "v1.0.0";
 const LAST_UPDATED = "2026-03-05";

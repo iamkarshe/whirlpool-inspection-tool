@@ -125,6 +125,9 @@ const LogsPage = lazy(() => import("@/pages/dashboard/admin/log/page"));
 const LogViewPage = lazy(
   () => import("@/pages/dashboard/admin/log/log-view-page"),
 );
+const KnowledgeBasePage = lazy(
+  () => import("@/pages/dashboard/admin/knowledge-base/page"),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -368,6 +371,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <LogViewPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "admin/knowledge-base",
+        handle: { title: "Knowledge Base" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <KnowledgeBasePage />
           </Suspense>
         ),
       },

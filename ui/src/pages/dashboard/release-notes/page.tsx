@@ -199,23 +199,21 @@ export default function ReleaseNotesPage() {
   return (
     <div className="space-y-4">
       <PageActionBar
-        title="Release notes"
-        description="Track changes and improvements shipped to the Whirlpool Inspection Tool."
+        title="Release Notes"
+        description="Track changes and improvements shipped to the application."
       />
 
-      <div className="rounded-lg border bg-background">
-        {loading ? (
-          <div className="flex min-h-[200px] items-center justify-center p-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          </div>
-        ) : (
-          <DataTable<ReleaseNote>
-            columns={columns}
-            data={releases}
-            searchKey="title"
-          />
-        )}
-      </div>
+      {loading ? (
+        <div className="flex min-h-[200px] items-center justify-center p-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      ) : (
+        <DataTable<ReleaseNote>
+          columns={columns}
+          data={releases}
+          searchKey="title"
+        />
+      )}
 
       <ReleaseDetailDialog
         release={selectedRelease}
