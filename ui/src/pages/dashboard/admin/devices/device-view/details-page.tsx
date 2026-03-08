@@ -2,7 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -22,10 +21,15 @@ function DeviceDetailCard({ device }: { device: Device }) {
               <Smartphone className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle>
-                {device.user_name} – {device.device_fingerprint}
-              </CardTitle>
-              <CardDescription>Device ID {device.id}</CardDescription>
+              <CardTitle>Device {device.id.slice(0, 8)}…</CardTitle>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                <Badge variant="secondary" className="font-normal">
+                  {device.user_name}
+                </Badge>
+                <Badge variant="outline" className="font-mono text-xs font-normal">
+                  {device.device_fingerprint}
+                </Badge>
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
@@ -49,7 +53,9 @@ function DeviceDetailCard({ device }: { device: Device }) {
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Type</p>
-          <p className="capitalize">{device.device_type}</p>
+          <Badge variant="outline" className="capitalize font-normal">
+            {device.device_type}
+          </Badge>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Fingerprint</p>

@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
 import {
@@ -73,9 +74,14 @@ export default function UserViewLayout() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
-          <p className="text-muted-foreground text-sm">
-            {user.role} · {user.designation}
-          </p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <Badge variant="secondary" className="font-normal">
+              {user.role}
+            </Badge>
+            <Badge variant="outline" className="font-normal">
+              {user.designation}
+            </Badge>
+          </div>
         </div>
       </div>
 

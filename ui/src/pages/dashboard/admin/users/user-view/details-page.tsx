@@ -39,11 +39,15 @@ export default function UserViewDetailsPage() {
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Role</p>
-          <p className="text-sm">{user.role}</p>
+          <Badge variant="secondary" className="font-normal">
+            {user.role}
+          </Badge>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Designation</p>
-          <p className="text-sm">{user.designation}</p>
+          <Badge variant="outline" className="font-normal">
+            {user.designation}
+          </Badge>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Status</p>

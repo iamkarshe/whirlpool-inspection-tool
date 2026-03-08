@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
@@ -76,9 +77,14 @@ export default function WarehouseViewLayout() {
           <h1 className="text-2xl font-semibold tracking-tight">
             {warehouse.name}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {warehouse.warehouse_code} · {warehouse.address}
-          </p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <Badge variant="secondary" className="font-mono text-xs font-normal uppercase">
+              {warehouse.warehouse_code}
+            </Badge>
+            <Badge variant="outline" className="max-w-[280px] truncate font-normal">
+              {warehouse.address}
+            </Badge>
+          </div>
         </div>
       </div>
 

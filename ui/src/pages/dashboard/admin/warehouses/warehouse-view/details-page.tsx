@@ -1,7 +1,7 @@
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -23,18 +23,23 @@ export default function WarehouseViewDetailsPage() {
           </div>
           <div>
             <CardTitle>{warehouse.name}</CardTitle>
-            <CardDescription>
-              {warehouse.warehouse_code} · Warehouse ID {warehouse.id.slice(0, 8)}…
-            </CardDescription>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              <Badge variant="secondary" className="font-mono text-xs font-normal uppercase">
+                {warehouse.warehouse_code}
+              </Badge>
+              <Badge variant="outline" className="font-mono text-xs font-normal">
+                ID {warehouse.id.slice(0, 8)}…
+              </Badge>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Code</p>
-          <p className="font-mono text-sm uppercase">
+          <Badge variant="secondary" className="font-mono text-xs font-normal uppercase">
             {warehouse.warehouse_code}
-          </p>
+          </Badge>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Address</p>

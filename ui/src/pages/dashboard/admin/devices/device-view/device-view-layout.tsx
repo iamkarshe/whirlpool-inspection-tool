@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
@@ -69,9 +70,14 @@ export default function DeviceViewLayout() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Device {device.id}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {device.user_name} · {device.device_fingerprint}
-          </p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <Badge variant="secondary" className="font-normal">
+              {device.user_name}
+            </Badge>
+            <Badge variant="outline" className="font-mono text-xs font-normal">
+              {device.device_fingerprint}
+            </Badge>
+          </div>
         </div>
       </div>
 

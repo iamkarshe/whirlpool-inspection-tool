@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -88,9 +87,17 @@ export default function InspectionViewPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Inspection {inspection.id.slice(0, 8)}…
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {inspection.inspection_type} · {formatDate(inspection.created_at)}
-          </p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <Badge
+              variant={inspection.inspection_type === "inbound" ? "secondary" : "default"}
+              className="font-normal uppercase"
+            >
+              {inspection.inspection_type}
+            </Badge>
+            <Badge variant="outline" className="font-mono text-xs font-normal">
+              {formatDate(inspection.created_at)}
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -104,9 +111,14 @@ export default function InspectionViewPage() {
               <CardTitle className="font-mono text-base">
                 {inspection.id.slice(0, 8)}…
               </CardTitle>
-              <CardDescription>
-                {inspection.checklist_name} · {inspection.product_serial}
-              </CardDescription>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                <Badge variant="secondary" className="font-normal">
+                  {inspection.checklist_name}
+                </Badge>
+                <Badge variant="outline" className="font-mono text-xs font-normal">
+                  {inspection.product_serial}
+                </Badge>
+              </div>
             </div>
           </div>
         </CardHeader>
