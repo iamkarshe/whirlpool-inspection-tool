@@ -86,12 +86,19 @@ export default function CsvUploadDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor={inputId}>CSV file</Label>
+          <Label htmlFor={inputId} className="block space-y-2">
+            <span className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 px-4 py-6 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50">
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {file ? file.name : "Choose a CSV file"}
+              </span>
+            </span>
             <Input
               id={inputId}
               type="file"
               accept={accept}
+              className="sr-only"
+              pattern={"text/csv"}
               onChange={(event) => {
                 const selected =
                   event.target.files && event.target.files[0]
@@ -100,7 +107,7 @@ export default function CsvUploadDialog({
                 setFile(selected);
               }}
             />
-          </div>
+          </Label>
           <DialogFooter className="flex items-center justify-between">
             <Button
               type="button"
