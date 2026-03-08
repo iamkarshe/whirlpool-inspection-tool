@@ -17,6 +17,8 @@ import {
 import { useIsTablet } from "@/hooks/use-mobile";
 import { CalendarClock, Globe, Tag } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { PAGES } from "@/endpoints";
 
 const RELEASE_CODE = "v1.0.0";
 const LAST_UPDATED = "2026-03-05";
@@ -78,22 +80,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
               System
             </h4>
-            <div className="flex items-center gap-2 text-xs">
-              <Tag className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-              <span className="text-muted-foreground">Release</span>
-              <span className="font-mono font-medium text-foreground">
+            <Link
+              to={PAGES.DASHBOARD_RELEASE_NOTES}
+              className="flex items-center justify-between gap-2 text-xs hover:opacity-80"
+            >
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5 shrink-0" />
+                Release
+              </span>
+              <span className="font-mono font-medium text-foreground shrink-0">
                 {RELEASE_CODE}
               </span>
+            </Link>
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5 shrink-0" />
+                Last updated
+              </span>
+              <span className="font-mono text-foreground shrink-0">
+                {LAST_UPDATED}
+              </span>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <CalendarClock className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-              <span className="text-muted-foreground">Last updated</span>
-              <span className="font-mono text-foreground">{LAST_UPDATED}</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <Globe className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-              <span className="text-muted-foreground">IP address</span>
-              <span className="max-w-[100px] truncate font-mono text-foreground">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5 shrink-0" />
+                IP address
+              </span>
+              <span className="max-w-[100px] truncate font-mono text-foreground shrink-0">
                 {clientIp ?? "…"}
               </span>
             </div>

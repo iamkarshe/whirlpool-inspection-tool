@@ -1,3 +1,4 @@
+import { navItems } from "@/components/layout/sidebar/nav-items";
 import {
   Collapsible,
   CollapsibleContent,
@@ -25,7 +26,6 @@ import {
 } from "@/components/ui/sidebar";
 import { ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { navItems } from "@/components/layout/sidebar/nav-items";
 
 export function NavMain() {
   const { pathname } = useLocation();
