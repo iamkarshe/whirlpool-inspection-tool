@@ -1,10 +1,23 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PAGES } from "@/endpoints";
 import type { LoginActivity } from "@/pages/dashboard/admin/logins/login-service";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Info, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 function formatDate(iso: string) {
@@ -19,123 +32,202 @@ function formatDate(iso: string) {
   }
 }
 
-const loginColumns: ColumnDef<LoginActivity>[] = [
-  {
-    accessorKey: "user_name",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        User
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const log = row.original;
-      if (log.user_id > 0) {
+function formatDateLong(iso: string) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "medium",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function buildLoginColumns(
+  onMoreInfo: (log: LoginActivity) => void,
+): ColumnDef<LoginActivity>[] {
+  return [
+    {
+      accessorKey: "user_name",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          User
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const log = row.original;
+        if (log.user_id > 0) {
+          return (
+            <Link
+              to={PAGES.userViewPath(log.user_id)}
+              className="text-primary hover:underline"
+            >
+              {log.user_name}
+            </Link>
+          );
+        }
         return (
-          <Link
-            to={PAGES.userViewPath(log.user_id)}
-            className="text-primary hover:underline"
-          >
-            {log.user_name}
-          </Link>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="secondary"
+                  className="inline-flex cursor-help items-center gap-1 font-normal"
+                >
+                  N/A
+                  <Info className="h-3 w-3" />
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[240px]">
+                <p>User information was not available for this login.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
-      }
-      return <span className="text-muted-foreground">{log.user_name}</span>;
+      },
     },
-  },
-  {
-    accessorKey: "email",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Email
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <span className="text-muted-foreground text-sm">
-        {row.getValue("email")}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "logged_at",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Logged at
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">
-        {formatDate(row.original.logged_at)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "ip_address",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        IP address
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{row.getValue("ip_address")}</span>
-    ),
-  },
-  {
-    accessorKey: "device_info",
-    header: "Device / Source",
-    cell: ({ row }) => (
-      <span className="text-muted-foreground max-w-[200px] truncate text-xs">
-        {row.original.device_info ?? "—"}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "success",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Status
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const success = row.original.success;
-      return (
-        <Badge variant={success ? "default" : "destructive"}>
-          {success ? "Success" : "Failed"}
-        </Badge>
-      );
+    {
+      accessorKey: "email",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Email
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground text-sm">
+          {row.getValue("email")}
+        </span>
+      ),
     },
-    filterFn: (row, _columnId, filterValue) => {
-      const v = row.getValue("success") as boolean;
-      if (filterValue === "true") return v === true;
-      if (filterValue === "false") return v === false;
-      return true;
+    {
+      accessorKey: "logged_at",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Logged at
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">
+          {formatDate(row.original.logged_at)}
+        </span>
+      ),
     },
-  },
-];
+    {
+      accessorKey: "ip_address",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          IP address
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{row.getValue("ip_address")}</span>
+      ),
+    },
+    {
+      accessorKey: "device_info",
+      header: "Device / Source",
+      cell: ({ row }) => {
+        const deviceInfo = row.original.device_info?.trim();
+        const isUnknown =
+          deviceInfo === "" ||
+          deviceInfo === undefined ||
+          deviceInfo === "Unknown";
+        if (isUnknown) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="secondary"
+                    className="inline-flex cursor-help items-center gap-1 font-normal"
+                  >
+                    N/A
+                    <Info className="h-3 w-3" />
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[240px]">
+                  <p>
+                    Device or browser information was not available for this
+                    login.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+        return (
+          <span className="text-muted-foreground max-w-[200px] truncate text-xs">
+            {deviceInfo}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "success",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Status
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const success = row.original.success;
+        return (
+          <Badge variant={success ? "default" : "destructive"}>
+            {success ? "Success" : "Failed"}
+          </Badge>
+        );
+      },
+      filterFn: (row, _columnId, filterValue) => {
+        const v = row.getValue("success") as boolean;
+        if (filterValue === "true") return v === true;
+        if (filterValue === "false") return v === false;
+        return true;
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      header: "",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onMoreInfo(row.original)}
+          aria-label="More info"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+}
 
 const loginFilters: DataTableFilter<LoginActivity>[] = [
   {
@@ -153,13 +245,95 @@ interface LoginsDataTableProps {
 }
 
 export default function LoginsDataTable({ data }: LoginsDataTableProps) {
+  const [selectedLogin, setSelectedLogin] = useState<LoginActivity | null>(
+    null,
+  );
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleMoreInfo = (log: LoginActivity) => {
+    setSelectedLogin(log);
+    setModalOpen(true);
+  };
+
+  const columns = buildLoginColumns(handleMoreInfo);
+
   return (
-    <DataTable<LoginActivity>
-      columns={loginColumns}
-      data={data}
-      searchKey="user_name"
-      filters={loginFilters}
-      dateRangeFilter={{ dateAccessorKey: "logged_at" }}
-    />
+    <>
+      <DataTable<LoginActivity>
+        columns={columns}
+        data={data}
+        searchKey="user_name"
+        filters={loginFilters}
+        dateRangeFilter={{ dateAccessorKey: "logged_at" }}
+      />
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Login details</DialogTitle>
+          </DialogHeader>
+          {selectedLogin && (
+            <div className="grid gap-3 py-2 text-sm">
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <span className="text-muted-foreground">ID</span>
+                <span className="font-mono text-xs">{selectedLogin.id}</span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <span className="text-muted-foreground">User</span>
+                <span>
+                  {selectedLogin.user_id > 0 ? (
+                    <Link
+                      to={PAGES.userViewPath(selectedLogin.user_id)}
+                      className="text-primary hover:underline"
+                    >
+                      {selectedLogin.user_name}
+                    </Link>
+                  ) : (
+                    selectedLogin.user_name
+                  )}
+                </span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <span className="text-muted-foreground">Email</span>
+                <span className="break-all">{selectedLogin.email}</span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <span className="text-muted-foreground">Logged at</span>
+                <span className="font-mono text-xs">
+                  {formatDateLong(selectedLogin.logged_at)}
+                </span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <span className="text-muted-foreground">IP address</span>
+                <span className="font-mono text-xs">
+                  {selectedLogin.ip_address}
+                </span>
+              </div>
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <span className="text-muted-foreground">Device / Source</span>
+                <span className="break-words">
+                  {selectedLogin.device_info ?? "—"}
+                </span>
+              </div>
+              {selectedLogin.user_agent ? (
+                <div className="grid grid-cols-[120px_1fr] gap-2">
+                  <span className="text-muted-foreground">User agent</span>
+                  <span className="break-all font-mono text-xs">
+                    {selectedLogin.user_agent}
+                  </span>
+                </div>
+              ) : null}
+              <div className="grid grid-cols-[120px_1fr] gap-2">
+                <span className="text-muted-foreground">Status</span>
+                <Badge
+                  variant={selectedLogin.success ? "default" : "destructive"}
+                >
+                  {selectedLogin.success ? "Success" : "Failed"}
+                </Badge>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

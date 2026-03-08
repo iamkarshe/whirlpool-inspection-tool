@@ -20,14 +20,10 @@ export default function LoginsPage() {
   return (
     <div className="space-y-6">
       <PageActionBar
-        title="Login activity"
-        description="View login and authentication activity (success and failed attempts)."
+        title="Logins"
+        description="View logins and authentication activity."
       />
-      {isLoading ? (
-        <SkeletonTable />
-      ) : (
-        <LoginsDataTable data={logins} />
-      )}
+      {isLoading ? <SkeletonTable /> : <LoginsDataTable data={logins} />}
     </div>
   );
 }
