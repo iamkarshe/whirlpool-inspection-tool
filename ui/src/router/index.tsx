@@ -123,6 +123,24 @@ const InspectionViewPage = lazy(
 const LoginsPage = lazy(
   () => import("@/pages/dashboard/admin/logins/page"),
 );
+const IntegrationsLayout = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/integrations/integrations-layout"
+    ),
+);
+const IntegrationsOktaPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/integrations/okta/page"
+    ),
+);
+const IntegrationsAwsS3Page = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/integrations/aws-s3/page"
+    ),
+);
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -295,6 +313,43 @@ export const router = createBrowserRouter([
             <LoginsPage />
           </Suspense>
         ),
+      },
+      {
+        path: "admin/integrations",
+        handle: { title: "Integrations" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <IntegrationsLayout />
+          </Suspense>
+        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <IntegrationsOktaPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "okta",
+            handle: { title: "Okta SSO" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <IntegrationsOktaPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "aws-s3",
+            handle: { title: "AWS S3 Bucket config" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <IntegrationsAwsS3Page />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "transactions/inspections",

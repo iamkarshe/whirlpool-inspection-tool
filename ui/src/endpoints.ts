@@ -54,5 +54,9 @@ export const PAGES = {
 
   DASHBOARD_ADMIN_LOGINS: "/dashboard/admin/logins",
   DASHBOARD_ADMIN_INTEGRATIONS: "/dashboard/admin/integrations",
+  integrationsOktaPath: () =>
+    `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/okta`,
+  integrationsAwsS3Path: () =>
+    `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/aws-s3`,
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
 };
