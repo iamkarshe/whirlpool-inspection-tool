@@ -35,7 +35,7 @@ type UserFormValues = {
   name: string;
   email: string;
   mobile_number: string;
-  role: string;
+  role_id: number;
   designation: string;
 };
 
@@ -46,7 +46,7 @@ export default function UsersPage() {
     name: "",
     email: "",
     mobile_number: "",
-    role: "",
+    role_id: 0,
     designation: "",
   });
 
@@ -137,18 +137,21 @@ export default function UsersPage() {
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Select
-                  value={formValues.role}
+                  value={formValues.role_id ? String(formValues.role_id) : ""}
                   onValueChange={(value) =>
-                    setFormValues((previous) => ({ ...previous, role: value }))
+                    setFormValues((previous) => ({
+                      ...previous,
+                      role_id: value ? Number(value) : 0,
+                    }))
                   }
                 >
                   <SelectTrigger id="role" className="w-full">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.title}
+                    {roles.map((r) => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        {r.role.charAt(0).toUpperCase() + r.role.slice(1)}
                       </SelectItem>
                     ))}
                   </SelectContent>

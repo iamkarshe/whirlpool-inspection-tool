@@ -1,4 +1,3 @@
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
@@ -8,70 +7,98 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getAvatarImage } from "@/lib/utils";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
+import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
 
-const userColumns: ColumnDef<User>[] = [
+const deviceColumns: ColumnDef<Device>[] = [
   {
-    accessorKey: "name",
-    header: "Name",
+    accessorKey: "user_name",
+    header: ({ column }) => (
+      <Button
+        className="-ml-3"
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        User
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => row.getValue("user_name"),
+  },
+  {
+    accessorKey: "imei",
+    header: ({ column }) => (
+      <Button
+        className="-ml-3"
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        IMEI
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => (
-      <div className="flex items-center gap-4">
-        <Avatar>
-          <AvatarImage src={getAvatarImage()} alt={row.original.name} />
-        </Avatar>
-        <div className="capitalize">{row.getValue("name")}</div>
-      </div>
+      <span className="font-mono text-sm">{row.getValue("imei")}</span>
     ),
   },
   {
-    accessorKey: "role",
+    accessorKey: "device_type",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Role
+        Type
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("role"),
+    cell: ({ row }) => {
+      const type = row.original.device_type;
+      return (
+        <span className="inline-flex items-center gap-1 capitalize">
+          <Smartphone className="h-3.5 w-3.5" />
+          {type}
+        </span>
+      );
+    },
   },
   {
-    accessorKey: "email",
+    accessorKey: "device_fingerprint",
+    header: "Fingerprint",
+    cell: ({ row }) => (
+      <span className="max-w-[140px] truncate font-mono text-xs text-muted-foreground">
+        {row.getValue("device_fingerprint")}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "is_locked",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Email
+        Locked
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("email"),
-  },
-  {
-    accessorKey: "mobile_number",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Mobile
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => row.getValue("mobile_number"),
-  },
-  {
-    accessorKey: "designation",
-    header: "Designation",
-    cell: ({ row }) => row.getValue("designation"),
+    cell: ({ row }) => {
+      const locked = row.original.is_locked;
+      return (
+        <Badge variant={locked ? "destructive" : "secondary"}>
+          {locked ? "Locked" : "Unlocked"}
+        </Badge>
+      );
+    },
+    filterFn: (row, _columnId, filterValue) => {
+      const v = row.getValue("is_locked") as boolean;
+      if (filterValue === "true") return v === true;
+      if (filterValue === "false") return v === false;
+      return true;
+    },
   },
   {
     accessorKey: "is_active",
@@ -112,7 +139,7 @@ const userColumns: ColumnDef<User>[] = [
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>View user</DropdownMenuItem>
+          <DropdownMenuItem>View device</DropdownMenuItem>
           <DropdownMenuItem>Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -120,7 +147,7 @@ const userColumns: ColumnDef<User>[] = [
   },
 ];
 
-const userFilters: DataTableFilter<User>[] = [
+const deviceFilters: DataTableFilter<Device>[] = [
   {
     id: "is_active",
     title: "Status",
@@ -130,27 +157,34 @@ const userFilters: DataTableFilter<User>[] = [
     ],
   },
   {
-    id: "role",
-    title: "Role",
+    id: "device_type",
+    title: "Type",
     options: [
-      { value: "Manager", label: "Manager" },
-      { value: "Operator", label: "Operator" },
-      { value: "Admin", label: "Admin" },
+      { value: "desktop", label: "Desktop" },
+      { value: "mobile", label: "Mobile" },
+    ],
+  },
+  {
+    id: "is_locked",
+    title: "Locked",
+    options: [
+      { value: "true", label: "Locked" },
+      { value: "false", label: "Unlocked" },
     ],
   },
 ];
 
-interface UsersDataTableProps {
-  data: User[];
+interface DevicesDataTableProps {
+  data: Device[];
 }
 
-export default function UsersDataTable({ data }: UsersDataTableProps) {
+export default function DevicesDataTable({ data }: DevicesDataTableProps) {
   return (
-    <DataTable<User>
-      columns={userColumns}
+    <DataTable<Device>
+      columns={deviceColumns}
       data={data}
-      searchKey="name"
-      filters={userFilters}
+      searchKey="user_name"
+      filters={deviceFilters}
     />
   );
 }

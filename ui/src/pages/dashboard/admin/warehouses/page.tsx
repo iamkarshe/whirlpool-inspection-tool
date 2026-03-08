@@ -23,9 +23,10 @@ import { useEffect, useState } from "react";
 
 type WarehouseFormValues = {
   name: string;
-  code: string;
-  location: string;
-  capacity: string;
+  warehouse_code: string;
+  address: string;
+  lat: string;
+  lng: string;
 };
 
 type SubmitEvent = FormEvent<HTMLFormElement>;
@@ -33,9 +34,10 @@ type SubmitEvent = FormEvent<HTMLFormElement>;
 export default function WarehousesPage() {
   const [formValues, setFormValues] = useState<WarehouseFormValues>({
     name: "",
-    code: "",
-    location: "",
-    capacity: "",
+    warehouse_code: "",
+    address: "",
+    lat: "",
+    lng: "",
   });
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -73,8 +75,8 @@ export default function WarehousesPage() {
   };
 
   const handleDownloadTemplate = () => {
-    const header = "name,code,location,capacity\n";
-    const exampleRow = "North Hub,WH-NORTH,Chicago IL,1200\n";
+    const header = "name,warehouse_code,address,lat,lng\n";
+    const exampleRow = "Pune North Hub,WH-PUN-01,Hinjawadi Pune Maharashtra,18.5204,73.8567\n";
     const csvContent = `${header}${exampleRow}`;
 
     const blob = new Blob([csvContent], {
@@ -170,37 +172,50 @@ export default function WarehousesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Code</Label>
+                <Label htmlFor="warehouse_code">Warehouse code</Label>
                 <Input
-                  id="code"
-                  name="code"
-                  value={formValues.code}
+                  id="warehouse_code"
+                  name="warehouse_code"
+                  value={formValues.warehouse_code}
                   onChange={handleInputChange}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
-                  id="location"
-                  name="location"
-                  value={formValues.location}
+                  id="address"
+                  name="address"
+                  value={formValues.address}
                   onChange={handleInputChange}
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity</Label>
-                <Input
-                  id="capacity"
-                  name="capacity"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formValues.capacity}
-                  onChange={handleInputChange}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lat">Latitude (optional)</Label>
+                  <Input
+                    id="lat"
+                    name="lat"
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 18.5204"
+                    value={formValues.lat}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lng">Longitude (optional)</Label>
+                  <Input
+                    id="lng"
+                    name="lng"
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 73.8567"
+                    value={formValues.lng}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button type="submit">Save warehouse</Button>

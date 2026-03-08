@@ -1,12 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DataTable,
-  type DataTableFilter,
-} from "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,11 +14,20 @@ import type { Warehouse } from "./warehouse-service";
 const warehouseColumns: ColumnDef<Warehouse>[] = [
   {
     accessorKey: "name",
-    header: "Name",
+    header: ({ column }) => (
+      <Button
+        className="-ml-3"
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Name
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => row.getValue("name"),
   },
   {
-    accessorKey: "code",
+    accessorKey: "warehouse_code",
     header: ({ column }) => (
       <Button
         className="-ml-3"
@@ -33,68 +38,31 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("code"),
+    cell: ({ row }) => (
+      <span className="font-mono text-xs uppercase">
+        {row.getValue("warehouse_code")}
+      </span>
+    ),
   },
   {
-    accessorKey: "location",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Location
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
+    accessorKey: "address",
+    header: "Address",
+    cell: ({ row }) => (
+      <span className="text-muted-foreground max-w-[200px] truncate">
+        {row.getValue("address")}
+      </span>
     ),
-    cell: ({ row }) => row.getValue("location"),
   },
   {
-    accessorKey: "capacity",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Capacity
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
+    id: "coordinates",
+    header: "Coordinates",
     cell: ({ row }) => {
-      const value = row.getValue("capacity") as number;
-      return <span>{value.toLocaleString()} units</span>;
-    },
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Status
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const status = row.original.status;
-
-      const statusMap: Record<
-        Warehouse["status"],
-        "success" | "destructive"
-      > = {
-        active: "success",
-        inactive: "destructive",
-      };
-
-      const statusClass = statusMap[status];
-
+      const { lat, lng } = row.original;
+      if (lat == null || lng == null) return "—";
       return (
-        <Badge variant={statusClass} className="capitalize">
-          {status}
-        </Badge>
+        <span className="font-mono text-xs">
+          {lat.toFixed(4)}, {lng.toFixed(4)}
+        </span>
       );
     },
   },
@@ -118,17 +86,6 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
   },
 ];
 
-const warehouseFilters: DataTableFilter<Warehouse>[] = [
-  {
-    id: "status",
-    title: "Status",
-    options: [
-      { value: "active", label: "Active" },
-      { value: "inactive", label: "Inactive" },
-    ],
-  },
-];
-
 interface WarehousesDataTableProps {
   data: Warehouse[];
 }
@@ -141,8 +98,6 @@ export default function WarehousesDataTable({
       columns={warehouseColumns}
       data={data}
       searchKey="name"
-      filters={warehouseFilters}
     />
   );
 }
-

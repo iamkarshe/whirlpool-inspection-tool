@@ -33,20 +33,20 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
 
 type ProductFormValues = {
-  name: string;
-  sku: string;
-  category: string;
-  price: string;
+  product_category_id: number;
+  serial_number: string;
+  manufacturing_date: string;
+  batch_number: string;
 };
 
 type SubmitEvent = FormEvent<HTMLFormElement>;
 
 export default function ProductsPage() {
   const [formValues, setFormValues] = useState<ProductFormValues>({
-    name: "",
-    sku: "",
-    category: "",
-    price: "",
+    product_category_id: 0,
+    serial_number: "",
+    manufacturing_date: "",
+    batch_number: "",
   });
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -89,9 +89,9 @@ export default function ProductsPage() {
   };
 
   const handleDownloadTemplate = () => {
-    const header = "name,sku,category,price\n";
+    const header = "serial_number,manufacturing_date,batch_number,product_category_id\n";
     const exampleRow =
-      "Front Load Washer,WH-FL-1001,Front Load Washing Machines,799\n";
+      "WH-FL-2024-001234,2024-01-15,BATCH-FL-2401,1\n";
     const csvContent = `${header}${exampleRow}`;
 
     const blob = new Blob([csvContent], {
@@ -177,33 +177,17 @@ export default function ProductsPage() {
             </DialogHeader>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formValues.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU</Label>
-                <Input
-                  id="sku"
-                  name="sku"
-                  value={formValues.sku}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select
-                  value={formValues.category}
+                  value={
+                    formValues.product_category_id
+                      ? String(formValues.product_category_id)
+                      : ""
+                  }
                   onValueChange={(value) =>
                     setFormValues((previous) => ({
                       ...previous,
-                      category: value,
+                      product_category_id: value ? Number(value) : 0,
                     }))
                   }
                 >
@@ -212,7 +196,7 @@ export default function ProductsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
+                      <SelectItem key={category.id} value={String(category.id)}>
                         {category.name}
                       </SelectItem>
                     ))}
@@ -220,14 +204,32 @@ export default function ProductsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Price</Label>
+                <Label htmlFor="serial_number">Serial number</Label>
                 <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formValues.price}
+                  id="serial_number"
+                  name="serial_number"
+                  value={formValues.serial_number}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="manufacturing_date">Manufacturing date</Label>
+                <Input
+                  id="manufacturing_date"
+                  name="manufacturing_date"
+                  type="date"
+                  value={formValues.manufacturing_date}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="batch_number">Batch number</Label>
+                <Input
+                  id="batch_number"
+                  name="batch_number"
+                  value={formValues.batch_number}
                   onChange={handleInputChange}
                   required
                 />

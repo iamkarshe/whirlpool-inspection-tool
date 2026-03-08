@@ -1,6 +1,6 @@
-"use client";
-
+import { PAGES } from "@/endpoints";
 import {
+  ActivityIcon,
   ChartBarDecreasingIcon,
   ClipboardCheckIcon,
   FolderIcon,
@@ -8,7 +8,6 @@ import {
   SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
-import { PAGES } from "@/endpoints";
 
 export type NavItem = {
   title: string;
@@ -34,6 +33,11 @@ export const navItems: NavGroup[] = [
         title: "Dashboard",
         href: PAGES.DASHBOARD,
         icon: GaugeIcon,
+      },
+      {
+        title: "Ops Dashboard",
+        href: PAGES.DASHBOARD,
+        icon: ActivityIcon,
       },
       {
         title: "Masters",

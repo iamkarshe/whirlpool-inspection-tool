@@ -26,33 +26,6 @@ const categoryColumns: ColumnDef<ProductCategory>[] = [
     cell: ({ row }) => row.getValue("name"),
   },
   {
-    accessorKey: "code",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Code
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs uppercase">
-        {row.getValue("code")}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground">
-        {row.getValue("description")}
-      </span>
-    ),
-  },
-  {
     id: "actions",
     enableHiding: false,
     cell: () => (

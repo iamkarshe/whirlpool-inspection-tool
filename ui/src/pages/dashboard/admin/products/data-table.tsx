@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
@@ -13,26 +12,51 @@ import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 
 const productColumns: ColumnDef<Product>[] = [
   {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => row.getValue("name"),
-  },
-  {
-    accessorKey: "sku",
+    accessorKey: "serial_number",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        SKU
+        Serial number
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("sku"),
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">{row.getValue("serial_number")}</span>
+    ),
   },
   {
-    accessorKey: "category",
+    accessorKey: "manufacturing_date",
+    header: ({ column }) => (
+      <Button
+        className="-ml-3"
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Manufacturing date
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => row.getValue("manufacturing_date"),
+  },
+  {
+    accessorKey: "batch_number",
+    header: ({ column }) => (
+      <Button
+        className="-ml-3"
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Batch number
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => row.getValue("batch_number"),
+  },
+  {
+    accessorKey: "category_name",
     header: ({ column }) => (
       <Button
         className="-ml-3"
@@ -43,53 +67,7 @@ const productColumns: ColumnDef<Product>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("category"),
-  },
-  {
-    accessorKey: "price",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Price
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const value = row.getValue("price") as number;
-      return <span>${value.toLocaleString()}</span>;
-    },
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Status
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const status = row.original.status;
-
-      const statusMap: Record<Product["status"], "success" | "destructive"> = {
-        active: "success",
-        inactive: "destructive",
-      };
-
-      const statusClass = statusMap[status];
-
-      return (
-        <Badge variant={statusClass} className="capitalize">
-          {status}
-        </Badge>
-      );
-    },
+    cell: ({ row }) => row.getValue("category_name"),
   },
   {
     id: "actions",
@@ -113,19 +91,13 @@ const productColumns: ColumnDef<Product>[] = [
 
 const productFilters: DataTableFilter<Product>[] = [
   {
-    id: "status",
-    title: "Status",
-    options: [
-      { value: "active", label: "Active" },
-      { value: "inactive", label: "Inactive" },
-    ],
-  },
-  {
-    id: "category",
+    id: "category_name",
     title: "Category",
     options: [
-      { value: "Washing Machines", label: "Washing Machines" },
-      { value: "Washer-Dryer Combo", label: "Washer-Dryer Combo" },
+      { value: "Front Load Washing Machines", label: "Front Load Washing Machines" },
+      { value: "Top Load Washing Machines", label: "Top Load Washing Machines" },
+      { value: "Double Door Refrigerators", label: "Double Door Refrigerators" },
+      { value: "Single Door Refrigerators", label: "Single Door Refrigerators" },
     ],
   },
 ];
@@ -139,7 +111,7 @@ export default function ProductsDataTable({ data }: ProductsDataTableProps) {
     <DataTable<Product>
       columns={productColumns}
       data={data}
-      searchKey="name"
+      searchKey="serial_number"
       filters={productFilters}
     />
   );

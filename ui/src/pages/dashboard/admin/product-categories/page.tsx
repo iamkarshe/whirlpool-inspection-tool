@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
 import {
   getProductCategories,
@@ -24,8 +23,6 @@ import { useEffect, useState } from "react";
 
 type ProductCategoryFormValues = {
   name: string;
-  code: string;
-  description: string;
 };
 
 type SubmitEvent = FormEvent<HTMLFormElement>;
@@ -34,8 +31,6 @@ export default function ProductCategoriesPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [formValues, setFormValues] = useState<ProductCategoryFormValues>({
     name: "",
-    code: "",
-    description: "",
   });
 
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -66,17 +61,14 @@ export default function ProductCategoriesPage() {
     console.log("Mock create product category", formValues);
   };
 
-  const handleInputChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
   const handleDownloadTemplate = () => {
-    const header = "name,code,description\n";
-    const exampleRow =
-      "Front Load Washing Machines,WM-FL,Front load washing machines for residential laundry.\n";
+    const header = "name\n";
+    const exampleRow = "Front Load Washing Machines\n";
     const csvContent = `${header}${exampleRow}`;
 
     const blob = new Blob([csvContent], {
@@ -169,26 +161,6 @@ export default function ProductCategoriesPage() {
                   value={formValues.name}
                   onChange={handleInputChange}
                   required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="code">Code</Label>
-                <Input
-                  id="code"
-                  name="code"
-                  value={formValues.code}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formValues.description}
-                  onChange={handleInputChange}
-                  rows={3}
                 />
               </div>
               <DialogFooter>
