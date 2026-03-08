@@ -27,7 +27,10 @@ import {
   type Device,
   type DeviceType,
 } from "@/pages/dashboard/admin/devices/device-service";
-import { getUsers, type User } from "@/pages/dashboard/admin/users/user-service";
+import {
+  getUsers,
+  type User,
+} from "@/pages/dashboard/admin/users/user-service";
 import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 
@@ -81,8 +84,7 @@ export default function DevicesPage() {
         : undefined;
     setFormValues((previous) => ({
       ...previous,
-      [name]:
-        type === "checkbox" && checked !== undefined ? checked : value,
+      [name]: type === "checkbox" && checked !== undefined ? checked : value,
     }));
   };
 
@@ -115,9 +117,7 @@ export default function DevicesPage() {
               <div className="space-y-2">
                 <Label htmlFor="user_id">User</Label>
                 <Select
-                  value={
-                    formValues.user_id ? String(formValues.user_id) : ""
-                  }
+                  value={formValues.user_id ? String(formValues.user_id) : ""}
                   onValueChange={(value) =>
                     setFormValues((previous) => ({
                       ...previous,
@@ -211,11 +211,7 @@ export default function DevicesPage() {
           </DialogContent>
         </Dialog>
       </PageActionBar>
-      {isLoading ? (
-        <SkeletonTable />
-      ) : (
-        <DevicesDataTable data={devices} />
-      )}
+      {isLoading ? <SkeletonTable /> : <DevicesDataTable data={devices} />}
     </div>
   );
 }
