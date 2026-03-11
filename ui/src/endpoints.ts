@@ -30,6 +30,10 @@ export const PAGES = {
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 
+  /** Products list filtered by product category (query param). */
+  productCategoryProductsPath: (categoryId: number) =>
+    `${PAGES.DASHBOARD_MASTERS_PRODUCTS}?product_category_id=${categoryId}`,
+
   userViewPath: (id: number) => `/dashboard/admin/users/${id}`,
   userViewDevicesPath: (userId: number) =>
     `/dashboard/admin/users/${userId}/devices`,
@@ -58,6 +62,10 @@ export const PAGES = {
     `/dashboard/masters/warehouses/${id}/devices`,
   warehouseInspectionsPath: (id: string) =>
     `/dashboard/masters/warehouses/${id}/inspections`,
+
+  /** Inspection checklists filtered by product category (query param). */
+  productCategoryChecklistsPath: (categoryId: number) =>
+    `${PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS}?product_category_id=${categoryId}`,
 
   DASHBOARD_ADMIN_LOGINS: "/dashboard/admin/logins",
   DASHBOARD_ADMIN_INTEGRATIONS: "/dashboard/admin/integrations",

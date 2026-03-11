@@ -131,5 +131,34 @@
    Example:
 
    ```
+
+11. Relationship-based data tables:
+    - When a parent entity has related collections (e.g. warehouse → users/devices/inspections, product category → products/checklists), expose **pre-computed count fields** on the parent type for table display.
+      - Example: `Warehouse.users_count`, `Warehouse.devices_count`, `Warehouse.inspections_count`.
+      - Example: `ProductCategory.products_count`, `ProductCategory.checklists_count`.
+    - Render relationship counts as **clickable badges with icons**, not plain numbers:
+      - Implement dedicated badge components alongside the feature (e.g. `warehouse-badge.tsx`, `product-category-badge.tsx`).
+      - Each badge:
+        - Uses `Badge` with `BADGE_ICON_CLASS` and a subtle hover state.
+        - Includes an appropriate icon (e.g. `Users`, `Smartphone`, `ClipboardCheck`, `Package`, `ClipboardList`).
+        - Wraps the badge in a `Link` that navigates via a **PAGES helper** which carries the parent id as a path or query param.
+          - Example: `PAGES.warehouseUsersPath(warehouseId)`, `PAGES.productCategoryProductsPath(categoryId)`, `PAGES.productCategoryChecklistsPath(categoryId)`.
+    - Data table columns for relationships:
+      - One column per relationship, header named after the entity (e.g. “Users”, “Devices”, “Inspections”, “Products”, “Checklists”).
+      - Cell renders the corresponding count badge component, passing the parent id and `count ?? 0`.
+      - Keep the **actions** column minimal (e.g. “Delete”, “View details”) and reserve navigation to related collections for the badges.
+
+12. Delete dialogs:
+    - Use a **single shared UI layer** for delete confirmations across the app.
+      - Component: `dialog-confirm-delete.tsx` exporting `ConfirmDeleteDialog`.
+      - Props: `open`, `onOpenChange`, `entityLabel?`, `title?`, `description?`, `confirmLabel?`, `cancelLabel?`, `isLoading?`, `onConfirm`.
+    - Pages/tables own the **state** for “what is being deleted” (e.g. `categoryToDelete: ProductCategory | null`) and render `ConfirmDeleteDialog` with:
+      - A specific `entityLabel` (“product category”, “warehouse”, “device”, etc.).
+      - An optional `description` that can interpolate entity details (name, code, etc.).
+      - An `onConfirm` handler that performs the delete (API call or mock) and then clears local state.
+    - For **new delete flows**:
+      - Do **not** inline `<AlertDialog>`; always use `ConfirmDeleteDialog` as the outer UI.
+      - Keep any entity-specific messaging inside the `description` or in the parent component that prepares the props.
+    - Existing delete dialogs (e.g. older device delete dialogs) should be gradually refactored to delegate their UI to `ConfirmDeleteDialog` while keeping device-specific copy/behaviour in the calling component.
    [feature] implement user pagination with server-side sorting and filtering for admin users table
    ```
