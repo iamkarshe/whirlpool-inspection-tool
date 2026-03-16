@@ -172,7 +172,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            handle: { title: "Ops Home", renderLogo: true },
+            handle: { title: "Home", renderLogo: true },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsHomePage />
@@ -190,7 +190,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "data",
-            handle: { title: "Ops Data" },
+            handle: { title: "Data" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsDataPage />
@@ -199,7 +199,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "search",
-            handle: { title: "Search inspections" },
+            handle: { title: "Search Inspections" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsSearchPage />
@@ -208,7 +208,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "settings",
-            handle: { title: "Ops Settings" },
+            handle: { title: "Settings" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsSettingsPage />
@@ -217,7 +217,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "account",
-            handle: { title: "Ops Account" },
+            handle: { title: "Account" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsAccountPage />
@@ -226,7 +226,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "help",
-            handle: { title: "How to use app" },
+            handle: { title: "Help" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsHelpPage />
