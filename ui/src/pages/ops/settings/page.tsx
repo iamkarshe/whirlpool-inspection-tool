@@ -115,7 +115,7 @@ export default function OpsSettingsPage() {
           onClick={() => setConfirmAction("logout")}
           className="flex w-full items-center justify-between rounded-2xl bg-rose-500/5 px-3 py-3 text-left text-sm font-medium text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-300"
         >
-          <span>Log out of Ops</span>
+          <span>Log out from this device</span>
         </button>
       </section>
 
