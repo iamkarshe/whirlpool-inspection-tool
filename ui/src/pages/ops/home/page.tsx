@@ -1,9 +1,4 @@
-import {
-  CircleUserRound,
-  ClipboardList,
-  ScanLine,
-  Timer,
-} from "lucide-react";
+import { BookOpenText, ClipboardList, ScanLine, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function OpsHomePage() {
@@ -36,7 +31,7 @@ export default function OpsHomePage() {
             <ScanLine className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Start new</p>
+            <p className="text-sm font-semibold">New Inspection</p>
             <p className="text-[11px] text-muted-foreground">
               Scan &amp; log a fresh product inspection.
             </p>
@@ -45,7 +40,7 @@ export default function OpsHomePage() {
 
         <button
           type="button"
-          onClick={() => navigate("/ops/data")}
+          onClick={() => navigate("/ops/search")}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-sky-500/5 p-3 text-left shadow-sm ring-1 ring-sky-500/10 transition-all hover:-translate-y-0.5 hover:bg-sky-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">
@@ -55,7 +50,7 @@ export default function OpsHomePage() {
             <ClipboardList className="h-5 w-5 text-sky-600 dark:text-sky-300" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Today&apos;s inspections</p>
+            <p className="text-sm font-semibold">Today's Inspections</p>
             <p className="text-[11px] text-muted-foreground">
               Review everything logged this shift.
             </p>
@@ -69,33 +64,33 @@ export default function OpsHomePage() {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex rounded-full bg-amber-500/15 px-2 py-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
-              Pending
+              Search
             </span>
-            <Timer className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+            <Search className="h-5 w-5 text-amber-600 dark:text-amber-300" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Pending checks</p>
+            <p className="text-sm font-semibold">Search Inspection</p>
             <p className="text-[11px] text-muted-foreground">
-              Finish drafts before your shift ends.
+              Look up inspection status by barcode or serial.
             </p>
           </div>
         </button>
 
         <button
           type="button"
-          onClick={() => navigate("/ops/account")}
+          onClick={() => navigate("/ops/help")}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-violet-500/5 p-3 text-left shadow-sm ring-1 ring-violet-500/10 transition-all hover:-translate-y-0.5 hover:bg-violet-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex rounded-full bg-violet-500/15 px-2 py-1 text-[11px] font-medium text-violet-700 dark:text-violet-300">
-              Profile
+              Guide
             </span>
-            <CircleUserRound className="h-5 w-5 text-violet-600 dark:text-violet-300" />
+            <BookOpenText className="h-5 w-5 text-violet-600 dark:text-violet-300" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Account</p>
+            <p className="text-sm font-semibold">How to use?</p>
             <p className="text-[11px] text-muted-foreground">
-              See your stats, shifts, and sign out.
+              Learn how to start, review, and complete inspections.
             </p>
           </div>
         </button>

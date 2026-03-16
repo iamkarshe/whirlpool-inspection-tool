@@ -135,8 +135,10 @@ const OpsNewInspectionPage = lazy(
   () => import("@/pages/ops/new-inspection/page"),
 );
 const OpsDataPage = lazy(() => import("@/pages/ops/data/page"));
+const OpsSearchPage = lazy(() => import("@/pages/ops/search/page"));
 const OpsSettingsPage = lazy(() => import("@/pages/ops/settings/page"));
 const OpsAccountPage = lazy(() => import("@/pages/ops/account/page"));
+const OpsHelpPage = lazy(() => import("@/pages/ops/help/page"));
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -196,6 +198,15 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "search",
+            handle: { title: "Search inspections" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsSearchPage />
+              </Suspense>
+            ),
+          },
+          {
             path: "settings",
             handle: { title: "Ops Settings" },
             element: (
@@ -210,6 +221,15 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsAccountPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "help",
+            handle: { title: "How to use app" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsHelpPage />
               </Suspense>
             ),
           },
