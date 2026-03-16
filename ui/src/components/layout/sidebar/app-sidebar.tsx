@@ -1,8 +1,6 @@
+import { BrandLogo } from "@/components/brand-logo";
 import { NavMain } from "@/components/layout/sidebar/nav-main";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sidebar,
@@ -43,13 +41,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       .catch(() => setClientIp("—"));
   }, []);
 
-  const lightLogo = <img src="/logo.svg" alt="Whirlpool" />;
-  const darkLogo = <img src="/logo-dark.svg" alt="Whirlpool" />;
-  const isDark =
-    typeof document !== "undefined" &&
-    document.documentElement.classList.contains("dark");
-  const logo = isDark ? darkLogo : lightLogo;
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -59,7 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton className="hover:text-foreground h-10 group-data-[collapsible=icon]:px-0!">
                   <div className="flex items-center text-foreground font-semibold text-xl">
-                    {logo}
+                    <BrandLogo />
                     <span className="-ml-4">Insights</span>
                   </div>
                 </SidebarMenuButton>

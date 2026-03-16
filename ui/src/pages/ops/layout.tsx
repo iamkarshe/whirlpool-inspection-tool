@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { BrandLogo } from "@/components/brand-logo";
 import { setPageTitle } from "@/lib/core";
 import { cn } from "@/lib/utils";
 import { CircleUserRound, Home, LineChart, ScanLine, Settings2 } from "lucide-react";
@@ -75,11 +76,18 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
     [matches],
   );
 
+  const currentTitle = React.useMemo(() => {
+    const match = [...matches]
+      .reverse()
+      .find((m) => (m.handle as RouteHandle | undefined)?.title);
+    return ((match?.handle as RouteHandle | undefined)?.title ?? "").toString();
+  }, [matches]);
+
   useEffect(() => {
-    if (activeTab?.label) {
-      setPageTitle(`${activeTab.label}`);
+    if (currentTitle) {
+      setPageTitle(currentTitle);
     }
-  }, [activeTab?.label]);
+  }, [currentTitle]);
 
   return (
     <div className={cn("flex min-h-screen flex-col bg-background", className)}>
@@ -90,18 +98,13 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
               Whirlpool Inspection Tool
             </p>
 
-            {shouldRenderLogo && (
-              <div className="mb-0.5 inline-flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground animate-in fade-in-0 slide-in-from-bottom-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Whirlpool Ops
-              </div>
-            )}
+            {shouldRenderLogo && <BrandLogo />}
             {!shouldRenderLogo && (
               <p
                 key={location.pathname}
                 className="text-base font-semibold tracking-tight animate-in fade-in-0 slide-in-from-bottom-2"
               >
-                {activeTab?.label ?? "Home"}
+                {currentTitle || activeTab?.label || "Home"}
               </p>
             )}
           </div>

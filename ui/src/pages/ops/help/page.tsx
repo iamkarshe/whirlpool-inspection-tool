@@ -1,15 +1,10 @@
-import { BookOpenText, ScanLine, Search, Smartphone } from "lucide-react";
+import { IconBubble } from "@/components/ui/icon-bubble";
+import { ScanLine, Search, Smartphone } from "lucide-react";
 
 export default function OpsHelpPage() {
   return (
     <div className="space-y-4">
       <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Quick guide
-        </p>
-        <h1 className="text-xl font-semibold tracking-tight">
-          How to use this app
-        </h1>
         <p className="text-sm text-muted-foreground">
           Three simple steps to complete inspections like an expert.
         </p>
@@ -17,9 +12,10 @@ export default function OpsHelpPage() {
 
       <section className="space-y-3">
         <div className="flex gap-3 rounded-3xl border bg-card/80 p-3 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
-            <ScanLine className="h-5 w-5" />
-          </div>
+          <IconBubble
+            icon={ScanLine}
+            className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+          />
           <div className="space-y-1">
             <p className="text-sm font-semibold">1. Start a new inspection</p>
             <p className="text-xs text-muted-foreground">
@@ -30,9 +26,10 @@ export default function OpsHelpPage() {
         </div>
 
         <div className="flex gap-3 rounded-3xl border bg-card/80 p-3 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-300">
-            <Search className="h-5 w-5" />
-          </div>
+          <IconBubble
+            icon={Search}
+            className="bg-sky-500/10 text-sky-600 dark:text-sky-300"
+          />
           <div className="space-y-1">
             <p className="text-sm font-semibold">2. Check inspection status</p>
             <p className="text-xs text-muted-foreground">
@@ -43,9 +40,10 @@ export default function OpsHelpPage() {
         </div>
 
         <div className="flex gap-3 rounded-3xl border bg-card/80 p-3 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-600 dark:text-violet-300">
-            <Smartphone className="h-5 w-5" />
-          </div>
+          <IconBubble
+            icon={Smartphone}
+            className="bg-violet-500/10 text-violet-600 dark:text-violet-300"
+          />
           <div className="space-y-1">
             <p className="text-sm font-semibold">3. Keep your device in sync</p>
             <p className="text-xs text-muted-foreground">
