@@ -1,8 +1,4 @@
-import React from "react";
-import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { CircleUserRound, Home, LineChart, ScanLine, Settings2 } from "lucide-react";
-
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { setPageTitle } from "@/lib/core";
+import { cn } from "@/lib/utils";
+import { CircleUserRound, Home, LineChart, ScanLine, Settings2 } from "lucide-react";
+import React, { useEffect } from "react";
+import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 
 type OpsLayoutProps = {
   className?: string;
@@ -21,6 +21,11 @@ type TabConfig = {
   label: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
+};
+
+type RouteHandle = {
+  title?: string;
+  renderLogo?: boolean;
 };
 
 const TABS: TabConfig[] = [
@@ -33,6 +38,7 @@ const TABS: TabConfig[] = [
 export default function OpsLayout({ className }: OpsLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const matches = useMatches();
   const [showDesktopWarning, setShowDesktopWarning] = React.useState(false);
 
   React.useEffect(() => {
@@ -61,6 +67,20 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
     [location.pathname],
   );
 
+  const shouldRenderLogo = React.useMemo(
+    () =>
+      matches.some(
+        (match) => (match.handle as RouteHandle | undefined)?.renderLogo === true,
+      ),
+    [matches],
+  );
+
+  useEffect(() => {
+    if (activeTab?.label) {
+      setPageTitle(`${activeTab.label}`);
+    }
+  }, [activeTab?.label]);
+
   return (
     <div className={cn("flex min-h-screen flex-col bg-background", className)}>
       <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur">
@@ -69,9 +89,18 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Whirlpool Inspection Tool
             </p>
-            <p className="text-base font-semibold tracking-tight transition-all">
-              {activeTab?.label ?? "Home"}
-            </p>
+
+            {shouldRenderLogo && (
+              <img src="/logo.svg" alt="Whirlpool" />
+            )}
+
+            {
+              !shouldRenderLogo && (
+                <p className="text-base font-semibold tracking-tight transition-all">
+                  {activeTab?.label ?? "Home"}
+                </p>
+              )
+            }
           </div>
           <button
             type="button"

@@ -172,7 +172,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            handle: { title: "Ops Home" },
+            handle: { title: "Ops Home", renderLogo: true },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsHomePage />
