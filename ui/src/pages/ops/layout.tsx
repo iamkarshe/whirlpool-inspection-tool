@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BrandLogo } from "@/components/brand-logo";
 import { setPageTitle } from "@/lib/core";
 import { cn } from "@/lib/utils";
 import { CircleUserRound, Home, LineChart, ScanLine, Settings2 } from "lucide-react";

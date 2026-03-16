@@ -1,5 +1,5 @@
-import { ClipboardList, ChevronRight } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronRight, ClipboardList } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type TodayInspection = {
   id: string;
@@ -60,32 +60,6 @@ function statusBadge(status: TodayInspection["status"]) {
 
 export default function OpsTodayInspectionsPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  const range = searchParams.get("range") ?? "today";
-
-  const rangeLabel = (() => {
-    switch (range) {
-      case "yesterday":
-        return "Yesterday’s inspections";
-      case "week":
-        return "This week’s inspections";
-      case "month":
-        return "This month’s inspections";
-      case "inwards":
-        return "Inwards inspections";
-      case "outwards":
-        return "Outwards inspections";
-      case "faults-today":
-        return "Today’s inspections with faults";
-      case "faults-week":
-        return "This week’s inspections with faults";
-      case "custom":
-        return "Custom range inspections";
-      default:
-        return "Today’s inspections";
-    }
-  })();
 
   return (
     <div className="space-y-4">

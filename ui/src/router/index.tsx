@@ -196,7 +196,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "data",
-            handle: { title: "Data" },
+            handle: { title: "Data Analytics" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsDataPage />
