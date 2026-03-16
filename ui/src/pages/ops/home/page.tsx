@@ -26,7 +26,7 @@ export default function OpsHomePage() {
         >
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-              Streak +1
+              New Scan
             </span>
             <ScanLine className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
           </div>
@@ -40,7 +40,7 @@ export default function OpsHomePage() {
 
         <button
           type="button"
-          onClick={() => navigate("/ops/search")}
+          onClick={() => navigate("/ops/today-inspections")}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-sky-500/5 p-3 text-left shadow-sm ring-1 ring-sky-500/10 transition-all hover:-translate-y-0.5 hover:bg-sky-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">
