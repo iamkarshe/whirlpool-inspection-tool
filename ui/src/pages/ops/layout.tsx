@@ -3,6 +3,15 @@ import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { CircleUserRound, Home, LineChart, ScanLine, Settings2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 type OpsLayoutProps = {
   className?: string;
@@ -24,6 +33,23 @@ const TABS: TabConfig[] = [
 export default function OpsLayout({ className }: OpsLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showDesktopWarning, setShowDesktopWarning] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hasSeen = window.sessionStorage.getItem("ops-desktop-warning-seen");
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    if (!hasSeen && isDesktop) {
+      setShowDesktopWarning(true);
+    }
+  }, []);
+
+  const handleDismissDesktopWarning = () => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("ops-desktop-warning-seen", "1");
+    }
+    setShowDesktopWarning(false);
+  };
 
   const activeTab = React.useMemo(
     () =>
@@ -41,7 +67,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Whirlpool Ops
+              Whirlpool Inspection Tool
             </p>
             <p className="text-base font-semibold tracking-tight transition-all">
               {activeTab?.label ?? "Home"}
@@ -80,6 +106,22 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
           ))}
         </div>
       </nav>
+      <Dialog open={showDesktopWarning} onOpenChange={setShowDesktopWarning}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Optimized for mobile</DialogTitle>
+            <DialogDescription>
+              The Ops experience is designed as a mobile app for warehouse operators.
+              For the best experience, open this page on your phone or a small tablet.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2 justify-end">
+            <Button type="button" onClick={handleDismissDesktopWarning}>
+              Continue here
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -13,7 +13,7 @@ export default function OpsHomePage() {
     <div className="space-y-4">
       <header className="space-y-1">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Today&apos;s game plan
+          Today's Work
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">
           Ready to inspect?
