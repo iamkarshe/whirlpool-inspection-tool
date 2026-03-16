@@ -83,11 +83,40 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
     return ((match?.handle as RouteHandle | undefined)?.title ?? "").toString();
   }, [matches]);
 
-  useEffect(() => {
-    if (currentTitle) {
-      setPageTitle(currentTitle);
+  const effectiveTitle = React.useMemo(() => {
+    const base = currentTitle || activeTab?.label || "Home";
+    if (!location.pathname.startsWith("/ops/today-inspections")) {
+      return base;
     }
-  }, [currentTitle]);
+    const params = new URLSearchParams(location.search);
+    const range = params.get("range") ?? "today";
+    switch (range) {
+      case "yesterday":
+        return "Yesterday’s inspections";
+      case "week":
+        return "This week’s inspections";
+      case "month":
+        return "This month’s inspections";
+      case "inwards":
+        return "Inwards inspections";
+      case "outwards":
+        return "Outwards inspections";
+      case "faults-today":
+        return "Today’s inspections with faults";
+      case "faults-week":
+        return "This week’s inspections with faults";
+      case "custom":
+        return "Custom range inspections";
+      default:
+        return "Today’s inspections";
+    }
+  }, [currentTitle, activeTab?.label, location.pathname, location.search]);
+
+  useEffect(() => {
+    if (effectiveTitle) {
+      setPageTitle(effectiveTitle);
+    }
+  }, [effectiveTitle]);
 
   return (
     <div className={cn("flex min-h-screen flex-col bg-background", className)}>
@@ -104,7 +133,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
                 key={location.pathname}
                 className="text-base font-semibold tracking-tight animate-in fade-in-0 slide-in-from-bottom-2"
               >
-                {currentTitle || activeTab?.label || "Home"}
+                {effectiveTitle}
               </p>
             )}
           </div>
