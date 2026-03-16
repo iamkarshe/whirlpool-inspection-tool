@@ -1,4 +1,25 @@
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { LogOut } from "lucide-react";
+import { useState } from "react";
+
+type ConfirmAction = "logout" | null;
+
 export default function OpsAccountPage() {
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+
+  const handleConfirm = () => {
+    // TODO: wire to real logout flow
+    setConfirmAction(null);
+  };
+
   return (
     <div className="space-y-4">
       <section className="rounded-3xl border bg-card/80 p-4 shadow-sm">
@@ -27,9 +48,7 @@ export default function OpsAccountPage() {
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted-foreground">Mobile fingerprint</span>
-            <span className="font-mono text-xs">
-              a1c9-92ff-4b7e-ops1
-            </span>
+            <span className="font-mono text-xs">a1c9-92ff-4b7e-ops1</span>
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted-foreground">Active IP</span>
@@ -44,8 +63,55 @@ export default function OpsAccountPage() {
           </div>
         </div>
       </section>
+
+      <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-300">
+            <LogOut className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Session</p>
+            <p className="text-xs text-muted-foreground">
+              End your shift safely from this device.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setConfirmAction("logout")}
+          className="flex w-full items-center justify-between rounded-2xl bg-rose-500/5 px-3 py-3 text-left text-sm font-medium text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-300"
+        >
+          <span>Log out from this device</span>
+        </button>
+      </section>
+
+      <Dialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Log out from this device?</DialogTitle>
+            <DialogDescription>
+              You will be signed out and any unsynced inspections may need to be uploaded again
+              after login.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <Button type="button" variant="outline" onClick={() => setConfirmAction(null)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleConfirm}>
+              Yes, log me out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
 
 

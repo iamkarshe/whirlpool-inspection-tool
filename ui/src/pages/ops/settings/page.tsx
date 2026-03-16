@@ -7,10 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { LogOut, MoonIcon, ShieldOff, SignalHigh, Smartphone, SunIcon } from "lucide-react";
+import { MoonIcon, ShieldOff, SignalHigh, Smartphone, SunIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type ConfirmAction = "offline" | "deactivate" | "logout" | null;
+type ConfirmAction = "offline" | "deactivate" | null;
 
 export default function OpsSettingsPage() {
   const [darkMode, setDarkMode] = useState(false);
@@ -98,27 +98,6 @@ export default function OpsSettingsPage() {
         </button>
       </section>
 
-      <section className="space-y-1 rounded-3xl border bg-card/80 p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-300">
-            <LogOut className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold">Session</p>
-            <p className="text-xs text-muted-foreground">
-              End your shift safely from this device.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setConfirmAction("logout")}
-          className="flex w-full items-center justify-between rounded-2xl bg-rose-500/5 px-3 py-3 text-left text-sm font-medium text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-300"
-        >
-          <span>Log out from this device</span>
-        </button>
-      </section>
-
       <Dialog
         open={confirmAction !== null}
         onOpenChange={(open) => {
@@ -132,14 +111,14 @@ export default function OpsSettingsPage() {
                 ? "Deactivate this device?"
                 : confirmAction === "offline"
                   ? "Mark device offline / outside?"
-                  : "Log out from this device?"}
+                  : ""}
             </DialogTitle>
             <DialogDescription>
               {confirmAction === "deactivate"
                 ? "This device will stop being used for inspections until an administrator re-activates it."
                 : confirmAction === "offline"
                   ? "Use this when taking the device outside the warehouse floor so supervisors know it is temporarily offline."
-                  : "You will be signed out and any unsynced inspections may need to be uploaded again after login."}
+                  : ""}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2">
@@ -149,9 +128,7 @@ export default function OpsSettingsPage() {
             <Button type="button" variant={confirmAction === "deactivate" ? "destructive" : "default"} onClick={handleConfirm}>
               {confirmAction === "deactivate"
                 ? "Yes, deactivate"
-                : confirmAction === "offline"
-                  ? "Yes, mark offline"
-                  : "Yes, log me out"}
+                : "Yes, mark offline"}
             </Button>
           </DialogFooter>
         </DialogContent>
