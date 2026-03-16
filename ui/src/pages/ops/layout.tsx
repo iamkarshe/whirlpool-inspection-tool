@@ -91,16 +91,19 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
             </p>
 
             {shouldRenderLogo && (
-              <img src="/logo.svg" alt="Whirlpool" />
+              <div className="mb-0.5 inline-flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground animate-in fade-in-0 slide-in-from-bottom-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Whirlpool Ops
+              </div>
             )}
-
-            {
-              !shouldRenderLogo && (
-                <p className="text-base font-semibold tracking-tight transition-all">
-                  {activeTab?.label ?? "Home"}
-                </p>
-              )
-            }
+            {!shouldRenderLogo && (
+              <p
+                key={location.pathname}
+                className="text-base font-semibold tracking-tight animate-in fade-in-0 slide-in-from-bottom-2"
+              >
+                {activeTab?.label ?? "Home"}
+              </p>
+            )}
           </div>
           <button
             type="button"
