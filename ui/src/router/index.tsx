@@ -1,5 +1,5 @@
-import { PageLoader } from "@/components/layout/page-loader";
 import { Suspense, lazy } from "react";
+import { PageLoader } from "@/components/layout/page-loader";
 import { createBrowserRouter } from "react-router-dom";
 
 // Components
@@ -7,6 +7,7 @@ import EmptyComponent from "@/components/empty4";
 
 // Routers
 import PrivateRouter from "@/router/PrivateRouter";
+import { OpsRouter } from "@/router/OpsRouter";
 const PublicRouter = lazy(() =>
   import("@/router/PublicRouter").then((m) => ({ default: m.PublicRouter })),
 );
@@ -128,6 +129,14 @@ const LogViewPage = lazy(
 const KnowledgeBasePage = lazy(
   () => import("@/pages/dashboard/admin/knowledge-base/page"),
 );
+const OpsLayout = lazy(() => import("@/pages/ops/layout"));
+const OpsHomePage = lazy(() => import("@/pages/ops/home/page"));
+const OpsNewInspectionPage = lazy(
+  () => import("@/pages/ops/new-inspection/page"),
+);
+const OpsDataPage = lazy(() => import("@/pages/ops/data/page"));
+const OpsSettingsPage = lazy(() => import("@/pages/ops/settings/page"));
+const OpsAccountPage = lazy(() => import("@/pages/ops/account/page"));
 // Dashboard Pages ENDS
 
 // Error Boundary
@@ -138,6 +147,76 @@ const NotFoundPage = lazy(() => import("@/pages/not-found"));
 
 // Routes
 export const router = createBrowserRouter([
+  {
+    path: "/ops",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <OpsRouter />
+      </Suspense>
+    ),
+    errorElement: (
+      <Suspense fallback={<PageLoader />}>
+        <ErrorBoundary />
+      </Suspense>
+    ),
+    handle: { title: "Warehouse Ops" },
+    children: [
+      {
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <OpsLayout />
+          </Suspense>
+        ),
+        children: [
+          {
+            index: true,
+            handle: { title: "Ops Home" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsHomePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "new-inspection",
+            handle: { title: "New Inspection" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsNewInspectionPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "data",
+            handle: { title: "Ops Data" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsDataPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "settings",
+            handle: { title: "Ops Settings" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsSettingsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "account",
+            handle: { title: "Ops Account" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsAccountPage />
+              </Suspense>
+            ),
+          },
+        ],
+      },
+    ],
+  },
   {
     path: "/",
     element: (
