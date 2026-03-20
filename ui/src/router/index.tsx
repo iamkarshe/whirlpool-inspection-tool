@@ -20,6 +20,11 @@ const ResetPasswordConfirmationPage = lazy(
 );
 // Auth Pages ENDS
 
+// Root splash / connection check
+const CheckAppPage = lazy(
+  () => import("@/pages/check-app/page"),
+);
+
 // Dashboard Pages
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
@@ -276,6 +281,14 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <CheckAppPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "login",
         element: (
           <Suspense fallback={<PageLoader />}>
             <LoginPage />

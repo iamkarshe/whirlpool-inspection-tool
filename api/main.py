@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from mod.api.user.router import router as user_router
 from mod.auth.router import router as auth_router
@@ -38,15 +43,60 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# API routes
 app.include_router(auth_router)
 app.include_router(user_router)
 
+# Jinja2 templates config.
+templates = Jinja2Templates(directory="template")
 
+
+# Health check
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-@app.get("/")
-def root():
-    return {"message": app_name, "version": "0.1.0"}
+# API Version
+@app.get("/version")
+def version():
+    return {"message": app_name, "version": "1.0.0"}
+
+# ReactJS build
+app.mount("/", StaticFiles(directory="build/", html=True), name="build")
+
+
+# Custom 404 page for ReactJS build
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    # Check if the request is for an API route
+    # Adjust prefix as per your API routes
+    if (
+        request.url.path.startswith("/api")
+        or request.url.path.startswith("/auth")
+        or request.url.path.startswith("/integration")
+    ):
+        return JSONResponse(
+            status_code=404,
+            content={
+                "success": False,
+                "error": "Resource not found",
+                "custom_404": True,
+            },
+        )
+
+    # Static files which not found
+    if request.url.path.startswith("/public"):
+        return templates.TemplateResponse("error.html", {"request": request})
+
+    # ReactJS
+    return FileResponse("build/index.html")
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_html = f"""Internal Server Error: {str(exc)}"""
+    return PlainTextResponse(content=error_html, status_code=500)
+
+
+# < krafted by karshe />

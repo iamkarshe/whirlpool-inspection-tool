@@ -34,11 +34,17 @@ export default function LoginPage() {
     }
 
     if (email === "ops@whirlpool.com") {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("whirlpool.role", "ops");
+      }
       navigate(PAGES.OPS_HOME);
       return;
     }
 
     if (email === "admin@whirlpool.com") {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("whirlpool.role", "admin");
+      }
       navigate(PAGES.DASHBOARD);
       return;
     }

@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MoonIcon, ShieldOff, SignalHigh, Smartphone, SunIcon } from "lucide-react";
+import { MoonIcon, Smartphone, SunIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type ConfirmAction = "offline" | "deactivate" | null;

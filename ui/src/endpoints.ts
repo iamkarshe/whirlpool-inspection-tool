@@ -1,6 +1,6 @@
 export const PAGES = {
-  HOME: "/",
-  LOGIN: "/",
+  CHECK_APP: "/",
+  LOGIN: "/login",
   FORGOT_PASSWORD: "/forgot-password",
   REGISTER: "/register",
   RESET_PASSWORD: "/reset-password",
