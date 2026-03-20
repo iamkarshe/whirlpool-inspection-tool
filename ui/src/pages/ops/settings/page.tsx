@@ -9,15 +9,15 @@ import {
 } from "@/components/ui/dialog";
 import { MoonIcon, Smartphone, SunIcon } from "lucide-react";
 import { useState } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/hooks/use-theme";
 
 type ConfirmAction = "offline" | "deactivate" | null;
 
 export default function OpsSettingsPage() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
 
   const handleConfirm = () => {
     setConfirmAction(null);
