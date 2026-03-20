@@ -47,8 +47,12 @@ export const PAGES = {
     `/dashboard/admin/devices/${id}/inspections`,
   deviceLoginsPath: (id: string) =>
     `/dashboard/admin/devices/${id}/logins`,
+  deviceLockHistoryPath: (id: string) =>
+    `/dashboard/admin/devices/${id}/lock-history`,
   deviceUsersPath: (id: string) =>
     `/dashboard/admin/devices/${id}/users`,
+  deviceNotificationsPath: (id: string) =>
+    `/dashboard/admin/devices/${id}/notifications`,
 
   warehouseViewPath: (id: string) => `/dashboard/masters/warehouses/${id}`,
   warehouseUsersPath: (id: string) =>

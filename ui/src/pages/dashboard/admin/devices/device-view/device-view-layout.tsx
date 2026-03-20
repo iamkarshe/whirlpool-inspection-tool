@@ -59,6 +59,8 @@ export default function DeviceViewLayout() {
   const usersPath = PAGES.deviceUsersPath(device.id);
   const inspectionsPath = PAGES.deviceInspectionsPath(device.id);
   const loginsPath = PAGES.deviceLoginsPath(device.id);
+  const lockHistoryPath = PAGES.deviceLockHistoryPath(device.id);
+  const notificationsPath = PAGES.deviceNotificationsPath(device.id);
 
   return (
     <div className="space-y-6">
@@ -67,8 +69,9 @@ export default function DeviceViewLayout() {
         style={{ animationFillMode: "backwards" }}
       >
         <Button variant="ghost" size="icon" asChild>
-          <Link to={PAGES.DASHBOARD_ADMIN_DEVICES} aria-label="Back to devices">
+          <Link to={PAGES.DASHBOARD_ADMIN_DEVICES}>
             <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Back to devices</span>
           </Link>
         </Button>
         <div>
@@ -82,7 +85,7 @@ export default function DeviceViewLayout() {
       </div>
 
       <div className="rounded-lg border bg-background px-4 py-2 pb-6 text-sm text-muted-foreground my-3 space-y-4">
-        <nav className="flex gap-1 border-b border-border">
+        <nav className="flex flex-wrap gap-1 border-b border-border">
           <NavLink
             to={basePath}
             end
@@ -136,6 +139,34 @@ export default function DeviceViewLayout() {
           >
             Previous Users
           </NavLink>
+
+          <NavLink
+            to={lockHistoryPath}
+            className={({ isActive }) =>
+              cn(
+                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                isActive
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )
+            }
+          >
+            Lock History
+          </NavLink>
+          <NavLink
+            to={notificationsPath}
+            className={({ isActive }) =>
+              cn(
+                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                isActive
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )
+            }
+          >
+            Notifications
+          </NavLink>
+
         </nav>
 
         <Outlet context={{ device }} />

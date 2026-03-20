@@ -57,6 +57,18 @@ const DeviceViewInspectionsPage = lazy(
 const DeviceViewLoginsPage = lazy(
   () => import("@/pages/dashboard/admin/devices/device-view/logins-page"),
 );
+const DeviceViewLockHistoryPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/devices/device-view/lock-history-page"
+    ),
+);
+const DeviceViewNotificationsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/devices/device-view/device-notifications-page"
+    ),
+);
 const DeviceViewUsersPage = lazy(
   () => import("@/pages/dashboard/admin/devices/device-view/users-page"),
 );
@@ -441,6 +453,24 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <DeviceViewLoginsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "lock-history",
+            handle: { title: "Device lock/unlock history" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DeviceViewLockHistoryPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "notifications",
+            handle: { title: "Device notifications" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DeviceViewNotificationsPage />
               </Suspense>
             ),
           },
