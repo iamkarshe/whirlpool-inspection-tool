@@ -14,11 +14,12 @@ from utils.log import setup_logging
 setup_logging()
 
 app_name = "Whirlpool Inspection Tool API"
+app_version = "1.0.3"
 
 app = FastAPI(
     title=app_name,
     description=f"Backend APIs for {app_name} developed by Scopt Analytics for MK Agrotech {app_name} platform.",
-    version="1.0.0",
+    version=app_version,
     contact={
         "name": "Scopt Analytics",
         "url": "https://scoptanalytics.com",
@@ -60,7 +61,7 @@ def health():
 # API Version
 @app.get("/version")
 def version():
-    return {"message": app_name, "version": "1.0.0"}
+    return {"message": app_name, "version": app_version}
 
 # ReactJS build
 app.mount("/", StaticFiles(directory="build/", html=True), name="build")
@@ -70,12 +71,10 @@ app.mount("/", StaticFiles(directory="build/", html=True), name="build")
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
     # Check if the request is for an API route
-    # Adjust prefix as per your API routes
-    if (
-        request.url.path.startswith("/api")
-        or request.url.path.startswith("/auth")
-        or request.url.path.startswith("/integration")
-    ):
+    api_routes = ("/api", "/auth", "/integration")
+
+    # API routes → JSON response
+    if request.url.path.startswith(api_routes):
         return JSONResponse(
             status_code=404,
             content={
