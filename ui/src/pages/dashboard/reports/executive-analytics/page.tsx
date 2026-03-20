@@ -1,5 +1,5 @@
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
-import { KpiCard, KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
+import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,28 +16,28 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
-  Bar,
-  BarChart,
-  XAxis,
-  YAxis,
-} from "recharts";
+  getDefectRateByType,
+  getExecutiveAnalyticsKpis,
+  getInspectionVolumeByLocation,
+  getInspectionVolumeTrend,
+  type DefectRateByType,
+  type ExecutiveAnalyticsKpis,
+  type VolumeByDimension,
+  type VolumeTrendPoint,
+} from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
 import {
-  ClipboardCheck,
   AlertTriangle,
+  ClipboardCheck,
   Clock,
   Inbox,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-  getExecutiveAnalyticsKpis,
-  getInspectionVolumeByLocation,
-  getDefectRateByType,
-  getInspectionVolumeTrend,
-  type ExecutiveAnalyticsKpis,
-  type VolumeByDimension,
-  type DefectRateByType,
-  type VolumeTrendPoint,
-} from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
+  Bar,
+  BarChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const volumeChartConfig = {
   volume: {
@@ -212,9 +212,10 @@ export default function ExecutiveAnalyticsPage() {
                     content={
                       <ChartTooltipContent
                         formatter={(v) => [`${v}%`, "Rate"]}
-                        labelFormatter={(_, payload) =>
-                          payload?.[0]?.payload?.type ?? ""
-                        }
+                        labelFormatter={(_, payload) => {
+                          const rawType = payload?.[0]?.payload?.type;
+                          return typeof rawType === "string" ? rawType : "";
+                        }}
                       />
                     }
                   />

@@ -1,6 +1,3 @@
-import { useId } from "react";
-
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -8,9 +5,15 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { useEffect, useId } from "react";
 
 export default function SelectComponent() {
   const id = useId();
+
+  useEffect(() => {
+    console.log(id);
+  }, [id]);
+
   return (
     <div className="w-full max-w-xs">
       <Select>

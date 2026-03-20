@@ -1,21 +1,18 @@
-"use client";
-
-import * as React from "react";
 import {
-  format,
-  subDays,
-  startOfMonth,
-  endOfMonth,
-  subMonths,
-  startOfDay,
   endOfDay,
-  startOfYear,
+  endOfMonth,
+  format,
+  startOfDay,
+  startOfMonth,
   startOfWeek,
+  startOfYear,
+  subDays,
+  subMonths,
 } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import * as React from "react";
 import type { DateRange } from "react-day-picker";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -23,13 +20,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -37,7 +27,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const dateFilterPresets = [
   { name: "Today", value: "today" },
@@ -59,7 +57,7 @@ const defaultRange: DateRange = (() => {
 })();
 
 export interface CalendarDateRangePickerProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   /** Controlled: selected range (use with onChange). */
   value?: DateRange | undefined;
   /** Controlled: called when range changes. */
@@ -105,31 +103,52 @@ export default function CalendarDateRangePicker({
         handleQuickSelect(startOfDay(today), endOfDay(today));
         break;
       case "yesterday":
-        const yesterday = subDays(today, 1);
-        handleQuickSelect(startOfDay(yesterday), endOfDay(yesterday));
+        {
+          const yesterday = subDays(today, 1);
+          handleQuickSelect(startOfDay(yesterday), endOfDay(yesterday));
+        }
         break;
       case "thisWeek":
-        const startOfCurrentWeek = startOfWeek(today);
-        handleQuickSelect(startOfDay(startOfCurrentWeek), endOfDay(today));
+        {
+          const startOfCurrentWeek = startOfWeek(today);
+          handleQuickSelect(
+            startOfDay(startOfCurrentWeek),
+            endOfDay(today),
+          );
+        }
         break;
       case "last7Days":
-        const sevenDaysAgo = subDays(today, 6);
-        handleQuickSelect(startOfDay(sevenDaysAgo), endOfDay(today));
+        {
+          const sevenDaysAgo = subDays(today, 6);
+          handleQuickSelect(startOfDay(sevenDaysAgo), endOfDay(today));
+        }
         break;
       case "last28Days":
-        const twentyEightDaysAgo = subDays(today, 27); // 27 days ago + today = 28 days
-        handleQuickSelect(startOfDay(twentyEightDaysAgo), endOfDay(today));
+        {
+          const twentyEightDaysAgo = subDays(today, 27); // 27 days ago + today = 28 days
+          handleQuickSelect(
+            startOfDay(twentyEightDaysAgo),
+            endOfDay(today),
+          );
+        }
         break;
       case "thisMonth":
         handleQuickSelect(startOfMonth(today), endOfDay(today));
         break;
       case "lastMonth":
-        const lastMonth = subMonths(today, 1);
-        handleQuickSelect(startOfMonth(lastMonth), endOfMonth(lastMonth));
+        {
+          const lastMonth = subMonths(today, 1);
+          handleQuickSelect(startOfMonth(lastMonth), endOfMonth(lastMonth));
+        }
         break;
       case "thisYear":
-        const startOfCurrentYear = startOfYear(today);
-        handleQuickSelect(startOfDay(startOfCurrentYear), endOfDay(today));
+        {
+          const startOfCurrentYear = startOfYear(today);
+          handleQuickSelect(
+            startOfDay(startOfCurrentYear),
+            endOfDay(today),
+          );
+        }
         break;
     }
   };

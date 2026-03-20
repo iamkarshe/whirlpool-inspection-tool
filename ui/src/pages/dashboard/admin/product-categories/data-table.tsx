@@ -6,13 +6,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import type { ProductCategory } from "./product-category-service";
 import {
   ProductCategoryChecklistsCountBadge,
   ProductCategoryProductsCountBadge,
 } from "./product-category-badge";
+import type { ProductCategory } from "./product-category-service";
 
 interface ProductCategoriesDataTableProps {
   data: ProductCategory[];

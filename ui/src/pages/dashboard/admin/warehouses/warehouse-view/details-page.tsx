@@ -6,8 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  WarehouseAddressBadge,
-  WarehouseCodeBadge,
+  WarehouseCodeBadge
 } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import { MapPin } from "lucide-react";
