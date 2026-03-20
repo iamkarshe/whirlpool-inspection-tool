@@ -21,7 +21,7 @@ export default function AuthLayout({ children, title }: AuthLayoutProps) {
         <div
           className="pointer-events-none absolute inset-0 bg-gradient-to-b from-muted/35 via-transparent to-background"
         />
-        <div className="relative">{children}</div>
+        <div className="relative w-[98%]">{children}</div>
       </div>
       <Toaster />
     </>

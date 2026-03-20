@@ -24,7 +24,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout title="Forgot Password">
-      <Card className="mx-auto w-96">
+      <Card className="mx-auto w-full max-w-96 sm:w-96">
         <CardHeader>
           <CardTitle className="text-2xl">Forgot Password</CardTitle>
           <CardDescription>

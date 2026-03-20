@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,11 +8,12 @@ import {
 } from "@/components/ui/card";
 import { PAGES } from "@/endpoints";
 import AuthLayout from "@/pages/auth/layout";
+import { Link } from "react-router-dom";
 
 export default function ResetPasswordConfirmationPage() {
   return (
     <AuthLayout title="Check your email">
-      <Card className="mx-auto w-96">
+      <Card className="mx-auto w-full max-w-96 sm:w-96">
         <CardHeader>
           <CardTitle className="text-2xl">Check your email</CardTitle>
           <CardDescription>

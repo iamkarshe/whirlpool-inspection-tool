@@ -49,7 +49,7 @@ export default function LoginPage() {
 
   return (
     <AuthLayout title="Login">
-      <Card className="mx-auto w-96">
+      <Card className="mx-auto w-full max-w-96 sm:w-96">
         <CardHeader>
           <img src="/logo.svg" alt="Whirlpool" />
           <CardTitle className="text-2xl">Login</CardTitle>
