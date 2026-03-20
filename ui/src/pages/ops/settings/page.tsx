@@ -8,18 +8,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MoonIcon, Smartphone, SunIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useTheme } from "next-themes";
 
 type ConfirmAction = "offline" | "deactivate" | null;
 
 export default function OpsSettingsPage() {
-  const [darkMode, setDarkMode] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const handleConfirm = () => {
     setConfirmAction(null);
@@ -88,7 +86,7 @@ export default function OpsSettingsPage() {
           onClick={() => setThemeDialogOpen(true)}
           className="flex w-full items-center justify-between rounded-2xl bg-muted/40 px-3 py-3 text-left text-sm font-medium transition-colors hover:bg-muted"
         >
-          <span>{darkMode ? "Use dark theme" : "Use light theme"}</span>
+          <span>{isDark ? "Use light theme" : "Use dark theme"}</span>
         </button>
       </section>
 
@@ -139,7 +137,7 @@ export default function OpsSettingsPage() {
             <button
               type="button"
               onClick={() => {
-                setDarkMode(false);
+                setTheme("light");
                 setThemeDialogOpen(false);
               }}
               className="flex w-full items-center justify-between rounded-2xl border bg-card px-3 py-3 text-left text-sm transition-colors hover:bg-accent"
@@ -159,7 +157,7 @@ export default function OpsSettingsPage() {
             <button
               type="button"
               onClick={() => {
-                setDarkMode(true);
+                setTheme("dark");
                 setThemeDialogOpen(false);
               }}
               className="flex w-full items-center justify-between rounded-2xl border bg-card px-3 py-3 text-left text-sm transition-colors hover:bg-accent"
