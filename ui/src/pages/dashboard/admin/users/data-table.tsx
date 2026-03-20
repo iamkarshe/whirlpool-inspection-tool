@@ -12,7 +12,7 @@ import { getAvatarImage } from "@/lib/utils";
 import { UserStatusBadge } from "@/pages/dashboard/admin/users/user-badge";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const userColumns: ColumnDef<User>[] = [
@@ -121,7 +121,10 @@ const userColumns: ColumnDef<User>[] = [
                 View inspections
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

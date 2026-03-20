@@ -50,8 +50,11 @@ export default function DialogLockDevice({
             .
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <Alert variant="default" className="border-primary/50 bg-primary/5">
-          <Info className="h-4 w-4" />
+        <Alert
+          variant="default"
+          className="border-amber-500/50 bg-amber-500/5 text-amber-700 dark:text-amber-200"
+        >
+          <Info className="h-4 w-4 text-amber-600 dark:text-amber-300" />
           <AlertTitle>Heads up</AlertTitle>
           <AlertDescription>
             The user will be logged out from this device and the device will be
@@ -62,7 +65,7 @@ export default function DialogLockDevice({
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-amber-500 text-amber-950 hover:bg-amber-500/90 dark:text-amber-50"
           >
             Lock device
           </AlertDialogAction>

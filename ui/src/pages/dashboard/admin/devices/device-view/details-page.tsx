@@ -59,15 +59,18 @@ function DeviceDetailCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onLockClick}>
-                  <Lock className="mr-2 h-4 w-4" />
+                <DropdownMenuItem
+                  onClick={onLockClick}
+                  className="text-amber-600 focus:text-amber-600"
+                >
+                  <Lock className="mr-2 h-4 w-4 text-amber-600" />
                   Lock device
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={onDeleteClick}
                   className="text-destructive focus:text-destructive"
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                   Delete device
                 </DropdownMenuItem>
               </DropdownMenuContent>

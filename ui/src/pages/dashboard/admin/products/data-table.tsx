@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Product } from "@/pages/dashboard/admin/products/product-service";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
 
 const productColumns: ColumnDef<Product>[] = [
   {
@@ -82,7 +82,10 @@ const productColumns: ColumnDef<Product>[] = [
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem>View product</DropdownMenuItem>
-          <DropdownMenuItem>Delete</DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+            Delete
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ),

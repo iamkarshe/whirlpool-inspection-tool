@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
 import {
   ProductCategoryChecklistsCountBadge,
   ProductCategoryProductsCountBadge,
@@ -87,6 +87,7 @@ export default function ProductCategoriesDataTable({
                       onDeleteCategory?.(category);
                     }}
                   >
+                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                     Delete category
                   </DropdownMenuItem>
                 </DropdownMenuContent>

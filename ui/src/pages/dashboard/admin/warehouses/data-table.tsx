@@ -15,7 +15,7 @@ import {
   WarehouseUsersCountBadge,
 } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Warehouse } from "./warehouse-service";
 
@@ -155,7 +155,10 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
                 View inspections
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

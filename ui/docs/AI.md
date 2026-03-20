@@ -160,6 +160,10 @@
       - Do **not** inline `<AlertDialog>`; always use `ConfirmDeleteDialog` as the outer UI.
       - Keep any entity-specific messaging inside the `description` or in the parent component that prepares the props.
     - Existing delete dialogs (e.g. older device delete dialogs) should be gradually refactored to delegate their UI to `ConfirmDeleteDialog` while keeping device-specific copy/behaviour in the calling component.
+    - Delete triggers (e.g. `DropdownMenuItem`, buttons, row actions that open the delete flow) must use consistent destructive styling:
+      - Labels: `className="text-destructive focus:text-destructive"`
+      - Icons: use a `Trash2`-style icon with matching `text-destructive` color
+      - This keeps delete UI consistent across all tables/pages.
    [feature] implement user pagination with server-side sorting and filtering for admin users table
    ```
 13. Don't use `aria-*` properties or attributes on any generated code.
