@@ -46,9 +46,6 @@ export default function OpsSettingsPage() {
           className="flex w-full items-center justify-between rounded-2xl bg-muted/40 px-3 py-3 text-left transition-colors hover:bg-muted"
         >
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300">
-              <SignalHigh className="h-5 w-5" />
-            </span>
             <div>
               <p className="text-sm font-medium">Mark device offline / outside</p>
               <p className="text-xs text-muted-foreground">
@@ -64,9 +61,6 @@ export default function OpsSettingsPage() {
           className="mt-2 flex w-full items-center justify-between rounded-2xl bg-destructive/5 px-3 py-3 text-left text-destructive transition-colors hover:bg-destructive/10"
         >
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/15">
-              <ShieldOff className="h-4 w-4" />
-            </span>
             <div>
               <p className="text-sm font-medium">Deactivate device</p>
               <p className="text-xs text-destructive/80">

@@ -141,7 +141,6 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
             type="button"
             onClick={() => navigate("/ops/account")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-            aria-label="Account"
           >
             <CircleUserRound className="h-5 w-5" />
           </button>

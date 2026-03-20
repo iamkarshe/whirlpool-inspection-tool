@@ -162,3 +162,4 @@
     - Existing delete dialogs (e.g. older device delete dialogs) should be gradually refactored to delegate their UI to `ConfirmDeleteDialog` while keeping device-specific copy/behaviour in the calling component.
    [feature] implement user pagination with server-side sorting and filtering for admin users table
    ```
+13. Don't use `aria-*` properties or attributes on any generated code.

@@ -7,17 +7,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { PAGES } from "@/endpoints";
 import { LogOut } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 type ConfirmAction = "logout" | null;
 
 export default function OpsAccountPage() {
+  const navigate = useNavigate();
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
 
   const handleConfirm = () => {
     // TODO: wire to real logout flow
     setConfirmAction(null);
+    navigate(PAGES.LOGIN);
   };
 
   return (

@@ -13,6 +13,7 @@ import AuthLayout from "@/pages/auth/layout";
 import type { SubmitEvent } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -26,7 +27,24 @@ export default function LoginPage() {
 
   const handleSubmit = (event: SubmitEvent) => {
     event.preventDefault();
-    navigate(PAGES.DASHBOARD);
+
+    if (password !== "password") {
+      toast.error("Invalid password");
+      return;
+    }
+
+    if (email === "ops@whirlpool.com") {
+      navigate(PAGES.OPS_HOME);
+      return;
+    }
+
+    if (email === "admin@whirlpool.com") {
+      navigate(PAGES.DASHBOARD);
+      return;
+    }
+
+    toast.error("Invalid email or password");
+    return;
   };
 
   return (

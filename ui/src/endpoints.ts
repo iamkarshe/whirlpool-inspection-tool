@@ -21,16 +21,13 @@ export const PAGES = {
   inspectionViewPath: (id: string) => `${PAGES.DASHBOARD_INSPECTIONS}/${id}`,
   DASHBOARD_TRANSACTIONS_CHECKLISTS: "/dashboard/transactions/checklists",
   DASHBOARD_TRANSACTIONS_REPORTS: "/dashboard/transactions/reports",
-  /** @deprecated Use DASHBOARD_INSPECTIONS */
   DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/inspections",
-  /** @deprecated Use DASHBOARD_INSPECTIONS */
   DASHBOARD_REPORTS_DAILY_INSPECTIONS: "/dashboard/inspections",
   DASHBOARD_REPORTS_OPERATIONS_ANALYTICS: "/dashboard/reports/operations-analytics",
   DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS: "/dashboard/reports/executive-analytics",
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 
-  /** Products list filtered by product category (query param). */
   productCategoryProductsPath: (categoryId: number) =>
     `${PAGES.DASHBOARD_MASTERS_PRODUCTS}?product_category_id=${categoryId}`,
 
@@ -41,10 +38,8 @@ export const PAGES = {
     `/dashboard/admin/users/${userId}/inspections`,
   userViewLoginsPath: (userId: number) =>
     `/dashboard/admin/users/${userId}/logins`,
-  /** Devices list filtered by user (query param). */
   userDevicesPath: (userId: number) =>
     `/dashboard/admin/devices?user_id=${userId}`,
-  /** Inspections list filtered by user (query param). */
   userInspectionsPath: (userId: number) =>
     `${PAGES.DASHBOARD_INSPECTIONS}?user_id=${userId}`,
   deviceViewPath: (id: string) => `/dashboard/admin/devices/${id}`,
@@ -63,7 +58,6 @@ export const PAGES = {
   warehouseInspectionsPath: (id: string) =>
     `/dashboard/masters/warehouses/${id}/inspections`,
 
-  /** Inspection checklists filtered by product category (query param). */
   productCategoryChecklistsPath: (categoryId: number) =>
     `${PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS}?product_category_id=${categoryId}`,
 
@@ -76,4 +70,14 @@ export const PAGES = {
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
   logViewPath: (id: string) => `${PAGES.DASHBOARD_ADMIN_LOGS}/${id}`,
   DASHBOARD_ADMIN_KNOWLEDGE_BASE: "/dashboard/admin/knowledge-base",
+
+  OPS_HOME: "/ops",
+  OPS_NEW_INSPECTION: "/ops/new-inspection",
+  OPS_DATA: "/ops/data",
+  OPS_SEARCH: "/ops/search",
+  OPS_SETTINGS: "/ops/settings",
+  OPS_ACCOUNT: "/ops/account",
+  OPS_HELP: "/ops/help",
+  OPS_TODAY_INSPECTIONS: "/ops/today-inspections",
+  OPS_INSPECTION_DETAIL: "/ops/inspection-detail",
 };
