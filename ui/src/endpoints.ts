@@ -23,6 +23,7 @@ export const PAGES = {
   DASHBOARD_INSPECTIONS_OUTBOUND: "/dashboard/inspections/outbound",
   DASHBOARD_INSPECTIONS_OUTBOUND_FAILED: "/dashboard/inspections/outbound-failed",
   DASHBOARD_INSPECTIONS_FLAGGED: "/dashboard/inspections/flagged",
+  DASHBOARD_INSPECTIONS_FLAGGED_IMAGES: "/dashboard/inspections/flagged-images",
   inspectionViewPath: (id: string) => `${PAGES.DASHBOARD_INSPECTIONS}/${id}`,
   DASHBOARD_TRANSACTIONS_CHECKLISTS: "/dashboard/transactions/checklists",
   DASHBOARD_TRANSACTIONS_REPORTS: "/dashboard/transactions/reports",

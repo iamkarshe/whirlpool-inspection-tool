@@ -210,6 +210,9 @@ const OutboundFailedInspectionsPage = lazy(
 const FlaggedInspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/flagged/page"),
 );
+const FlaggedImagesPage = lazy(
+  () => import("@/pages/dashboard/inspections/flagged-images/page"),
+);
 const InspectionViewPage = lazy(
   () => import("@/pages/dashboard/inspections/inspection-view-page"),
 );
@@ -684,6 +687,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <FlaggedInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/flagged-images",
+        handle: { title: "Flagged Images" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <FlaggedImagesPage />
           </Suspense>
         ),
       },

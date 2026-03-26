@@ -81,7 +81,7 @@ export const navItems: NavGroup[] = [
           },
           {
             title: "Flagged Images",
-            href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
+            href: PAGES.DASHBOARD_INSPECTIONS_FLAGGED_IMAGES,
           },
         ],
       },
