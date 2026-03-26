@@ -3,10 +3,10 @@ import { PAGES } from "@/endpoints";
 import { DeviceHeaderBadges } from "@/pages/dashboard/admin/devices/device-badge";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import { loadDeviceView } from "@/pages/dashboard/admin/devices/device-view/controller";
+import { TabbedContent } from "@/components/tabbed-content";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useParams } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { Link, Outlet, useParams } from "react-router-dom";
 
 export default function DeviceViewLayout() {
   const params = useParams<{ id: string }>();
@@ -61,6 +61,14 @@ export default function DeviceViewLayout() {
   const loginsPath = PAGES.deviceLoginsPath(device.id);
   const lockHistoryPath = PAGES.deviceLockHistoryPath(device.id);
   const notificationsPath = PAGES.deviceNotificationsPath(device.id);
+  const tabs = [
+    { label: "Device Details", to: basePath, end: true },
+    { label: "Inspections", to: inspectionsPath },
+    { label: "Logins", to: loginsPath },
+    { label: "Previous Users", to: usersPath },
+    { label: "Lock History", to: lockHistoryPath },
+    { label: "Notifications", to: notificationsPath },
+  ] as const;
 
   return (
     <div className="space-y-6">
@@ -84,93 +92,9 @@ export default function DeviceViewLayout() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-background px-4 py-2 pb-6 text-sm text-muted-foreground my-3 space-y-4">
-        <nav className="flex flex-wrap gap-1 border-b border-border">
-          <NavLink
-            to={basePath}
-            end
-            className={({ isActive }) =>
-              cn(
-                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            Device Details
-          </NavLink>
-          <NavLink
-            to={inspectionsPath}
-            className={({ isActive }) =>
-              cn(
-                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            Inspections
-          </NavLink>
-          <NavLink
-            to={loginsPath}
-            className={({ isActive }) =>
-              cn(
-                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            Logins
-          </NavLink>
-          <NavLink
-            to={usersPath}
-            className={({ isActive }) =>
-              cn(
-                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            Previous Users
-          </NavLink>
-
-          <NavLink
-            to={lockHistoryPath}
-            className={({ isActive }) =>
-              cn(
-                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            Lock History
-          </NavLink>
-          <NavLink
-            to={notificationsPath}
-            className={({ isActive }) =>
-              cn(
-                "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            Notifications
-          </NavLink>
-
-        </nav>
-
+      <TabbedContent tabs={tabs}>
         <Outlet context={{ device }} />
-      </div>
+      </TabbedContent>
     </div>
   );
 }

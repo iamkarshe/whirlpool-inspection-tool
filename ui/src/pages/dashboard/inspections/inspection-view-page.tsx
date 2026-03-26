@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { PAGES } from "@/endpoints";
 import {
   ImageGalleryDialog,
@@ -26,6 +26,8 @@ import {
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
 import { InspectionQuestionResultsTable } from "@/pages/dashboard/inspections/components/inspection-question-results-table";
+import { TabbedButtons } from "@/components/tabbed-nav";
+import { TabbedSurface } from "@/components/tabbed-content";
 import {
   InspectionChecklistBadge,
   InspectionProductBadge,
@@ -73,9 +75,9 @@ export default function InspectionViewPage() {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [activeGalleryUrl, setActiveGalleryUrl] = useState<string | null>(null);
   const [checksDialogOpen, setChecksDialogOpen] = useState(false);
-  const [checksDialogMode, setChecksDialogMode] = useState<
-    "failed" | "passed"
-  >("failed");
+  const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
+    "failed",
+  );
 
   const tab = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -306,7 +308,6 @@ export default function InspectionViewPage() {
         title="Inspection images"
         description="Click a thumbnail to preview, or download the selected image."
       />
-
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link
@@ -329,261 +330,220 @@ export default function InspectionViewPage() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList variant="line" className="w-full justify-start">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="outer-packaging">Outer Packaging</TabsTrigger>
-          <TabsTrigger value="inner-packaging">Inner Packaging</TabsTrigger>
-          <TabsTrigger value="product">Product</TabsTrigger>
-          <TabsTrigger value="images">Inspection Images</TabsTrigger>
-          <TabsTrigger value="relationship">Relationship</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <Card className="gap-3 py-3">
-            <CardHeader className="px-3">
-              <CardTitle className="text-base">Quality summary</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3">
-              {reviewLoading ? (
-                <div className="flex min-h-[120px] items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <KpiCardGrid
-                  cards={reviewKpis}
-                  className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
-                />
-              )}
-            </CardContent>
-          </Card>
-
-          <ChecksSummaryDialog
-            open={checksDialogOpen}
-            onOpenChange={setChecksDialogOpen}
-            mode={checksDialogMode}
-            onModeChange={setChecksDialogMode}
-            reviewCounts={{
-              passed: reviewSummary.passed,
-              failed: reviewSummary.failed,
-            }}
-            sectionRows={checksBySection}
-            onViewImages={(r) => {
-              setGalleryImages(r.images);
-              setActiveGalleryUrl(r.images[0]?.url ?? null);
-              setGalleryOpen(true);
-            }}
+      <TabbedSurface>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabbedButtons
+            value={tab}
+            onValueChange={setTab}
+            className="w-full justify-start"
+            items={[
+              { value: "overview", label: "Overview" },
+              { value: "outer-packaging", label: "Outer Packaging" },
+              { value: "inner-packaging", label: "Inner Packaging" },
+              { value: "product", label: "Product" },
+              { value: "images", label: "Inspection Images" },
+              { value: "relationship", label: "Relationship" },
+            ]}
           />
 
-          <Card className="mt-[-12px]">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
-                  <ClipboardCheck className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">{inspection.id}</CardTitle>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    <InspectionChecklistBadge
-                      name={inspection.checklist_name}
-                    />
-                    <InspectionProductBadge
-                      serial={inspection.product_serial}
-                    />
+          <TabsContent value="overview" className="space-y-6">
+            <Card className="gap-3 py-3">
+              <CardHeader className="px-3">
+                <CardTitle className="text-base">Quality summary</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3">
+                {reviewLoading ? (
+                  <div className="flex min-h-[120px] items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <KpiCardGrid
+                    cards={reviewKpis}
+                    className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            <ChecksSummaryDialog
+              open={checksDialogOpen}
+              onOpenChange={setChecksDialogOpen}
+              mode={checksDialogMode}
+              onModeChange={setChecksDialogMode}
+              reviewCounts={{
+                passed: reviewSummary.passed,
+                failed: reviewSummary.failed,
+              }}
+              sectionRows={checksBySection}
+              onViewImages={(r) => {
+                setGalleryImages(r.images);
+                setActiveGalleryUrl(r.images[0]?.url ?? null);
+                setGalleryOpen(true);
+              }}
+            />
+
+            <Card className="mt-[-12px]">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
+                    <ClipboardCheck className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{inspection.id}</CardTitle>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      <InspectionChecklistBadge
+                        name={inspection.checklist_name}
+                      />
+                      <InspectionProductBadge
+                        serial={inspection.product_serial}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Inspector</p>
-                <Link
-                  to={PAGES.userViewPath(inspection.inspector_id)}
-                  className="text-primary hover:underline"
-                >
-                  {inspection.inspector_name}
-                </Link>
-              </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Device</p>
-                <Link
-                  to={PAGES.deviceViewPath(inspection.device_id)}
-                  className="font-mono text-sm text-primary hover:underline"
-                >
-                  {inspection.device_fingerprint}
-                </Link>
-              </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Product</p>
-                <p className="font-mono text-sm">{inspection.product_serial}</p>
-              </div>
-              {inspection.product_category_name ? (
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">
-                    Product category
+                  <p className="text-muted-foreground text-sm">Inspector</p>
+                  <Link
+                    to={PAGES.userViewPath(inspection.inspector_id)}
+                    className="text-primary hover:underline"
+                  >
+                    {inspection.inspector_name}
+                  </Link>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-sm">Device</p>
+                  <Link
+                    to={PAGES.deviceViewPath(inspection.device_id)}
+                    className="font-mono text-sm text-primary hover:underline"
+                  >
+                    {inspection.device_fingerprint}
+                  </Link>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-sm">Product</p>
+                  <p className="font-mono text-sm">
+                    {inspection.product_serial}
                   </p>
-                  <p className="text-sm">{inspection.product_category_name}</p>
                 </div>
-              ) : null}
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Checklist</p>
-                <p className="text-sm">{inspection.checklist_name}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Type</p>
-                <InspectionTypeBadge
-                  inspectionType={inspection.inspection_type}
-                />
-              </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Date</p>
-                <p className="text-sm">{formatDate(inspection.created_at)}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {(["outer-packaging", "inner-packaging", "product"] as const).map(
-          (k) => (
-            <TabsContent key={k} value={k} className="space-y-4">
-              <Card className="gap-3 py-3">
-                <CardHeader className="px-3">
-                  <CardTitle className="text-base">
-                    {k === "outer-packaging"
-                      ? "Outer packaging"
-                      : k === "inner-packaging"
-                        ? "Inner packaging"
-                        : "Product"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3">
-                  {sectionLoading ? (
-                    <div className="flex min-h-[160px] items-center justify-center">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : (
-                    <InspectionQuestionResultsTable
-                      rows={sectionRows}
-                      onViewImages={(r) => {
-                        setGalleryImages(r.images);
-                        setActiveGalleryUrl(r.images[0]?.url ?? null);
-                        setGalleryOpen(true);
-                      }}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ),
-        )}
-
-        <TabsContent value="relationship" className="space-y-4">
-          <Card className="gap-3 py-3">
-            <CardHeader className="px-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <GitBranch className="h-4 w-4 text-primary" />
-                Inbound - Outbound Relationship
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 px-3">
-              {relationshipLoading ? (
-                <div className="flex min-h-[160px] items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                {inspection.product_category_name ? (
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground text-sm">
+                      Product category
+                    </p>
+                    <p className="text-sm">
+                      {inspection.product_category_name}
+                    </p>
+                  </div>
+                ) : null}
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-sm">Checklist</p>
+                  <p className="text-sm">{inspection.checklist_name}</p>
                 </div>
-              ) : !relationship ? (
-                <div className="text-muted-foreground py-10 text-center text-sm">
-                  Relationship data not available.
-                </div>
-              ) : (
-                <>
-                  <KpiCardGrid
-                    className="grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-                    cards={[
-                      {
-                        label: "Inbound",
-                        value: "Available",
-                        icon: CheckCircle,
-                        className:
-                          "border-green-200 bg-green-50/30 hover:bg-green-50/30 dark:bg-green-900/10",
-                      },
-                      {
-                        label: "Outbound",
-                        value: relationship.outbound ? "Linked" : "Not linked",
-                        icon: relationship.outbound ? CheckCircle : XCircle,
-                        className: relationship.outbound
-                          ? "border-green-200 bg-green-50/30 hover:bg-green-50/30 dark:bg-green-900/10"
-                          : "border-red-200 bg-red-50/30 hover:bg-red-50/30 dark:bg-red-900/10",
-                      },
-                      {
-                        label: "Flow",
-                        value: relationship.outbound
-                          ? "Inbound with Outbound"
-                          : "Inbound only",
-                        icon: GitBranch,
-                      },
-                    ]}
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-sm">Type</p>
+                  <InspectionTypeBadge
+                    inspectionType={inspection.inspection_type}
                   />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-sm">Date</p>
+                  <p className="text-sm">{formatDate(inspection.created_at)}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                  <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-muted/10 via-background to-muted/20 p-4">
-                    <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_1px_1px,theme(colors.border)_1px,transparent_0)] [background-size:20px_20px]" />
-                    <div className="relative grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
-                      <div className="rounded-xl border border-emerald-300/60 bg-emerald-50/60 p-4 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/20">
-                        <div className="mb-3 flex items-center justify-between">
-                          <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                            Inbound Inspection
-                          </div>
-                          <Button
-                            asChild
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2"
-                          >
-                            <Link
-                              to={PAGES.inspectionViewPath(
-                                relationship.inbound.inspectionId,
-                              )}
-                            >
-                              Open
-                              <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                            </Link>
-                          </Button>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="text-muted-foreground text-xs font-medium">
-                            {relationship.inbound.inspectionId}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span>{relationship.inbound.personName}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Smartphone className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-mono text-xs">
-                              {relationship.inbound.deviceFingerprint}
-                            </span>
-                          </div>
-                          <div className="text-muted-foreground text-xs">
-                            {formatDate(relationship.inbound.scannedAt)}
-                          </div>
-                        </div>
+          {(["outer-packaging", "inner-packaging", "product"] as const).map(
+            (k) => (
+              <TabsContent key={k} value={k} className="space-y-4">
+                <Card className="gap-3 py-3">
+                  <CardHeader className="px-3">
+                    <CardTitle className="text-base">
+                      {k === "outer-packaging"
+                        ? "Outer packaging"
+                        : k === "inner-packaging"
+                          ? "Inner packaging"
+                          : "Product"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-3">
+                    {sectionLoading ? (
+                      <div className="flex min-h-[160px] items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       </div>
+                    ) : (
+                      <InspectionQuestionResultsTable
+                        rows={sectionRows}
+                        onViewImages={(r) => {
+                          setGalleryImages(r.images);
+                          setActiveGalleryUrl(r.images[0]?.url ?? null);
+                          setGalleryOpen(true);
+                        }}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            ),
+          )}
 
-                      <div className="relative flex items-center justify-center py-3 lg:py-0">
-                        <div
-                          className={
-                            relationship.outbound
-                              ? "h-[2px] w-20 bg-gradient-to-r from-emerald-500 via-primary to-blue-500 animate-pulse lg:w-28"
-                              : "h-[2px] w-20 border-t border-dashed border-muted-foreground/50 lg:w-28"
-                          }
-                        />
-                        <ArrowRight className="text-muted-foreground absolute h-4 w-4 bg-background" />
-                      </div>
+          <TabsContent value="relationship" className="space-y-4">
+            <Card className="gap-3 py-3">
+              <CardHeader className="px-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <GitBranch className="h-4 w-4 text-primary" />
+                  Inbound - Outbound Relationship
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 px-3">
+                {relationshipLoading ? (
+                  <div className="flex min-h-[160px] items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !relationship ? (
+                  <div className="text-muted-foreground py-10 text-center text-sm">
+                    Relationship data not available.
+                  </div>
+                ) : (
+                  <>
+                    <KpiCardGrid
+                      className="grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                      cards={[
+                        {
+                          label: "Inbound",
+                          value: "Available",
+                          icon: CheckCircle,
+                          className:
+                            "border-green-200 bg-green-50/30 hover:bg-green-50/30 dark:bg-green-900/10",
+                        },
+                        {
+                          label: "Outbound",
+                          value: relationship.outbound
+                            ? "Linked"
+                            : "Not linked",
+                          icon: relationship.outbound ? CheckCircle : XCircle,
+                          className: relationship.outbound
+                            ? "border-green-200 bg-green-50/30 hover:bg-green-50/30 dark:bg-green-900/10"
+                            : "border-red-200 bg-red-50/30 hover:bg-red-50/30 dark:bg-red-900/10",
+                        },
+                        {
+                          label: "Flow",
+                          value: relationship.outbound
+                            ? "Inbound with Outbound"
+                            : "Inbound only",
+                          icon: GitBranch,
+                        },
+                      ]}
+                    />
 
-                      {relationship.outbound ? (
-                        <div className="rounded-xl border border-blue-300/60 bg-blue-50/60 p-4 shadow-sm dark:border-blue-800 dark:bg-blue-950/20">
+                    <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-muted/10 via-background to-muted/20 p-4">
+                      <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_1px_1px,theme(colors.border)_1px,transparent_0)] [background-size:20px_20px]" />
+                      <div className="relative grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
+                        <div className="rounded-xl border border-emerald-300/60 bg-emerald-50/60 p-4 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/20">
                           <div className="mb-3 flex items-center justify-between">
-                            <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                              Outbound Inspection
+                            <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                              Inbound Inspection
                             </div>
                             <Button
                               asChild
@@ -593,7 +553,7 @@ export default function InspectionViewPage() {
                             >
                               <Link
                                 to={PAGES.inspectionViewPath(
-                                  relationship.outbound.inspectionId,
+                                  relationship.inbound.inspectionId,
                                 )}
                               >
                                 Open
@@ -603,90 +563,144 @@ export default function InspectionViewPage() {
                           </div>
                           <div className="space-y-2 text-sm">
                             <div className="text-muted-foreground text-xs font-medium">
-                              {relationship.outbound.inspectionId}
+                              {relationship.inbound.inspectionId}
                             </div>
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground" />
-                              <span>{relationship.outbound.personName}</span>
+                              <span>{relationship.inbound.personName}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Smartphone className="h-4 w-4 text-muted-foreground" />
                               <span className="font-mono text-xs">
-                                {relationship.outbound.deviceFingerprint}
+                                {relationship.inbound.deviceFingerprint}
                               </span>
                             </div>
                             <div className="text-muted-foreground text-xs">
-                              {formatDate(relationship.outbound.scannedAt)}
+                              {formatDate(relationship.inbound.scannedAt)}
                             </div>
                           </div>
                         </div>
-                      ) : (
-                        <div className="rounded-xl border border-dashed bg-muted/20 p-4">
-                          <div className="text-muted-foreground text-sm">
-                            Outbound scan not available
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="images" className="space-y-4">
-          <Card className="gap-3 py-3">
-            <CardHeader className="px-3">
-              <CardTitle className="text-base">
-                All inspection images ({allImages.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-3">
-              {reviewLoading ? (
-                <div className="flex min-h-[160px] items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : allImages.length === 0 ? (
-                <div className="text-muted-foreground py-10 text-center text-sm">
-                  No images available
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {allImages.map((img) => (
-                    <button
-                      key={img.key}
-                      type="button"
-                      onClick={() => {
-                        setGalleryImages(allGalleryImages);
-                        setActiveGalleryUrl(img.url);
-                        setGalleryOpen(true);
-                      }}
-                      className="group rounded-md border bg-muted/20 text-left transition-colors hover:bg-muted/40"
-                    >
-                      <div className="aspect-[4/3] overflow-hidden rounded-t-md">
-                        <img
-                          src={img.url}
-                          alt={img.filename ?? "Inspection image"}
-                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                        />
+                        <div className="relative flex items-center justify-center py-3 lg:py-0">
+                          <div
+                            className={
+                              relationship.outbound
+                                ? "h-[2px] w-20 bg-gradient-to-r from-emerald-500 via-primary to-blue-500 animate-pulse lg:w-28"
+                                : "h-[2px] w-20 border-t border-dashed border-muted-foreground/50 lg:w-28"
+                            }
+                          />
+                          <ArrowRight className="text-muted-foreground absolute h-4 w-4 bg-background" />
+                        </div>
+
+                        {relationship.outbound ? (
+                          <div className="rounded-xl border border-blue-300/60 bg-blue-50/60 p-4 shadow-sm dark:border-blue-800 dark:bg-blue-950/20">
+                            <div className="mb-3 flex items-center justify-between">
+                              <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                                Outbound Inspection
+                              </div>
+                              <Button
+                                asChild
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2"
+                              >
+                                <Link
+                                  to={PAGES.inspectionViewPath(
+                                    relationship.outbound.inspectionId,
+                                  )}
+                                >
+                                  Open
+                                  <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                                </Link>
+                              </Button>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="text-muted-foreground text-xs font-medium">
+                                {relationship.outbound.inspectionId}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span>{relationship.outbound.personName}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Smartphone className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-mono text-xs">
+                                  {relationship.outbound.deviceFingerprint}
+                                </span>
+                              </div>
+                              <div className="text-muted-foreground text-xs">
+                                {formatDate(relationship.outbound.scannedAt)}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-dashed bg-muted/20 p-4">
+                            <div className="text-muted-foreground text-sm">
+                              Outbound scan not available
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="space-y-1 p-2">
-                        <p className="text-xs font-medium capitalize">
-                          {img.section.replace("-", " ")}
-                        </p>
-                        <p className="text-muted-foreground line-clamp-2 text-xs">
-                          {img.question}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="images" className="space-y-4">
+            <Card className="gap-3 py-3">
+              <CardHeader className="px-3">
+                <CardTitle className="text-base">
+                  All inspection images ({allImages.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3">
+                {reviewLoading ? (
+                  <div className="flex min-h-[160px] items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : allImages.length === 0 ? (
+                  <div className="text-muted-foreground py-10 text-center text-sm">
+                    No images available
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {allImages.map((img) => (
+                      <button
+                        key={img.key}
+                        type="button"
+                        onClick={() => {
+                          setGalleryImages(allGalleryImages);
+                          setActiveGalleryUrl(img.url);
+                          setGalleryOpen(true);
+                        }}
+                        className="group rounded-md border bg-muted/20 text-left transition-colors hover:bg-muted/40"
+                      >
+                        <div className="aspect-[4/3] overflow-hidden rounded-t-md">
+                          <img
+                            src={img.url}
+                            alt={img.filename ?? "Inspection image"}
+                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                          />
+                        </div>
+                        <div className="space-y-1 p-2">
+                          <p className="text-xs font-medium capitalize">
+                            {img.section.replace("-", " ")}
+                          </p>
+                          <p className="text-muted-foreground line-clamp-2 text-xs">
+                            {img.question}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </TabbedSurface>
     </div>
   );
 }

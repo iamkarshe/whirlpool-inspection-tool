@@ -1,7 +1,7 @@
 import { PAGES } from "@/endpoints";
-import { NavLink, Outlet } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { Outlet } from "react-router-dom";
 import { KeyRound, LogOut } from "lucide-react";
+import { TabbedNav } from "@/components/tabbed-nav";
 
 const items = [
   { title: "Update password", href: PAGES.settingsPasswordPath(), icon: KeyRound },
@@ -20,26 +20,14 @@ export default function SettingsLayout() {
 
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
         <aside className="lg:w-56 shrink-0">
-          <nav className="flex flex-col gap-0.5">
-            {items.map(({ title, href, icon: Icon }) => (
-              <NavLink
-                key={href}
-                to={href}
-                end={false}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  )
-                }
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {title}
-              </NavLink>
-            ))}
-          </nav>
+          <TabbedNav
+            variant="sidebar"
+            items={items.map(({ title, href, icon }) => ({
+              label: title,
+              to: href,
+              icon,
+            }))}
+          />
         </aside>
         <main className="min-w-0 flex-1">
           <Outlet />

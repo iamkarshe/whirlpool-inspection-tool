@@ -5,10 +5,10 @@ import {
   getUserById,
   type User,
 } from "@/pages/dashboard/admin/users/user-service";
+import { TabbedContent } from "@/components/tabbed-content";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useParams } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { Link, Outlet, useParams } from "react-router-dom";
 
 export default function UserViewLayout() {
   const params = useParams<{ id: string }>();
@@ -63,6 +63,12 @@ export default function UserViewLayout() {
   const devicesPath = PAGES.userViewDevicesPath(user.id);
   const inspectionsPath = PAGES.userViewInspectionsPath(user.id);
   const loginsPath = PAGES.userViewLoginsPath(user.id);
+  const tabs = [
+    { label: "Details", to: basePath, end: true },
+    { label: "Devices", to: devicesPath },
+    { label: "Inspections", to: inspectionsPath },
+    { label: "Login history", to: loginsPath },
+  ] as const;
 
   return (
     <div className="space-y-6">
@@ -80,63 +86,9 @@ export default function UserViewLayout() {
         </div>
       </div>
 
-      <nav className="flex gap-1 border-b border-border">
-        <NavLink
-          to={basePath}
-          end
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Details
-        </NavLink>
-        <NavLink
-          to={devicesPath}
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Devices
-        </NavLink>
-        <NavLink
-          to={inspectionsPath}
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Inspections
-        </NavLink>
-        <NavLink
-          to={loginsPath}
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Login history
-        </NavLink>
-      </nav>
-
-      <Outlet context={{ user }} />
+      <TabbedContent tabs={tabs} className="my-0">
+        <Outlet context={{ user }} />
+      </TabbedContent>
     </div>
   );
 }

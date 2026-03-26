@@ -1,3 +1,7 @@
+import { Lock, MoreHorizontal, Smartphone, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,9 +22,6 @@ import {
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import DialogDeleteDevice from "@/pages/dashboard/admin/devices/dialog-delete-device";
 import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device";
-import { Lock, MoreHorizontal, Smartphone, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
 
 type DeviceViewContext = { device: Device };
 

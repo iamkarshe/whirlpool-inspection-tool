@@ -3,10 +3,10 @@ import { PAGES } from "@/endpoints";
 import { WarehouseHeaderBadges } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import { loadWarehouseView } from "@/pages/dashboard/admin/warehouses/warehouse-view/controller";
+import { TabbedContent } from "@/components/tabbed-content";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useParams } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { Link, Outlet, useParams } from "react-router-dom";
 
 export default function WarehouseViewLayout() {
   const params = useParams<{ id: string }>();
@@ -61,6 +61,12 @@ export default function WarehouseViewLayout() {
   const usersPath = PAGES.warehouseUsersPath(warehouse.id);
   const devicesPath = PAGES.warehouseDevicesPath(warehouse.id);
   const inspectionsPath = PAGES.warehouseInspectionsPath(warehouse.id);
+  const tabs = [
+    { label: "Details", to: basePath, end: true },
+    { label: "Users", to: usersPath },
+    { label: "Devices", to: devicesPath },
+    { label: "Inspections", to: inspectionsPath },
+  ] as const;
 
   return (
     <div className="space-y-6">
@@ -83,63 +89,9 @@ export default function WarehouseViewLayout() {
         </div>
       </div>
 
-      <nav className="flex gap-1 border-b border-border">
-        <NavLink
-          to={basePath}
-          end
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Details
-        </NavLink>
-        <NavLink
-          to={usersPath}
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Users
-        </NavLink>
-        <NavLink
-          to={devicesPath}
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Devices
-        </NavLink>
-        <NavLink
-          to={inspectionsPath}
-          className={({ isActive }) =>
-            cn(
-              "px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
-              isActive
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )
-          }
-        >
-          Inspections
-        </NavLink>
-      </nav>
-
-      <Outlet context={{ warehouse }} />
+      <TabbedContent tabs={tabs} className="my-0">
+        <Outlet context={{ warehouse }} />
+      </TabbedContent>
     </div>
   );
 }
