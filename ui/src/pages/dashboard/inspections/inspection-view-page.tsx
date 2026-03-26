@@ -6,6 +6,7 @@ import { CheckCircle, XCircle, Package, Box, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
+import { AnimatedIntroText } from "@/components/animated-intro-text";
 import { PAGES } from "@/endpoints";
 import { type GalleryImage } from "@/components/image-gallery-dialog";
 import { type RaiseIssuePayload } from "@/components/dialogs/raise-issue-dialog";
@@ -418,12 +419,12 @@ export default function InspectionViewPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {activeTabTitle}
-          </h1>
-          <div className="text-muted-foreground mt-1 text-sm">
-            Inspection {inspection.id}
-          </div>
+          <AnimatedIntroText
+            title={activeTabTitle}
+            description={`Inspection [${inspection.id}]`}
+            titleClassName="text-2xl font-semibold tracking-tight"
+            descriptionClassName="text-muted-foreground mb-1 text-sm"
+          />
           <div className="mt-1 flex flex-wrap gap-1.5">
             <InspectionTypeBadge inspectionType={inspection.inspection_type} />
             <Badge variant="outline" className="text-xs font-normal">
