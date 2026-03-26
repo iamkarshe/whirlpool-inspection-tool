@@ -95,5 +95,6 @@ export const PAGES = {
   OPS_ACCOUNT: "/ops/account",
   OPS_HELP: "/ops/help",
   OPS_TODAY_INSPECTIONS: "/ops/today-inspections",
-  OPS_INSPECTION_DETAIL: "/ops/inspection-detail",
+  OPS_INSPECTIONS: "/ops/inspections",
+  opsInspectionDetailPath: (id: string) => `/ops/inspections/${id}`,
 };

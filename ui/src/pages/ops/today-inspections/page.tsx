@@ -1,5 +1,12 @@
 import { ChevronRight, ClipboardList } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import {
+  getInspectionQuestionResults,
+  getInspections,
+  type Inspection,
+} from "@/pages/dashboard/inspections/inspection-service";
 
 type TodayInspection = {
   id: string;
@@ -9,29 +16,28 @@ type TodayInspection = {
   time: string;
 };
 
-const MOCK_INSPECTIONS: TodayInspection[] = [
-  {
-    id: "insp-001",
-    product: "Front Load Washer",
-    code: "FLW-839201",
-    status: "passed",
-    time: "09:12",
-  },
-  {
-    id: "insp-002",
-    product: "Side-by-Side Refrigerator",
-    code: "SBS-448920",
-    status: "failed",
-    time: "09:34",
-  },
-  {
-    id: "insp-003",
-    product: "Microwave Oven",
-    code: "MWO-992104",
-    status: "pending",
-    time: "10:02",
-  },
-];
+function toTodayTime(createdAt: string) {
+  return new Date(createdAt).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+async function toTodayInspection(inspection: Inspection): Promise<TodayInspection> {
+  const [outer, inner, product] = await Promise.all([
+    getInspectionQuestionResults(inspection.id, "outer-packaging"),
+    getInspectionQuestionResults(inspection.id, "inner-packaging"),
+    getInspectionQuestionResults(inspection.id, "product"),
+  ]);
+  const failed = [...outer, ...inner, ...product].some((r) => r.status === "fail");
+  return {
+    id: inspection.id,
+    product: inspection.product_category_name ?? inspection.checklist_name,
+    code: inspection.product_serial,
+    status: failed ? "failed" : "passed",
+    time: toTodayTime(inspection.created_at),
+  };
+}
 
 function statusBadge(status: TodayInspection["status"]) {
   if (status === "passed") {
@@ -60,6 +66,24 @@ function statusBadge(status: TodayInspection["status"]) {
 
 export default function OpsTodayInspectionsPage() {
   const navigate = useNavigate();
+  const [rows, setRows] = useState<TodayInspection[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getInspections()
+      .then(async (list) => {
+        const mapped = await Promise.all(list.map(toTodayInspection));
+        if (!cancelled) setRows(mapped);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -70,7 +94,10 @@ export default function OpsTodayInspectionsPage() {
       </header>
 
       <section className="space-y-2">
-        {MOCK_INSPECTIONS.map((inspection) => (
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading inspections...</p>
+        ) : null}
+        {rows.map((inspection) => (
           <button
             key={inspection.id}
             type="button"
