@@ -41,7 +41,17 @@ export default function ProductCategoriesDataTable({
               <ArrowUpDown className="ml-1 h-4 w-4" />
             </Button>
           ),
-          cell: ({ row }) => row.getValue("name"),
+          cell: ({ row }) => {
+            const c = row.original;
+            return (
+              <Link
+                to={PAGES.productCategoryViewPath(c.id)}
+                className="text-primary hover:underline"
+              >
+                {row.getValue("name")}
+              </Link>
+            );
+          },
         },
         {
           id: "products",

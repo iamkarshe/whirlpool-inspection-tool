@@ -45,3 +45,10 @@ export const getProductCategories = async (): Promise<ProductCategory[]> => {
     }, 2000);
   });
 };
+
+export const getProductCategoryById = async (
+  id: number,
+): Promise<ProductCategory | null> => {
+  const list = await getProductCategories();
+  return list.find((c) => c.id === id) ?? null;
+};

@@ -75,6 +75,42 @@ const DeviceViewUsersPage = lazy(
 const ProductCategoriesPage = lazy(
   () => import("@/pages/dashboard/admin/product-categories/page"),
 );
+const ProductCategoryViewLayout = lazy(
+  () => import("@/pages/dashboard/admin/product-categories/category-view/page"),
+);
+const ProductCategoryOverviewPage = lazy(
+  () => import("@/pages/dashboard/admin/product-categories/category-view/overview-page"),
+);
+const ProductCategoryProductsPage = lazy(
+  () => import("@/pages/dashboard/admin/product-categories/category-view/products-page"),
+);
+const ProductCategoryInspectionsPage = lazy(
+  () => import("@/pages/dashboard/admin/product-categories/category-view/inspections-page"),
+);
+const ProductCategoryInboundInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/product-categories/category-view/inbound-inspections-page"
+    ),
+);
+const ProductCategoryOutboundInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/product-categories/category-view/outbound-inspections-page"
+    ),
+);
+const ProductCategoryInboundFailedInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/product-categories/category-view/inbound-failed-inspections-page"
+    ),
+);
+const ProductCategoryOutboundFailedInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/product-categories/category-view/outbound-failed-inspections-page"
+    ),
+);
 const ProductsPage = lazy(
   () => import("@/pages/dashboard/admin/products/page"),
 );
@@ -641,6 +677,73 @@ export const router = createBrowserRouter([
             <ProductCategoriesPage />
           </Suspense>
         ),
+      },
+      {
+        path: "masters/product-categories/:id",
+        handle: { title: "Product category" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProductCategoryViewLayout />
+          </Suspense>
+        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductCategoryOverviewPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "products",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductCategoryProductsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductCategoryInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/inbound",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductCategoryInboundInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/outbound",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductCategoryOutboundInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/inbound-failed",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductCategoryInboundFailedInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/outbound-failed",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductCategoryOutboundFailedInspectionsPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "masters/products",

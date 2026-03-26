@@ -74,10 +74,7 @@ const productColumns: ColumnDef<Product>[] = [
     cell: ({ row }) => {
       const p = row.original;
       return (
-        <Link
-          to={`${PAGES.DASHBOARD_MASTERS_PRODUCT_CATEGORIES}?product_category_id=${p.product_category_id}`}
-          className="text-primary hover:underline"
-        >
+        <Link to={PAGES.productCategoryViewPath(p.product_category_id)} className="text-primary hover:underline">
           {row.getValue("category_name")}
         </Link>
       );

@@ -51,16 +51,16 @@ export const navItems: NavGroup[] = [
         ],
       },
       {
-        title: "Transactions",
+        title: "Inspections",
         href: "#",
         icon: ClipboardCheckIcon,
         items: [
           {
-            title: "Inspections",
+            title: "Overall",
             href: PAGES.DASHBOARD_INSPECTIONS,
           },
           {
-            title: "Inbound Inspections",
+            title: "Inbound",
             href: PAGES.DASHBOARD_INSPECTIONS_INBOUND,
           },
           {
@@ -68,11 +68,19 @@ export const navItems: NavGroup[] = [
             href: PAGES.DASHBOARD_INSPECTIONS_INBOUND_FAILED,
           },
           {
-            title: "Outbound Inspections",
+            title: "Outbound",
             href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND,
           },
           {
             title: "Outbound Failed",
+            href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
+          },
+          {
+            title: "Flagged Inspections",
+            href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
+          },
+          {
+            title: "Flagged Images",
             href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
           },
         ],
