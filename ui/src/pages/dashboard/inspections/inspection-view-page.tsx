@@ -5,25 +5,10 @@ import { CheckCircle, XCircle, Package, Box, ShoppingBag } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs } from "@/components/ui/tabs";
 import { PAGES } from "@/endpoints";
-import {
-  ImageGalleryDialog,
-  type GalleryImage,
-} from "@/components/image-gallery-dialog";
-import {
-  RaiseIssueDialog,
-  type RaiseIssuePayload,
-} from "@/components/dialogs/raise-issue-dialog";
+import { type GalleryImage } from "@/components/image-gallery-dialog";
+import { type RaiseIssuePayload } from "@/components/dialogs/raise-issue-dialog";
 import { type KpiCardProps } from "@/components/kpi-card";
 import { TabbedButtons } from "@/components/tabbed-nav";
 import { TabbedSurface } from "@/components/tabbed-content";
@@ -46,6 +31,8 @@ import {
   InspectionFlagsTab,
   type InspectionIssueRow,
 } from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
+import { inspectionTabTitle, inspectionViewTabItems } from "@/pages/dashboard/inspections/components/view-tabs/inspection-view-tab-items";
+import { InspectionViewDialogs } from "@/pages/dashboard/inspections/components/view-tabs/inspection-view-dialogs";
 
 type ManualIssue = Omit<InspectionIssueRow, "status">;
 
@@ -115,14 +102,7 @@ export default function InspectionViewPage() {
   }, [tab]);
 
   const activeTabTitle = useMemo(() => {
-    if (tab === "overview") return "Overview";
-    if (tab === "outer-packaging") return "Outer Packaging";
-    if (tab === "inner-packaging") return "Inner Packaging";
-    if (tab === "product") return "Product Inspection";
-    if (tab === "images") return "Inspection Images";
-    if (tab === "relationship") return "Relationship";
-    if (tab === "flags") return "Issues/Flags";
-    return "Overview";
+    return inspectionTabTitle(tab);
   }, [tab]);
 
   function setTab(next: string) {
@@ -364,35 +344,16 @@ export default function InspectionViewPage() {
       data-testid="screen-dashboard-inspections-view"
       className="space-y-6"
     >
-      <ImageGalleryDialog
-        open={galleryOpen}
-        onOpenChange={setGalleryOpen}
-        images={galleryImages}
-        activeUrl={activeGalleryUrl}
-        onActiveUrlChange={setActiveGalleryUrl}
-        title="Inspection images"
-        description="Click a thumbnail to preview, or download the selected image."
-        onRaiseIssue={(img) => {
-          setActiveGalleryUrl(img.url);
-          setRaiseIssueOpen(true);
-        }}
-      />
-      <RaiseIssueDialog
-        open={raiseIssueOpen}
-        onOpenChange={setRaiseIssueOpen}
-        target={
-          activeGalleryUrl
-            ? {
-                type: "image",
-                inspectionId: inspection.id,
-                imageUrl: activeGalleryUrl,
-                imageFilename: galleryImages.find(
-                  (i) => i.url === activeGalleryUrl,
-                )?.filename,
-              }
-            : { type: "inspection", inspectionId: inspection.id }
-        }
-        onSubmit={(payload: RaiseIssuePayload) => {
+      <InspectionViewDialogs
+        inspectionId={inspection.id}
+        galleryOpen={galleryOpen}
+        setGalleryOpen={setGalleryOpen}
+        galleryImages={galleryImages}
+        activeGalleryUrl={activeGalleryUrl}
+        setActiveGalleryUrl={setActiveGalleryUrl}
+        raiseIssueOpen={raiseIssueOpen}
+        setRaiseIssueOpen={setRaiseIssueOpen}
+        onRaiseIssueSubmit={(payload: RaiseIssuePayload) => {
           const next: ManualIssue = {
             id: `manual-${crypto.randomUUID()}`,
             source: "manual",
@@ -413,55 +374,23 @@ export default function InspectionViewPage() {
           };
           setManualIssues((prev) => [next, ...prev]);
         }}
+        resolveOpen={resolveOpen}
+        setResolveOpen={setResolveOpen}
+        resolvingIssueTitle={resolvingIssue?.title}
+        resolveRemark={resolveRemark}
+        setResolveRemark={setResolveRemark}
+        onResolveConfirm={() => {
+          if (!resolvingIssue) return;
+          setResolvedIssues((prev) => ({
+            ...prev,
+            [resolvingIssue.id]: {
+              resolvedAt: new Date().toISOString(),
+              remark: resolveRemark.trim(),
+            },
+          }));
+          setResolveOpen(false);
+        }}
       />
-      <Dialog open={resolveOpen} onOpenChange={setResolveOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Resolve issue</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-md border bg-muted/20 p-3 text-sm">
-              <div className="font-medium">
-                {resolvingIssue?.title ?? "Issue"}
-              </div>
-              <div className="text-muted-foreground mt-1 text-xs">
-                Add remarks for resolution audit trail.
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="resolve-remark">Resolution remarks</Label>
-              <Textarea
-                id="resolve-remark"
-                value={resolveRemark}
-                onChange={(e) => setResolveRemark(e.target.value)}
-                placeholder="What was done to resolve this issue?"
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={!resolvingIssue || resolveRemark.trim().length === 0}
-              onClick={() => {
-                if (!resolvingIssue) return;
-                setResolvedIssues((prev) => ({
-                  ...prev,
-                  [resolvingIssue.id]: {
-                    resolvedAt: new Date().toISOString(),
-                    remark: resolveRemark.trim(),
-                  },
-                }));
-                setResolveOpen(false);
-              }}
-            >
-              Mark as resolved
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link
@@ -493,15 +422,7 @@ export default function InspectionViewPage() {
             value={tab}
             onValueChange={setTab}
             className="w-full justify-start"
-            items={[
-              { value: "overview", label: "Overview" },
-              { value: "outer-packaging", label: "Outer Packaging" },
-              { value: "inner-packaging", label: "Inner Packaging" },
-              { value: "product", label: "Product Inspection" },
-              { value: "images", label: "Inspection Images" },
-              { value: "relationship", label: "Relationship" },
-              { value: "flags", label: "Issues/Flags" },
-            ]}
+            items={[...inspectionViewTabItems]}
           />
 
           <InspectionOverviewTab
