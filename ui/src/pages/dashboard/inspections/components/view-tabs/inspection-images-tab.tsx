@@ -3,6 +3,8 @@ import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import type { GalleryImage } from "@/components/image-gallery-dialog";
+import type { InspectionIssueRow } from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
+import { ImageIssuesBadge } from "@/pages/dashboard/inspections/components/view-tabs/image-issues-badge";
 
 type InspectionImageCard = {
   key: string;
@@ -17,6 +19,8 @@ type Props = {
   allImages: InspectionImageCard[];
   allGalleryImages: GalleryImage[];
   onOpenImage: (images: GalleryImage[], activeUrl: string) => void;
+  issueRows: InspectionIssueRow[];
+  onOpenImageIssues: (imageUrl: string) => void;
 };
 
 export function InspectionImagesTab({
@@ -24,6 +28,8 @@ export function InspectionImagesTab({
   allImages,
   allGalleryImages,
   onOpenImage,
+  issueRows,
+  onOpenImageIssues,
 }: Props) {
   return (
     <TabsContent value="images" className="space-y-4">
@@ -51,12 +57,18 @@ export function InspectionImagesTab({
                   onClick={() => onOpenImage(allGalleryImages, img.url)}
                   className="group rounded-md border bg-muted/20 text-left transition-colors hover:bg-muted/40"
                 >
-                  <div className="aspect-[4/3] overflow-hidden rounded-t-md">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-t-md">
                     <img
                       src={img.url}
                       alt={img.filename ?? "Inspection image"}
                       className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                     />
+                    <div className="absolute top-2 right-2">
+                      <ImageIssuesBadge
+                        count={issueRows.filter((i) => i.imageUrl === img.url).length}
+                        onClick={() => onOpenImageIssues(img.url)}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1 p-2">
                     <p className="text-xs font-medium capitalize">

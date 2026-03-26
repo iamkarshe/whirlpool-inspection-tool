@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { InspectionIssueRow } from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
+import { ImageIssuesBadge } from "@/pages/dashboard/inspections/components/view-tabs/image-issues-badge";
+import { InspectionImageIssuesDialog } from "@/pages/dashboard/inspections/components/view-tabs/inspection-image-issues-dialog";
 
 type Props = {
   inspectionId: string;
@@ -28,6 +31,12 @@ type Props = {
   resolveRemark: string;
   setResolveRemark: (value: string) => void;
   onResolveConfirm: () => void;
+  issueRows: InspectionIssueRow[];
+  imageIssuesOpen: boolean;
+  setImageIssuesOpen: (open: boolean) => void;
+  imageIssuesUrl: string | null;
+  setImageIssuesUrl: (url: string | null) => void;
+  onResolveIssue: (issueId: string) => void;
 };
 
 export function InspectionViewDialogs({
@@ -46,6 +55,12 @@ export function InspectionViewDialogs({
   resolveRemark,
   setResolveRemark,
   onResolveConfirm,
+  issueRows,
+  imageIssuesOpen,
+  setImageIssuesOpen,
+  imageIssuesUrl,
+  setImageIssuesUrl,
+  onResolveIssue,
 }: Props) {
   const raiseIssueTarget: RaiseIssueTarget = activeGalleryUrl
     ? {
@@ -55,6 +70,8 @@ export function InspectionViewDialogs({
         imageFilename: galleryImages.find((i) => i.url === activeGalleryUrl)?.filename,
       }
     : { type: "inspection", inspectionId };
+  const activeImageIssues = issueRows.filter((issue) => issue.imageUrl === activeGalleryUrl);
+  const selectedImageIssues = issueRows.filter((issue) => issue.imageUrl === imageIssuesUrl);
 
   return (
     <>
@@ -70,6 +87,25 @@ export function InspectionViewDialogs({
           setActiveGalleryUrl(img.url);
           setRaiseIssueOpen(true);
         }}
+        activeImageOverlay={
+          activeGalleryUrl ? (
+            <ImageIssuesBadge
+              count={activeImageIssues.length}
+              onClick={() => {
+                setImageIssuesUrl(activeGalleryUrl);
+                setImageIssuesOpen(true);
+              }}
+            />
+          ) : null
+        }
+      />
+
+      <InspectionImageIssuesDialog
+        open={imageIssuesOpen}
+        onOpenChange={setImageIssuesOpen}
+        imageUrl={imageIssuesUrl}
+        issues={selectedImageIssues}
+        onResolveIssue={onResolveIssue}
       />
 
       <RaiseIssueDialog

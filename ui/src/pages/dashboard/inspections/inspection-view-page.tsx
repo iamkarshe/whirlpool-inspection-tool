@@ -77,6 +77,8 @@ export default function InspectionViewPage() {
   const [resolveOpen, setResolveOpen] = useState(false);
   const [resolvingIssueId, setResolvingIssueId] = useState<string | null>(null);
   const [resolveRemark, setResolveRemark] = useState("");
+  const [imageIssuesOpen, setImageIssuesOpen] = useState(false);
+  const [imageIssuesUrl, setImageIssuesUrl] = useState<string | null>(null);
   const [checksDialogOpen, setChecksDialogOpen] = useState(false);
   const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
     "failed",
@@ -393,6 +395,17 @@ export default function InspectionViewPage() {
           }));
           setResolveOpen(false);
         }}
+        issueRows={issueRows}
+        imageIssuesOpen={imageIssuesOpen}
+        setImageIssuesOpen={setImageIssuesOpen}
+        imageIssuesUrl={imageIssuesUrl}
+        setImageIssuesUrl={setImageIssuesUrl}
+        onResolveIssue={(issueId) => {
+          setResolvingIssueId(issueId);
+          setResolveRemark("");
+          setResolveOpen(true);
+          setImageIssuesOpen(false);
+        }}
       />
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
@@ -493,10 +506,15 @@ export default function InspectionViewPage() {
             reviewLoading={reviewLoading}
             allImages={allImages}
             allGalleryImages={allGalleryImages}
+            issueRows={issueRows}
             onOpenImage={(images, activeUrl) => {
               setGalleryImages(images);
               setActiveGalleryUrl(activeUrl);
               setGalleryOpen(true);
+            }}
+            onOpenImageIssues={(url) => {
+              setImageIssuesUrl(url);
+              setImageIssuesOpen(true);
             }}
           />
 

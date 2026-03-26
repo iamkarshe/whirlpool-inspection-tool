@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ export function ImageGalleryDialog({
   activeUrl,
   onActiveUrlChange,
   onRaiseIssue,
+  activeImageOverlay,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,6 +36,7 @@ export function ImageGalleryDialog({
   activeUrl: string | null;
   onActiveUrlChange: (url: string) => void;
   onRaiseIssue?: (img: GalleryImage) => void;
+  activeImageOverlay?: ReactNode;
 }) {
   const active = useMemo(() => {
     const fallback = images[0]?.url ?? null;
@@ -63,12 +66,15 @@ export function ImageGalleryDialog({
           </div>
         ) : (
           <div className="grid min-h-0 flex-1 gap-4 overflow-hidden md:grid-cols-[1fr_220px]">
-            <div className="min-h-0 overflow-auto rounded-md border bg-muted/20">
+            <div className="relative min-h-0 overflow-auto rounded-md border bg-muted/20">
               <img
                 src={active ?? ""}
                 alt={activeImage?.filename ?? "Inspection image"}
                 className="h-full min-h-[320px] w-full object-contain"
               />
+              {activeImageOverlay ? (
+                <div className="absolute bottom-2 left-2">{activeImageOverlay}</div>
+              ) : null}
             </div>
 
             <div className="relative min-h-0">
