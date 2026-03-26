@@ -27,9 +27,14 @@ const productColumns: ColumnDef<Product>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <span className="font-mono text-sm">{row.getValue("serial_number")}</span>
-    ),
+    cell: ({ row }) => {
+      const p = row.original;
+      return (
+        <Link to={PAGES.productViewPath(p.id)} className="font-mono text-sm text-primary hover:underline">
+          {row.getValue("serial_number")}
+        </Link>
+      );
+    },
   },
   {
     accessorKey: "manufacturing_date",

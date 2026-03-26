@@ -114,6 +114,39 @@ const ProductCategoryOutboundFailedInspectionsPage = lazy(
 const ProductsPage = lazy(
   () => import("@/pages/dashboard/admin/products/page"),
 );
+const ProductViewLayout = lazy(
+  () => import("@/pages/dashboard/admin/products/product-view/page"),
+);
+const ProductOverviewPage = lazy(
+  () => import("@/pages/dashboard/admin/products/product-view/overview-page"),
+);
+const ProductInspectionsPage = lazy(
+  () => import("@/pages/dashboard/admin/products/product-view/inspections-page"),
+);
+const ProductInboundInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/products/product-view/inbound-inspections-page"
+    ),
+);
+const ProductOutboundInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/products/product-view/outbound-inspections-page"
+    ),
+);
+const ProductInboundFailedInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/products/product-view/inbound-failed-inspections-page"
+    ),
+);
+const ProductOutboundFailedInspectionsPage = lazy(
+  () =>
+    import(
+      "@/pages/dashboard/admin/products/product-view/outbound-failed-inspections-page"
+    ),
+);
 const WarehousesPage = lazy(
   () => import("@/pages/dashboard/admin/warehouses/page"),
 );
@@ -753,6 +786,65 @@ export const router = createBrowserRouter([
             <ProductsPage />
           </Suspense>
         ),
+      },
+      {
+        path: "masters/products/:id",
+        handle: { title: "Product" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProductViewLayout />
+          </Suspense>
+        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductOverviewPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/inbound",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductInboundInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/outbound",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductOutboundInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/inbound-failed",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductInboundFailedInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections/outbound-failed",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProductOutboundFailedInspectionsPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "masters/warehouses",

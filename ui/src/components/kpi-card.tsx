@@ -44,7 +44,7 @@ export function KpiCard({
     <Card
       title={label}
       className={cn(
-        "w-full p-3 transition-colors duration-200",
+        "group w-full p-3 transition-colors duration-200",
         "border-border hover:bg-muted/40 hover:border-primary/20",
         href || onClick ? "cursor-pointer" : null,
         className,
@@ -78,25 +78,31 @@ export function KpiCard({
             </Badge>
           ) : null}
         </div>
-        <dd className="text-foreground mt-2 text-3xl font-semibold">
+        <dd
+          className={cn(
+            "text-foreground mt-2 text-3xl font-semibold",
+            "relative overflow-hidden whitespace-nowrap pr-10",
+            "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-12",
+            "after:bg-gradient-to-l after:from-background after:to-transparent",
+            "after:transition-colors after:duration-200 group-hover:after:from-muted/40",
+          )}
+        >
           {displayValue}
         </dd>
       </CardContent>
     </Card>
   );
 
-  return (
-    href ? (
-      <Link to={href} className="block no-underline">
-        {card}
-      </Link>
-    ) : onClick ? (
-      <button type="button" onClick={onClick} className="block w-full text-left">
-        {card}
-      </button>
-    ) : (
-      card
-    )
+  return href ? (
+    <Link to={href} className="block no-underline">
+      {card}
+    </Link>
+  ) : onClick ? (
+    <button type="button" onClick={onClick} className="block w-full text-left">
+      {card}
+    </button>
+  ) : (
+    card
   );
 }
 

@@ -45,3 +45,8 @@ export const getProducts = async (): Promise<Product[]> => {
     }, 1500);
   });
 };
+
+export const getProductById = async (id: number): Promise<Product | null> => {
+  const list = await getProducts();
+  return list.find((p) => p.id === id) ?? null;
+};

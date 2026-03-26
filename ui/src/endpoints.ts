@@ -38,6 +38,9 @@ export const PAGES = {
   productCategoryViewPath: (categoryId: number | string) =>
     `${PAGES.DASHBOARD_MASTERS_PRODUCT_CATEGORIES}/${categoryId}`,
 
+  productViewPath: (productId: number | string) =>
+    `${PAGES.DASHBOARD_MASTERS_PRODUCTS}/${productId}`,
+
   userViewPath: (id: number) => `/dashboard/admin/users/${id}`,
   userViewDevicesPath: (userId: number) =>
     `/dashboard/admin/users/${userId}/devices`,
