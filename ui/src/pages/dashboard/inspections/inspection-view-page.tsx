@@ -1,24 +1,10 @@
-import { ArrowLeft, Bug, ClipboardCheck, Loader2 } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  CheckCircle,
-  XCircle,
-  Package,
-  Box,
-  ShoppingBag,
-  User,
-  Smartphone,
-  GitBranch,
-  ArrowRight,
-  ExternalLink,
-} from "lucide-react";
+import { CheckCircle, XCircle, Package, Box, ShoppingBag } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs } from "@/components/ui/tabs";
 import { PAGES } from "@/endpoints";
 import {
   ImageGalleryDialog,
@@ -36,20 +22,12 @@ import {
 } from "@/components/image-gallery-dialog";
 import {
   RaiseIssueDialog,
-  type IssueSeverity,
-  type IssueType,
   type RaiseIssuePayload,
 } from "@/components/dialogs/raise-issue-dialog";
-import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
-import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
-import { InspectionQuestionResultsTable } from "@/pages/dashboard/inspections/components/inspection-question-results-table";
+import { type KpiCardProps } from "@/components/kpi-card";
 import { TabbedButtons } from "@/components/tabbed-nav";
 import { TabbedSurface } from "@/components/tabbed-content";
-import {
-  InspectionChecklistBadge,
-  InspectionProductBadge,
-  InspectionTypeBadge,
-} from "@/pages/dashboard/inspections/inspection-badge";
+import { InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
 import {
   getInspectionById,
   getInspectionRelationship,
@@ -60,28 +38,16 @@ import {
   type InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-service";
 import { formatDate } from "@/lib/core";
+import { InspectionOverviewTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-overview-tab";
+import { InspectionSectionTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-section-tab";
+import { InspectionRelationshipTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-relationship-tab";
+import { InspectionImagesTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-images-tab";
+import {
+  InspectionFlagsTab,
+  type InspectionIssueRow,
+} from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
 
-type InspectionIssueRow = {
-  id: string;
-  source: "system" | "manual";
-  targetType: "inspection" | "image";
-  title: string;
-  description: string;
-  severity: IssueSeverity;
-  type: IssueType;
-  section?: InspectionSectionKey;
-  imageUrl?: string;
-  imageFilename?: string;
-  createdAt: string;
-  status: "open" | "resolved";
-  resolvedAt?: string;
-  resolutionRemark?: string;
-};
-
-type ManualIssue = Omit<
-  InspectionIssueRow,
-  "status" | "resolvedAt" | "resolutionRemark"
->;
+type ManualIssue = Omit<InspectionIssueRow, "status">;
 
 export default function InspectionViewPage() {
   const params = useParams<{ id: string }>();
@@ -345,144 +311,9 @@ export default function InspectionViewPage() {
       return {
         ...item,
         status: resolved ? "resolved" : "open",
-        resolvedAt: resolved?.resolvedAt,
-        resolutionRemark: resolved?.remark,
       };
     });
   }, [manualIssues, systemIssues, resolvedIssues]);
-
-  const issuesFilters: DataTableFilter<InspectionIssueRow>[] = [
-    {
-      id: "status",
-      title: "Status",
-      options: [
-        { value: "open", label: "Open" },
-        { value: "resolved", label: "Resolved" },
-      ],
-    },
-    {
-      id: "severity",
-      title: "Severity",
-      options: [
-        { value: "low", label: "Low" },
-        { value: "medium", label: "Medium" },
-        { value: "high", label: "High" },
-      ],
-    },
-  ];
-
-  const issueColumns: ColumnDef<InspectionIssueRow>[] = [
-    {
-      accessorKey: "title",
-      header: "Issue",
-      cell: ({ row }) => (
-        <div className="min-w-[220px]">
-          <div className="font-medium">{row.original.title}</div>
-          <div className="text-muted-foreground line-clamp-2 text-xs">
-            {row.original.description}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "section",
-      header: "Section",
-      cell: ({ row }) =>
-        row.original.section ? (
-          <Badge variant="outline" className="capitalize">
-            {row.original.section.replace("-", " ")}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        ),
-    },
-    {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ row }) => (
-        <Badge variant="secondary" className="capitalize">
-          {row.original.type.replaceAll("_", " ")}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "severity",
-      header: "Severity",
-      cell: ({ row }) => (
-        <Badge
-          variant="outline"
-          className={
-            row.original.severity === "high"
-              ? "border-red-300 bg-red-50 text-red-700"
-              : row.original.severity === "medium"
-                ? "border-amber-300 bg-amber-50 text-amber-700"
-                : "border-emerald-300 bg-emerald-50 text-emerald-700"
-          }
-        >
-          {row.original.severity}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge
-          variant={
-            row.original.status === "resolved" ? "success" : "destructive"
-          }
-        >
-          {row.original.status === "resolved" ? "Resolved" : "Open"}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created",
-      cell: ({ row }) => formatDate(row.original.createdAt),
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const item = row.original;
-        const isResolved = item.status === "resolved";
-        return (
-          <div className="flex items-center gap-2">
-            {item.imageUrl ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setGalleryImages(
-                    item.imageUrl
-                      ? [{ url: item.imageUrl, filename: item.imageFilename }]
-                      : [],
-                  );
-                  setActiveGalleryUrl(item.imageUrl ?? null);
-                  setGalleryOpen(true);
-                }}
-              >
-                View image
-              </Button>
-            ) : null}
-            <Button
-              size="sm"
-              variant={isResolved ? "secondary" : "default"}
-              disabled={isResolved}
-              onClick={() => {
-                setResolvingIssueId(item.id);
-                setResolveRemark("");
-                setResolveOpen(true);
-              }}
-            >
-              {isResolved ? "Resolved" : "Resolve"}
-            </Button>
-          </div>
-        );
-      },
-    },
-  ];
 
   const resolvingIssue = useMemo(
     () => issueRows.find((i) => i.id === resolvingIssueId) ?? null,
@@ -654,389 +485,76 @@ export default function InspectionViewPage() {
             ]}
           />
 
-          <TabsContent value="overview" className="space-y-6">
-            <Card className="gap-3 py-3 my-2">
-              <CardHeader className="px-3">
-                <CardTitle className="text-base">Quality Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3">
-                {reviewLoading ? (
-                  <div className="flex min-h-[120px] items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <KpiCardGrid
-                    cards={reviewKpis}
-                    className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
-                  />
-                )}
-              </CardContent>
-            </Card>
-            <ChecksSummaryDialog
-              open={checksDialogOpen}
-              onOpenChange={setChecksDialogOpen}
-              mode={checksDialogMode}
-              onModeChange={setChecksDialogMode}
-              reviewCounts={{
-                passed: reviewSummary.passed,
-                failed: reviewSummary.failed,
-              }}
-              sectionRows={checksBySection}
-              onViewImages={(r) => {
-                setGalleryImages(r.images);
-                setActiveGalleryUrl(r.images[0]?.url ?? null);
-                setGalleryOpen(true);
-              }}
-            />
-            <Card className="my-4">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
-                    <ClipboardCheck className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">{inspection.id}</CardTitle>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      <InspectionChecklistBadge
-                        name={inspection.checklist_name}
-                      />
-                      <InspectionProductBadge
-                        serial={inspection.product_serial}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Inspector</p>
-                  <Link
-                    to={PAGES.userViewPath(inspection.inspector_id)}
-                    className="text-primary hover:underline"
-                  >
-                    {inspection.inspector_name}
-                  </Link>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Device</p>
-                  <Link
-                    to={PAGES.deviceViewPath(inspection.device_id)}
-                    className="font-mono text-sm text-primary hover:underline"
-                  >
-                    {inspection.device_fingerprint}
-                  </Link>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Product</p>
-                  <p className="font-mono text-sm">
-                    {inspection.product_serial}
-                  </p>
-                </div>
-                {inspection.product_category_name ? (
-                  <div className="space-y-1">
-                    <p className="text-muted-foreground text-sm">
-                      Product category
-                    </p>
-                    <p className="text-sm">
-                      {inspection.product_category_name}
-                    </p>
-                  </div>
-                ) : null}
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Checklist</p>
-                  <p className="text-sm">{inspection.checklist_name}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Type</p>
-                  <InspectionTypeBadge
-                    inspectionType={inspection.inspection_type}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Date</p>
-                  <p className="text-sm">{formatDate(inspection.created_at)}</p>
-                </div>
-                <div className="space-y-1 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setActiveGalleryUrl(null);
-                      setRaiseIssueOpen(true);
-                    }}
-                  >
-                    <Bug className="h-4 w-4" />
-                    Raise an issue
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <InspectionOverviewTab
+            reviewLoading={reviewLoading}
+            reviewKpis={reviewKpis}
+            checksDialogOpen={checksDialogOpen}
+            setChecksDialogOpen={setChecksDialogOpen}
+            checksDialogMode={checksDialogMode}
+            setChecksDialogMode={setChecksDialogMode}
+            reviewSummary={{
+              passed: reviewSummary.passed,
+              failed: reviewSummary.failed,
+            }}
+            checksBySection={checksBySection}
+            onViewImages={(r) => {
+              setGalleryImages(r.images);
+              setActiveGalleryUrl(r.images[0]?.url ?? null);
+              setGalleryOpen(true);
+            }}
+            inspection={inspection}
+            onRaiseIssue={() => {
+              setActiveGalleryUrl(null);
+              setRaiseIssueOpen(true);
+            }}
+          />
 
           {(["outer-packaging", "inner-packaging", "product"] as const).map(
             (k) => (
-              <TabsContent key={k} value={k} className="space-y-4">
-                <Card className="gap-3 py-3">
-                  <CardHeader className="px-3">
-                    <CardTitle className="text-base">
-                      {k === "outer-packaging"
-                        ? "Outer packaging"
-                        : k === "inner-packaging"
-                          ? "Inner packaging"
-                          : "Product"}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-3">
-                    {sectionLoading ? (
-                      <div className="flex min-h-[160px] items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : (
-                      <InspectionQuestionResultsTable
-                        rows={sectionRows}
-                        onViewImages={(r) => {
-                          setGalleryImages(r.images);
-                          setActiveGalleryUrl(r.images[0]?.url ?? null);
-                          setGalleryOpen(true);
-                        }}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+              <InspectionSectionTab
+                key={k}
+                value={k}
+                sectionLoading={sectionLoading}
+                rows={sectionRows}
+                onViewImages={(r) => {
+                  setGalleryImages(r.images);
+                  setActiveGalleryUrl(r.images[0]?.url ?? null);
+                  setGalleryOpen(true);
+                }}
+              />
             ),
           )}
 
-          <TabsContent value="relationship" className="space-y-4">
-            <Card className="gap-3 py-3">
-              <CardHeader className="px-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <GitBranch className="h-4 w-4 text-primary" />
-                  Inbound - Outbound Relationship
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 px-3">
-                {relationshipLoading ? (
-                  <div className="flex min-h-[160px] items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : !relationship ? (
-                  <div className="text-muted-foreground py-10 text-center text-sm">
-                    Relationship data not available.
-                  </div>
-                ) : (
-                  <>
-                    <KpiCardGrid
-                      className="grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-                      cards={[
-                        {
-                          label: "Inbound",
-                          value: "Available",
-                          icon: CheckCircle,
-                          className:
-                            "border-green-200 bg-green-50/30 hover:bg-green-50/30 dark:bg-green-900/10",
-                        },
-                        {
-                          label: "Outbound",
-                          value: relationship.outbound
-                            ? "Linked"
-                            : "Not linked",
-                          icon: relationship.outbound ? CheckCircle : XCircle,
-                          className: relationship.outbound
-                            ? "border-green-200 bg-green-50/30 hover:bg-green-50/30 dark:bg-green-900/10"
-                            : "border-red-200 bg-red-50/30 hover:bg-red-50/30 dark:bg-red-900/10",
-                        },
-                        {
-                          label: "Flow",
-                          value: relationship.outbound
-                            ? "Inbound with Outbound"
-                            : "Inbound only",
-                          icon: GitBranch,
-                        },
-                      ]}
-                    />
+          <InspectionRelationshipTab
+            relationshipLoading={relationshipLoading}
+            relationship={relationship}
+          />
 
-                    <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-muted/10 via-background to-muted/20 p-4">
-                      <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_1px_1px,theme(colors.border)_1px,transparent_0)] [background-size:20px_20px]" />
-                      <div className="relative grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
-                        <div className="rounded-xl border border-emerald-300/60 bg-emerald-50/60 p-4 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/20">
-                          <div className="mb-3 flex items-center justify-between">
-                            <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                              Inbound Inspection
-                            </div>
-                            <Button
-                              asChild
-                              size="sm"
-                              variant="outline"
-                              className="h-7 px-2"
-                            >
-                              <Link
-                                to={PAGES.inspectionViewPath(
-                                  relationship.inbound.inspectionId,
-                                )}
-                              >
-                                Open
-                                <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                              </Link>
-                            </Button>
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="text-muted-foreground text-xs font-medium">
-                              {relationship.inbound.inspectionId}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span>{relationship.inbound.personName}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Smartphone className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-mono text-xs">
-                                {relationship.inbound.deviceFingerprint}
-                              </span>
-                            </div>
-                            <div className="text-muted-foreground text-xs">
-                              {formatDate(relationship.inbound.scannedAt)}
-                            </div>
-                          </div>
-                        </div>
+          <InspectionImagesTab
+            reviewLoading={reviewLoading}
+            allImages={allImages}
+            allGalleryImages={allGalleryImages}
+            onOpenImage={(images, activeUrl) => {
+              setGalleryImages(images);
+              setActiveGalleryUrl(activeUrl);
+              setGalleryOpen(true);
+            }}
+          />
 
-                        <div className="relative flex items-center justify-center py-3 lg:py-0">
-                          <div
-                            className={
-                              relationship.outbound
-                                ? "h-[2px] w-20 bg-gradient-to-r from-emerald-500 via-primary to-blue-500 animate-pulse lg:w-28"
-                                : "h-[2px] w-20 border-t border-dashed border-muted-foreground/50 lg:w-28"
-                            }
-                          />
-                          <ArrowRight className="text-muted-foreground absolute h-4 w-4 bg-background" />
-                        </div>
-
-                        {relationship.outbound ? (
-                          <div className="rounded-xl border border-blue-300/60 bg-blue-50/60 p-4 shadow-sm dark:border-blue-800 dark:bg-blue-950/20">
-                            <div className="mb-3 flex items-center justify-between">
-                              <div className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-                                Outbound Inspection
-                              </div>
-                              <Button
-                                asChild
-                                size="sm"
-                                variant="outline"
-                                className="h-7 px-2"
-                              >
-                                <Link
-                                  to={PAGES.inspectionViewPath(
-                                    relationship.outbound.inspectionId,
-                                  )}
-                                >
-                                  Open
-                                  <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                                </Link>
-                              </Button>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                              <div className="text-muted-foreground text-xs font-medium">
-                                {relationship.outbound.inspectionId}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span>{relationship.outbound.personName}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Smartphone className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-mono text-xs">
-                                  {relationship.outbound.deviceFingerprint}
-                                </span>
-                              </div>
-                              <div className="text-muted-foreground text-xs">
-                                {formatDate(relationship.outbound.scannedAt)}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="rounded-xl border border-dashed bg-muted/20 p-4">
-                            <div className="text-muted-foreground text-sm">
-                              Outbound scan not available
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="images" className="space-y-4">
-            <Card className="gap-3 py-3">
-              <CardHeader className="px-3">
-                <CardTitle className="text-base">
-                  All inspection images ({allImages.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3">
-                {reviewLoading ? (
-                  <div className="flex min-h-[160px] items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : allImages.length === 0 ? (
-                  <div className="text-muted-foreground py-10 text-center text-sm">
-                    No images available
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {allImages.map((img) => (
-                      <button
-                        key={img.key}
-                        type="button"
-                        onClick={() => {
-                          setGalleryImages(allGalleryImages);
-                          setActiveGalleryUrl(img.url);
-                          setGalleryOpen(true);
-                        }}
-                        className="group rounded-md border bg-muted/20 text-left transition-colors hover:bg-muted/40"
-                      >
-                        <div className="aspect-[4/3] overflow-hidden rounded-t-md">
-                          <img
-                            src={img.url}
-                            alt={img.filename ?? "Inspection image"}
-                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                          />
-                        </div>
-                        <div className="space-y-1 p-2">
-                          <p className="text-xs font-medium capitalize">
-                            {img.section.replace("-", " ")}
-                          </p>
-                          <p className="text-muted-foreground line-clamp-2 text-xs">
-                            {img.question}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="flags" className="space-y-4">
-            <Card className="gap-3 py-3">
-              <CardContent className="px-3">
-                {reviewLoading ? (
-                  <div className="flex min-h-[160px] items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <DataTable<InspectionIssueRow>
-                    columns={issueColumns}
-                    data={issueRows}
-                    filters={issuesFilters}
-                    searchKey="title"
-                    rangeLabel="issues"
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <InspectionFlagsTab
+            reviewLoading={reviewLoading}
+            issueRows={issueRows}
+            onViewImage={(url, filename) => {
+              setGalleryImages([{ url, filename }]);
+              setActiveGalleryUrl(url);
+              setGalleryOpen(true);
+            }}
+            onResolve={(issueId) => {
+              setResolvingIssueId(issueId);
+              setResolveRemark("");
+              setResolveOpen(true);
+            }}
+          />
         </Tabs>
       </TabbedSurface>
     </div>
