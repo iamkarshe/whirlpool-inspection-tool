@@ -1,15 +1,10 @@
 import CsvUploadDialog from "@/components/csv-upload-dialog";
+import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,83 +84,73 @@ export default function WarehousesPage() {
           onSubmit={handleCsvSubmit}
         />
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <span className="mr-1">+</span>
-              Add Warehouse
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add warehouse</DialogTitle>
-              <DialogDescription>
-                Create a new warehouse location.
-              </DialogDescription>
-            </DialogHeader>
-            <form className="space-y-4" onSubmit={handleSubmit}>
+        <CreateEntryDialog
+          triggerLabel="Add Warehouse"
+          title="Add warehouse"
+          description="Create a new warehouse location."
+        >
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formValues.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="warehouse_code">Warehouse code</Label>
+              <Input
+                id="warehouse_code"
+                name="warehouse_code"
+                value={formValues.warehouse_code}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                name="address"
+                value={formValues.address}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="lat">Latitude (optional)</Label>
                 <Input
-                  id="name"
-                  name="name"
-                  value={formValues.name}
+                  id="lat"
+                  name="lat"
+                  type="number"
+                  step="any"
+                  placeholder="e.g. 18.5204"
+                  value={formValues.lat}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="warehouse_code">Warehouse code</Label>
+                <Label htmlFor="lng">Longitude (optional)</Label>
                 <Input
-                  id="warehouse_code"
-                  name="warehouse_code"
-                  value={formValues.warehouse_code}
+                  id="lng"
+                  name="lng"
+                  type="number"
+                  step="any"
+                  placeholder="e.g. 73.8567"
+                  value={formValues.lng}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={formValues.address}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="lat">Latitude (optional)</Label>
-                  <Input
-                    id="lat"
-                    name="lat"
-                    type="number"
-                    step="any"
-                    placeholder="e.g. 18.5204"
-                    value={formValues.lat}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lng">Longitude (optional)</Label>
-                  <Input
-                    id="lng"
-                    name="lng"
-                    type="number"
-                    step="any"
-                    placeholder="e.g. 73.8567"
-                    value={formValues.lng}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit">Save warehouse</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Save warehouse</Button>
+            </DialogFooter>
+          </form>
+        </CreateEntryDialog>
       </PageActionBar>
 
       {isLoading ? (

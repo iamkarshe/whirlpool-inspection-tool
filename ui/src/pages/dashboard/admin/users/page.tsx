@@ -1,14 +1,9 @@
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
+import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,92 +80,82 @@ export default function UsersPage() {
         title="Users"
         description="Manage user accounts and roles."
       >
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <span className="mr-1">+</span>
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add user</DialogTitle>
-              <DialogDescription>
-                Create a new user for the system.
-              </DialogDescription>
-            </DialogHeader>
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formValues.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formValues.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobile_number">Mobile number</Label>
-                <Input
-                  id="mobile_number"
-                  name="mobile_number"
-                  type="tel"
-                  value={formValues.mobile_number}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={formValues.role_id ? String(formValues.role_id) : ""}
-                  onValueChange={(value) =>
-                    setFormValues((previous) => ({
-                      ...previous,
-                      role_id: value ? Number(value) : 0,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="role" className="w-full">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((r) => (
-                      <SelectItem key={r.id} value={String(r.id)}>
-                        {r.role.charAt(0).toUpperCase() + r.role.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="designation">Designation</Label>
-                <Input
-                  id="designation"
-                  name="designation"
-                  value={formValues.designation}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button type="submit">Save user</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CreateEntryDialog
+          triggerLabel="Add User"
+          title="Add user"
+          description="Create a new user for the system."
+        >
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formValues.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formValues.email}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mobile_number">Mobile number</Label>
+              <Input
+                id="mobile_number"
+                name="mobile_number"
+                type="tel"
+                value={formValues.mobile_number}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={formValues.role_id ? String(formValues.role_id) : ""}
+                onValueChange={(value) =>
+                  setFormValues((previous) => ({
+                    ...previous,
+                    role_id: value ? Number(value) : 0,
+                  }))
+                }
+              >
+                <SelectTrigger id="role" className="w-full">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      {r.role.charAt(0).toUpperCase() + r.role.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="designation">Designation</Label>
+              <Input
+                id="designation"
+                name="designation"
+                value={formValues.designation}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit">Save user</Button>
+            </DialogFooter>
+          </form>
+        </CreateEntryDialog>
       </PageActionBar>
       {isLoading ? <SkeletonTable /> : <UsersDataTable data={users} />}
     </div>

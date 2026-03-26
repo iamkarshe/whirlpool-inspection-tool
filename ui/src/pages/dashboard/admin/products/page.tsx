@@ -1,15 +1,10 @@
 import CsvUploadDialog from "@/components/csv-upload-dialog";
+import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,85 +97,75 @@ export default function ProductsPage() {
           onSubmit={handleCsvSubmit}
         />
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <span className="mr-1">+</span>
-              Add Product
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add product</DialogTitle>
-              <DialogDescription>
-                Create a new product for the catalog.
-              </DialogDescription>
-            </DialogHeader>
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={
-                    formValues.product_category_id
-                      ? String(formValues.product_category_id)
-                      : ""
-                  }
-                  onValueChange={(value) =>
-                    setFormValues((previous) => ({
-                      ...previous,
-                      product_category_id: value ? Number(value) : 0,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="category" className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={String(category.id)}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="serial_number">Serial number</Label>
-                <Input
-                  id="serial_number"
-                  name="serial_number"
-                  value={formValues.serial_number}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="manufacturing_date">Manufacturing date</Label>
-                <Input
-                  id="manufacturing_date"
-                  name="manufacturing_date"
-                  type="date"
-                  value={formValues.manufacturing_date}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="batch_number">Batch number</Label>
-                <Input
-                  id="batch_number"
-                  name="batch_number"
-                  value={formValues.batch_number}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button type="submit">Save product</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CreateEntryDialog
+          triggerLabel="Add Product"
+          title="Add product"
+          description="Create a new product for the catalog."
+        >
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select
+                value={
+                  formValues.product_category_id
+                    ? String(formValues.product_category_id)
+                    : ""
+                }
+                onValueChange={(value) =>
+                  setFormValues((previous) => ({
+                    ...previous,
+                    product_category_id: value ? Number(value) : 0,
+                  }))
+                }
+              >
+                <SelectTrigger id="category" className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="serial_number">Serial number</Label>
+              <Input
+                id="serial_number"
+                name="serial_number"
+                value={formValues.serial_number}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="manufacturing_date">Manufacturing date</Label>
+              <Input
+                id="manufacturing_date"
+                name="manufacturing_date"
+                type="date"
+                value={formValues.manufacturing_date}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="batch_number">Batch number</Label>
+              <Input
+                id="batch_number"
+                name="batch_number"
+                value={formValues.batch_number}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit">Save product</Button>
+            </DialogFooter>
+          </form>
+        </CreateEntryDialog>
       </PageActionBar>
 
       {isLoading ? <SkeletonTable /> : <ProductsDataTable data={products} />}

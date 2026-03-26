@@ -1,17 +1,13 @@
-import ConfirmDeleteDialog from "@/components/dialog-confirm-delete";
+import type { ChangeEvent, SubmitEvent } from "react";
+import { useEffect, useState } from "react";
+
 import CsvUploadDialog from "@/components/csv-upload-dialog";
+import ConfirmDeleteDialog from "@/components/dialog-confirm-delete";
+import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
@@ -19,8 +15,6 @@ import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
-import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useState } from "react";
 
 type ProductCategoryFormValues = {
   name: string;
@@ -33,7 +27,8 @@ export default function ProductCategoriesPage() {
 
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [categoryToDelete, setCategoryToDelete] = useState<ProductCategory | null>(null);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<ProductCategory | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -65,8 +60,7 @@ export default function ProductCategoriesPage() {
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const categoryCsvTemplate =
-    "name\n" + "Front Load Washing Machines\n";
+  const categoryCsvTemplate = "name\n" + "Front Load Washing Machines\n";
 
   return (
     <div className="space-y-6">
@@ -82,37 +76,27 @@ export default function ProductCategoriesPage() {
           onSubmit={handleCsvSubmit}
         />
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <span className="mr-1">+</span>
-              Add Product Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add product category</DialogTitle>
-              <DialogDescription>
-                Create a new product category for use across the system.
-              </DialogDescription>
-            </DialogHeader>
-            <form className="space-y-4" onSubmit={handleCreateCategory}>
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formValues.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button type="submit">Save category</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CreateEntryDialog
+          triggerLabel="Add Product Category"
+          title="Add product category"
+          description="Create a new product category for use across the system."
+        >
+          <form className="space-y-4" onSubmit={handleCreateCategory}>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formValues.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit">Save category</Button>
+            </DialogFooter>
+          </form>
+        </CreateEntryDialog>
       </PageActionBar>
 
       {isLoading ? (
