@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
 import {
-  ProductCategoryChecklistsCountBadge,
   ProductCategoryProductsCountBadge,
 } from "./product-category-badge";
 import type { ProductCategory } from "./product-category-service";
+import { ProductCategoryInspectionCountBadge } from "@/pages/dashboard/admin/product-categories/inspection-count-badges";
 
 interface ProductCategoriesDataTableProps {
   data: ProductCategory[];
@@ -55,14 +55,66 @@ export default function ProductCategoriesDataTable({
           },
         },
         {
-          id: "checklists",
-          header: "Checklists",
+          id: "inspections_total",
+          header: "Total inspections",
           cell: ({ row }) => {
             const c = row.original;
             return (
-              <ProductCategoryChecklistsCountBadge
+              <ProductCategoryInspectionCountBadge
                 categoryId={c.id}
-                count={c.checklists_count ?? 0}
+                kind="total"
+              />
+            );
+          },
+        },
+        {
+          id: "inspections_inbound_passed",
+          header: "Inbound passed",
+          cell: ({ row }) => {
+            const c = row.original;
+            return (
+              <ProductCategoryInspectionCountBadge
+                categoryId={c.id}
+                kind="inboundPassed"
+              />
+            );
+          },
+        },
+        {
+          id: "inspections_inbound_failed",
+          header: "Inbound failed",
+          cell: ({ row }) => {
+            const c = row.original;
+            return (
+              <ProductCategoryInspectionCountBadge
+                categoryId={c.id}
+                kind="inboundFailed"
+              />
+            );
+          },
+        },
+        {
+          id: "inspections_outbound_passed",
+          header: "Outbound passed",
+          cell: ({ row }) => {
+            const c = row.original;
+            return (
+              <ProductCategoryInspectionCountBadge
+                categoryId={c.id}
+                kind="outboundPassed"
+              />
+            );
+          },
+        },
+        {
+          id: "inspections_outbound_failed",
+          header: "Outbound failed",
+          cell: ({ row }) => {
+            const c = row.original;
+            return (
+              <ProductCategoryInspectionCountBadge
+                categoryId={c.id}
+                kind="outboundFailed"
               />
             );
           },

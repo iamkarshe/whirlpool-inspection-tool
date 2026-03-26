@@ -12,6 +12,52 @@ export type InspectionStatusFilter = "pass" | "fail";
 
 export type InspectionStatusMap = Record<string, InspectionStatusFilter>;
 
+export function defaultInspectionFilters(): MultiSelectFiltersValue {
+  return {
+    type: [],
+    status: [],
+    warehouse: [],
+    product: [],
+    inspector: [],
+    product_category_id: [],
+  };
+}
+
+function parseCsvParam(params: URLSearchParams, key: string) {
+  const raw = (params.get(key) ?? "").trim();
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export function parseInspectionFiltersFromSearch(
+  search: string,
+): MultiSelectFiltersValue {
+  const params = new URLSearchParams(search);
+  const next = defaultInspectionFilters();
+  next.type = parseCsvParam(params, "type");
+  next.status = parseCsvParam(params, "status");
+  next.warehouse = parseCsvParam(params, "warehouse");
+  next.product = parseCsvParam(params, "product");
+  next.inspector = parseCsvParam(params, "inspector");
+  next.product_category_id = parseCsvParam(params, "product_category_id");
+  return next;
+}
+
+export function mergeInspectionFilters(
+  base: MultiSelectFiltersValue,
+  override: MultiSelectFiltersValue,
+): MultiSelectFiltersValue {
+  const out = { ...base };
+  for (const k of Object.keys(out)) {
+    const key = k as keyof MultiSelectFiltersValue;
+    if ((override[key] ?? []).length > 0) out[key] = override[key];
+  }
+  return out;
+}
+
 function hasAnyFailed(rows: InspectionQuestionResult[]) {
   return rows.some((r) => r.status === "fail");
 }
@@ -48,6 +94,19 @@ export function buildInspectionFilterSections(
     .sort()
     .map((serial) => ({ id: serial, label: serial }));
 
+  const categories = Array.from(
+    new Map(
+      inspections
+        .filter((i) => i.product_category_id != null && i.product_category_name)
+        .map((i) => [
+          String(i.product_category_id),
+          i.product_category_name as string,
+        ]),
+    ).entries(),
+  )
+    .sort((a, b) => a[1].localeCompare(b[1]))
+    .map(([id, name]) => ({ id, label: name }));
+
   // Warehouse is not currently present in Inspection rows in this UI mock.
   // Keep the section to match UX; options will be empty until data is wired.
   const warehouses: Array<{ id: string; label: string }> = [];
@@ -60,6 +119,11 @@ export function buildInspectionFilterSections(
         { id: "inbound", label: "Inbound" },
         { id: "outbound", label: "Outbound" },
       ],
+    },
+    {
+      key: "product_category_id",
+      label: "Product category",
+      options: categories,
     },
     {
       key: "status",
@@ -85,10 +149,14 @@ export function applyInspectionFilters(
   const warehouses = new Set(value.warehouse ?? []);
   const products = new Set(value.product ?? []);
   const inspectors = new Set(value.inspector ?? []);
+  const categories = new Set(value.product_category_id ?? []);
 
   return inspections.filter((i) => {
     if (types.size > 0 && !types.has(i.inspection_type)) return false;
 
+    if (categories.size > 0 && !categories.has(String(i.product_category_id ?? ""))) {
+      return false;
+    }
     if (products.size > 0 && !products.has(i.product_serial)) return false;
     if (inspectors.size > 0 && !inspectors.has(i.inspector_name)) return false;
 

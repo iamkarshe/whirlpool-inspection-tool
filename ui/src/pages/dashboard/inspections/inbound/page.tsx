@@ -12,19 +12,23 @@ import {
   applyInspectionFilters,
   buildInspectionFilterSections,
   computeInspectionStatusMap,
+  defaultInspectionFilters,
+  mergeInspectionFilters,
+  parseInspectionFiltersFromSearch,
   type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
+import { useLocation } from "react-router-dom";
 
 export default function InboundInspectionsPage() {
+  const location = useLocation();
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>({
-    type: ["inbound"],
-    status: [],
-    warehouse: [],
-    product: [],
-    inspector: [],
+    ...mergeInspectionFilters(
+      { ...defaultInspectionFilters(), type: ["inbound"] },
+      parseInspectionFiltersFromSearch(location.search),
+    ),
   });
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 

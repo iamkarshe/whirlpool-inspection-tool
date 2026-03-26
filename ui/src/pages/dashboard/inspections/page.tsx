@@ -17,22 +17,26 @@ import {
   applyInspectionFilters,
   buildInspectionFilterSections,
   computeInspectionStatusMap,
+  defaultInspectionFilters,
+  mergeInspectionFilters,
+  parseInspectionFiltersFromSearch,
   type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
+import { useLocation } from "react-router-dom";
 
 export default function InspectionsPage() {
+  const location = useLocation();
   const [kpis, setKpis] = useState<InspectionKpis | null>(null);
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loadingKpis, setLoadingKpis] = useState(true);
   const [loadingTable, setLoadingTable] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>({
-    type: [],
-    status: [],
-    warehouse: [],
-    product: [],
-    inspector: [],
-  });
+  const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(() =>
+    mergeInspectionFilters(
+      defaultInspectionFilters(),
+      parseInspectionFiltersFromSearch(location.search),
+    ),
+  );
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
   const filterSections = useMemo(
