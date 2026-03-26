@@ -161,18 +161,11 @@ export type InspectionRelationship = {
 };
 
 export interface InspectionKpis {
-  total: number;
-  totalChange: string;
-  totalChangeType: "positive" | "negative";
-  inbound: number;
-  inboundChange: string;
-  inboundChangeType: "positive" | "negative";
-  outbound: number;
-  outboundChange: string;
-  outboundChangeType: "positive" | "negative";
-  uniqueInspectors: number;
-  inspectorsChange: string;
-  inspectorsChangeType: "positive" | "negative";
+  totalInspections: number;
+  inboundPassed: number;
+  inboundFailed: number;
+  outboundPassed: number;
+  outboundFailed: number;
 }
 
 const inspections: Inspection[] = [
@@ -339,18 +332,11 @@ export async function getInspectionKpis(
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
-        total: 156,
-        totalChange: "+12.4%",
-        totalChangeType: "positive",
-        inbound: 62,
-        inboundChange: "+8.2%",
-        inboundChangeType: "positive",
-        outbound: 94,
-        outboundChange: "+15.1%",
-        outboundChangeType: "positive",
-        uniqueInspectors: 12,
-        inspectorsChange: "+2",
-        inspectorsChangeType: "positive",
+        totalInspections: 156,
+        inboundPassed: 54,
+        inboundFailed: 8,
+        outboundPassed: 79,
+        outboundFailed: 15,
       });
     }, 400);
   });

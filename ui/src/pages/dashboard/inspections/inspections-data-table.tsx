@@ -1,5 +1,15 @@
-import { Button } from "@/components/ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import type { DateRange } from "react-day-picker";
+
+import {
+  ImageGalleryDialog,
+  type GalleryImage,
+} from "@/components/image-gallery-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
   DropdownMenu,
@@ -8,31 +18,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
+import { formatDate } from "@/lib/core";
+import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
 import {
   InspectionIdLinkBadge,
   InspectionTypeBadge,
 } from "@/pages/dashboard/inspections/inspection-badge";
-import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
-import { formatDate } from "@/lib/core";
-import {
-  ImageGalleryDialog,
-  type GalleryImage,
-} from "@/components/image-gallery-dialog";
 import {
   getInspectionQuestionResults,
   type Inspection,
   type InspectionQuestionResult,
   type InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-service";
-import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
 export type InspectionsDataTableProps = {
   data: Inspection[];
   /** When true, hide the Device column (e.g. on device inspections tab). */
   hideDeviceColumn?: boolean;
+  dateRange?: DateRange | undefined;
+  onDateRangeChange?: (range: DateRange | undefined) => void;
 };
 
 function getSectionStatus(rows: InspectionQuestionResult[] | null) {
@@ -142,6 +146,8 @@ const deviceColumn: ColumnDef<Inspection> = {
 export default function InspectionsDataTable({
   data,
   hideDeviceColumn = false,
+  dateRange,
+  onDateRangeChange,
 }: InspectionsDataTableProps) {
   const [checksDialogOpen, setChecksDialogOpen] = useState(false);
   const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
@@ -419,6 +425,8 @@ export default function InspectionsDataTable({
           searchKey="product_serial"
           filters={filters}
           dateRangeFilter={{ dateAccessorKey: "created_at" }}
+          dateRange={dateRange}
+          onDateRangeChange={onDateRangeChange}
           rangeLabel="inspections"
         />
       </div>

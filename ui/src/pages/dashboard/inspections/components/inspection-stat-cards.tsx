@@ -1,91 +1,68 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import type { InspectionKpis } from "@/pages/dashboard/inspections/inspection-service";
+import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import {
-  ClipboardCheck,
   ArrowDownToLine,
   ArrowUpFromLine,
-  Users,
-  TrendingDown,
-  TrendingUp,
+  ClipboardCheck,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
-
-const statConfig = [
-  {
-    name: "Total inspections",
-    stat: (k: InspectionKpis) => k.total.toLocaleString(),
-    change: (k: InspectionKpis) => k.totalChange,
-    changeType: (k: InspectionKpis) => k.totalChangeType,
-    icon: ClipboardCheck,
-  },
-  {
-    name: "Inbound",
-    stat: (k: InspectionKpis) => k.inbound.toLocaleString(),
-    change: (k: InspectionKpis) => k.inboundChange,
-    changeType: (k: InspectionKpis) => k.inboundChangeType,
-    icon: ArrowDownToLine,
-  },
-  {
-    name: "Outbound",
-    stat: (k: InspectionKpis) => k.outbound.toLocaleString(),
-    change: (k: InspectionKpis) => k.outboundChange,
-    changeType: (k: InspectionKpis) => k.outboundChangeType,
-    icon: ArrowUpFromLine,
-  },
-  {
-    name: "Active inspectors",
-    stat: (k: InspectionKpis) => k.uniqueInspectors.toLocaleString(),
-    change: (k: InspectionKpis) => k.inspectorsChange,
-    changeType: (k: InspectionKpis) => k.inspectorsChangeType,
-    icon: Users,
-  },
-];
 
 interface InspectionStatCardsProps {
   kpis: InspectionKpis;
 }
 
 export function InspectionStatCards({ kpis }: InspectionStatCardsProps) {
+  const cards: KpiCardProps[] = [
+    {
+      label: "Total Inspections",
+      value: kpis.totalInspections,
+      icon: ClipboardCheck,
+      className: "border-border bg-muted/10 hover:bg-muted/20",
+    },
+    {
+      label: "Inbound Passed",
+      value: kpis.inboundPassed,
+      icon: ArrowDownToLine,
+      className:
+        "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/40 dark:bg-emerald-900/10",
+    },
+    {
+      label: "Inbound Failed",
+      value: kpis.inboundFailed,
+      icon: ArrowDownToLine,
+      className:
+        "border-red-200 bg-red-50/20 hover:bg-red-50/30 dark:bg-red-900/10",
+    },
+    {
+      label: "Outbound Passed",
+      value: kpis.outboundPassed,
+      icon: ArrowUpFromLine,
+      className:
+        "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/40 dark:bg-emerald-900/10",
+    },
+    {
+      label: "Outbound Failed",
+      value: kpis.outboundFailed,
+      icon: ArrowUpFromLine,
+      className:
+        "border-red-200 bg-red-50/20 hover:bg-red-50/30 dark:bg-red-900/10",
+    },
+  ];
+
+  // Add small semantic icon cue in labels via existing icon slot.
+  // (KpiCard supports only one icon; keep it subtle and consistent.)
+  cards[1].icon = CheckCircle;
+  cards[2].icon = XCircle;
+  cards[3].icon = CheckCircle;
+  cards[4].icon = XCircle;
+
   return (
-    <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {statConfig.map(({ name, stat, change, changeType, icon: Icon }) => {
-        const type = changeType(kpis);
-        return (
-          <Card key={name} className="w-full p-6 py-4">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground flex items-center gap-1.5 text-sm font-medium">
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {name}
-                </dt>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "inline-flex items-center px-1.5 py-0.5 ps-2.5 text-xs font-medium",
-                    type === "positive"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-                  )}
-                >
-                  {type === "positive" ? (
-                    <TrendingUp className="mr-0.5 -ml-1 h-5 w-5 shrink-0 self-center text-green-500" />
-                  ) : (
-                    <TrendingDown className="mr-0.5 -ml-1 h-5 w-5 shrink-0 self-center text-red-500" />
-                  )}
-                  <span className="sr-only">
-                    {type === "positive" ? "Increased" : "Decreased"} by
-                  </span>
-                  {change(kpis)}
-                </Badge>
-              </div>
-              <dd className="text-foreground mt-2 text-3xl font-semibold">
-                {stat(kpis)}
-              </dd>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className="overflow-x-auto">
+      <KpiCardGrid
+        cards={cards}
+        className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 min-w-[980px]"
+      />
     </div>
   );
 }

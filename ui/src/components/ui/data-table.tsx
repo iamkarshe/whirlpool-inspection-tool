@@ -1,3 +1,21 @@
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from "@tanstack/react-table";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { Columns, PlusCircle } from "lucide-react";
+import * as React from "react";
+import type { DateRange } from "react-day-picker";
+
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,23 +48,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { filterByCalendarDateRange } from "@/lib/date-range-filter";
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-} from "@tanstack/react-table";
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { Columns, PlusCircle } from "lucide-react";
-import * as React from "react";
-import type { DateRange } from "react-day-picker";
 
 export type DataTableFilterOption = {
   label: string;
@@ -72,6 +73,10 @@ export interface DataTableProps<TData> {
   filters?: DataTableFilter<TData>[];
   /** When set, enables the calendar date range picker in the toolbar and filters data by the selected range. */
   dateRangeFilter?: DataTableDateRangeFilter<TData>;
+  /** Controlled date range (use with onDateRangeChange). */
+  dateRange?: DateRange | undefined;
+  /** Controlled date range setter (use with dateRange). */
+  onDateRangeChange?: (range: DateRange | undefined) => void;
   /**
    * When true, show the selected-count footer text.
    * Most tables are read-only; keep this false unless you explicitly support selection.
@@ -89,25 +94,68 @@ export interface DataTableProps<TData> {
   rangeLabel?: string;
 }
 
+function formatColumnLabel(input: string) {
+  const normalized = input
+    .replace(/[_-]+/g, " ")
+    .replace(/[^a-zA-Z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return input;
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 export function DataTable<TData>({
   columns,
   data,
   searchKey,
   filters,
   dateRangeFilter,
+  dateRange: controlledDateRange,
+  onDateRangeChange,
   allowSelection = false,
   selectionLabel,
   rangeLabel,
 }: DataTableProps<TData>) {
+  const columnsStorageKey = React.useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const scope = window.location.pathname;
+    const label = (rangeLabel ?? "rows").toString();
+    return `whirlpool.ui.datatable.columns.${scope}.${label}`;
+  }, [rangeLabel]);
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>(() => {
+      if (!columnsStorageKey) return {};
+      try {
+        const raw = window.localStorage.getItem(columnsStorageKey);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw) as unknown;
+        if (parsed && typeof parsed === "object") {
+          return parsed as VisibilityState;
+        }
+        return {};
+      } catch {
+        return {};
+      }
+    });
   const [rowSelection, setRowSelection] = React.useState({});
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(
-    undefined,
+  const isDateRangeControlled =
+    controlledDateRange !== undefined && onDateRangeChange !== undefined;
+  const [internalDateRange, setInternalDateRange] = React.useState<
+    DateRange | undefined
+  >(undefined);
+  const dateRange = isDateRangeControlled ? controlledDateRange : internalDateRange;
+  const setDateRange = React.useCallback(
+    (next: DateRange | undefined) => {
+      if (isDateRangeControlled) onDateRangeChange?.(next);
+      else setInternalDateRange(next);
+    },
+    [isDateRangeControlled, onDateRangeChange],
   );
 
   const filteredData = React.useMemo(() => {
@@ -132,7 +180,25 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: (updater) => {
+      setColumnVisibility((prev) => {
+        const next =
+          typeof updater === "function"
+            ? (updater as (old: VisibilityState) => VisibilityState)(prev)
+            : updater;
+        if (columnsStorageKey) {
+          try {
+            window.localStorage.setItem(
+              columnsStorageKey,
+              JSON.stringify(next),
+            );
+          } catch {
+            // ignore
+          }
+        }
+        return next;
+      });
+    },
     onRowSelectionChange: setRowSelection,
     state: {
       sorting,
@@ -243,11 +309,11 @@ export function DataTable<TData>({
                 .map((column) => (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="capitalize"
+                    className=""
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) => column.toggleVisibility(value)}
                   >
-                    {column.id}
+                    {formatColumnLabel(column.id)}
                   </DropdownMenuCheckboxItem>
                 ))}
             </DropdownMenuContent>
