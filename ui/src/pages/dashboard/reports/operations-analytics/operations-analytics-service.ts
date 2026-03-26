@@ -12,13 +12,59 @@ export interface OperationsAnalyticsKpis {
   devices: Awaited<ReturnType<typeof getDeviceKpis>>;
 }
 
-export async function getOperationsAnalyticsKpis(): Promise<OperationsAnalyticsKpis> {
+export type OperationsAnalyticsFilters = {
+  warehouseIds?: string[];
+  productCategoryIds?: string[];
+  operatorIds?: string[];
+};
+
+function getFilterScale(filters?: OperationsAnalyticsFilters) {
+  const w = filters?.warehouseIds?.length ?? 0;
+  const c = filters?.productCategoryIds?.length ?? 0;
+  const o = filters?.operatorIds?.length ?? 0;
+  const activeTypes = (w > 0 ? 1 : 0) + (c > 0 ? 1 : 0) + (o > 0 ? 1 : 0);
+  const total = w + c + o;
+  if (activeTypes === 0) return 1;
+  const scale = 1 - 0.12 * activeTypes - 0.03 * total;
+  return Math.max(0.35, Math.min(0.9, scale));
+}
+
+function scaleInt(value: number, scale: number) {
+  return Math.max(0, Math.round(value * scale));
+}
+
+export async function getOperationsAnalyticsKpis(
+  filters?: OperationsAnalyticsFilters,
+): Promise<OperationsAnalyticsKpis> {
   const [inspections, logins, devices] = await Promise.all([
     getInspectionKpis(),
     getLoginKpis(),
     getDeviceKpis(),
   ]);
-  return { inspections, logins, devices };
+  const scale = getFilterScale(filters);
+  return {
+    inspections: {
+      ...inspections,
+      total: scaleInt(inspections.total, scale),
+      inbound: scaleInt(inspections.inbound, scale),
+      outbound: scaleInt(inspections.outbound, scale),
+      uniqueInspectors: scaleInt(inspections.uniqueInspectors, Math.min(1, scale + 0.1)),
+    },
+    logins: {
+      ...logins,
+      totalLogins: scaleInt(logins.totalLogins, scale),
+      successfulLogins: scaleInt(logins.successfulLogins, scale),
+      failedLogins: scaleInt(logins.failedLogins, scale),
+      uniqueUsers: scaleInt(logins.uniqueUsers, Math.min(1, scale + 0.1)),
+    },
+    devices: {
+      ...devices,
+      totalDevices: scaleInt(devices.totalDevices, scale),
+      activeDevices: scaleInt(devices.activeDevices, scale),
+      mobileDevices: scaleInt(devices.mobileDevices, scale),
+      desktopDevices: scaleInt(devices.desktopDevices, scale),
+    },
+  };
 }
 
 /** Weekly trend for charts (mock). */
@@ -49,14 +95,30 @@ export interface OperationsSummaryByCategory {
   fill?: string;
 }
 
-export async function getOperationsSummaryByCategory(): Promise<OperationsSummaryByCategory[]> {
+export async function getOperationsTrendFiltered(
+  filters?: OperationsAnalyticsFilters,
+): Promise<OperationsTrendPoint[]> {
+  const scale = getFilterScale(filters);
+  const base = await getOperationsTrend();
+  return base.map((p) => ({
+    ...p,
+    inspections: scaleInt(p.inspections, scale),
+    logins: scaleInt(p.logins, scale),
+    devices: scaleInt(p.devices, scale),
+  }));
+}
+
+export async function getOperationsSummaryByCategory(
+  filters?: OperationsAnalyticsFilters,
+): Promise<OperationsSummaryByCategory[]> {
+  const scale = getFilterScale(filters);
   return new Promise((r) =>
     setTimeout(
       () =>
         r([
-          { name: "Inspections", value: 2163, fill: "var(--chart-1)" },
-          { name: "Logins", value: 342, fill: "var(--chart-2)" },
-          { name: "Devices", value: 48, fill: "var(--chart-3)" },
+          { name: "Inspections", value: scaleInt(2163, scale), fill: "var(--chart-1)" },
+          { name: "Logins", value: scaleInt(342, scale), fill: "var(--chart-2)" },
+          { name: "Devices", value: scaleInt(48, scale), fill: "var(--chart-3)" },
         ]),
       200,
     ),

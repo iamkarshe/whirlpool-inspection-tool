@@ -1,4 +1,5 @@
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
@@ -28,16 +29,30 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import {
   getOperationsAnalyticsKpis,
-  getOperationsTrend,
   getOperationsSummaryByCategory,
+  getOperationsTrendFiltered,
+  type OperationsAnalyticsFilters,
   type OperationsAnalyticsKpis,
   type OperationsTrendPoint,
   type OperationsSummaryByCategory,
 } from "@/pages/dashboard/reports/operations-analytics/operations-analytics-service";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  getWarehouses,
+  type Warehouse,
+} from "@/pages/dashboard/admin/warehouses/warehouse-service";
+import {
+  getProductCategories,
+  type ProductCategory,
+} from "@/pages/dashboard/admin/product-categories/product-category-service";
+import {
+  getUsers,
+  type User,
+} from "@/pages/dashboard/admin/users/user-service";
 
 const trendChartConfig = {
   inspections: { label: "Inspections", color: "var(--chart-1)" },
@@ -179,6 +194,9 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
 }
 
 export default function OperationsAnalyticsPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [kpis, setKpis] = useState<OperationsAnalyticsKpis | null>(null);
   const [trend, setTrend] = useState<OperationsTrendPoint[]>([]);
   const [summaryByCategory, setSummaryByCategory] = useState<
@@ -186,12 +204,47 @@ export default function OperationsAnalyticsPage() {
   >([]);
   const [loading, setLoading] = useState(true);
 
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>(
+    [],
+  );
+  const [operators, setOperators] = useState<User[]>([]);
+
+  const [filters, setFilters] = useState<OperationsAnalyticsFilters>({});
+
   useEffect(() => {
-    setLoading(true);
+    const params = new URLSearchParams(location.search);
+    const token = params.get("f");
+    if (!token) {
+      queueMicrotask(() => setFilters({}));
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(`ops-analytics-filters:${token}`);
+      if (!raw) {
+        queueMicrotask(() => setFilters({}));
+        return;
+      }
+      const parsed = JSON.parse(raw) as OperationsAnalyticsFilters;
+      queueMicrotask(() =>
+        setFilters({
+          warehouseIds: parsed.warehouseIds ?? [],
+          productCategoryIds: parsed.productCategoryIds ?? [],
+          operatorIds: parsed.operatorIds ?? [],
+        }),
+      );
+    } catch {
+      queueMicrotask(() => setFilters({}));
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    queueMicrotask(() => setLoading(true));
     Promise.all([
-      getOperationsAnalyticsKpis(),
-      getOperationsTrend(),
-      getOperationsSummaryByCategory(),
+      getOperationsAnalyticsKpis(filters),
+      getOperationsTrendFiltered(filters),
+      getOperationsSummaryByCategory(filters),
     ])
       .then(([k, t, s]) => {
         setKpis(k);
@@ -199,7 +252,87 @@ export default function OperationsAnalyticsPage() {
         setSummaryByCategory(s);
       })
       .finally(() => setLoading(false));
+  }, [filters]);
+
+  useEffect(() => {
+    Promise.all([getWarehouses(), getProductCategories(), getUsers()]).then(
+      ([w, c, u]) => {
+        setWarehouses(w);
+        setProductCategories(c);
+        setOperators(u.filter((x) => x.role.toLowerCase() === "operator"));
+      },
+    );
   }, []);
+
+  const filterValue = useMemo(
+    () => ({
+      warehouseIds: filters.warehouseIds ?? [],
+      productCategoryIds: filters.productCategoryIds ?? [],
+      operatorIds: filters.operatorIds ?? [],
+    }),
+    [filters],
+  );
+
+  const filterSections = useMemo(
+    () => [
+      {
+        key: "warehouseIds",
+        label: "Warehouse",
+        options: warehouses.map((w) => ({
+          id: w.id,
+          label: `${w.warehouse_code} — ${w.name}`,
+        })),
+      },
+      {
+        key: "productCategoryIds",
+        label: "Product category",
+        options: productCategories.map((c) => ({
+          id: String(c.id),
+          label: c.name,
+        })),
+      },
+      {
+        key: "operatorIds",
+        label: "Operator",
+        options: operators.map((u) => ({
+          id: String(u.id),
+          label: u.name,
+        })),
+      },
+    ],
+    [warehouses, productCategories, operators],
+  );
+
+  function applyFilters(next: Record<string, string[]>) {
+    const nextFilters: OperationsAnalyticsFilters = {
+      warehouseIds: (next.warehouseIds ?? []).map(String).filter(Boolean),
+      productCategoryIds: (next.productCategoryIds ?? []).map(String).filter(Boolean),
+      operatorIds: (next.operatorIds ?? []).map(String).filter(Boolean),
+    };
+
+    const isEmpty =
+      (nextFilters.warehouseIds?.length ?? 0) === 0 &&
+      (nextFilters.productCategoryIds?.length ?? 0) === 0 &&
+      (nextFilters.operatorIds?.length ?? 0) === 0;
+
+    if (isEmpty) {
+      setFilters({});
+      navigate({ pathname: location.pathname, search: "" }, { replace: true });
+      return;
+    }
+
+    const token = crypto.randomUUID();
+    localStorage.setItem(
+      `ops-analytics-filters:${token}`,
+      JSON.stringify(nextFilters),
+    );
+    setFilters(nextFilters);
+    const search = new URLSearchParams({ f: token }).toString();
+    navigate(
+      { pathname: location.pathname, search: search ? `?${search}` : "" },
+      { replace: true },
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -210,6 +343,14 @@ export default function OperationsAnalyticsPage() {
         />
         <div className="flex items-center gap-2">
           <CalendarDateRangePicker />
+          <MultiSelectFiltersDialog
+            title="Filters"
+            description="Multi-select filters. Applying updates the URL for sharing."
+            sections={filterSections}
+            value={filterValue}
+            onApply={applyFilters}
+            triggerLabel="Filters"
+          />
           <Button variant="outline" size="sm">
             Download
           </Button>

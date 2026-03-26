@@ -25,19 +25,9 @@ import {
   type VolumeByDimension,
   type VolumeTrendPoint,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
-import {
-  AlertTriangle,
-  ClipboardCheck,
-  Clock,
-  Inbox,
-} from "lucide-react";
+import { AlertTriangle, ClipboardCheck, Clock, Inbox } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
 const volumeChartConfig = {
   volume: {
@@ -96,13 +86,15 @@ function buildKpiCards(kpis: ExecutiveAnalyticsKpis): KpiCardProps[] {
 
 export default function ExecutiveAnalyticsPage() {
   const [kpis, setKpis] = useState<ExecutiveAnalyticsKpis | null>(null);
-  const [volumeByLocation, setVolumeByLocation] = useState<VolumeByDimension[]>([]);
+  const [volumeByLocation, setVolumeByLocation] = useState<VolumeByDimension[]>(
+    [],
+  );
   const [defectByType, setDefectByType] = useState<DefectRateByType[]>([]);
   const [volumeTrend, setVolumeTrend] = useState<VolumeTrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
     Promise.all([
       getExecutiveAnalyticsKpis(),
       getInspectionVolumeByLocation(),
@@ -123,7 +115,7 @@ export default function ExecutiveAnalyticsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Executive Analytics"
-          description="Inspection volume by location, operator, product; defect rates (Whirlpool 3 types); avg inspection time; pending approvals."
+          description="Inspection volume by location, operator, product, avg inspection time, approvals."
         />
         <div className="flex items-center gap-2">
           <CalendarDateRangePicker />
@@ -160,7 +152,10 @@ export default function ExecutiveAnalyticsPage() {
                 config={volumeChartConfig}
                 className="aspect-auto h-[280px] w-full"
               >
-                <BarChart data={volumeByLocation} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                <BarChart
+                  data={volumeByLocation}
+                  margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                >
                   <XAxis
                     dataKey="name"
                     tickLine={false}
@@ -199,7 +194,12 @@ export default function ExecutiveAnalyticsPage() {
                   layout="vertical"
                   margin={{ top: 8, right: 8, left: 40, bottom: 8 }}
                 >
-                  <XAxis type="number" unit="%" tickLine={false} axisLine={false} />
+                  <XAxis
+                    type="number"
+                    unit="%"
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <YAxis
                     type="category"
                     dataKey="type"
@@ -241,7 +241,10 @@ export default function ExecutiveAnalyticsPage() {
                 config={trendChartConfig}
                 className="aspect-auto h-[260px] w-full"
               >
-                <BarChart data={volumeTrend} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                <BarChart
+                  data={volumeTrend}
+                  margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                >
                   <XAxis
                     dataKey="week"
                     tickLine={false}
