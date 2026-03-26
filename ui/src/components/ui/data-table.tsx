@@ -72,6 +72,21 @@ export interface DataTableProps<TData> {
   filters?: DataTableFilter<TData>[];
   /** When set, enables the calendar date range picker in the toolbar and filters data by the selected range. */
   dateRangeFilter?: DataTableDateRangeFilter<TData>;
+  /**
+   * When true, show the selected-count footer text.
+   * Most tables are read-only; keep this false unless you explicitly support selection.
+   */
+  allowSelection?: boolean;
+  /**
+   * Label used in selected-count footer text (e.g. "notifications", "products").
+   * Defaults to "row(s)" when not provided.
+   */
+  selectionLabel?: string;
+  /**
+   * When `allowSelection` is false, the footer shows a pagination range label like:
+   * "1 - 10 notifications". Defaults to "row(s)" when not provided.
+   */
+  rangeLabel?: string;
 }
 
 export function DataTable<TData>({
@@ -80,6 +95,9 @@ export function DataTable<TData>({
   searchKey,
   filters,
   dateRangeFilter,
+  allowSelection = false,
+  selectionLabel,
+  rangeLabel,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -123,6 +141,16 @@ export function DataTable<TData>({
       rowSelection,
     },
   });
+
+  const pageRangeText = React.useMemo(() => {
+    const total = table.getFilteredRowModel().rows.length;
+    if (total === 0) return `Showing 0 ${rangeLabel ?? "row(s)"}`;
+
+    const { pageIndex, pageSize } = table.getState().pagination;
+    const start = pageIndex * pageSize + 1;
+    const end = Math.min(total, (pageIndex + 1) * pageSize);
+    return `Showing ${start}–${end} of ${total} ${rangeLabel ?? "row(s)"}`;
+  }, [rangeLabel, table]);
 
   return (
     <div className="rounded-lg border bg-background px-4 py-2 text-sm text-muted-foreground my-3">
@@ -276,10 +304,17 @@ export function DataTable<TData>({
         </div>
 
         <div className="flex items-center justify-end space-x-2 pt-4">
-          <div className="text-muted-foreground flex-1 text-sm">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
-          </div>
+          {allowSelection ? (
+            <div className="text-muted-foreground flex-1 text-sm">
+              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredRowModel().rows.length}{" "}
+              {selectionLabel ?? "row(s)"} selected.
+            </div>
+          ) : (
+            <div className="text-muted-foreground flex-1 text-xs">
+              {pageRangeText}
+            </div>
+          )}
           <div className="space-x-2">
             <Button
               variant="outline"

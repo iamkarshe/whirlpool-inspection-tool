@@ -126,6 +126,7 @@ export default function NotificationsPage() {
           searchKey="title"
           filters={filters}
           dateRangeFilter={{ dateAccessorKey: "createdAt" }}
+          rangeLabel="notifications"
         />
       )}
 
