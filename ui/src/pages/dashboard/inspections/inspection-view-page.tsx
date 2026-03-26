@@ -81,7 +81,6 @@ export default function InspectionViewPage() {
       "outer-packaging",
       "inner-packaging",
       "product",
-      "device",
       "images",
     ]);
     return allowed.has(t) ? t : "overview";
@@ -91,7 +90,6 @@ export default function InspectionViewPage() {
     if (tab === "outer-packaging") return "outer-packaging";
     if (tab === "inner-packaging") return "inner-packaging";
     if (tab === "product") return "product";
-    if (tab === "device") return "device";
     return null;
   }, [tab]);
 
@@ -378,7 +376,6 @@ export default function InspectionViewPage() {
           <TabsTrigger value="outer-packaging">Outer packaging</TabsTrigger>
           <TabsTrigger value="inner-packaging">Inner packaging</TabsTrigger>
           <TabsTrigger value="product">Product</TabsTrigger>
-          <TabsTrigger value="device">Device</TabsTrigger>
           <TabsTrigger value="images">Images</TabsTrigger>
         </TabsList>
 
@@ -469,9 +466,7 @@ export default function InspectionViewPage() {
           </Card>
         </TabsContent>
 
-        {(
-          ["outer-packaging", "inner-packaging", "product", "device"] as const
-        ).map((k) => (
+        {(["outer-packaging", "inner-packaging", "product"] as const).map((k) => (
           <TabsContent key={k} value={k} className="space-y-4">
             <Card className="gap-3 py-3">
               <CardHeader className="px-3">
@@ -480,9 +475,7 @@ export default function InspectionViewPage() {
                     ? "Outer packaging"
                     : k === "inner-packaging"
                       ? "Inner packaging"
-                      : k === "product"
-                        ? "Product"
-                        : "Device"}
+                      : "Product"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-3">
