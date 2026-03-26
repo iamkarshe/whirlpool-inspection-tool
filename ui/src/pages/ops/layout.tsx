@@ -10,9 +10,21 @@ import {
 } from "@/components/ui/dialog";
 import { setPageTitle } from "@/lib/core";
 import { cn } from "@/lib/utils";
-import { CircleUserRound, Home, LineChart, ScanLine, Settings2 } from "lucide-react";
+import {
+  CircleUserRound,
+  Home,
+  LineChart,
+  ScanLine,
+  Settings2,
+} from "lucide-react";
 import React, { useEffect } from "react";
-import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useMatches,
+  useNavigate,
+} from "react-router-dom";
 
 type OpsLayoutProps = {
   className?: string;
@@ -71,7 +83,8 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   const shouldRenderLogo = React.useMemo(
     () =>
       matches.some(
-        (match) => (match.handle as RouteHandle | undefined)?.renderLogo === true,
+        (match) =>
+          (match.handle as RouteHandle | undefined)?.renderLogo === true,
       ),
     [matches],
   );
@@ -120,7 +133,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
 
   return (
     <div className={cn("flex min-h-screen flex-col bg-background", className)}>
-      <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur_">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -149,7 +162,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       <main className="flex-1 px-4 pb-20 pt-3">
         <Outlet />
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/80 pb-safe pt-2 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/80 pb-safe pt-2 backdrop-blur_">
         <div className="mx-auto flex max-w-md items-center justify-between px-4">
           {TABS.map((tab) => (
             <NavLink
@@ -159,7 +172,8 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
               className={({ isActive }) =>
                 cn(
                   "flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-muted-foreground transition-all",
-                  isActive && "bg-accent text-accent-foreground shadow-sm translate-y-[-2px]",
+                  isActive &&
+                    "bg-accent text-accent-foreground shadow-sm translate-y-[-2px]",
                 )
               }
             >
@@ -174,8 +188,9 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
           <DialogHeader>
             <DialogTitle>Optimized for mobile</DialogTitle>
             <DialogDescription>
-              The Ops experience is designed as a mobile app for warehouse operators.
-              For the best experience, open this page on your phone or a small tablet.
+              The Ops experience is designed as a mobile app for warehouse
+              operators. For the best experience, open this page on your phone
+              or a small tablet.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-2 justify-end">
@@ -188,4 +203,3 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
     </div>
   );
 }
-
