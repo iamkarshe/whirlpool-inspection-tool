@@ -207,6 +207,9 @@ const OutboundInspectionsPage = lazy(
 const OutboundFailedInspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/outbound-failed/page"),
 );
+const FlaggedInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/flagged/page"),
+);
 const InspectionViewPage = lazy(
   () => import("@/pages/dashboard/inspections/inspection-view-page"),
 );
@@ -672,6 +675,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <OutboundFailedInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/flagged",
+        handle: { title: "Flagged Inspections" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <FlaggedInspectionsPage />
           </Suspense>
         ),
       },
