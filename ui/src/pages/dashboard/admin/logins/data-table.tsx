@@ -224,6 +224,7 @@ export default function LoginsDataTable({ data }: LoginsDataTableProps) {
         searchKey="user_name"
         filters={loginFilters}
         dateRangeFilter={{ dateAccessorKey: "logged_at" }}
+        rangeLabel="logins"
       />
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-lg">

@@ -98,6 +98,7 @@ export default function ProductCategoriesDataTable({
       ]}
       data={data}
       searchKey="name"
+      rangeLabel="product categories"
     />
   );
 }

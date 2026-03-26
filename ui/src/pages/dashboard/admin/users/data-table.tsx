@@ -163,6 +163,7 @@ export default function UsersDataTable({ data }: UsersDataTableProps) {
       data={data}
       searchKey="name"
       filters={userFilters}
+      rangeLabel="users"
     />
   );
 }

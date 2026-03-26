@@ -239,6 +239,7 @@ export default function DeviceNotificationsPage() {
         data={notifications}
         searchKey="title"
         dateRangeFilter={{ dateAccessorKey: "sent_at" }}
+        rangeLabel="notifications"
       />
     </div>
   );

@@ -116,6 +116,7 @@ export default function ProductsDataTable({ data }: ProductsDataTableProps) {
       data={data}
       searchKey="serial_number"
       filters={productFilters}
+      rangeLabel="products"
     />
   );
 }

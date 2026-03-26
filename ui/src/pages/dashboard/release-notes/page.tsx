@@ -212,6 +212,7 @@ export default function ReleaseNotesPage() {
           columns={columns}
           data={releases}
           searchKey="title"
+          rangeLabel="release notes"
         />
       )}
 

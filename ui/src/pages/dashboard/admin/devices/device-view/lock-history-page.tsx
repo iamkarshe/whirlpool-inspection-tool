@@ -108,6 +108,7 @@ export default function DeviceViewLockHistoryPage() {
       data={events}
       searchKey="actor_name"
       dateRangeFilter={{ dateAccessorKey: "occurred_at" }}
+      rangeLabel="lock events"
     />
   );
 }

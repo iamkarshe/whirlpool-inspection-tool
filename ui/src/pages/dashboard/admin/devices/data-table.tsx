@@ -231,6 +231,7 @@ export default function DevicesDataTable({ data }: DevicesDataTableProps) {
         searchKey="user_name"
         filters={deviceFilters}
         dateRangeFilter={{ dateAccessorKey: "last_active_at" }}
+        rangeLabel="devices"
       />
       <DialogLockDevice
         open={deviceToLock !== null}

@@ -178,6 +178,7 @@ export default function WarehousesDataTable({
       columns={warehouseColumns}
       data={data}
       searchKey="name"
+      rangeLabel="warehouses"
     />
   );
 }

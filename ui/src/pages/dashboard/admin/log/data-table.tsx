@@ -143,6 +143,7 @@ export default function LogsDataTable({ data }: LogsDataTableProps) {
       searchKey="message"
       filters={logFilters}
       dateRangeFilter={{ dateAccessorKey: "timestamp" }}
+      rangeLabel="logs"
     />
   );
 }

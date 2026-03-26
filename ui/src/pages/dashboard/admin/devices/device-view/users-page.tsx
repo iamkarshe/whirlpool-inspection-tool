@@ -162,6 +162,7 @@ export default function DeviceViewUsersPage() {
       searchKey="user_name"
       filters={filters}
       dateRangeFilter={{ dateAccessorKey: "assigned_at" }}
+      rangeLabel="device users"
     />
   );
 }
