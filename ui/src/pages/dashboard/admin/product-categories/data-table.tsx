@@ -1,3 +1,7 @@
+import { ArrowUpDown, BarChart3, MoreHorizontal, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+
+import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -7,13 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
-import { ArrowUpDown, BarChart3, MoreHorizontal, Trash2 } from "lucide-react";
-import {
-  ProductCategoryProductsCountBadge,
-} from "./product-category-badge";
+import { ProductCategoryProductsCountBadge } from "./product-category-badge";
 import type { ProductCategory } from "./product-category-service";
-import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
-import { Link } from "react-router-dom";
 
 interface ProductCategoriesDataTableProps {
   data: ProductCategory[];
@@ -72,7 +71,11 @@ export default function ProductCategoriesDataTable({
           cell: ({ row }) => {
             const c = row.original;
             return (
-              <InspectionCountBadge scope={{ productCategoryId: c.id }} kind="total" />
+              <InspectionCountBadge
+                scope={{ productCategoryId: c.id }}
+                kind="total"
+                linkBasePath={PAGES.productCategoryViewPath(c.id)}
+              />
             );
           },
         },
@@ -85,6 +88,7 @@ export default function ProductCategoriesDataTable({
               <InspectionCountBadge
                 scope={{ productCategoryId: c.id }}
                 kind="inboundPassed"
+                linkBasePath={PAGES.productCategoryViewPath(c.id)}
               />
             );
           },
@@ -98,6 +102,7 @@ export default function ProductCategoriesDataTable({
               <InspectionCountBadge
                 scope={{ productCategoryId: c.id }}
                 kind="inboundFailed"
+                linkBasePath={PAGES.productCategoryViewPath(c.id)}
               />
             );
           },
@@ -111,6 +116,7 @@ export default function ProductCategoriesDataTable({
               <InspectionCountBadge
                 scope={{ productCategoryId: c.id }}
                 kind="outboundPassed"
+                linkBasePath={PAGES.productCategoryViewPath(c.id)}
               />
             );
           },
@@ -124,6 +130,7 @@ export default function ProductCategoriesDataTable({
               <InspectionCountBadge
                 scope={{ productCategoryId: c.id }}
                 kind="outboundFailed"
+                linkBasePath={PAGES.productCategoryViewPath(c.id)}
               />
             );
           },

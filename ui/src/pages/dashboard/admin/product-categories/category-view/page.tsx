@@ -1,2 +1,1 @@
-export { default } from "./product-category-view-layout";
-
+export { default } from "./product-category-view-layout.tsx";

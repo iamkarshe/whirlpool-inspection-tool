@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Columns, PlusCircle } from "lucide-react";
+import { Columns, Download, PlusCircle } from "lucide-react";
 import * as React from "react";
 import type { DateRange } from "react-day-picker";
 
@@ -48,6 +48,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { filterByCalendarDateRange } from "@/lib/date-range-filter";
+import { downloadCsv as downloadCsvFile, toCsv } from "@/lib/csv";
 
 export type DataTableFilterOption = {
   label: string;
@@ -97,6 +98,18 @@ export interface DataTableProps<TData> {
    * "1 - 10 notifications". Defaults to "row(s)" when not provided.
    */
   rangeLabel?: string;
+  /**
+   * When provided, show a "Download CSV" button in the toolbar.
+   * The export uses the table's current filtered/sorted rows (not just current page).
+   */
+  downloadCsvFileName?: string;
+  /**
+   * Provide headers and row mapping for CSV export.
+   * Receives the currently filtered/sorted row originals.
+   */
+  downloadCsv?: (
+    rows: TData[],
+  ) => { headers: string[]; rows: Record<string, unknown>[] };
 }
 
 function formatColumnLabel(input: string) {
@@ -122,6 +135,8 @@ export function DataTable<TData>({
   allowSelection = false,
   selectionLabel,
   rangeLabel,
+  downloadCsvFileName,
+  downloadCsv,
 }: DataTableProps<TData>) {
   const columnsStorageKey = React.useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -301,6 +316,21 @@ export function DataTable<TData>({
               </Popover>
             ))}
           </div>
+
+          {downloadCsvFileName && downloadCsv ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const rows = table.getSortedRowModel().rows.map((r) => r.original as TData);
+                const { headers, rows: mapped } = downloadCsv(rows);
+                const csv = toCsv(mapped, headers);
+                downloadCsvFile(downloadCsvFileName, csv);
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download CSV
+            </Button>
+          ) : null}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

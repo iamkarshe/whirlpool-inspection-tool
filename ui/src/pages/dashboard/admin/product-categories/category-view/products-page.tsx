@@ -30,6 +30,29 @@ export default function ProductCategoryProductsPage() {
 
   if (loading) return <SkeletonTable />;
 
-  return <ProductsDataTable data={products} />;
+  return (
+    <ProductsDataTable
+      data={products}
+      downloadCsvFileName={`product-category-${categoryId}-products.csv`}
+      downloadCsv={(rows) => ({
+        headers: [
+          "id",
+          "product_category_id",
+          "category_name",
+          "serial_number",
+          "manufacturing_date",
+          "batch_number",
+        ],
+        rows: rows.map((p) => ({
+          id: p.id,
+          product_category_id: p.product_category_id,
+          category_name: p.category_name,
+          serial_number: p.serial_number,
+          manufacturing_date: p.manufacturing_date,
+          batch_number: p.batch_number,
+        })),
+      })}
+    />
+  );
 }
 

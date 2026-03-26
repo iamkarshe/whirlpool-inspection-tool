@@ -14,7 +14,7 @@ export function ProductCategoryProductsCountBadge({
 }) {
   return (
     <Link
-      to={PAGES.productCategoryProductsPath(categoryId)}
+      to={`${PAGES.productCategoryViewPath(categoryId)}/products`}
       className="inline-block"
     >
       <Badge variant="secondary" className={linkBadgeClass}>

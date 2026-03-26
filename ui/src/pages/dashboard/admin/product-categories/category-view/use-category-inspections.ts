@@ -7,8 +7,13 @@ import {
   type Inspection,
 } from "@/pages/dashboard/inspections/inspection-service";
 import { useEffect, useMemo, useState } from "react";
+import type { DateRange } from "react-day-picker";
+import { filterByCalendarDateRange } from "@/lib/date-range-filter";
 
-export function useCategoryInspections(categoryId: number) {
+export function useCategoryInspections(
+  categoryId: number,
+  dateRange?: DateRange | undefined,
+) {
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +23,10 @@ export function useCategoryInspections(categoryId: number) {
     queueMicrotask(() => setLoading(true));
     getInspections()
       .then(async (list) => {
-        const filtered = list.filter((i) => i.product_category_id === categoryId);
+        const scoped = list.filter((i) => i.product_category_id === categoryId);
+        const filtered = dateRange
+          ? filterByCalendarDateRange(scoped, (i) => i.created_at, dateRange)
+          : scoped;
         const map = await computeInspectionStatusMap(filtered);
         if (cancelled) return;
         setInspections(filtered);
@@ -31,7 +39,7 @@ export function useCategoryInspections(categoryId: number) {
     return () => {
       cancelled = true;
     };
-  }, [categoryId]);
+  }, [categoryId, dateRange]);
 
   const failedIds = useMemo(() => {
     if (!statusMap) return new Set<string>();

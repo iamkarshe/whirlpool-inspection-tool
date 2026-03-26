@@ -37,6 +37,10 @@ export type InspectionsDataTableProps = {
   hideDeviceColumn?: boolean;
   dateRange?: DateRange | undefined;
   onDateRangeChange?: (range: DateRange | undefined) => void;
+  downloadCsvFileName?: string;
+  downloadCsv?: (
+    rows: Inspection[],
+  ) => { headers: string[]; rows: Record<string, unknown>[] };
 };
 
 function getSectionStatus(rows: InspectionQuestionResult[] | null) {
@@ -148,6 +152,8 @@ export default function InspectionsDataTable({
   hideDeviceColumn = false,
   dateRange,
   onDateRangeChange,
+  downloadCsvFileName,
+  downloadCsv,
 }: InspectionsDataTableProps) {
   const [checksDialogOpen, setChecksDialogOpen] = useState(false);
   const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
@@ -429,6 +435,8 @@ export default function InspectionsDataTable({
           dateRange={dateRange}
           onDateRangeChange={onDateRangeChange}
           rangeLabel="inspections"
+          downloadCsvFileName={downloadCsvFileName}
+          downloadCsv={downloadCsv}
         />
       </div>
     </>

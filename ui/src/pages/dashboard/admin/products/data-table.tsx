@@ -180,9 +180,15 @@ const productFilters: DataTableFilter<Product>[] = [
 
 interface ProductsDataTableProps {
   data: Product[];
+  downloadCsvFileName?: string;
+  downloadCsv?: (rows: Product[]) => { headers: string[]; rows: Record<string, unknown>[] };
 }
 
-export default function ProductsDataTable({ data }: ProductsDataTableProps) {
+export default function ProductsDataTable({
+  data,
+  downloadCsvFileName,
+  downloadCsv,
+}: ProductsDataTableProps) {
   return (
     <DataTable<Product>
       columns={productColumns}
@@ -190,6 +196,8 @@ export default function ProductsDataTable({ data }: ProductsDataTableProps) {
       searchKey="serial_number"
       filters={productFilters}
       rangeLabel="products"
+      downloadCsvFileName={downloadCsvFileName}
+      downloadCsv={downloadCsv}
     />
   );
 }
