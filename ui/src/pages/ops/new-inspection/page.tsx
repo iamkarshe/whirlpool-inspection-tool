@@ -42,7 +42,9 @@ function getDefaultScannerEnabled() {
 
 export default function OpsNewInspectionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialCode = (searchParams.get("code") ?? "").replace(/\s+/g, "").slice(0, 15);
+  const initialCode = (searchParams.get("code") ?? "")
+    .replace(/\s+/g, "")
+    .slice(0, 15);
   const initialStep =
     searchParams.get("step") === "2" && initialCode.length === 15 ? 2 : 1;
 
@@ -104,52 +106,56 @@ export default function OpsNewInspectionPage() {
               }`}
             >
               <Barcode className="h-5 w-5 text-muted-foreground" />
-              {scannerEnabled ? "Stop Scan for Manual Entry" : "Scan"}
+              {scannerEnabled
+                ? "Stop Scan for Manual Entry"
+                : "Scan QR/Barcode"}
             </button>
           </div>
 
           {scannerEnabled ? (
             <div className="space-y-2 rounded-2xl border bg-background p-2">
-              <Scanner
-                onScan={(detectedCodes) => {
-                  const raw = detectedCodes[0]?.rawValue ?? "";
-                  if (!raw) return;
-                  const normalized = raw.replace(/\s+/g, "").slice(0, 15);
-                  setInspectionCode(normalized);
-                  if (normalized.length === 15) {
-                    setScannerEnabled(false);
-                    setStep(2);
-                    updateNewInspectionUrl({
-                      code: normalized,
-                      step: 2,
-                      source: "scan",
-                    });
-                  }
-                }}
-                onError={(error) => {
-                  const message =
-                    error instanceof Error
-                      ? error.message
-                      : "Unable to access camera";
-                  setScanError(message);
-                  setScanErrorOpen(true);
-                }}
-                constraints={{ facingMode: "environment" }}
-                formats={[
-                  "qr_code",
-                  "code_128",
-                  "ean_13",
-                  "ean_8",
-                  "upc_a",
-                  "upc_e",
-                  "itf",
-                ]}
-                components={{ finder: true }}
-              />
+              <div className="overflow-hidden rounded-xl border">
+                <Scanner
+                  onScan={(detectedCodes) => {
+                    const raw = detectedCodes[0]?.rawValue ?? "";
+                    if (!raw) return;
+                    const normalized = raw.replace(/\s+/g, "").slice(0, 15);
+                    setInspectionCode(normalized);
+                    if (normalized.length === 15) {
+                      setScannerEnabled(false);
+                      setStep(2);
+                      updateNewInspectionUrl({
+                        code: normalized,
+                        step: 2,
+                        source: "scan",
+                      });
+                    }
+                  }}
+                  onError={(error) => {
+                    const message =
+                      error instanceof Error
+                        ? error.message
+                        : "Unable to access camera";
+                    setScanError(message);
+                    setScanErrorOpen(true);
+                  }}
+                  constraints={{ facingMode: "environment" }}
+                  formats={[
+                    "qr_code",
+                    "code_128",
+                    "ean_13",
+                    "ean_8",
+                    "upc_a",
+                    "upc_e",
+                    "itf",
+                  ]}
+                  components={{ finder: true }}
+                />
+              </div>
               {scanError ? (
                 <p className="text-xs text-destructive">{scanError}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground text-center">
                   Point camera to QR code or barcode.
                 </p>
               )}
@@ -159,9 +165,9 @@ export default function OpsNewInspectionPage() {
           <div className="space-y-1 rounded-2xl border border-dashed bg-muted/20 p-3">
             <label
               htmlFor="manual-code"
-              className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground"
+              className="block w-full text-center text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground"
             >
-              Manual entry (fallback)
+              Enter manually
             </label>
             <div className="flex items-center gap-2 rounded-2xl border bg-background px-3 py-2">
               <ScanLine className="h-4 w-4 text-muted-foreground" />
@@ -178,7 +184,7 @@ export default function OpsNewInspectionPage() {
                 className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground text-center">
               {inspectionCode.length}/15 characters
             </p>
           </div>
@@ -196,7 +202,7 @@ export default function OpsNewInspectionPage() {
               });
             }}
           >
-            Continue to checks
+            Continue to Inspection
           </Button>
         </section>
       )}
@@ -210,8 +216,8 @@ export default function OpsNewInspectionPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="text-muted-foreground text-sm">
-            Check camera permissions and ensure no other app is using the camera.
-            You can continue with manual code entry.
+            Check camera permissions and ensure no other app is using the
+            camera. You can continue with manual code entry.
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setScanErrorOpen(false)}>
