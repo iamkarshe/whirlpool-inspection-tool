@@ -91,25 +91,99 @@ function buildSummaryKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
 function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
   const { inspections, logins, devices } = kpis;
   return [
-    { label: "Total inspections", value: inspections.total.toLocaleString(), change: inspections.totalChange, changeType: inspections.totalChangeType, icon: ClipboardCheck },
-    { label: "Inbound", value: inspections.inbound.toLocaleString(), change: inspections.inboundChange, changeType: inspections.inboundChangeType, icon: ArrowDownToLine },
-    { label: "Outbound", value: inspections.outbound.toLocaleString(), change: inspections.outboundChange, changeType: inspections.outboundChangeType, icon: ArrowUpFromLine },
-    { label: "Active inspectors", value: inspections.uniqueInspectors.toLocaleString(), change: inspections.inspectorsChange, changeType: inspections.inspectorsChangeType, icon: Users },
-    { label: "Total logins", value: logins.totalLogins.toLocaleString(), change: logins.totalChange, changeType: logins.totalChangeType, icon: LogIn },
-    { label: "Successful logins", value: logins.successfulLogins.toLocaleString(), change: logins.successChange, changeType: logins.successChangeType, icon: CheckCircle },
-    { label: "Failed logins", value: logins.failedLogins.toLocaleString(), change: logins.failedChange, changeType: logins.failedChangeType, icon: XCircle },
-    { label: "Unique users (logins)", value: logins.uniqueUsers.toLocaleString(), change: logins.usersChange, changeType: logins.usersChangeType, icon: Users },
-    { label: "Total devices", value: devices.totalDevices.toLocaleString(), change: devices.totalChange, changeType: devices.totalChangeType, icon: LayoutGrid },
-    { label: "Active devices", value: devices.activeDevices.toLocaleString(), change: devices.activeChange, changeType: devices.activeChangeType, icon: CircleDot },
-    { label: "Mobile devices", value: devices.mobileDevices.toLocaleString(), change: devices.mobileChange, changeType: devices.mobileChangeType, icon: Smartphone },
-    { label: "Desktop devices", value: devices.desktopDevices.toLocaleString(), change: devices.desktopChange, changeType: devices.desktopChangeType, icon: Monitor },
+    {
+      label: "Total inspections",
+      value: inspections.total.toLocaleString(),
+      change: inspections.totalChange,
+      changeType: inspections.totalChangeType,
+      icon: ClipboardCheck,
+    },
+    {
+      label: "Inbound",
+      value: inspections.inbound.toLocaleString(),
+      change: inspections.inboundChange,
+      changeType: inspections.inboundChangeType,
+      icon: ArrowDownToLine,
+    },
+    {
+      label: "Outbound",
+      value: inspections.outbound.toLocaleString(),
+      change: inspections.outboundChange,
+      changeType: inspections.outboundChangeType,
+      icon: ArrowUpFromLine,
+    },
+    {
+      label: "Active inspectors",
+      value: inspections.uniqueInspectors.toLocaleString(),
+      change: inspections.inspectorsChange,
+      changeType: inspections.inspectorsChangeType,
+      icon: Users,
+    },
+    {
+      label: "Total logins",
+      value: logins.totalLogins.toLocaleString(),
+      change: logins.totalChange,
+      changeType: logins.totalChangeType,
+      icon: LogIn,
+    },
+    {
+      label: "Successful logins",
+      value: logins.successfulLogins.toLocaleString(),
+      change: logins.successChange,
+      changeType: logins.successChangeType,
+      icon: CheckCircle,
+    },
+    {
+      label: "Failed logins",
+      value: logins.failedLogins.toLocaleString(),
+      change: logins.failedChange,
+      changeType: logins.failedChangeType,
+      icon: XCircle,
+    },
+    {
+      label: "Unique users (logins)",
+      value: logins.uniqueUsers.toLocaleString(),
+      change: logins.usersChange,
+      changeType: logins.usersChangeType,
+      icon: Users,
+    },
+    {
+      label: "Total devices",
+      value: devices.totalDevices.toLocaleString(),
+      change: devices.totalChange,
+      changeType: devices.totalChangeType,
+      icon: LayoutGrid,
+    },
+    {
+      label: "Active devices",
+      value: devices.activeDevices.toLocaleString(),
+      change: devices.activeChange,
+      changeType: devices.activeChangeType,
+      icon: CircleDot,
+    },
+    {
+      label: "Mobile devices",
+      value: devices.mobileDevices.toLocaleString(),
+      change: devices.mobileChange,
+      changeType: devices.mobileChangeType,
+      icon: Smartphone,
+    },
+    {
+      label: "Desktop devices",
+      value: devices.desktopDevices.toLocaleString(),
+      change: devices.desktopChange,
+      changeType: devices.desktopChangeType,
+      icon: Monitor,
+    },
   ];
 }
 
 export default function OperationsAnalyticsPage() {
   const [kpis, setKpis] = useState<OperationsAnalyticsKpis | null>(null);
   const [trend, setTrend] = useState<OperationsTrendPoint[]>([]);
-  const [summaryByCategory, setSummaryByCategory] = useState<OperationsSummaryByCategory[]>([]);
+  const [summaryByCategory, setSummaryByCategory] = useState<
+    OperationsSummaryByCategory[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -161,14 +235,14 @@ export default function OperationsAnalyticsPage() {
 
         {/* Chart row: 8 cols + 4 cols (same layout as Executive) */}
         <div className="lg:col-span-12 xl:col-span-8">
-          <Card>
-            <CardHeader>
+          <Card className="gap-3 py-3">
+            <CardHeader className="px-3">
               <CardTitle>Weekly trend</CardTitle>
               <CardDescription>
                 Inspections, logins, and devices over the last 6 weeks
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3">
               <ChartContainer
                 config={trendChartConfig}
                 className="aspect-auto h-[280px] w-full"
@@ -224,12 +298,12 @@ export default function OperationsAnalyticsPage() {
         </div>
 
         <div className="lg:col-span-12 xl:col-span-4">
-          <Card>
-            <CardHeader>
+          <Card className="gap-3 py-3">
+            <CardHeader className="px-3">
               <CardTitle>Volume by category</CardTitle>
               <CardDescription>Current period totals</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3">
               <ChartContainer
                 config={summaryChartConfig}
                 className="aspect-auto h-[280px] w-full"
@@ -275,7 +349,7 @@ export default function OperationsAnalyticsPage() {
               <CardContent>
                 <KpiCardGrid
                   cards={buildAllKpiCards(kpis)}
-                  className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
+                  className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4"
                 />
               </CardContent>
             </Card>

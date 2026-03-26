@@ -34,7 +34,14 @@ export function KpiCard({
   const showChange = change != null && changeType != null;
 
   return (
-    <Card className={cn("w-full p-6 py-4", className)}>
+    <Card
+      title={label}
+      className={cn(
+        "w-full p-3 transition-colors duration-200",
+        "border-border hover:bg-muted/40 hover:border-primary/20",
+        className,
+      )}
+    >
       <CardContent className="p-0">
         <div className="flex items-center justify-between">
           <dt className="text-muted-foreground flex items-center gap-1.5 text-sm font-medium">
@@ -78,10 +85,7 @@ export interface KpiCardGridProps {
   className?: string;
 }
 
-export function KpiCardGrid({
-  cards,
-  className,
-}: KpiCardGridProps) {
+export function KpiCardGrid({ cards, className }: KpiCardGridProps) {
   return (
     <div
       className={cn(
