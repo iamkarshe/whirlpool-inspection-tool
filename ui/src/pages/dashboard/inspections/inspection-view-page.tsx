@@ -27,6 +27,7 @@ import { InspectionOverviewTab } from "@/pages/dashboard/inspections/components/
 import { InspectionSectionTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-section-tab";
 import { InspectionRelationshipTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-relationship-tab";
 import { InspectionImagesTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-images-tab";
+import { InspectionContextBadges } from "@/pages/dashboard/inspections/components/inspection-context-badges";
 import {
   InspectionFlagsTab,
   type InspectionIssueRow,
@@ -428,22 +429,10 @@ export default function InspectionViewPage() {
             <Badge variant="outline" className="text-xs font-normal">
               {formatDate(inspection.created_at)}
             </Badge>
-            {issueRows.some((i) => i.status === "open") ? (
-              <Badge
-                variant="destructive"
-                className="border-red-300 bg-red-50 text-red-700 dark:bg-red-900/20"
-              >
-                Flagged
-              </Badge>
-            ) : null}
-            {reviewSummary.failed > 0 ? (
-              <Badge
-                variant="destructive"
-                className="border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20"
-              >
-                Failed checks: {reviewSummary.failed}
-              </Badge>
-            ) : null}
+            <InspectionContextBadges
+              hasOpenIssues={issueRows.some((i) => i.status === "open")}
+              failedChecksCount={reviewSummary.failed}
+            />
           </div>
         </div>
       </div>
