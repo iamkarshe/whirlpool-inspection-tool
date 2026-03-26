@@ -37,7 +37,7 @@ import {
   type InspectionQuestionResult,
   type InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-service";
-import { formatDate } from "@/lib/core";
+import { formatDate, setPageTitle } from "@/lib/core";
 import { InspectionOverviewTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-overview-tab";
 import { InspectionSectionTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-section-tab";
 import { InspectionRelationshipTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-relationship-tab";
@@ -114,6 +114,17 @@ export default function InspectionViewPage() {
     return null;
   }, [tab]);
 
+  const activeTabTitle = useMemo(() => {
+    if (tab === "overview") return "Overview";
+    if (tab === "outer-packaging") return "Outer Packaging";
+    if (tab === "inner-packaging") return "Inner Packaging";
+    if (tab === "product") return "Product Inspection";
+    if (tab === "images") return "Inspection Images";
+    if (tab === "relationship") return "Relationship";
+    if (tab === "flags") return "Issues/Flags";
+    return "Overview";
+  }, [tab]);
+
   function setTab(next: string) {
     const params = new URLSearchParams(location.search);
     if (next === "overview") params.delete("tab");
@@ -139,6 +150,11 @@ export default function InspectionViewPage() {
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!inspection) return;
+    setPageTitle(`${activeTabTitle} - Inspection ${inspection.id}`);
+  }, [inspection, activeTabTitle]);
 
   useEffect(() => {
     let cancelled = false;
@@ -457,8 +473,11 @@ export default function InspectionViewPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Inspection {inspection.id}
+            {activeTabTitle}
           </h1>
+          <div className="text-muted-foreground mt-1 text-sm">
+            Inspection {inspection.id}
+          </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <InspectionTypeBadge inspectionType={inspection.inspection_type} />
             <Badge variant="outline" className="text-xs font-normal">
