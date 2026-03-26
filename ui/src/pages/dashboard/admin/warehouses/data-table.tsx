@@ -18,9 +18,13 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
   BarChart3,
+  ClipboardList,
+  Eye,
   LineChart,
   MoreHorizontal,
+  Smartphone,
   Trash2,
+  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Warehouse } from "./warehouse-service";
@@ -146,16 +150,26 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseViewPath(id)}>View warehouse</Link>
+              <Link to={PAGES.warehouseViewPath(id)} className="flex items-center">
+                <Eye className="mr-2 h-4 w-4" />
+                View warehouse
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseUsersPath(id)}>View users</Link>
+              <Link to={PAGES.warehouseUsersPath(id)} className="flex items-center">
+                <Users className="mr-2 h-4 w-4" />
+                View users
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseDevicesPath(id)}>View devices</Link>
+              <Link to={PAGES.warehouseDevicesPath(id)} className="flex items-center">
+                <Smartphone className="mr-2 h-4 w-4" />
+                View devices
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseInspectionsPath(id)}>
+              <Link to={PAGES.warehouseInspectionsPath(id)} className="flex items-center">
+                <ClipboardList className="mr-2 h-4 w-4" />
                 View inspections
               </Link>
             </DropdownMenuItem>
@@ -165,7 +179,7 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
                 className="flex items-center"
               >
                 <LineChart className="mr-2 h-4 w-4" />
-                Operations Analytics
+                Operations analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
@@ -174,7 +188,7 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
                 className="flex items-center"
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Executive Analytics
+                Executive analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive focus:text-destructive">

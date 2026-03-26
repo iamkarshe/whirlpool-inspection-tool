@@ -17,7 +17,14 @@ import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import DialogDeleteDevice from "@/pages/dashboard/admin/devices/dialog-delete-device";
 import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  ClipboardList,
+  Eye,
+  Lock,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -157,16 +164,25 @@ function buildDeviceColumns(
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={PAGES.deviceViewPath(row.original.id)}>
+              <Link
+                to={PAGES.deviceViewPath(row.original.id)}
+                className="flex items-center"
+              >
+                <Eye className="mr-2 h-4 w-4" />
                 View device
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.deviceInspectionsPath(row.original.id)}>
+              <Link
+                to={PAGES.deviceInspectionsPath(row.original.id)}
+                className="flex items-center"
+              >
+                <ClipboardList className="mr-2 h-4 w-4" />
                 View inspections
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onLockClick(row.original)}>
+              <Lock className="mr-2 h-4 w-4" />
               Lock device
             </DropdownMenuItem>
             <DropdownMenuItem

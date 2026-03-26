@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
+import { ArrowUpDown, Eye, MoreHorizontal, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { DateRange } from "react-day-picker";
@@ -38,9 +38,10 @@ export type InspectionsDataTableProps = {
   dateRange?: DateRange | undefined;
   onDateRangeChange?: (range: DateRange | undefined) => void;
   downloadCsvFileName?: string;
-  downloadCsv?: (
-    rows: Inspection[],
-  ) => { headers: string[]; rows: Record<string, unknown>[] };
+  downloadCsv?: (rows: Inspection[]) => {
+    headers: string[];
+    rows: Record<string, unknown>[];
+  };
 };
 
 function getSectionStatus(rows: InspectionQuestionResult[] | null) {
@@ -348,6 +349,7 @@ export default function InspectionsDataTable({
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
               <Link to={PAGES.inspectionViewPath(row.original.id)}>
+                <Eye className="mr-2 h-4 w-4" />
                 View inspection
               </Link>
             </DropdownMenuItem>

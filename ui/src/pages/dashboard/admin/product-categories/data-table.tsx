@@ -161,7 +161,7 @@ export default function ProductCategoriesDataTable({
                       className="flex items-center"
                     >
                       <LineChart className="mr-2 h-4 w-4" />
-                      Operations Analytics
+                      Operations analytics
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -170,7 +170,7 @@ export default function ProductCategoriesDataTable({
                       className="flex items-center"
                     >
                       <BarChart3 className="mr-2 h-4 w-4" />
-                      Executive Analytics
+                      Executive analytics
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem

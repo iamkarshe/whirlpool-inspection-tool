@@ -1,3 +1,14 @@
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  ClipboardList,
+  Eye,
+  MoreHorizontal,
+  Smartphone,
+  Trash2,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
@@ -11,9 +22,6 @@ import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
 import { UserStatusBadge } from "@/pages/dashboard/admin/users/user-badge";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
-import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const userColumns: ColumnDef<User>[] = [
   {
@@ -111,13 +119,29 @@ const userColumns: ColumnDef<User>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={PAGES.userViewPath(userId)}>View user</Link>
+              <Link
+                to={PAGES.userViewPath(userId)}
+                className="flex items-center"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View user
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.userViewDevicesPath(userId)}>View devices</Link>
+              <Link
+                to={PAGES.userViewDevicesPath(userId)}
+                className="flex items-center"
+              >
+                <Smartphone className="mr-2 h-4 w-4" />
+                View devices
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.userViewInspectionsPath(userId)}>
+              <Link
+                to={PAGES.userViewInspectionsPath(userId)}
+                className="flex items-center"
+              >
+                <ClipboardList className="mr-2 h-4 w-4" />
                 View inspections
               </Link>
             </DropdownMenuItem>

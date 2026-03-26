@@ -347,7 +347,7 @@ export default function InspectionViewPage() {
           />
 
           <TabsContent value="overview" className="space-y-6">
-            <Card className="gap-3 py-3">
+            <Card className="gap-3 py-3 my-2">
               <CardHeader className="px-3">
                 <CardTitle className="text-base">Quality summary</CardTitle>
               </CardHeader>
@@ -382,7 +382,7 @@ export default function InspectionViewPage() {
               }}
             />
 
-            <Card className="mt-[-12px]">
+            <Card className="my-4">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="flex size-12 items-center justify-center rounded-lg bg-muted">

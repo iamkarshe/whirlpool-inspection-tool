@@ -1,10 +1,11 @@
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
+
 import LoginsDataTable from "@/pages/dashboard/admin/logins/data-table";
 import type { LoginActivity } from "@/pages/dashboard/admin/logins/login-service";
 import { getLoginsByUserId } from "@/pages/dashboard/admin/logins/login-service";
 import type { User } from "@/pages/dashboard/admin/users/user-service";
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
 
 type UserViewContext = { user: User };
 
@@ -15,7 +16,9 @@ export default function UserViewLoginsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    queueMicrotask(() => {
+      if (!cancelled) setLoading(true);
+    });
     getLoginsByUserId(user.id)
       .then((data) => {
         if (!cancelled) setLogins(data);

@@ -5,6 +5,7 @@ import {
   LineChart,
   MoreHorizontal,
   Trash2,
+  Eye,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -166,6 +167,7 @@ const productColumns: ColumnDef<Product>[] = [
                 to={PAGES.productViewPath(p.id)}
                 className="flex items-center"
               >
+                <Eye className="mr-2 h-4 w-4" />
                 View product
               </Link>
             </DropdownMenuItem>
@@ -177,7 +179,7 @@ const productColumns: ColumnDef<Product>[] = [
                 className="flex items-center"
               >
                 <LineChart className="mr-2 h-4 w-4" />
-                Operations Analytics
+                Operations analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
@@ -188,7 +190,7 @@ const productColumns: ColumnDef<Product>[] = [
                 className="flex items-center"
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Executive Analytics
+                Executive analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive focus:text-destructive">
