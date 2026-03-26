@@ -6,12 +6,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import { PAGES } from "@/endpoints";
+import { ArrowUpDown, BarChart3, MoreHorizontal, Trash2 } from "lucide-react";
 import {
   ProductCategoryProductsCountBadge,
 } from "./product-category-badge";
 import type { ProductCategory } from "./product-category-service";
 import { ProductCategoryInspectionCountBadge } from "@/pages/dashboard/admin/product-categories/inspection-count-badges";
+import { Link } from "react-router-dom";
 
 interface ProductCategoriesDataTableProps {
   data: ProductCategory[];
@@ -133,6 +135,15 @@ export default function ProductCategoriesDataTable({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.id}`}
+                      className="flex items-center"
+                    >
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Executive summary
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => {
