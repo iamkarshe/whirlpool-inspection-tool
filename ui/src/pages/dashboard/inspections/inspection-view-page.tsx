@@ -1,4 +1,5 @@
 import { ArrowLeft, Bug, ClipboardCheck, Loader2 } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
@@ -17,13 +18,28 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { PAGES } from "@/endpoints";
 import {
   ImageGalleryDialog,
   type GalleryImage,
 } from "@/components/image-gallery-dialog";
-import { RaiseIssueDialog } from "@/components/dialogs/raise-issue-dialog";
+import {
+  RaiseIssueDialog,
+  type IssueSeverity,
+  type IssueType,
+  type RaiseIssuePayload,
+} from "@/components/dialogs/raise-issue-dialog";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
 import { InspectionQuestionResultsTable } from "@/pages/dashboard/inspections/components/inspection-question-results-table";
@@ -44,6 +60,28 @@ import {
   type InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-service";
 import { formatDate } from "@/lib/core";
+
+type InspectionIssueRow = {
+  id: string;
+  source: "system" | "manual";
+  targetType: "inspection" | "image";
+  title: string;
+  description: string;
+  severity: IssueSeverity;
+  type: IssueType;
+  section?: InspectionSectionKey;
+  imageUrl?: string;
+  imageFilename?: string;
+  createdAt: string;
+  status: "open" | "resolved";
+  resolvedAt?: string;
+  resolutionRemark?: string;
+};
+
+type ManualIssue = Omit<
+  InspectionIssueRow,
+  "status" | "resolvedAt" | "resolutionRemark"
+>;
 
 export default function InspectionViewPage() {
   const params = useParams<{ id: string }>();
@@ -76,6 +114,13 @@ export default function InspectionViewPage() {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [activeGalleryUrl, setActiveGalleryUrl] = useState<string | null>(null);
   const [raiseIssueOpen, setRaiseIssueOpen] = useState(false);
+  const [manualIssues, setManualIssues] = useState<ManualIssue[]>([]);
+  const [resolvedIssues, setResolvedIssues] = useState<
+    Record<string, { resolvedAt: string; remark: string }>
+  >({});
+  const [resolveOpen, setResolveOpen] = useState(false);
+  const [resolvingIssueId, setResolvingIssueId] = useState<string | null>(null);
+  const [resolveRemark, setResolveRemark] = useState("");
   const [checksDialogOpen, setChecksDialogOpen] = useState(false);
   const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
     "failed",
@@ -91,6 +136,7 @@ export default function InspectionViewPage() {
       "product",
       "relationship",
       "images",
+      "flags",
     ]);
     return allowed.has(t) ? t : "overview";
   }, [location.search]);
@@ -273,6 +319,176 @@ export default function InspectionViewPage() {
     [allImages],
   );
 
+  const systemIssues = useMemo<ManualIssue[]>(() => {
+    return [...outerRows, ...innerRows, ...productRows]
+      .filter((r) => r.status === "fail")
+      .map((r) => ({
+        id: `sys-${id}-${r.id}`,
+        source: "system" as const,
+        targetType:
+          r.images.length > 0 ? ("image" as const) : ("inspection" as const),
+        title: r.question,
+        description:
+          r.notes ?? `Failed check in ${r.section.replace("-", " ")}.`,
+        severity: "medium" as const,
+        type: "other" as const,
+        section: r.section,
+        imageUrl: r.images[0]?.url,
+        imageFilename: r.images[0]?.filename,
+        createdAt: inspection?.created_at ?? new Date().toISOString(),
+      }));
+  }, [outerRows, innerRows, productRows, id, inspection?.created_at]);
+
+  const issueRows = useMemo<InspectionIssueRow[]>(() => {
+    return [...manualIssues, ...systemIssues].map((item) => {
+      const resolved = resolvedIssues[item.id];
+      return {
+        ...item,
+        status: resolved ? "resolved" : "open",
+        resolvedAt: resolved?.resolvedAt,
+        resolutionRemark: resolved?.remark,
+      };
+    });
+  }, [manualIssues, systemIssues, resolvedIssues]);
+
+  const issuesFilters: DataTableFilter<InspectionIssueRow>[] = [
+    {
+      id: "status",
+      title: "Status",
+      options: [
+        { value: "open", label: "Open" },
+        { value: "resolved", label: "Resolved" },
+      ],
+    },
+    {
+      id: "severity",
+      title: "Severity",
+      options: [
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
+      ],
+    },
+  ];
+
+  const issueColumns: ColumnDef<InspectionIssueRow>[] = [
+    {
+      accessorKey: "title",
+      header: "Issue",
+      cell: ({ row }) => (
+        <div className="min-w-[220px]">
+          <div className="font-medium">{row.original.title}</div>
+          <div className="text-muted-foreground line-clamp-2 text-xs">
+            {row.original.description}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "section",
+      header: "Section",
+      cell: ({ row }) =>
+        row.original.section ? (
+          <Badge variant="outline" className="capitalize">
+            {row.original.section.replace("-", " ")}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => (
+        <Badge variant="secondary" className="capitalize">
+          {row.original.type.replaceAll("_", " ")}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "severity",
+      header: "Severity",
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className={
+            row.original.severity === "high"
+              ? "border-red-300 bg-red-50 text-red-700"
+              : row.original.severity === "medium"
+                ? "border-amber-300 bg-amber-50 text-amber-700"
+                : "border-emerald-300 bg-emerald-50 text-emerald-700"
+          }
+        >
+          {row.original.severity}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant={
+            row.original.status === "resolved" ? "success" : "destructive"
+          }
+        >
+          {row.original.status === "resolved" ? "Resolved" : "Open"}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Created",
+      cell: ({ row }) => formatDate(row.original.createdAt),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const item = row.original;
+        const isResolved = item.status === "resolved";
+        return (
+          <div className="flex items-center gap-2">
+            {item.imageUrl ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setGalleryImages(
+                    item.imageUrl
+                      ? [{ url: item.imageUrl, filename: item.imageFilename }]
+                      : [],
+                  );
+                  setActiveGalleryUrl(item.imageUrl ?? null);
+                  setGalleryOpen(true);
+                }}
+              >
+                View image
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant={isResolved ? "secondary" : "default"}
+              disabled={isResolved}
+              onClick={() => {
+                setResolvingIssueId(item.id);
+                setResolveRemark("");
+                setResolveOpen(true);
+              }}
+            >
+              {isResolved ? "Resolved" : "Resolve"}
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const resolvingIssue = useMemo(
+    () => issueRows.find((i) => i.id === resolvingIssueId) ?? null,
+    [issueRows, resolvingIssueId],
+  );
+
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -323,16 +539,82 @@ export default function InspectionViewPage() {
                 type: "image",
                 inspectionId: inspection.id,
                 imageUrl: activeGalleryUrl,
-                imageFilename:
-                  galleryImages.find((i) => i.url === activeGalleryUrl)?.filename,
+                imageFilename: galleryImages.find(
+                  (i) => i.url === activeGalleryUrl,
+                )?.filename,
               }
             : { type: "inspection", inspectionId: inspection.id }
         }
-        onSubmit={(payload) => {
-          // TODO: wire backend.
-          console.log("Raise issue", payload);
+        onSubmit={(payload: RaiseIssuePayload) => {
+          const next: ManualIssue = {
+            id: `manual-${crypto.randomUUID()}`,
+            source: "manual",
+            targetType: payload.target.type,
+            title: payload.title,
+            description: payload.description,
+            severity: payload.severity,
+            type: payload.type,
+            createdAt: new Date().toISOString(),
+            imageUrl:
+              payload.target.type === "image"
+                ? payload.target.imageUrl
+                : undefined,
+            imageFilename:
+              payload.target.type === "image"
+                ? payload.target.imageFilename
+                : undefined,
+          };
+          setManualIssues((prev) => [next, ...prev]);
         }}
       />
+      <Dialog open={resolveOpen} onOpenChange={setResolveOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Resolve issue</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-md border bg-muted/20 p-3 text-sm">
+              <div className="font-medium">
+                {resolvingIssue?.title ?? "Issue"}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Add remarks for resolution audit trail.
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="resolve-remark">Resolution remarks</Label>
+              <Textarea
+                id="resolve-remark"
+                value={resolveRemark}
+                onChange={(e) => setResolveRemark(e.target.value)}
+                placeholder="What was done to resolve this issue?"
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResolveOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!resolvingIssue || resolveRemark.trim().length === 0}
+              onClick={() => {
+                if (!resolvingIssue) return;
+                setResolvedIssues((prev) => ({
+                  ...prev,
+                  [resolvingIssue.id]: {
+                    resolvedAt: new Date().toISOString(),
+                    remark: resolveRemark.trim(),
+                  },
+                }));
+                setResolveOpen(false);
+              }}
+            >
+              Mark as resolved
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link
@@ -368,7 +650,7 @@ export default function InspectionViewPage() {
               { value: "product", label: "Product Inspection" },
               { value: "images", label: "Inspection Images" },
               { value: "relationship", label: "Relationship" },
-              { value: "flags", label: "Flags" },
+              { value: "flags", label: "Issues/Flags" },
             ]}
           />
 
@@ -732,6 +1014,25 @@ export default function InspectionViewPage() {
                       </button>
                     ))}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="flags" className="space-y-4">
+            <Card className="gap-3 py-3">
+              <CardContent className="px-3">
+                {reviewLoading ? (
+                  <div className="flex min-h-[160px] items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <DataTable<InspectionIssueRow>
+                    columns={issueColumns}
+                    data={issueRows}
+                    filters={issuesFilters}
+                    searchKey="title"
+                    rangeLabel="issues"
+                  />
                 )}
               </CardContent>
             </Card>
