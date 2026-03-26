@@ -2,6 +2,7 @@ import { ChevronRight, ClipboardList } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
 import {
   getInspectionQuestionResults,
   getInspections,
@@ -94,9 +95,7 @@ export default function OpsTodayInspectionsPage() {
       </header>
 
       <section className="space-y-2">
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Loading inspections...</p>
-        ) : null}
+        {loading ? <OpsInspectionSkeleton variant="list" count={4} /> : null}
         {rows.map((inspection) => (
           <button
             key={inspection.id}

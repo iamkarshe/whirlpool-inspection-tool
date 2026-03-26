@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   Flag,
-  Loader2,
   Link2,
   XCircle,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import {
   ImageGalleryDialog,
   type GalleryImage,
 } from "@/components/image-gallery-dialog";
+import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -281,11 +281,7 @@ export default function OpsInspectionDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <OpsInspectionSkeleton variant="detail" />;
   }
 
   if (!inspection) {
