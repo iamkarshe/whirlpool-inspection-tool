@@ -31,7 +31,10 @@ import {
   InspectionFlagsTab,
   type InspectionIssueRow,
 } from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
-import { inspectionTabTitle, inspectionViewTabItems } from "@/pages/dashboard/inspections/components/view-tabs/inspection-view-tab-items";
+import {
+  inspectionTabTitle,
+  inspectionViewTabItems,
+} from "@/pages/dashboard/inspections/components/view-tabs/inspection-view-tab-items";
 import { InspectionViewDialogs } from "@/pages/dashboard/inspections/components/view-tabs/inspection-view-dialogs";
 
 type ManualIssue = Omit<InspectionIssueRow, "status">;
@@ -412,6 +415,22 @@ export default function InspectionViewPage() {
             <Badge variant="outline" className="text-xs font-normal">
               {formatDate(inspection.created_at)}
             </Badge>
+            {issueRows.some((i) => i.status === "open") ? (
+              <Badge
+                variant="destructive"
+                className="border-red-300 bg-red-50 text-red-700 dark:bg-red-900/20"
+              >
+                Flagged
+              </Badge>
+            ) : null}
+            {reviewSummary.failed > 0 ? (
+              <Badge
+                variant="destructive"
+                className="border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20"
+              >
+                Failed checks: {reviewSummary.failed}
+              </Badge>
+            ) : null}
           </div>
         </div>
       </div>
