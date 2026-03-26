@@ -12,19 +12,9 @@ import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/core";
 
 type DeviceViewContext = { device: Device };
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 const columns: ColumnDef<DeviceUserAssignment>[] = [
   {

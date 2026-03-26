@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import { useAppNotifications } from "@/contexts/use-app-notifications";
-import { formatCreatedAt } from "@/lib/core";
+import { formatDate } from "@/lib/core";
 import type { AppNotification } from "@/services/app-notifications-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
@@ -89,7 +89,7 @@ export default function NotificationsPage() {
       ),
       cell: ({ row }) => (
         <span className="text-xs text-muted-foreground">
-          {formatCreatedAt(row.original.createdAt)}
+          {formatDate(row.original.createdAt)}
         </span>
       ),
     },

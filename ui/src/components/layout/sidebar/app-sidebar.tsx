@@ -1,7 +1,10 @@
 import { BrandLogo } from "@/components/brand-logo";
 import { CopyDebugDetailsDialog } from "@/components/dialog-copy-debug-details";
 import { NavMain } from "@/components/layout/sidebar/nav-main";
-import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sidebar,
@@ -26,16 +29,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setOpen, setOpenMobile, isMobile } = useSidebar();
   const isTablet = useIsTablet();
   const [clientIp, setClientIp] = useState<string | null>(null);
-  const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null);
+  const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(
+    () => {
+      if (typeof window === "undefined") return null;
+      return window.localStorage.getItem("whirlpool.deviceFingerprint");
+    },
+  );
   const [deviceDebugOpen, setDeviceDebugOpen] = useState(false);
 
   useEffect(() => {
     if (isMobile) setOpenMobile(false);
-  }, []);
+  }, [isMobile, setOpenMobile]);
 
   useEffect(() => {
     setOpen(!isTablet);
-  }, [isTablet]);
+  }, [isTablet, setOpen]);
 
   useEffect(() => {
     fetch("https://api.ipify.org?format=json")
@@ -45,23 +53,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || deviceFingerprint) return;
 
     const key = "whirlpool.deviceFingerprint";
-    const existing = window.localStorage.getItem(key);
-    if (existing) {
-      setDeviceFingerprint(existing);
-      return;
-    }
-
     const id =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        : `fp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
     window.localStorage.setItem(key, id);
-    setDeviceFingerprint(id);
-  }, []);
+    const rafId = window.requestAnimationFrame(() => {
+      setDeviceFingerprint(id);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [deviceFingerprint]);
 
   const deviceDebugText = useMemo(() => {
     if (typeof window === "undefined") return "";
@@ -120,7 +128,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </h4>
             <Link
               to={PAGES.DASHBOARD_RELEASE_NOTES}
-              className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 text-[11px] hover:bg-muted/60"
+              className="flex items-center justify-between gap-2 rounded-md py-1 text-[11px] hover:bg-muted/60"
             >
               <span className="text-muted-foreground flex items-center gap-1.5 leading-none">
                 <Tag className="h-3.5 w-3.5 shrink-0" />
@@ -134,7 +142,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <button
               type="button"
               onClick={() => setDeviceDebugOpen(true)}
-              className="flex w-full items-center justify-between gap-2 rounded-md px-1.5 py-1 text-left text-[11px] hover:bg-muted/60"
+              className="flex w-full items-center justify-between gap-2 rounded-md py-1 text-left text-[11px] hover:bg-muted/60"
             >
               <span className="text-muted-foreground flex items-center gap-1.5 leading-none">
                 <Smartphone className="h-3.5 w-3.5 shrink-0" />
@@ -148,7 +156,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </span>
             </button>
 
-            <div className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 text-[11px]">
+            <div className="flex items-center justify-between gap-2 rounded-md py-1 text-[11px]">
               <span className="text-muted-foreground flex items-center gap-1.5 leading-none">
                 <Globe className="h-3.5 w-3.5 shrink-0" />
                 IP Address

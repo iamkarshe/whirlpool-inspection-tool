@@ -2,22 +2,11 @@ import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import { PAGES } from "@/endpoints";
 import { LogLevelBadge, LogSourceBadge } from "@/pages/dashboard/admin/log/log-badge";
+import { formatDate } from "@/lib/core";
 import type { Log } from "@/pages/dashboard/admin/log/log-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
-
-function formatDate(iso: string) {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 const logColumns: ColumnDef<Log>[] = [
   {

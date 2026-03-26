@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDate } from "@/lib/core";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { DeviceNotification } from "./notification-service";
 import {
@@ -28,17 +29,6 @@ import { useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 
 type DeviceViewContext = { device: Device };
-
-function formatDateTime(iso: string) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 const columns: ColumnDef<DeviceNotification>[] = [
   {
@@ -96,7 +86,7 @@ const columns: ColumnDef<DeviceNotification>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-xs">{formatDateTime(row.original.sent_at)}</span>
+      <span className="font-mono text-xs">{formatDate(row.original.sent_at)}</span>
     ),
   },
 ];

@@ -15,21 +15,10 @@ import {
   getLogById,
   type Log,
 } from "@/pages/dashboard/admin/log/log-service";
+import { formatDate } from "@/lib/core";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-
-function formatDate(iso: string) {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "medium",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 export default function LogViewPage() {
   const params = useParams<{ id: string }>();

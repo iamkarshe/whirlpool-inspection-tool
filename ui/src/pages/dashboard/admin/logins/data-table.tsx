@@ -13,35 +13,12 @@ import {
   LoginNaBadge,
   LoginStatusBadge,
 } from "@/pages/dashboard/admin/logins/login-badge";
+import { formatDate } from "@/lib/core";
 import type { LoginActivity } from "@/pages/dashboard/admin/logins/login-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-function formatDate(iso: string) {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function formatDateLong(iso: string) {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "medium",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 function buildLoginColumns(
   onMoreInfo: (log: LoginActivity) => void,
@@ -259,7 +236,7 @@ export default function LoginsDataTable({ data }: LoginsDataTableProps) {
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">Logged at</span>
                 <span className="font-mono text-xs">
-                  {formatDateLong(selectedLogin.logged_at)}
+                  {formatDate(selectedLogin.logged_at)}
                 </span>
               </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">

@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import SkeletonTable from "@/components/skeleton7";
+import { formatDate } from "@/lib/core";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { DeviceLockHistoryEvent } from "./lock-history-service";
 import { getDeviceLockHistoryByDeviceId } from "./lock-history-service";
@@ -11,17 +12,6 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
 type DeviceViewContext = { device: Device };
-
-function formatDateTime(iso: string) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 const columns: ColumnDef<DeviceLockHistoryEvent>[] = [
   {
@@ -63,7 +53,7 @@ const columns: ColumnDef<DeviceLockHistoryEvent>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-xs">{formatDateTime(row.original.occurred_at)}</span>
+      <span className="font-mono text-xs">{formatDate(row.original.occurred_at)}</span>
     ),
   },
   {

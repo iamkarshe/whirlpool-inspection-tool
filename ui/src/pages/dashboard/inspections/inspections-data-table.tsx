@@ -11,6 +11,7 @@ import {
   InspectionIdLinkBadge,
   InspectionTypeBadge,
 } from "@/pages/dashboard/inspections/inspection-badge";
+import { formatDate } from "@/lib/core";
 import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
@@ -22,18 +23,6 @@ export type InspectionsDataTableProps = {
   /** When true, hide the Device column (e.g. on device inspections tab). */
   hideDeviceColumn?: boolean;
 };
-
-function formatDate(iso: string) {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 const deviceColumn: ColumnDef<Inspection> = {
   id: "device",

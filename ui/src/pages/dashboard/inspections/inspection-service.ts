@@ -146,6 +146,20 @@ export async function getInspectionQuestionResults(
   });
 }
 
+export type InspectionRelationshipScan = {
+  inspectionId: string;
+  scannedAt: string;
+  personId: number;
+  personName: string;
+  deviceId: string;
+  deviceFingerprint: string;
+};
+
+export type InspectionRelationship = {
+  inbound: InspectionRelationshipScan;
+  outbound: InspectionRelationshipScan | null;
+};
+
 export interface InspectionKpis {
   total: number;
   totalChange: string;
@@ -240,6 +254,59 @@ export const getInspectionById = async (
       const found = inspections.find((i) => i.id === id) ?? null;
       resolve(found);
     }, 400);
+  });
+};
+
+export const getInspectionRelationship = async (
+  id: string,
+): Promise<InspectionRelationship | null> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const current = inspections.find((i) => i.id === id);
+      if (!current) {
+        resolve(null);
+        return;
+      }
+
+      const productSerial = current.product_serial;
+      const related = inspections.filter((i) => i.product_serial === productSerial);
+      const inbound = related.find((i) => i.inspection_type === "inbound") ?? current;
+      const outbound =
+        related.find((i) => i.inspection_type === "outbound" && i.id !== inbound.id) ??
+        (inbound.id === current.id
+          ? {
+              ...current,
+              id: "mock-outbound-for-validation",
+              inspection_type: "outbound" as const,
+              inspector_id: 3,
+              inspector_name: "Rahul Gupta",
+              device_id: "550e8400-e29b-41d4-a716-446655440004",
+              device_fingerprint: "fp-android-mock999",
+              created_at: "2024-03-06T12:20:00Z",
+            }
+          : null);
+
+      resolve({
+        inbound: {
+          inspectionId: inbound.id,
+          scannedAt: inbound.created_at,
+          personId: inbound.inspector_id,
+          personName: inbound.inspector_name,
+          deviceId: inbound.device_id,
+          deviceFingerprint: inbound.device_fingerprint,
+        },
+        outbound: outbound
+          ? {
+              inspectionId: outbound.id,
+              scannedAt: outbound.created_at,
+              personId: outbound.inspector_id,
+              personName: outbound.inspector_name,
+              deviceId: outbound.device_id,
+              deviceFingerprint: outbound.device_fingerprint,
+            }
+          : null,
+      });
+    }, 300);
   });
 };
 
