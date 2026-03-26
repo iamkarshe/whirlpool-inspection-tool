@@ -22,6 +22,130 @@ export interface Inspection {
   created_at: string;
 }
 
+export type InspectionSectionKey =
+  | "outer-packaging"
+  | "inner-packaging"
+  | "product"
+  | "device";
+
+export type InspectionQuestionStatus = "pass" | "fail";
+
+export type InspectionImage = {
+  url: string;
+  filename?: string;
+};
+
+export type InspectionQuestionResult = {
+  id: string;
+  section: InspectionSectionKey;
+  question: string;
+  status: InspectionQuestionStatus;
+  notes?: string;
+  images: InspectionImage[];
+};
+
+function placeholderImageUrl(text: string) {
+  const t = encodeURIComponent(text);
+  return `https://placehold.co/1200x800?text=${t}`;
+}
+
+const inspectionQuestionResults: InspectionQuestionResult[] = [
+  {
+    id: "q-outer-1",
+    section: "outer-packaging",
+    question: "Carton intact (no dents / punctures)",
+    status: "pass",
+    images: [{ url: placeholderImageUrl("Outer carton"), filename: "outer-carton.jpg" }],
+  },
+  {
+    id: "q-outer-2",
+    section: "outer-packaging",
+    question: "Shipping label present and readable",
+    status: "pass",
+    images: [{ url: placeholderImageUrl("Shipping label"), filename: "label.jpg" }],
+  },
+  {
+    id: "q-outer-3",
+    section: "outer-packaging",
+    question: "Straps / seals intact",
+    status: "fail",
+    notes: "Seal partially torn on the right edge.",
+    images: [
+      { url: placeholderImageUrl("Seal issue - 1"), filename: "seal-1.jpg" },
+      { url: placeholderImageUrl("Seal issue - 2"), filename: "seal-2.jpg" },
+    ],
+  },
+  {
+    id: "q-inner-1",
+    section: "inner-packaging",
+    question: "Foam inserts present",
+    status: "pass",
+    images: [{ url: placeholderImageUrl("Foam inserts"), filename: "foam.jpg" }],
+  },
+  {
+    id: "q-inner-2",
+    section: "inner-packaging",
+    question: "Accessories bag present",
+    status: "pass",
+    images: [{ url: placeholderImageUrl("Accessories bag"), filename: "accessories.jpg" }],
+  },
+  {
+    id: "q-inner-3",
+    section: "inner-packaging",
+    question: "Plastic wrap intact",
+    status: "fail",
+    notes: "Tear at the back panel.",
+    images: [{ url: placeholderImageUrl("Wrap tear"), filename: "wrap.jpg" }],
+  },
+  {
+    id: "q-prod-1",
+    section: "product",
+    question: "Control panel has no scratches",
+    status: "pass",
+    images: [{ url: placeholderImageUrl("Control panel"), filename: "panel.jpg" }],
+  },
+  {
+    id: "q-prod-2",
+    section: "product",
+    question: "Drum rotates smoothly",
+    status: "pass",
+    images: [],
+  },
+  {
+    id: "q-prod-3",
+    section: "product",
+    question: "Paint finish consistent",
+    status: "fail",
+    notes: "Minor scuff visible near bottom-left corner.",
+    images: [{ url: placeholderImageUrl("Paint scuff"), filename: "scuff.jpg" }],
+  },
+  {
+    id: "q-dev-1",
+    section: "device",
+    question: "Device time is synced",
+    status: "pass",
+    images: [],
+  },
+  {
+    id: "q-dev-2",
+    section: "device",
+    question: "Camera focus is OK",
+    status: "pass",
+    images: [{ url: placeholderImageUrl("Camera test"), filename: "camera-test.jpg" }],
+  },
+];
+
+export async function getInspectionQuestionResults(
+  _inspectionId: string,
+  section: InspectionSectionKey,
+): Promise<InspectionQuestionResult[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(inspectionQuestionResults.filter((r) => r.section === section));
+    }, 250);
+  });
+}
+
 export interface InspectionKpis {
   total: number;
   totalChange: string;
