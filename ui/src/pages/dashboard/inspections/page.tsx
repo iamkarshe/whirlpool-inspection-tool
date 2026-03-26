@@ -13,6 +13,12 @@ import {
 } from "@/pages/dashboard/inspections/inspection-service";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import type { DateRange } from "react-day-picker";
+import {
+  applyInspectionFilters,
+  buildInspectionFilterSections,
+  computeInspectionStatusMap,
+  type InspectionStatusMap,
+} from "@/pages/dashboard/inspections/components/inspection-filters";
 
 export default function InspectionsPage() {
   const [kpis, setKpis] = useState<InspectionKpis | null>(null);
@@ -22,13 +28,22 @@ export default function InspectionsPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>({
     type: [],
+    status: [],
+    warehouse: [],
+    product: [],
+    inspector: [],
   });
+  const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
-  const filteredInspections = useMemo(() => {
-    const types = new Set(filtersValue.type ?? []);
-    if (types.size === 0) return inspections;
-    return inspections.filter((i) => types.has(i.inspection_type));
-  }, [filtersValue.type, inspections]);
+  const filterSections = useMemo(
+    () => buildInspectionFilterSections(inspections),
+    [inspections],
+  );
+
+  const filteredInspections = useMemo(
+    () => applyInspectionFilters(inspections, filtersValue, statusMap),
+    [filtersValue, inspections, statusMap],
+  );
 
   useEffect(() => {
     queueMicrotask(() => setLoadingKpis(true));
@@ -43,7 +58,11 @@ export default function InspectionsPage() {
   useEffect(() => {
     queueMicrotask(() => setLoadingTable(true));
     getInspections()
-      .then(setInspections)
+      .then(async (list) => {
+        setInspections(list);
+        const map = await computeInspectionStatusMap(list);
+        setStatusMap(map);
+      })
       .finally(() => setLoadingTable(false));
   }, []);
 
@@ -59,16 +78,7 @@ export default function InspectionsPage() {
           <MultiSelectFiltersDialog
             title="Filters"
             description="Refine the table results."
-            sections={[
-              {
-                key: "type",
-                label: "Type",
-                options: [
-                  { id: "inbound", label: "Inbound" },
-                  { id: "outbound", label: "Outbound" },
-                ],
-              },
-            ]}
+            sections={filterSections}
             value={filtersValue}
             onApply={setFiltersValue}
             triggerLabel="Filters"

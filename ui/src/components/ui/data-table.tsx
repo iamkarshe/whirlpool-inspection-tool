@@ -73,6 +73,11 @@ export interface DataTableProps<TData> {
   filters?: DataTableFilter<TData>[];
   /** When set, enables the calendar date range picker in the toolbar and filters data by the selected range. */
   dateRangeFilter?: DataTableDateRangeFilter<TData>;
+  /**
+   * When true (default), show the date range picker in the toolbar.
+   * When false, date range filtering can still be applied via controlled props.
+   */
+  showDateRangePicker?: boolean;
   /** Controlled date range (use with onDateRangeChange). */
   dateRange?: DateRange | undefined;
   /** Controlled date range setter (use with dateRange). */
@@ -111,6 +116,7 @@ export function DataTable<TData>({
   searchKey,
   filters,
   dateRangeFilter,
+  showDateRangePicker = true,
   dateRange: controlledDateRange,
   onDateRangeChange,
   allowSelection = false,
@@ -223,7 +229,7 @@ export function DataTable<TData>({
       <div className="w-full">
         <div className="flex items-center gap-4 py-4">
           <div className="flex flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
-            {dateRangeFilter ? (
+            {dateRangeFilter && showDateRangePicker ? (
               <CalendarDateRangePicker
                 value={dateRange}
                 onChange={setDateRange}

@@ -1,50 +1,53 @@
 import { useEffect, useMemo, useState } from "react";
 
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
-import type {
-  Inspection,
-  InspectionQuestionResult,
-} from "@/pages/dashboard/inspections/inspection-service";
-import {
-  getInspectionQuestionResults,
-  getInspections,
-} from "@/pages/dashboard/inspections/inspection-service";
+import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
+import { getInspections } from "@/pages/dashboard/inspections/inspection-service";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import type { DateRange } from "react-day-picker";
-
-function hasAnyFailed(rows: InspectionQuestionResult[]) {
-  return rows.some((r) => r.status === "fail");
-}
+import {
+  applyInspectionFilters,
+  buildInspectionFilterSections,
+  computeInspectionStatusMap,
+  type InspectionStatusMap,
+} from "@/pages/dashboard/inspections/components/inspection-filters";
 
 export default function OutboundFailedInspectionsPage() {
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>({
+    type: ["outbound"],
+    status: ["fail"],
+    warehouse: [],
+    product: [],
+    inspector: [],
+  });
+  const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
   useEffect(() => {
     queueMicrotask(() => setLoading(true));
     getInspections()
       .then(async (list) => {
         const outbound = list.filter((i) => i.inspection_type === "outbound");
-        const flags = await Promise.all(
-          outbound.map(async (i) => {
-            const [outer, inner, product] = await Promise.all([
-              getInspectionQuestionResults(i.id, "outer-packaging"),
-              getInspectionQuestionResults(i.id, "inner-packaging"),
-              getInspectionQuestionResults(i.id, "product"),
-            ]);
-            return { id: i.id, failed: [outer, inner, product].some(hasAnyFailed) };
-          }),
-        );
-        const failedIds = new Set(flags.filter((f) => f.failed).map((f) => f.id));
-        setInspections(outbound.filter((i) => failedIds.has(i.id)));
+        setInspections(outbound);
+        const map = await computeInspectionStatusMap(outbound);
+        setStatusMap(map);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  const data = useMemo(() => inspections, [inspections]);
+  const filterSections = useMemo(
+    () => buildInspectionFilterSections(inspections),
+    [inspections],
+  );
+  const data = useMemo(
+    () => applyInspectionFilters(inspections, filtersValue, statusMap),
+    [filtersValue, inspections, statusMap],
+  );
 
   return (
     <div className="space-y-6">
@@ -55,6 +58,14 @@ export default function OutboundFailedInspectionsPage() {
         />
         <div className="flex items-center gap-2">
           <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+          <MultiSelectFiltersDialog
+            title="Filters"
+            description="Refine the table results."
+            sections={filterSections}
+            value={filtersValue}
+            onApply={setFiltersValue}
+            triggerLabel="Filters"
+          />
         </div>
       </div>
 
