@@ -1,4 +1,4 @@
-import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Bug, ClipboardCheck, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
@@ -23,6 +23,7 @@ import {
   ImageGalleryDialog,
   type GalleryImage,
 } from "@/components/image-gallery-dialog";
+import { RaiseIssueDialog } from "@/components/dialogs/raise-issue-dialog";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
 import { InspectionQuestionResultsTable } from "@/pages/dashboard/inspections/components/inspection-question-results-table";
@@ -74,6 +75,7 @@ export default function InspectionViewPage() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [activeGalleryUrl, setActiveGalleryUrl] = useState<string | null>(null);
+  const [raiseIssueOpen, setRaiseIssueOpen] = useState(false);
   const [checksDialogOpen, setChecksDialogOpen] = useState(false);
   const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
     "failed",
@@ -307,6 +309,29 @@ export default function InspectionViewPage() {
         onActiveUrlChange={setActiveGalleryUrl}
         title="Inspection images"
         description="Click a thumbnail to preview, or download the selected image."
+        onRaiseIssue={(img) => {
+          setActiveGalleryUrl(img.url);
+          setRaiseIssueOpen(true);
+        }}
+      />
+      <RaiseIssueDialog
+        open={raiseIssueOpen}
+        onOpenChange={setRaiseIssueOpen}
+        target={
+          activeGalleryUrl
+            ? {
+                type: "image",
+                inspectionId: inspection.id,
+                imageUrl: activeGalleryUrl,
+                imageFilename:
+                  galleryImages.find((i) => i.url === activeGalleryUrl)?.filename,
+              }
+            : { type: "inspection", inspectionId: inspection.id }
+        }
+        onSubmit={(payload) => {
+          // TODO: wire backend.
+          console.log("Raise issue", payload);
+        }}
       />
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
@@ -340,16 +365,17 @@ export default function InspectionViewPage() {
               { value: "overview", label: "Overview" },
               { value: "outer-packaging", label: "Outer Packaging" },
               { value: "inner-packaging", label: "Inner Packaging" },
-              { value: "product", label: "Product" },
+              { value: "product", label: "Product Inspection" },
               { value: "images", label: "Inspection Images" },
               { value: "relationship", label: "Relationship" },
+              { value: "flags", label: "Flags" },
             ]}
           />
 
           <TabsContent value="overview" className="space-y-6">
             <Card className="gap-3 py-3 my-2">
               <CardHeader className="px-3">
-                <CardTitle className="text-base">Quality summary</CardTitle>
+                <CardTitle className="text-base">Quality Summary</CardTitle>
               </CardHeader>
               <CardContent className="px-3">
                 {reviewLoading ? (
@@ -364,7 +390,6 @@ export default function InspectionViewPage() {
                 )}
               </CardContent>
             </Card>
-
             <ChecksSummaryDialog
               open={checksDialogOpen}
               onOpenChange={setChecksDialogOpen}
@@ -381,7 +406,6 @@ export default function InspectionViewPage() {
                 setGalleryOpen(true);
               }}
             />
-
             <Card className="my-4">
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -449,6 +473,19 @@ export default function InspectionViewPage() {
                 <div className="space-y-1">
                   <p className="text-muted-foreground text-sm">Date</p>
                   <p className="text-sm">{formatDate(inspection.created_at)}</p>
+                </div>
+                <div className="space-y-1 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setActiveGalleryUrl(null);
+                      setRaiseIssueOpen(true);
+                    }}
+                  >
+                    <Bug className="h-4 w-4" />
+                    Raise an issue
+                  </Button>
                 </div>
               </CardContent>
             </Card>

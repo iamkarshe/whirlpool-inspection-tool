@@ -44,11 +44,11 @@ export async function getOperationsAnalyticsKpis(
   const scale = getFilterScale(filters);
   return {
     inspections: {
-      ...inspections,
-      total: scaleInt(inspections.total, scale),
-      inbound: scaleInt(inspections.inbound, scale),
-      outbound: scaleInt(inspections.outbound, scale),
-      uniqueInspectors: scaleInt(inspections.uniqueInspectors, Math.min(1, scale + 0.1)),
+      totalInspections: scaleInt(inspections.totalInspections, scale),
+      inboundPassed: scaleInt(inspections.inboundPassed, scale),
+      inboundFailed: scaleInt(inspections.inboundFailed, scale),
+      outboundPassed: scaleInt(inspections.outboundPassed, scale),
+      outboundFailed: scaleInt(inspections.outboundFailed, scale),
     },
     logins: {
       ...logins,

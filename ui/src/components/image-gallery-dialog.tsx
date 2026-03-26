@@ -24,6 +24,7 @@ export function ImageGalleryDialog({
   images,
   activeUrl,
   onActiveUrlChange,
+  onRaiseIssue,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +33,7 @@ export function ImageGalleryDialog({
   images: GalleryImage[];
   activeUrl: string | null;
   onActiveUrlChange: (url: string) => void;
+  onRaiseIssue?: (img: GalleryImage) => void;
 }) {
   const active = useMemo(() => {
     const fallback = images[0]?.url ?? null;
@@ -116,6 +118,14 @@ export function ImageGalleryDialog({
         )}
 
         <DialogFooter className="mt-2 shrink-0">
+          {active && activeImage && onRaiseIssue ? (
+            <Button
+              variant="outline"
+              onClick={() => onRaiseIssue(activeImage)}
+            >
+              Raise an issue
+            </Button>
+          ) : null}
           {active ? (
             <Button asChild>
               <a

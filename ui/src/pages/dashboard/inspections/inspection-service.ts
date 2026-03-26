@@ -44,9 +44,22 @@ export type InspectionQuestionResult = {
   images: InspectionImage[];
 };
 
+function hasAnyFailed(rows: InspectionQuestionResult[]) {
+  return rows.some((r) => r.status === "fail");
+}
+
+async function computeInspectionStatus(inspectionId: string) {
+  const [outer, inner, product] = await Promise.all([
+    getInspectionQuestionResults(inspectionId, "outer-packaging"),
+    getInspectionQuestionResults(inspectionId, "inner-packaging"),
+    getInspectionQuestionResults(inspectionId, "product"),
+  ]);
+  return [outer, inner, product].some(hasAnyFailed) ? "fail" : "pass";
+}
+
 function placeholderImageUrl(text: string) {
   const t = encodeURIComponent(text);
-  return `https://placehold.co/1200x800?text=${t}`;
+  return `https://api.dicebear.com/8.x/shapes/svg?seed=${t}`;
 }
 
 const inspectionQuestionResults: InspectionQuestionResult[] = [
@@ -326,18 +339,47 @@ export const getInspectionsByUserId = async (
 
 /** KPI stats for inspections (e.g. list header / reports). */
 export async function getInspectionKpis(
-  _dateFrom?: string,
-  _dateTo?: string,
+  dateFrom?: string,
+  dateTo?: string,
 ): Promise<InspectionKpis> {
+  const fromTime = dateFrom ? new Date(dateFrom).getTime() : null;
+  const toTime = dateTo ? new Date(dateTo).getTime() : null;
+
+  const filtered = inspections.filter((i) => {
+    if (!fromTime && !toTime) return true;
+    const t = new Date(i.created_at).getTime();
+    if (Number.isNaN(t)) return false;
+    if (fromTime != null && t < fromTime) return false;
+    if (toTime != null && t > toTime) return false;
+    return true;
+  });
+
+  const statuses = await Promise.all(
+    filtered.map(async (i) => ({
+      inspection: i,
+      status: await computeInspectionStatus(i.id),
+    })),
+  );
+
+  const next: InspectionKpis = {
+    totalInspections: statuses.length,
+    inboundPassed: 0,
+    inboundFailed: 0,
+    outboundPassed: 0,
+    outboundFailed: 0,
+  };
+
+  for (const s of statuses) {
+    const t = s.inspection.inspection_type;
+    if (t === "inbound" && s.status === "pass") next.inboundPassed += 1;
+    if (t === "inbound" && s.status === "fail") next.inboundFailed += 1;
+    if (t === "outbound" && s.status === "pass") next.outboundPassed += 1;
+    if (t === "outbound" && s.status === "fail") next.outboundFailed += 1;
+  }
+
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve({
-        totalInspections: 156,
-        inboundPassed: 54,
-        inboundFailed: 8,
-        outboundPassed: 79,
-        outboundFailed: 15,
-      });
+      resolve(next);
     }, 400);
   });
 }

@@ -1,6 +1,23 @@
+import {
+  Bug,
+  CircleDot,
+  CheckCircle,
+  ClipboardCheck,
+  LayoutGrid,
+  LogIn,
+  Monitor,
+  Percent,
+  Smartphone,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Bar, BarChart, XAxis, YAxis } from "recharts";
+
+import { ChartCard } from "@/components/chart-card";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
-import { ChartCard } from "@/components/chart-card";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
@@ -17,35 +34,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  ClipboardCheck,
-  LogIn,
-  LayoutGrid,
-  Smartphone,
-  Users,
-  CheckCircle,
-  XCircle,
-  CircleDot,
-  Monitor,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
-import {
-  getOperationsAnalyticsKpis,
-  getOperationsSummaryByCategory,
-  getOperationsTrendFiltered,
-  type OperationsAnalyticsFilters,
-  type OperationsAnalyticsKpis,
-  type OperationsTrendPoint,
-  type OperationsSummaryByCategory,
-} from "@/pages/dashboard/reports/operations-analytics/operations-analytics-service";
-import { useLocation, useNavigate } from "react-router-dom";
-import {
-  getWarehouses,
-  type Warehouse,
-} from "@/pages/dashboard/admin/warehouses/warehouse-service";
+import { PAGES } from "@/endpoints";
 import {
   getProductCategories,
   type ProductCategory,
@@ -54,6 +43,19 @@ import {
   getUsers,
   type User,
 } from "@/pages/dashboard/admin/users/user-service";
+import {
+  getWarehouses,
+  type Warehouse,
+} from "@/pages/dashboard/admin/warehouses/warehouse-service";
+import {
+  getOperationsAnalyticsKpis,
+  getOperationsSummaryByCategory,
+  getOperationsTrendFiltered,
+  type OperationsAnalyticsFilters,
+  type OperationsAnalyticsKpis,
+  type OperationsSummaryByCategory,
+  type OperationsTrendPoint,
+} from "@/pages/dashboard/reports/operations-analytics/operations-analytics-service";
 
 const trendChartConfig = {
   inspections: { label: "Inspections", color: "var(--chart-1)" },
@@ -68,144 +70,119 @@ const summaryChartConfig = {
   devices: { label: "Devices", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
-/** Top 4 summary KPI cards (same layout as Executive). */
+/** Master KPI cards for Operations Analytics. */
 function buildSummaryKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
-  const { inspections, logins, devices } = kpis;
+  const { inspections } = kpis;
+  const passed = inspections.inboundPassed + inspections.outboundPassed;
+  const failed = inspections.inboundFailed + inspections.outboundFailed;
+  const total = inspections.totalInspections;
+  const successRatioPct = total > 0 ? Math.round((passed / total) * 100) : 0;
   return [
     {
       label: "Total inspections",
-      value: inspections.total.toLocaleString(),
-      change: inspections.totalChange,
-      changeType: inspections.totalChangeType,
+      value: total,
       icon: ClipboardCheck,
-      href: "/dashboard/inspections",
+      href: PAGES.DASHBOARD_INSPECTIONS,
     },
     {
-      label: "Total logins",
-      value: logins.totalLogins.toLocaleString(),
-      change: logins.totalChange,
-      changeType: logins.totalChangeType,
-      icon: LogIn,
-      href: "/dashboard/admin/logins",
+      label: "Success ratio",
+      value: `${successRatioPct}%`,
+      icon: Percent,
+      href: PAGES.DASHBOARD_INSPECTIONS,
     },
     {
-      label: "Total devices",
-      value: devices.totalDevices.toLocaleString(),
-      change: devices.totalChange,
-      changeType: devices.totalChangeType,
-      icon: LayoutGrid,
-      href: "/dashboard/admin/devices",
+      label: "Passed inspections",
+      value: passed,
+      icon: CheckCircle,
+      className:
+        "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/40 dark:bg-emerald-900/10",
+      href: `${PAGES.DASHBOARD_INSPECTIONS}?status=pass`,
     },
     {
-      label: "Active inspectors",
-      value: inspections.uniqueInspectors.toLocaleString(),
-      change: inspections.inspectorsChange,
-      changeType: inspections.inspectorsChangeType,
-      icon: Users,
-      href: "/dashboard/admin/users",
+      label: "Failed inspections",
+      value: failed,
+      icon: XCircle,
+      className:
+        "border-red-200 bg-red-50/20 hover:bg-red-50/30 dark:bg-red-900/10",
+      href: `${PAGES.DASHBOARD_INSPECTIONS}?status=fail`,
+    },
+    {
+      label: "Issues",
+      value: failed,
+      icon: Bug,
+      href: `${PAGES.DASHBOARD_INSPECTIONS}?status=fail`,
     },
   ];
 }
 
-/** All 12 KPIs for the detailed section. */
+/** Detailed section: master KPIs + additional clickable breakdown KPIs. */
 function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
-  const { inspections, logins, devices } = kpis;
+  const { logins, devices } = kpis;
   return [
-    {
-      label: "Total inspections",
-      value: inspections.total.toLocaleString(),
-      change: inspections.totalChange,
-      changeType: inspections.totalChangeType,
-      icon: ClipboardCheck,
-      href: "/dashboard/inspections",
-    },
-    {
-      label: "Inbound",
-      value: inspections.inbound.toLocaleString(),
-      change: inspections.inboundChange,
-      changeType: inspections.inboundChangeType,
-      icon: ArrowDownToLine,
-      href: "/dashboard/inspections",
-    },
-    {
-      label: "Outbound",
-      value: inspections.outbound.toLocaleString(),
-      change: inspections.outboundChange,
-      changeType: inspections.outboundChangeType,
-      icon: ArrowUpFromLine,
-      href: "/dashboard/inspections",
-    },
-    {
-      label: "Active inspectors",
-      value: inspections.uniqueInspectors.toLocaleString(),
-      change: inspections.inspectorsChange,
-      changeType: inspections.inspectorsChangeType,
-      icon: Users,
-      href: "/dashboard/admin/users",
-    },
-    {
-      label: "Total logins",
-      value: logins.totalLogins.toLocaleString(),
-      change: logins.totalChange,
-      changeType: logins.totalChangeType,
-      icon: LogIn,
-      href: "/dashboard/admin/logins",
-    },
+    ...buildSummaryKpiCards(kpis),
     {
       label: "Successful logins",
-      value: logins.successfulLogins.toLocaleString(),
+      value: logins.successfulLogins,
       change: logins.successChange,
       changeType: logins.successChangeType,
       icon: CheckCircle,
-      href: "/dashboard/admin/logins",
+      href: PAGES.DASHBOARD_ADMIN_LOGINS,
     },
     {
       label: "Failed logins",
-      value: logins.failedLogins.toLocaleString(),
+      value: logins.failedLogins,
       change: logins.failedChange,
       changeType: logins.failedChangeType,
       icon: XCircle,
-      href: "/dashboard/admin/logins",
+      href: PAGES.DASHBOARD_ADMIN_LOGINS,
     },
     {
       label: "Unique users (logins)",
-      value: logins.uniqueUsers.toLocaleString(),
+      value: logins.uniqueUsers,
       change: logins.usersChange,
       changeType: logins.usersChangeType,
       icon: Users,
-      href: "/dashboard/admin/users",
+      href: PAGES.DASHBOARD_ADMIN_USERS,
     },
     {
       label: "Total devices",
-      value: devices.totalDevices.toLocaleString(),
+      value: devices.totalDevices,
       change: devices.totalChange,
       changeType: devices.totalChangeType,
       icon: LayoutGrid,
-      href: "/dashboard/admin/devices",
+      href: PAGES.DASHBOARD_ADMIN_DEVICES,
     },
     {
       label: "Active devices",
-      value: devices.activeDevices.toLocaleString(),
+      value: devices.activeDevices,
       change: devices.activeChange,
       changeType: devices.activeChangeType,
       icon: CircleDot,
-      href: "/dashboard/admin/devices",
+      href: PAGES.DASHBOARD_ADMIN_DEVICES,
     },
     {
       label: "Mobile devices",
-      value: devices.mobileDevices.toLocaleString(),
+      value: devices.mobileDevices,
       change: devices.mobileChange,
       changeType: devices.mobileChangeType,
       icon: Smartphone,
-      href: "/dashboard/admin/devices",
+      href: PAGES.DASHBOARD_ADMIN_DEVICES,
     },
     {
       label: "Desktop devices",
-      value: devices.desktopDevices.toLocaleString(),
+      value: devices.desktopDevices,
       change: devices.desktopChange,
       changeType: devices.desktopChangeType,
       icon: Monitor,
-      href: "/dashboard/admin/devices",
+      href: PAGES.DASHBOARD_ADMIN_DEVICES,
+    },
+    {
+      label: "Total logins",
+      value: logins.totalLogins,
+      change: logins.totalChange,
+      changeType: logins.totalChangeType,
+      icon: LogIn,
+      href: PAGES.DASHBOARD_ADMIN_LOGINS,
     },
   ];
 }
@@ -381,19 +358,26 @@ export default function OperationsAnalyticsPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
-        {/* Top row: 4 KPI cards (same as Executive) */}
+        {/* Top row: master KPIs (single line) */}
         <div className="lg:col-span-12">
           {loading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-[88px] animate-pulse rounded-lg border bg-muted/50"
-                />
-              ))}
+            <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="grid min-w-[980px] grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="h-[88px] animate-pulse rounded-lg border bg-muted/50"
+                  />
+                ))}
+              </div>
             </div>
           ) : kpis ? (
-            <KpiCardGrid cards={buildSummaryKpiCards(kpis)} />
+            <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <KpiCardGrid
+                cards={buildSummaryKpiCards(kpis)}
+                className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 min-w-[980px] gap-3"
+              />
+            </div>
           ) : null}
         </div>
 
