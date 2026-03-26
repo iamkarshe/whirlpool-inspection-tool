@@ -1,12 +1,10 @@
+import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
 import { PAGES } from "@/endpoints";
 import {
   getInspectionQuestionResults,
   getInspections,
   type InspectionQuestionResult,
 } from "@/pages/dashboard/inspections/inspection-service";
-import { useEffect, useMemo, useState } from "react";
-import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -14,13 +12,26 @@ import {
   ClipboardList,
   XCircle,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
-export type ProductCategoryInspectionCounts = {
+export type InspectionCounts = {
   inboundPassed: number;
   inboundFailed: number;
   outboundPassed: number;
   outboundFailed: number;
 };
+
+export type InspectionCountsScope =
+  | { productCategoryId: number; productSerial?: never }
+  | { productSerial: string; productCategoryId?: never };
+
+type Kind =
+  | "total"
+  | "inboundPassed"
+  | "inboundFailed"
+  | "outboundPassed"
+  | "outboundFailed";
 
 function hasAnyFailed(rows: InspectionQuestionResult[]) {
   return rows.some((r) => r.status === "fail");
@@ -42,12 +53,21 @@ function buildHref(params: Record<string, string>) {
 
 const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`;
 
-const resolvedCountsCache = new Map<number, ProductCategoryInspectionCounts>();
-const pendingCountsCache = new Map<number, Promise<ProductCategoryInspectionCounts>>();
+const resolvedCountsCache = new Map<string, InspectionCounts>();
+const pendingCountsCache = new Map<string, Promise<InspectionCounts>>();
 
-async function fetchCountsForCategory(categoryId: number) {
+function cacheKey(scope: InspectionCountsScope) {
+  if ("productCategoryId" in scope) return `category:${scope.productCategoryId}`;
+  return `product:${scope.productSerial}`;
+}
+
+async function fetchCounts(scope: InspectionCountsScope) {
   const list = await getInspections();
-  const filtered = list.filter((i) => i.product_category_id === categoryId);
+  const filtered = list.filter((i) => {
+    if ("productCategoryId" in scope) return i.product_category_id === scope.productCategoryId;
+    return i.product_serial === scope.productSerial;
+  });
+
   const statuses = await Promise.all(
     filtered.map(async (i) => ({
       inspection: i,
@@ -55,7 +75,7 @@ async function fetchCountsForCategory(categoryId: number) {
     })),
   );
 
-  const next: ProductCategoryInspectionCounts = {
+  const next: InspectionCounts = {
     inboundPassed: 0,
     inboundFailed: 0,
     outboundPassed: 0,
@@ -70,30 +90,30 @@ async function fetchCountsForCategory(categoryId: number) {
     if (t === "outbound" && s.status === "fail") next.outboundFailed += 1;
   }
 
-  resolvedCountsCache.set(categoryId, next);
+  resolvedCountsCache.set(cacheKey(scope), next);
   return next;
 }
 
-export function useProductCategoryInspectionCounts(categoryId: number) {
-  const [counts, setCounts] = useState<ProductCategoryInspectionCounts | null>(
-    () => resolvedCountsCache.get(categoryId) ?? null,
+export function useInspectionCounts(scope: InspectionCountsScope) {
+  const key = cacheKey(scope);
+  const [counts, setCounts] = useState<InspectionCounts | null>(
+    () => resolvedCountsCache.get(key) ?? null,
   );
 
   useEffect(() => {
     let cancelled = false;
-    const resolved = resolvedCountsCache.get(categoryId);
+    const resolved = resolvedCountsCache.get(key);
     if (resolved) {
       setCounts(resolved);
       return;
     }
 
     const pending =
-      pendingCountsCache.get(categoryId) ??
-      fetchCountsForCategory(categoryId).finally(() => {
-        pendingCountsCache.delete(categoryId);
+      pendingCountsCache.get(key) ??
+      fetchCounts(scope).finally(() => {
+        pendingCountsCache.delete(key);
       });
-    pendingCountsCache.set(categoryId, pending);
-
+    pendingCountsCache.set(key, pending);
     pending.then((next) => {
       if (!cancelled) setCounts(next);
     });
@@ -101,7 +121,7 @@ export function useProductCategoryInspectionCounts(categoryId: number) {
     return () => {
       cancelled = true;
     };
-  }, [categoryId]);
+  }, [key, scope]);
 
   const total = useMemo(
     () =>
@@ -117,29 +137,25 @@ export function useProductCategoryInspectionCounts(categoryId: number) {
   return { counts, total, loading: !counts };
 }
 
-export function ProductCategoryInspectionCountBadge({
-  categoryId,
+export function InspectionCountBadge({
+  scope,
   kind,
 }: {
-  categoryId: number;
-  kind:
-    | "total"
-    | "inboundPassed"
-    | "inboundFailed"
-    | "outboundPassed"
-    | "outboundFailed";
+  scope: InspectionCountsScope;
+  kind: Kind;
 }) {
-  const { counts, total, loading } = useProductCategoryInspectionCounts(categoryId);
-
+  const { counts, total, loading } = useInspectionCounts(scope);
   if (loading) return <span className="text-muted-foreground text-xs">…</span>;
   if (!counts) return <span className="text-muted-foreground text-xs">-</span>;
 
+  const baseParams =
+    "productCategoryId" in scope
+      ? { product_category_id: String(scope.productCategoryId) }
+      : { product: scope.productSerial };
+
   if (kind === "total") {
     return (
-      <Link
-        to={buildHref({ product_category_id: String(categoryId) })}
-        className="no-underline"
-      >
+      <Link to={buildHref(baseParams)} className="inline-block no-underline">
         <Badge variant="secondary" className={linkBadgeClass}>
           <ClipboardList />
           {total}
@@ -151,12 +167,8 @@ export function ProductCategoryInspectionCountBadge({
   if (kind === "inboundPassed") {
     return (
       <Link
-        to={buildHref({
-          type: "inbound",
-          status: "pass",
-          product_category_id: String(categoryId),
-        })}
-        className="no-underline"
+        to={buildHref({ ...baseParams, type: "inbound", status: "pass" })}
+        className="inline-block no-underline"
       >
         <Badge variant="success" className={linkBadgeClass}>
           <ArrowDownToLine />
@@ -170,12 +182,8 @@ export function ProductCategoryInspectionCountBadge({
   if (kind === "inboundFailed") {
     return (
       <Link
-        to={buildHref({
-          type: "inbound",
-          status: "fail",
-          product_category_id: String(categoryId),
-        })}
-        className="no-underline"
+        to={buildHref({ ...baseParams, type: "inbound", status: "fail" })}
+        className="inline-block no-underline"
       >
         <Badge
           variant="destructive"
@@ -192,12 +200,8 @@ export function ProductCategoryInspectionCountBadge({
   if (kind === "outboundPassed") {
     return (
       <Link
-        to={buildHref({
-          type: "outbound",
-          status: "pass",
-          product_category_id: String(categoryId),
-        })}
-        className="no-underline"
+        to={buildHref({ ...baseParams, type: "outbound", status: "pass" })}
+        className="inline-block no-underline"
       >
         <Badge variant="success" className={linkBadgeClass}>
           <ArrowUpFromLine />
@@ -210,12 +214,8 @@ export function ProductCategoryInspectionCountBadge({
 
   return (
     <Link
-      to={buildHref({
-        type: "outbound",
-        status: "fail",
-        product_category_id: String(categoryId),
-      })}
-      className="no-underline"
+      to={buildHref({ ...baseParams, type: "outbound", status: "fail" })}
+      className="inline-block no-underline"
     >
       <Badge
         variant="destructive"

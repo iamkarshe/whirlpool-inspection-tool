@@ -1,11 +1,12 @@
+import type { ChangeEvent, SubmitEvent } from "react";
+import { useEffect, useState } from "react";
+
 import CsvUploadDialog from "@/components/csv-upload-dialog";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
-import {
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,17 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ProductsDataTable from "./data-table";
-import {
-  getProducts,
-  type Product,
-} from "@/pages/dashboard/admin/products/product-service";
 import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
-import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useState } from "react";
+import {
+  getProducts,
+  type Product,
+} from "@/pages/dashboard/admin/products/product-service";
+import ProductsDataTable from "./data-table";
 
 type ProductFormValues = {
   product_category_id: number;

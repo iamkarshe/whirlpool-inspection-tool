@@ -12,7 +12,7 @@ import {
   ProductCategoryProductsCountBadge,
 } from "./product-category-badge";
 import type { ProductCategory } from "./product-category-service";
-import { ProductCategoryInspectionCountBadge } from "@/pages/dashboard/admin/product-categories/inspection-count-badges";
+import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
 import { Link } from "react-router-dom";
 
 interface ProductCategoriesDataTableProps {
@@ -62,10 +62,7 @@ export default function ProductCategoriesDataTable({
           cell: ({ row }) => {
             const c = row.original;
             return (
-              <ProductCategoryInspectionCountBadge
-                categoryId={c.id}
-                kind="total"
-              />
+              <InspectionCountBadge scope={{ productCategoryId: c.id }} kind="total" />
             );
           },
         },
@@ -75,8 +72,8 @@ export default function ProductCategoriesDataTable({
           cell: ({ row }) => {
             const c = row.original;
             return (
-              <ProductCategoryInspectionCountBadge
-                categoryId={c.id}
+              <InspectionCountBadge
+                scope={{ productCategoryId: c.id }}
                 kind="inboundPassed"
               />
             );
@@ -88,8 +85,8 @@ export default function ProductCategoriesDataTable({
           cell: ({ row }) => {
             const c = row.original;
             return (
-              <ProductCategoryInspectionCountBadge
-                categoryId={c.id}
+              <InspectionCountBadge
+                scope={{ productCategoryId: c.id }}
                 kind="inboundFailed"
               />
             );
@@ -101,8 +98,8 @@ export default function ProductCategoriesDataTable({
           cell: ({ row }) => {
             const c = row.original;
             return (
-              <ProductCategoryInspectionCountBadge
-                categoryId={c.id}
+              <InspectionCountBadge
+                scope={{ productCategoryId: c.id }}
                 kind="outboundPassed"
               />
             );
@@ -114,8 +111,8 @@ export default function ProductCategoriesDataTable({
           cell: ({ row }) => {
             const c = row.original;
             return (
-              <ProductCategoryInspectionCountBadge
-                categoryId={c.id}
+              <InspectionCountBadge
+                scope={{ productCategoryId: c.id }}
                 kind="outboundFailed"
               />
             );

@@ -1,14 +1,18 @@
+import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PAGES } from "@/endpoints";
 import type { Product } from "@/pages/dashboard/admin/products/product-service";
-import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const productColumns: ColumnDef<Product>[] = [
   {
@@ -67,7 +71,67 @@ const productColumns: ColumnDef<Product>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("category_name"),
+    cell: ({ row }) => {
+      const p = row.original;
+      return (
+        <Link
+          to={`${PAGES.DASHBOARD_MASTERS_PRODUCT_CATEGORIES}?product_category_id=${p.product_category_id}`}
+          className="text-primary hover:underline"
+        >
+          {row.getValue("category_name")}
+        </Link>
+      );
+    },
+  },
+  {
+    id: "inspections_total",
+    header: "Total inspections",
+    cell: ({ row }) => (
+      <InspectionCountBadge
+        scope={{ productSerial: row.original.serial_number }}
+        kind="total"
+      />
+    ),
+  },
+  {
+    id: "inspections_inbound_passed",
+    header: "Inbound passed",
+    cell: ({ row }) => (
+      <InspectionCountBadge
+        scope={{ productSerial: row.original.serial_number }}
+        kind="inboundPassed"
+      />
+    ),
+  },
+  {
+    id: "inspections_inbound_failed",
+    header: "Inbound failed",
+    cell: ({ row }) => (
+      <InspectionCountBadge
+        scope={{ productSerial: row.original.serial_number }}
+        kind="inboundFailed"
+      />
+    ),
+  },
+  {
+    id: "inspections_outbound_passed",
+    header: "Outbound passed",
+    cell: ({ row }) => (
+      <InspectionCountBadge
+        scope={{ productSerial: row.original.serial_number }}
+        kind="outboundPassed"
+      />
+    ),
+  },
+  {
+    id: "inspections_outbound_failed",
+    header: "Outbound failed",
+    cell: ({ row }) => (
+      <InspectionCountBadge
+        scope={{ productSerial: row.original.serial_number }}
+        kind="outboundFailed"
+      />
+    ),
   },
   {
     id: "actions",
@@ -97,10 +161,22 @@ const productFilters: DataTableFilter<Product>[] = [
     id: "category_name",
     title: "Category",
     options: [
-      { value: "Front Load Washing Machines", label: "Front Load Washing Machines" },
-      { value: "Top Load Washing Machines", label: "Top Load Washing Machines" },
-      { value: "Double Door Refrigerators", label: "Double Door Refrigerators" },
-      { value: "Single Door Refrigerators", label: "Single Door Refrigerators" },
+      {
+        value: "Front Load Washing Machines",
+        label: "Front Load Washing Machines",
+      },
+      {
+        value: "Top Load Washing Machines",
+        label: "Top Load Washing Machines",
+      },
+      {
+        value: "Double Door Refrigerators",
+        label: "Double Door Refrigerators",
+      },
+      {
+        value: "Single Door Refrigerators",
+        label: "Single Door Refrigerators",
+      },
     ],
   },
 ];
