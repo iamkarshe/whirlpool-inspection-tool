@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { InspectionIssueRow } from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
 import { formatDate } from "@/lib/core";
+import { formatIssueStatus } from "@/pages/dashboard/inspections/components/view-tabs/inspection-issue-presenters";
 
 type Props = {
   open: boolean;
@@ -45,7 +46,7 @@ export function InspectionImageIssuesDialog({
                       <Badge
                         variant={issue.status === "resolved" ? "success" : "destructive"}
                       >
-                        {issue.status}
+                        {formatIssueStatus(issue.status)}
                       </Badge>
                     </div>
                     <div className="text-muted-foreground mt-2 text-xs">

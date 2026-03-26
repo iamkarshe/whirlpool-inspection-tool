@@ -7,8 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/core";
-import type { IssueSeverity, IssueType } from "@/components/dialogs/raise-issue-dialog";
+import type {
+  IssueSeverity,
+  IssueType,
+} from "@/components/dialogs/raise-issue-dialog";
 import type { InspectionSectionKey } from "@/pages/dashboard/inspections/inspection-service";
+import {
+  formatIssueSeverity,
+  formatIssueStatus,
+  issueSeverityBadgeClass,
+} from "@/pages/dashboard/inspections/components/view-tabs/inspection-issue-presenters";
 
 export type InspectionIssueRow = {
   id: string;
@@ -98,15 +106,9 @@ export function InspectionFlagsTab({
       cell: ({ row }) => (
         <Badge
           variant="outline"
-          className={
-            row.original.severity === "high"
-              ? "border-red-300 bg-red-50 text-red-700"
-              : row.original.severity === "medium"
-                ? "border-amber-300 bg-amber-50 text-amber-700"
-                : "border-emerald-300 bg-emerald-50 text-emerald-700"
-          }
+          className={issueSeverityBadgeClass(row.original.severity)}
         >
-          {row.original.severity}
+          {formatIssueSeverity(row.original.severity)}
         </Badge>
       ),
     },
@@ -114,8 +116,12 @@ export function InspectionFlagsTab({
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.status === "resolved" ? "success" : "destructive"}>
-          {row.original.status === "resolved" ? "Resolved" : "Open"}
+        <Badge
+          variant={
+            row.original.status === "resolved" ? "success" : "destructive"
+          }
+        >
+          {formatIssueStatus(row.original.status)}
         </Badge>
       ),
     },
@@ -136,7 +142,9 @@ export function InspectionFlagsTab({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onViewImage(item.imageUrl ?? "", item.imageFilename)}
+                onClick={() =>
+                  onViewImage(item.imageUrl ?? "", item.imageFilename)
+                }
               >
                 View image
               </Button>
