@@ -126,6 +126,18 @@ const ExecutiveAnalyticsPage = lazy(
 const InspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/page"),
 );
+const InboundInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/inbound/page"),
+);
+const InboundFailedInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/inbound-failed/page"),
+);
+const OutboundInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/outbound/page"),
+);
+const OutboundFailedInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/outbound-failed/page"),
+);
 const InspectionViewPage = lazy(
   () => import("@/pages/dashboard/inspections/inspection-view-page"),
 );
@@ -555,6 +567,42 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <InspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/inbound",
+        handle: { title: "Inbound Inspections" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <InboundInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/inbound-failed",
+        handle: { title: "Inbound Failed" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <InboundFailedInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/outbound",
+        handle: { title: "Outbound Inspections" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <OutboundInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/outbound-failed",
+        handle: { title: "Outbound Failed" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <OutboundFailedInspectionsPage />
           </Suspense>
         ),
       },

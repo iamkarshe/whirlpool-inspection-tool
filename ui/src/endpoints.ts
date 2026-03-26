@@ -18,6 +18,10 @@ export const PAGES = {
   DASHBOARD_RELEASE_NOTES: "/dashboard/release-notes",
 
   DASHBOARD_INSPECTIONS: "/dashboard/inspections",
+  DASHBOARD_INSPECTIONS_INBOUND: "/dashboard/inspections/inbound",
+  DASHBOARD_INSPECTIONS_INBOUND_FAILED: "/dashboard/inspections/inbound-failed",
+  DASHBOARD_INSPECTIONS_OUTBOUND: "/dashboard/inspections/outbound",
+  DASHBOARD_INSPECTIONS_OUTBOUND_FAILED: "/dashboard/inspections/outbound-failed",
   inspectionViewPath: (id: string) => `${PAGES.DASHBOARD_INSPECTIONS}/${id}`,
   DASHBOARD_TRANSACTIONS_CHECKLISTS: "/dashboard/transactions/checklists",
   DASHBOARD_TRANSACTIONS_REPORTS: "/dashboard/transactions/reports",

@@ -44,6 +44,10 @@ export const navItems: NavGroup[] = [
           },
           { title: "Products", href: PAGES.DASHBOARD_MASTERS_PRODUCTS },
           { title: "Warehouses", href: PAGES.DASHBOARD_MASTERS_WAREHOUSES },
+          {
+            title: "Checklists",
+            href: PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS,
+          },
         ],
       },
       {
@@ -56,8 +60,20 @@ export const navItems: NavGroup[] = [
             href: PAGES.DASHBOARD_INSPECTIONS,
           },
           {
-            title: "Checklists",
-            href: PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS,
+            title: "Inbound Inspections",
+            href: PAGES.DASHBOARD_INSPECTIONS_INBOUND,
+          },
+          {
+            title: "Inbound Failed",
+            href: PAGES.DASHBOARD_INSPECTIONS_INBOUND_FAILED,
+          },
+          {
+            title: "Outbound Inspections",
+            href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND,
+          },
+          {
+            title: "Outbound Failed",
+            href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
           },
         ],
       },
