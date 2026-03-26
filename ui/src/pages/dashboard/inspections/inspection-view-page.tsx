@@ -67,6 +67,7 @@ export default function InspectionViewPage() {
   const [productRows, setProductRows] = useState<InspectionQuestionResult[]>(
     [],
   );
+  const [deviceRows, setDeviceRows] = useState<InspectionQuestionResult[]>([]);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
@@ -81,6 +82,7 @@ export default function InspectionViewPage() {
       "inner-packaging",
       "product",
       "device",
+      "images",
     ]);
     return allowed.has(t) ? t : "overview";
   }, [location.search]);
@@ -142,12 +144,14 @@ export default function InspectionViewPage() {
       getInspectionQuestionResults(id, "outer-packaging"),
       getInspectionQuestionResults(id, "inner-packaging"),
       getInspectionQuestionResults(id, "product"),
+      getInspectionQuestionResults(id, "device"),
     ])
-      .then(([outer, inner, product]) => {
+      .then(([outer, inner, product, device]) => {
         if (cancelled) return;
         setOuterRows(outer);
         setInnerRows(inner);
         setProductRows(product);
+        setDeviceRows(device);
       })
       .finally(() => {
         if (!cancelled) setReviewLoading(false);
@@ -216,6 +220,23 @@ export default function InspectionViewPage() {
       },
     ];
   }, [reviewSummary]);
+
+  const allImages = useMemo(() => {
+    const source = [...outerRows, ...innerRows, ...productRows, ...deviceRows];
+    return source.flatMap((row) =>
+      row.images.map((img, index) => ({
+        ...img,
+        section: row.section,
+        question: row.question,
+        key: `${row.id}-${index}-${img.url}`,
+      })),
+    );
+  }, [outerRows, innerRows, productRows, deviceRows]);
+
+  const allGalleryImages = useMemo(
+    () => allImages.map(({ url, filename }) => ({ url, filename })),
+    [allImages],
+  );
 
   function SectionSimpleTable({ rows }: { rows: InspectionQuestionResult[] }) {
     return (
@@ -358,6 +379,7 @@ export default function InspectionViewPage() {
           <TabsTrigger value="inner-packaging">Inner packaging</TabsTrigger>
           <TabsTrigger value="product">Product</TabsTrigger>
           <TabsTrigger value="device">Device</TabsTrigger>
+          <TabsTrigger value="images">Images</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -475,6 +497,58 @@ export default function InspectionViewPage() {
             </Card>
           </TabsContent>
         ))}
+
+        <TabsContent value="images" className="space-y-4">
+          <Card className="gap-3 py-3">
+            <CardHeader className="px-3">
+              <CardTitle className="text-base">
+                All inspection images ({allImages.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3">
+              {reviewLoading ? (
+                <div className="flex min-h-[160px] items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : allImages.length === 0 ? (
+                <div className="text-muted-foreground py-10 text-center text-sm">
+                  No images available
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {allImages.map((img) => (
+                    <button
+                      key={img.key}
+                      type="button"
+                      onClick={() => {
+                        setGalleryImages(allGalleryImages);
+                        setActiveGalleryUrl(img.url);
+                        setGalleryOpen(true);
+                      }}
+                      className="group rounded-md border bg-muted/20 text-left transition-colors hover:bg-muted/40"
+                    >
+                      <div className="aspect-[4/3] overflow-hidden rounded-t-md">
+                        <img
+                          src={img.url}
+                          alt={img.filename ?? "Inspection image"}
+                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                      </div>
+                      <div className="space-y-1 p-2">
+                        <p className="text-xs font-medium capitalize">
+                          {img.section.replace("-", " ")}
+                        </p>
+                        <p className="text-muted-foreground line-clamp-2 text-xs">
+                          {img.question}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );

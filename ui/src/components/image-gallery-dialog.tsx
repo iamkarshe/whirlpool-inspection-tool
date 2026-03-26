@@ -43,10 +43,11 @@ export function ImageGalleryDialog({
     () => images.find((i) => i.url === active) ?? null,
     [active, images],
   );
+  const shouldScrollThumbs = images.length > 4;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-6xl">
+      <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden p-4 sm:max-w-6xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? (
@@ -55,21 +56,27 @@ export function ImageGalleryDialog({
         </DialogHeader>
 
         {images.length === 0 ? (
-          <div className="text-muted-foreground py-10 text-center text-sm">
+          <div className="text-muted-foreground flex-1 py-10 text-center text-sm">
             No images
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-[1fr_220px]">
-            <div className="rounded-md border bg-muted/20">
+          <div className="grid min-h-0 flex-1 gap-4 overflow-hidden md:grid-cols-[1fr_220px]">
+            <div className="min-h-0 overflow-auto rounded-md border bg-muted/20">
               <img
                 src={active ?? ""}
                 alt={activeImage?.filename ?? "Inspection image"}
-                className="h-[70vh] max-h-[720px] w-full rounded-md object-contain"
+                className="h-full min-h-[320px] w-full object-contain"
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="grid max-h-[70vh] gap-2 overflow-auto pr-1 md:max-h-[720px]">
+            <div className="relative min-h-0">
+              <div
+                className={cn(
+                  "grid min-h-0 gap-2 pr-1",
+                  "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                  shouldScrollThumbs ? "max-h-[460px] overflow-y-auto" : "",
+                )}
+              >
                 {images.map((img) => {
                   const isActive = img.url === active;
                   return (
@@ -78,14 +85,14 @@ export function ImageGalleryDialog({
                       type="button"
                       onClick={() => onActiveUrlChange(img.url)}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-md border p-2 text-left",
+                        "flex h-[75px] w-full items-center gap-2 rounded-md border p-2 text-left",
                         "hover:bg-muted/40",
                         isActive
                           ? "border-primary/40 bg-muted/40"
                           : "border-border",
                       )}
                     >
-                      <div className="h-10 w-14 overflow-hidden rounded bg-muted">
+                      <div className="h-full w-20 overflow-hidden rounded bg-muted">
                         <img
                           src={img.url}
                           alt={img.filename ?? "thumbnail"}
@@ -101,11 +108,14 @@ export function ImageGalleryDialog({
                   );
                 })}
               </div>
+              {shouldScrollThumbs ? (
+                <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-8 rounded-b-md bg-gradient-to-t from-background to-transparent" />
+              ) : null}
             </div>
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="mt-2 shrink-0">
           {active ? (
             <Button asChild>
               <a
