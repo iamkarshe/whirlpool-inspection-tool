@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { ExternalLink } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
+import { MultiSelectCombobox } from "@/components/filters/multi-select-combobox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,9 +14,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { MultiSelectCombobox } from "@/components/filters/multi-select-combobox";
-import { ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
 
 export type MultiSelectFilterOption = {
   id: string;
@@ -36,7 +36,10 @@ function uniqSorted(values: string[]) {
   return Array.from(new Set(values)).sort();
 }
 
-function normalizeValue(value: MultiSelectFiltersValue, sections: MultiSelectFilterSection[]) {
+function normalizeValue(
+  value: MultiSelectFiltersValue,
+  sections: MultiSelectFilterSection[],
+) {
   const out: MultiSelectFiltersValue = {};
   for (const s of sections) out[s.key] = uniqSorted(value[s.key] ?? []);
   return out;
@@ -72,24 +75,21 @@ export function MultiSelectFiltersDialog({
 
   const totalSelected = useMemo(
     () =>
-      sections.reduce((acc, s) => acc + (normalizedValue[s.key]?.length ?? 0), 0),
+      sections.reduce(
+        (acc, s) => acc + (normalizedValue[s.key]?.length ?? 0),
+        0,
+      ),
     [normalizedValue, sections],
   );
 
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<MultiSelectFiltersValue>(() => normalizedValue);
+  const [draft, setDraft] = useState<MultiSelectFiltersValue>(
+    () => normalizedValue,
+  );
 
-  useEffect(() => {
-    if (!open) setDraft(normalizedValue);
-  }, [open, normalizedValue]);
-
-  function toggle(sectionKey: string, id: string) {
-    setDraft((prev) => {
-      const set = new Set(prev[sectionKey] ?? []);
-      if (set.has(id)) set.delete(id);
-      else set.add(id);
-      return { ...prev, [sectionKey]: uniqSorted(Array.from(set)) };
-    });
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) setDraft(normalizedValue);
+    setOpen(nextOpen);
   }
 
   function clearLocal() {
@@ -113,7 +113,7 @@ export function MultiSelectFiltersDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant={triggerVariant}
@@ -163,7 +163,9 @@ export function MultiSelectFiltersDialog({
                   label={section.label}
                   options={section.options}
                   value={selected}
-                  onChange={(next) => setDraft((prev) => ({ ...prev, [section.key]: next }))}
+                  onChange={(next) =>
+                    setDraft((prev) => ({ ...prev, [section.key]: next }))
+                  }
                 />
               </div>
             );
@@ -183,4 +185,3 @@ export function MultiSelectFiltersDialog({
     </Dialog>
   );
 }
-

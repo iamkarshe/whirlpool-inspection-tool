@@ -1,11 +1,3 @@
-import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
-import { PAGES } from "@/endpoints";
-import { filterByCalendarDateRange } from "@/lib/date-range-filter";
-import {
-  getInspectionQuestionResults,
-  getInspections,
-  type InspectionQuestionResult,
-} from "@/pages/dashboard/inspections/inspection-service";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -14,8 +6,17 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import type { DateRange } from "react-day-picker";
+import { Link } from "react-router-dom";
+
+import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
+import { PAGES } from "@/endpoints";
+import { filterByCalendarDateRange } from "@/lib/date-range-filter";
+import {
+  getInspectionQuestionResults,
+  getInspections,
+  type InspectionQuestionResult,
+} from "@/pages/dashboard/inspections/inspection-service";
 
 export type InspectionCounts = {
   inboundPassed: number;
@@ -62,23 +63,29 @@ const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hov
 const resolvedCountsCache = new Map<string, InspectionCounts>();
 const pendingCountsCache = new Map<string, Promise<InspectionCounts>>();
 
-function cacheKey(scope: InspectionCountsScope, options?: InspectionCountsOptions) {
-  const range =
-    options?.dateRange?.from
-      ? `${options.dateRange.from.toISOString()}..${(
-          options.dateRange.to ?? options.dateRange.from
-        ).toISOString()}`
-      : "";
+function cacheKey(
+  scope: InspectionCountsScope,
+  options?: InspectionCountsOptions,
+) {
+  const range = options?.dateRange?.from
+    ? `${options.dateRange.from.toISOString()}..${(
+        options.dateRange.to ?? options.dateRange.from
+      ).toISOString()}`
+    : "";
   if ("productCategoryId" in scope) {
     return `category:${scope.productCategoryId}${range ? `|range:${range}` : ""}`;
   }
   return `product:${scope.productSerial}${range ? `|range:${range}` : ""}`;
 }
 
-async function fetchCounts(scope: InspectionCountsScope, options?: InspectionCountsOptions) {
+async function fetchCounts(
+  scope: InspectionCountsScope,
+  options?: InspectionCountsOptions,
+) {
   const list = await getInspections();
   const scoped = list.filter((i) => {
-    if ("productCategoryId" in scope) return i.product_category_id === scope.productCategoryId;
+    if ("productCategoryId" in scope)
+      return i.product_category_id === scope.productCategoryId;
     return i.product_serial === scope.productSerial;
   });
   const filtered = options?.dateRange
@@ -111,22 +118,24 @@ async function fetchCounts(scope: InspectionCountsScope, options?: InspectionCou
   return next;
 }
 
+// Shared by non-component modules that need inspection KPIs.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useInspectionCounts(
   scope: InspectionCountsScope,
   options?: InspectionCountsOptions,
 ) {
   const key = cacheKey(scope, options);
-  const [counts, setCounts] = useState<InspectionCounts | null>(
-    () => resolvedCountsCache.get(key) ?? null,
-  );
+  const cachedCounts = resolvedCountsCache.get(key) ?? null;
+  const [fetchedState, setFetchedState] = useState<{
+    key: string;
+    counts: InspectionCounts;
+  } | null>(null);
+  const counts =
+    cachedCounts ?? (fetchedState?.key === key ? fetchedState.counts : null);
 
   useEffect(() => {
     let cancelled = false;
-    const resolved = resolvedCountsCache.get(key);
-    if (resolved) {
-      setCounts(resolved);
-      return;
-    }
+    if (cachedCounts) return;
 
     const pending =
       pendingCountsCache.get(key) ??
@@ -135,13 +144,13 @@ export function useInspectionCounts(
       });
     pendingCountsCache.set(key, pending);
     pending.then((next) => {
-      if (!cancelled) setCounts(next);
+      if (!cancelled) setFetchedState({ key, counts: next });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [key, options, scope]);
+  }, [cachedCounts, key, options, scope]);
 
   const total = useMemo(
     () =>
@@ -188,10 +197,12 @@ export function InspectionCountBadge({
         }[kind]
       : null;
 
-  const baseParams =
-    "productCategoryId" in scope
-      ? { product_category_id: String(scope.productCategoryId) }
-      : { product: scope.productSerial };
+  const baseParams: Record<string, string> = {};
+  if ("productCategoryId" in scope) {
+    baseParams.product_category_id = String(scope.productCategoryId);
+  } else {
+    baseParams.product = scope.productSerial;
+  }
 
   if (kind === "total") {
     return (
@@ -283,4 +294,3 @@ export function InspectionCountBadge({
     </Link>
   );
 }
-
