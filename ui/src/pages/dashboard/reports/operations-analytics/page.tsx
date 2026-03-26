@@ -1,5 +1,6 @@
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
+import { ChartCard } from "@/components/chart-card";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
@@ -306,7 +307,9 @@ export default function OperationsAnalyticsPage() {
   function applyFilters(next: Record<string, string[]>) {
     const nextFilters: OperationsAnalyticsFilters = {
       warehouseIds: (next.warehouseIds ?? []).map(String).filter(Boolean),
-      productCategoryIds: (next.productCategoryIds ?? []).map(String).filter(Boolean),
+      productCategoryIds: (next.productCategoryIds ?? [])
+        .map(String)
+        .filter(Boolean),
       operatorIds: (next.operatorIds ?? []).map(String).filter(Boolean),
     };
 
@@ -376,118 +379,110 @@ export default function OperationsAnalyticsPage() {
 
         {/* Chart row: 8 cols + 4 cols (same layout as Executive) */}
         <div className="lg:col-span-12 xl:col-span-8">
-          <Card className="gap-3 py-3">
-            <CardHeader className="px-3">
-              <CardTitle>Weekly trend</CardTitle>
-              <CardDescription>
-                Inspections, logins, and devices over the last 6 weeks
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-3">
-              <ChartContainer
-                config={trendChartConfig}
-                className="aspect-auto h-[280px] w-full"
+          <ChartCard
+            title="Weekly trend"
+            description="Inspections, logins, and devices over the last 6 weeks"
+          >
+            <ChartContainer
+              config={trendChartConfig}
+              className="aspect-auto h-[280px] w-full"
+            >
+              <BarChart
+                data={trend}
+                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
               >
-                <BarChart
-                  data={trend}
-                  margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-                >
-                  <XAxis
-                    dataKey="week"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis hide />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        formatter={(v, name) => [
-                          v,
-                          name === "inspections"
-                            ? "Inspections"
-                            : name === "logins"
-                              ? "Logins"
-                              : "Devices",
-                        ]}
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="inspections"
-                    fill="var(--color-inspections)"
-                    radius={[4, 4, 0, 0]}
-                    stackId="a"
-                  />
-                  <Bar
-                    dataKey="logins"
-                    fill="var(--color-logins)"
-                    radius={[4, 4, 0, 0]}
-                    stackId="a"
-                  />
-                  <Bar
-                    dataKey="devices"
-                    fill="var(--color-devices)"
-                    radius={[4, 4, 0, 0]}
-                    stackId="a"
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                <XAxis
+                  dataKey="week"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <YAxis hide />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      formatter={(v, name) => [
+                        v,
+                        name === "inspections"
+                          ? "Inspections"
+                          : name === "logins"
+                            ? "Logins"
+                            : "Devices",
+                      ]}
+                    />
+                  }
+                />
+                <Bar
+                  dataKey="inspections"
+                  fill="var(--color-inspections)"
+                  radius={[4, 4, 0, 0]}
+                  stackId="a"
+                />
+                <Bar
+                  dataKey="logins"
+                  fill="var(--color-logins)"
+                  radius={[4, 4, 0, 0]}
+                  stackId="a"
+                />
+                <Bar
+                  dataKey="devices"
+                  fill="var(--color-devices)"
+                  radius={[4, 4, 0, 0]}
+                  stackId="a"
+                />
+              </BarChart>
+            </ChartContainer>
+          </ChartCard>
         </div>
 
         <div className="lg:col-span-12 xl:col-span-4">
-          <Card className="gap-3 py-3">
-            <CardHeader className="px-3">
-              <CardTitle>Volume by category</CardTitle>
-              <CardDescription>Current period totals</CardDescription>
-            </CardHeader>
-            <CardContent className="px-3">
-              <ChartContainer
-                config={summaryChartConfig}
-                className="aspect-auto h-[280px] w-full"
+          <ChartCard
+            title="Volume by category"
+            description="Current period totals"
+          >
+            <ChartContainer
+              config={summaryChartConfig}
+              className="aspect-auto h-[280px] w-full"
+            >
+              <BarChart
+                data={summaryByCategory}
+                layout="vertical"
+                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
               >
-                <BarChart
-                  data={summaryByCategory}
-                  layout="vertical"
-                  margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-                >
-                  <XAxis type="number" tickLine={false} axisLine={false} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tickLine={false}
-                    axisLine={false}
-                    width={80}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar
-                    dataKey="value"
-                    fill="var(--color-value)"
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                <XAxis type="number" tickLine={false} axisLine={false} />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  width={80}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar
+                  dataKey="value"
+                  fill="var(--color-value)"
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          </ChartCard>
         </div>
 
         {/* Full-width: detailed metrics (all 12 KPIs) */}
         <div className="lg:col-span-12">
           {kpis && (
-            <Card>
-              <CardHeader>
+            <Card className="gap-3 py-3">
+              <CardHeader className="px-3">
                 <CardTitle>Detailed metrics</CardTitle>
                 <CardDescription>
                   Inspections, logins, and devices breakdown
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3">
                 <KpiCardGrid
                   cards={buildAllKpiCards(kpis)}
                   className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4"
