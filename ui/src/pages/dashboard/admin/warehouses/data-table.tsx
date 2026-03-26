@@ -15,7 +15,13 @@ import {
   WarehouseUsersCountBadge,
 } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  BarChart3,
+  LineChart,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Warehouse } from "./warehouse-service";
 
@@ -32,9 +38,7 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <WarehouseIdLinkBadge id={row.original.id} />
-    ),
+    cell: ({ row }) => <WarehouseIdLinkBadge id={row.original.id} />,
   },
   {
     accessorKey: "name",
@@ -153,6 +157,24 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
             <DropdownMenuItem asChild>
               <Link to={PAGES.warehouseInspectionsPath(id)}>
                 View inspections
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?warehouse_id=${id}`}
+                className="flex items-center"
+              >
+                <LineChart className="mr-2 h-4 w-4" />
+                Operations Analytics
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?warehouse_id=${id}`}
+                className="flex items-center"
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Executive Analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive focus:text-destructive">

@@ -86,7 +86,7 @@ export const navItems: NavGroup[] = [
         ],
       },
       {
-        title: "Reports",
+        title: "Analytics",
         href: "#",
         icon: ChartBarDecreasingIcon,
         items: [

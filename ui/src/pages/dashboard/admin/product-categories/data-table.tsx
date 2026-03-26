@@ -1,4 +1,10 @@
-import { ArrowUpDown, BarChart3, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  BarChart3,
+  LineChart,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
@@ -151,11 +157,20 @@ export default function ProductCategoriesDataTable({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
                     <Link
+                      to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product_category_id=${category.id}`}
+                      className="flex items-center"
+                    >
+                      <LineChart className="mr-2 h-4 w-4" />
+                      Operations Analytics
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
                       to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.id}`}
                       className="flex items-center"
                     >
                       <BarChart3 className="mr-2 h-4 w-4" />
-                      Executive summary
+                      Executive Analytics
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem

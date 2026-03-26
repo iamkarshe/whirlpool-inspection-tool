@@ -31,7 +31,10 @@ export default function ProductCategoryViewLayout() {
     document.title = name ? name : "Product Category";
   }, [category?.name]);
 
-  const basePath = useMemo(() => PAGES.productCategoryViewPath(categoryId), [categoryId]);
+  const basePath = useMemo(
+    () => PAGES.productCategoryViewPath(categoryId),
+    [categoryId],
+  );
   const tabs = useMemo(
     () => [
       { label: "Overview", to: basePath, end: true },
@@ -66,7 +69,7 @@ export default function ProductCategoryViewLayout() {
           </Button>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              {loading ? "Product Category" : category?.name ?? "-"}
+              {loading ? "Product Category" : (category?.name ?? "-")}
             </h1>
             <p className="text-muted-foreground text-sm">
               {loading ? "Loading..." : `Product Category [${categoryId}]`}
@@ -80,7 +83,7 @@ export default function ProductCategoryViewLayout() {
             <Link
               to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${categoryId}`}
             >
-              Open Executive Summary
+              Open Executive Analytics
             </Link>
           </Button>
         </div>
@@ -92,4 +95,3 @@ export default function ProductCategoryViewLayout() {
     </div>
   );
 }
-

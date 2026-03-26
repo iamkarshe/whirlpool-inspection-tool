@@ -1,5 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  ArrowUpDown,
+  BarChart3,
+  LineChart,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
@@ -30,7 +36,10 @@ const productColumns: ColumnDef<Product>[] = [
     cell: ({ row }) => {
       const p = row.original;
       return (
-        <Link to={PAGES.productViewPath(p.id)} className="font-mono text-sm text-primary hover:underline">
+        <Link
+          to={PAGES.productViewPath(p.id)}
+          className="font-mono text-sm text-primary hover:underline"
+        >
           {row.getValue("serial_number")}
         </Link>
       );
@@ -79,7 +88,10 @@ const productColumns: ColumnDef<Product>[] = [
     cell: ({ row }) => {
       const p = row.original;
       return (
-        <Link to={PAGES.productCategoryViewPath(p.product_category_id)} className="text-primary hover:underline">
+        <Link
+          to={PAGES.productCategoryViewPath(p.product_category_id)}
+          className="text-primary hover:underline"
+        >
           {row.getValue("category_name")}
         </Link>
       );
@@ -138,23 +150,55 @@ const productColumns: ColumnDef<Product>[] = [
   {
     id: "actions",
     enableHiding: false,
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>View product</DropdownMenuItem>
-          <DropdownMenuItem className="text-destructive focus:text-destructive">
-            <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => {
+      const p = row.original;
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link
+                to={PAGES.productViewPath(p.id)}
+                className="flex items-center"
+              >
+                View product
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product=${encodeURIComponent(
+                  p.serial_number,
+                )}`}
+                className="flex items-center"
+              >
+                <LineChart className="mr-2 h-4 w-4" />
+                Operations Analytics
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product=${encodeURIComponent(
+                  p.serial_number,
+                )}`}
+                className="flex items-center"
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Executive Analytics
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
 ];
 
@@ -186,7 +230,10 @@ const productFilters: DataTableFilter<Product>[] = [
 interface ProductsDataTableProps {
   data: Product[];
   downloadCsvFileName?: string;
-  downloadCsv?: (rows: Product[]) => { headers: string[]; rows: Record<string, unknown>[] };
+  downloadCsv?: (rows: Product[]) => {
+    headers: string[];
+    rows: Record<string, unknown>[];
+  };
 }
 
 export default function ProductsDataTable({
