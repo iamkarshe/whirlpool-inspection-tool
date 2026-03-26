@@ -49,7 +49,9 @@ export function ImageGalleryDialog({
       <DialogContent className="sm:max-w-6xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          {description ? <DialogDescription>{description}</DialogDescription> : null}
+          {description ? (
+            <DialogDescription>{description}</DialogDescription>
+          ) : null}
         </DialogHeader>
 
         {images.length === 0 ? (
@@ -59,7 +61,6 @@ export function ImageGalleryDialog({
         ) : (
           <div className="grid gap-4 md:grid-cols-[1fr_220px]">
             <div className="rounded-md border bg-muted/20">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={active ?? ""}
                 alt={activeImage?.filename ?? "Inspection image"}
@@ -68,9 +69,6 @@ export function ImageGalleryDialog({
             </div>
 
             <div className="space-y-2">
-              <div className="text-muted-foreground text-xs">
-                {activeImage?.filename ?? "Selected image"}
-              </div>
               <div className="grid max-h-[70vh] gap-2 overflow-auto pr-1 md:max-h-[720px]">
                 {images.map((img) => {
                   const isActive = img.url === active;
@@ -82,11 +80,12 @@ export function ImageGalleryDialog({
                       className={cn(
                         "flex w-full items-center gap-2 rounded-md border p-2 text-left",
                         "hover:bg-muted/40",
-                        isActive ? "border-primary/40 bg-muted/40" : "border-border",
+                        isActive
+                          ? "border-primary/40 bg-muted/40"
+                          : "border-border",
                       )}
                     >
                       <div className="h-10 w-14 overflow-hidden rounded bg-muted">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={img.url}
                           alt={img.filename ?? "thumbnail"}
@@ -96,9 +95,6 @@ export function ImageGalleryDialog({
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm">
                           {img.filename ?? "image"}
-                        </div>
-                        <div className="text-muted-foreground truncate text-xs">
-                          {img.url}
                         </div>
                       </div>
                     </button>
@@ -112,7 +108,12 @@ export function ImageGalleryDialog({
         <DialogFooter>
           {active ? (
             <Button asChild>
-              <a href={active} download={activeImage?.filename} target="_blank" rel="noreferrer">
+              <a
+                href={active}
+                download={activeImage?.filename}
+                target="_blank"
+                rel="noreferrer"
+              >
                 Download
               </a>
             </Button>
@@ -125,4 +126,3 @@ export function ImageGalleryDialog({
     </Dialog>
   );
 }
-

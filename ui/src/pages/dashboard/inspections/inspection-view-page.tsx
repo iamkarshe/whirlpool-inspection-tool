@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PAGES } from "@/endpoints";
-import { ImageGalleryDialog, type GalleryImage } from "@/components/image-gallery-dialog";
+import {
+  ImageGalleryDialog,
+  type GalleryImage,
+} from "@/components/image-gallery-dialog";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import {
   Table,
@@ -54,12 +57,16 @@ export default function InspectionViewPage() {
   const [loading, setLoading] = useState(true);
 
   const [sectionLoading, setSectionLoading] = useState(false);
-  const [sectionRows, setSectionRows] = useState<InspectionQuestionResult[]>([]);
+  const [sectionRows, setSectionRows] = useState<InspectionQuestionResult[]>(
+    [],
+  );
 
   const [reviewLoading, setReviewLoading] = useState(false);
   const [outerRows, setOuterRows] = useState<InspectionQuestionResult[]>([]);
   const [innerRows, setInnerRows] = useState<InspectionQuestionResult[]>([]);
-  const [productRows, setProductRows] = useState<InspectionQuestionResult[]>([]);
+  const [productRows, setProductRows] = useState<InspectionQuestionResult[]>(
+    [],
+  );
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
@@ -177,13 +184,15 @@ export default function InspectionViewPage() {
         label: "Passed checks",
         value: `${reviewSummary.passed}/${reviewSummary.total}`,
         icon: CheckCircle,
-        className: "border-green-200 bg-green-50/30 hover:bg-green-50/50 dark:bg-green-900/10",
+        className:
+          "border-green-200 bg-green-50/30 hover:bg-green-50/50 dark:bg-green-900/10",
       },
       {
         label: "Failed checks",
         value: reviewSummary.failed,
         icon: XCircle,
-        className: "border-red-200 bg-red-50/30 hover:bg-red-50/50 dark:bg-red-900/10",
+        className:
+          "border-red-200 bg-red-50/30 hover:bg-red-50/50 dark:bg-red-900/10",
       },
       {
         label: "Outer packaging",
@@ -223,7 +232,10 @@ export default function InspectionViewPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="text-muted-foreground py-10 text-center">
+                <TableCell
+                  colSpan={4}
+                  className="text-muted-foreground py-10 text-center"
+                >
                   No checks
                 </TableCell>
               </TableRow>
@@ -367,7 +379,7 @@ export default function InspectionViewPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="mt-[-12px]">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="flex size-12 items-center justify-center rounded-lg bg-muted">
@@ -376,8 +388,12 @@ export default function InspectionViewPage() {
                 <div>
                   <CardTitle className="text-base">{inspection.id}</CardTitle>
                   <div className="mt-1 flex flex-wrap gap-1.5">
-                    <InspectionChecklistBadge name={inspection.checklist_name} />
-                    <InspectionProductBadge serial={inspection.product_serial} />
+                    <InspectionChecklistBadge
+                      name={inspection.checklist_name}
+                    />
+                    <InspectionProductBadge
+                      serial={inspection.product_serial}
+                    />
                   </div>
                 </div>
               </div>
@@ -407,7 +423,9 @@ export default function InspectionViewPage() {
               </div>
               {inspection.product_category_name ? (
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Product category</p>
+                  <p className="text-muted-foreground text-sm">
+                    Product category
+                  </p>
                   <p className="text-sm">{inspection.product_category_name}</p>
                 </div>
               ) : null}
@@ -417,7 +435,9 @@ export default function InspectionViewPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm">Type</p>
-                <InspectionTypeBadge inspectionType={inspection.inspection_type} />
+                <InspectionTypeBadge
+                  inspectionType={inspection.inspection_type}
+                />
               </div>
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm">Date</p>
@@ -427,34 +447,34 @@ export default function InspectionViewPage() {
           </Card>
         </TabsContent>
 
-        {(["outer-packaging", "inner-packaging", "product", "device"] as const).map(
-          (k) => (
-            <TabsContent key={k} value={k} className="space-y-4">
-              <Card className="gap-3 py-3">
-                <CardHeader className="px-3">
-                  <CardTitle className="text-base">
-                    {k === "outer-packaging"
-                      ? "Outer packaging"
-                      : k === "inner-packaging"
-                        ? "Inner packaging"
-                        : k === "product"
-                          ? "Product"
-                          : "Device"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3">
-                  {sectionLoading ? (
-                    <div className="flex min-h-[160px] items-center justify-center">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : (
-                    <SectionSimpleTable rows={sectionRows} />
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ),
-        )}
+        {(
+          ["outer-packaging", "inner-packaging", "product", "device"] as const
+        ).map((k) => (
+          <TabsContent key={k} value={k} className="space-y-4">
+            <Card className="gap-3 py-3">
+              <CardHeader className="px-3">
+                <CardTitle className="text-base">
+                  {k === "outer-packaging"
+                    ? "Outer packaging"
+                    : k === "inner-packaging"
+                      ? "Inner packaging"
+                      : k === "product"
+                        ? "Product"
+                        : "Device"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3">
+                {sectionLoading ? (
+                  <div className="flex min-h-[160px] items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <SectionSimpleTable rows={sectionRows} />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
