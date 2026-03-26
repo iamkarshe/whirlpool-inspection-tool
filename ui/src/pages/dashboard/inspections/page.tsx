@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { InspectionStatCards } from "@/pages/dashboard/inspections/components/inspection-stat-cards";
@@ -93,14 +94,7 @@ export default function InspectionsPage() {
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12">
           {loadingKpis ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-[88px] animate-pulse rounded-lg border bg-muted/50"
-                />
-              ))}
-            </div>
+            <KpiLoader count={4} />
           ) : kpis ? (
             <InspectionStatCards kpis={kpis} />
           ) : null}

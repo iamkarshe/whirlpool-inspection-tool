@@ -1,14 +1,9 @@
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { ChartCard } from "@/components/chart-card";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
+import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import type { ChartConfig } from "@/components/ui/chart";
 import {
   ChartContainer,
@@ -25,6 +20,7 @@ import {
   type VolumeByDimension,
   type VolumeTrendPoint,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
+import { ExecutiveTooltipContent } from "@/pages/dashboard/reports/executive-analytics/executive-tooltip-content";
 import { AlertTriangle, ClipboardCheck, Clock, Inbox } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
@@ -132,157 +128,157 @@ export default function ExecutiveAnalyticsPage() {
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12">
           {loading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-[88px] animate-pulse rounded-lg border bg-muted/50"
-                />
-              ))}
-            </div>
+            <KpiLoader count={4} />
           ) : kpis ? (
             <KpiCardGrid cards={buildKpiCards(kpis)} />
           ) : null}
         </div>
 
         <div className="lg:col-span-12 xl:col-span-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inspection volume by location</CardTitle>
-              <CardDescription>Last 30 days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={volumeChartConfig}
-                className="aspect-auto h-[280px] w-full"
+          <ChartCard title="Inspection volume by location" description="Last 30 days">
+            <ChartContainer
+              config={volumeChartConfig}
+              className="aspect-auto h-[280px] w-full"
+            >
+              <BarChart
+                data={volumeByLocation}
+                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
               >
-                <BarChart
-                  data={volumeByLocation}
-                  margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-                >
-                  <XAxis
-                    dataKey="name"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis hide />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar
-                    dataKey="volume"
-                    fill="var(--color-volume)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <YAxis hide />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      className="min-w-[220px] gap-2 border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+                      formatter={(v, _name, item, _index, payload) => (
+                        <ExecutiveTooltipContent
+                          label={String(payload?.payload?.name || "Inspections")}
+                          value={Number(v)}
+                          color={item.payload?.fill || item.color}
+                        />
+                      )}
+                    />
+                  }
+                />
+                <Bar
+                  dataKey="volume"
+                  fill="var(--color-volume)"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          </ChartCard>
         </div>
 
         <div className="lg:col-span-12 xl:col-span-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Defect rate by type (Whirlpool)</CardTitle>
-              <CardDescription>Critical, Major, Minor</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={defectChartConfig}
-                className="aspect-auto h-[280px] w-full"
+          <ChartCard
+            title="Defect rate by type (Whirlpool)"
+            description="Critical, Major, Minor"
+          >
+            <ChartContainer
+              config={defectChartConfig}
+              className="aspect-auto h-[280px] w-full"
+            >
+              <BarChart
+                data={defectByType}
+                layout="vertical"
+                margin={{ top: 8, right: 8, left: 40, bottom: 8 }}
               >
-                <BarChart
-                  data={defectByType}
-                  layout="vertical"
-                  margin={{ top: 8, right: 8, left: 40, bottom: 8 }}
-                >
-                  <XAxis
-                    type="number"
-                    unit="%"
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="type"
-                    tickLine={false}
-                    axisLine={false}
-                    width={56}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        formatter={(v) => [`${v}%`, "Rate"]}
-                        labelFormatter={(_, payload) => {
-                          const rawType = payload?.[0]?.payload?.type;
-                          return typeof rawType === "string" ? rawType : "";
-                        }}
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="rate"
-                    fill="var(--color-rate)"
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                <XAxis
+                  type="number"
+                  unit="%"
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="type"
+                  tickLine={false}
+                  axisLine={false}
+                  width={56}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      className="min-w-[220px] gap-2 border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+                      formatter={(v, _name, item, _index, payload) => (
+                        <ExecutiveTooltipContent
+                          label={String(payload?.payload?.type || "Rate")}
+                          value={Number(v)}
+                          suffix="%"
+                          color={item.payload?.fill || item.color}
+                        />
+                      )}
+                    />
+                  }
+                />
+                <Bar
+                  dataKey="rate"
+                  fill="var(--color-rate)"
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          </ChartCard>
         </div>
 
         <div className="lg:col-span-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inspection volume trend</CardTitle>
-              <CardDescription>Weekly volume and defects</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={trendChartConfig}
-                className="aspect-auto h-[260px] w-full"
+          <ChartCard title="Inspection volume trend" description="Weekly volume and defects">
+            <ChartContainer
+              config={trendChartConfig}
+              className="aspect-auto h-[260px] w-full"
+            >
+              <BarChart
+                data={volumeTrend}
+                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
               >
-                <BarChart
-                  data={volumeTrend}
-                  margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-                >
-                  <XAxis
-                    dataKey="week"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis hide />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        formatter={(v, name) => [
-                          v,
-                          name === "volume" ? "Volume" : "Defects",
-                        ]}
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="volume"
-                    fill="var(--color-volume)"
-                    radius={[4, 4, 0, 0]}
-                    name="volume"
-                  />
-                  <Bar
-                    dataKey="defects"
-                    fill="var(--color-defects)"
-                    radius={[4, 4, 0, 0]}
-                    name="defects"
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                <XAxis
+                  dataKey="week"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <YAxis hide />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      className="min-w-[220px] gap-2 border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+                      formatter={(v, name, item) => (
+                        <ExecutiveTooltipContent
+                          label={name === "volume" ? "Volume" : "Defects"}
+                          value={Number(v)}
+                          color={item.payload?.fill || item.color}
+                        />
+                      )}
+                    />
+                  }
+                />
+                <Bar
+                  dataKey="volume"
+                  fill="var(--color-volume)"
+                  radius={[4, 4, 0, 0]}
+                  name="volume"
+                />
+                <Bar
+                  dataKey="defects"
+                  fill="var(--color-defects)"
+                  radius={[4, 4, 0, 0]}
+                  name="defects"
+                />
+              </BarChart>
+            </ChartContainer>
+          </ChartCard>
         </div>
       </div>
     </div>

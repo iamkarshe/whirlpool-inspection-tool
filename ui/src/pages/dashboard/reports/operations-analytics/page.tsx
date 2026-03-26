@@ -19,6 +19,7 @@ import { ChartCard } from "@/components/chart-card";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
+import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -369,14 +370,10 @@ export default function OperationsAnalyticsPage() {
         <div className="lg:col-span-12">
           {loading ? (
             <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="grid min-w-[980px] grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="h-[88px] animate-pulse rounded-lg border bg-muted/50"
-                  />
-                ))}
-              </div>
+              <KpiLoader
+                count={5}
+                className="min-w-[980px] grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+              />
             </div>
           ) : kpis ? (
             <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
