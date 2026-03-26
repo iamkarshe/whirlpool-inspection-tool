@@ -111,7 +111,11 @@ export default function ExecutiveAnalyticsPage() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div
+      data-containerid="dashboard-reports-executive-analytics"
+      data-testid="screen-dashboard-reports-executive-analytics"
+      className="space-y-4"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Executive Analytics"

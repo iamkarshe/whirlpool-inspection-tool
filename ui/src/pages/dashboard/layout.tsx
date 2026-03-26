@@ -43,7 +43,11 @@ export default function DashboardLayout() {
         <SidebarInset>
           <SiteHeader />
           <div className="bg-muted/40 flex flex-1 flex-col">
-            <div className="@container/main p-(--content-padding) xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto">
+            <div
+              data-containerid="dashboard-layout"
+              data-testid="layout-dashboard"
+              className="@container/main p-(--content-padding) xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto"
+            >
               <Outlet />
             </div>
           </div>

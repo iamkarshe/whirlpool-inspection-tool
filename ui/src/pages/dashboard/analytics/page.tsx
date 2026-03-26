@@ -14,7 +14,11 @@ import StatCards from "@/pages/dashboard/analytics/components/stat-cards";
 
 export default function AnalyticsPage() {
   return (
-    <div className="space-y-4">
+    <div
+      data-containerid="dashboard-analytics"
+      data-testid="screen-dashboard-analytics"
+      className="space-y-4"
+    >
       <div className="flex flex-row items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
           Dashboard

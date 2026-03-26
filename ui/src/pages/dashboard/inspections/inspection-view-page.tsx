@@ -1,11 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PAGES } from "@/endpoints";
 import {
   InspectionChecklistBadge,
@@ -42,7 +37,7 @@ export default function InspectionViewPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
     getInspectionById(id)
       .then((data) => {
         if (!cancelled) setInspection(data);
@@ -90,7 +85,7 @@ export default function InspectionViewPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Inspection {inspection.id.slice(0, 8)}…
+            Inspection {inspection.id}
           </h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <InspectionTypeBadge inspectionType={inspection.inspection_type} />
@@ -108,9 +103,7 @@ export default function InspectionViewPage() {
               <ClipboardCheck className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle className="text-base">
-                {inspection.id.slice(0, 8)}…
-              </CardTitle>
+              <CardTitle className="text-base">{inspection.id}</CardTitle>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 <InspectionChecklistBadge name={inspection.checklist_name} />
                 <InspectionProductBadge serial={inspection.product_serial} />

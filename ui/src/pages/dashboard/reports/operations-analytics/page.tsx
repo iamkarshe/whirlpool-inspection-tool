@@ -354,7 +354,11 @@ export default function OperationsAnalyticsPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div
+      data-containerid="dashboard-reports-operations-analytics"
+      data-testid="screen-dashboard-reports-operations-analytics"
+      className="space-y-4"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Operations Analytics"

@@ -1,13 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  WarehouseCodeBadge
-} from "@/pages/dashboard/admin/warehouses/warehouse-badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WarehouseCodeBadge } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
 import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import { MapPin } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
@@ -29,7 +22,7 @@ export default function WarehouseViewDetailsPage() {
             <div className="mt-1 flex flex-wrap gap-1.5">
               <WarehouseCodeBadge code={warehouse.warehouse_code} />
               <Badge variant="outline" className="text-xs font-normal">
-                ID {warehouse.id.slice(0, 8)}…
+                ID {warehouse.id}
               </Badge>
             </div>
           </div>
