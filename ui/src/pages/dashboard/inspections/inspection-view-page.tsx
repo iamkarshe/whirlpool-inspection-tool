@@ -1,10 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/ui/data-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PAGES } from "@/endpoints";
 import { ImageGalleryDialog, type GalleryImage } from "@/components/image-gallery-dialog";
+import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   InspectionChecklistBadge,
   InspectionProductBadge,
@@ -20,8 +28,7 @@ import {
 import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import type { ColumnDef } from "@tanstack/react-table";
-import { Badge as StatusBadge } from "@/components/ui/badge";
+import { CheckCircle, XCircle, Package, Box, ShoppingBag } from "lucide-react";
 
 function formatDate(iso: string) {
   try {
@@ -48,6 +55,11 @@ export default function InspectionViewPage() {
 
   const [sectionLoading, setSectionLoading] = useState(false);
   const [sectionRows, setSectionRows] = useState<InspectionQuestionResult[]>([]);
+
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [outerRows, setOuterRows] = useState<InspectionQuestionResult[]>([]);
+  const [innerRows, setInnerRows] = useState<InspectionQuestionResult[]>([]);
+  const [productRows, setProductRows] = useState<InspectionQuestionResult[]>([]);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
@@ -116,64 +128,156 @@ export default function InspectionViewPage() {
     };
   }, [id, sectionKey]);
 
-  const questionColumns = useMemo((): ColumnDef<InspectionQuestionResult, unknown>[] => {
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => setReviewLoading(true));
+    Promise.all([
+      getInspectionQuestionResults(id, "outer-packaging"),
+      getInspectionQuestionResults(id, "inner-packaging"),
+      getInspectionQuestionResults(id, "product"),
+    ])
+      .then(([outer, inner, product]) => {
+        if (cancelled) return;
+        setOuterRows(outer);
+        setInnerRows(inner);
+        setProductRows(product);
+      })
+      .finally(() => {
+        if (!cancelled) setReviewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  function getCounts(rows: InspectionQuestionResult[]) {
+    const total = rows.length;
+    const passed = rows.filter((r) => r.status === "pass").length;
+    const failed = total - passed;
+    return { total, passed, failed };
+  }
+
+  const reviewSummary = useMemo(() => {
+    const outer = getCounts(outerRows);
+    const inner = getCounts(innerRows);
+    const product = getCounts(productRows);
+    const total = outer.total + inner.total + product.total;
+    const passed = outer.passed + inner.passed + product.passed;
+    const failed = outer.failed + inner.failed + product.failed;
+    return { total, passed, failed, outer, inner, product };
+  }, [outerRows, innerRows, productRows]);
+
+  const reviewKpis = useMemo((): KpiCardProps[] => {
+    const pct =
+      reviewSummary.total > 0
+        ? `${Math.round((reviewSummary.passed / reviewSummary.total) * 100)}%`
+        : "—";
     return [
       {
-        accessorKey: "status",
-        header: "Result",
-        cell: ({ row }) => {
-          const status = row.original.status;
-          return (
-            <StatusBadge
-              variant="outline"
-              className={
-                status === "pass"
-                  ? "border-green-300 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300"
-                  : "border-red-300 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300"
-              }
-            >
-              {status.toUpperCase()}
-            </StatusBadge>
-          );
-        },
+        label: "Passed checks",
+        value: `${reviewSummary.passed}/${reviewSummary.total}`,
+        icon: CheckCircle,
+        className: "border-green-200 bg-green-50/30 hover:bg-green-50/50 dark:bg-green-900/10",
       },
       {
-        accessorKey: "question",
-        header: "Question",
-        cell: ({ row }) => <div className="whitespace-normal">{row.original.question}</div>,
+        label: "Failed checks",
+        value: reviewSummary.failed,
+        icon: XCircle,
+        className: "border-red-200 bg-red-50/30 hover:bg-red-50/50 dark:bg-red-900/10",
       },
       {
-        accessorKey: "notes",
-        header: "Notes",
-        cell: ({ row }) => (
-          <div className="text-muted-foreground whitespace-normal">
-            {row.original.notes ?? "—"}
-          </div>
-        ),
+        label: "Outer packaging",
+        value: `${reviewSummary.outer.passed}/${reviewSummary.outer.total}`,
+        icon: Package,
       },
       {
-        id: "images",
-        header: "Images",
-        cell: ({ row }) => {
-          const images = row.original.images ?? [];
-          if (images.length === 0) return <span className="text-muted-foreground">—</span>;
-          return (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setGalleryImages(images);
-                setActiveGalleryUrl(images[0]?.url ?? null);
-                setGalleryOpen(true);
-              }}
-            >
-              View ({images.length})
-            </Button>
-          );
-        },
+        label: "Inner packaging",
+        value: `${reviewSummary.inner.passed}/${reviewSummary.inner.total}`,
+        icon: Box,
+      },
+      {
+        label: "Product",
+        value: `${reviewSummary.product.passed}/${reviewSummary.product.total}`,
+        icon: ShoppingBag,
+      },
+      {
+        label: "Pass rate",
+        value: pct,
+        icon: CheckCircle,
       },
     ];
-  }, []);
+  }, [reviewSummary]);
+
+  function SectionSimpleTable({ rows }: { rows: InspectionQuestionResult[] }) {
+    return (
+      <div className="rounded-md border">
+        <Table className="text-sm">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[110px]">Result</TableHead>
+              <TableHead>Question</TableHead>
+              <TableHead className="w-[40%]">Notes</TableHead>
+              <TableHead className="w-[120px] text-right">Images</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="text-muted-foreground py-10 text-center">
+                  No checks
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((r) => {
+                const isPass = r.status === "pass";
+                const rowClass = isPass
+                  ? "border-l-4 border-l-green-400 bg-green-50/40 hover:bg-green-50/60 dark:bg-green-900/10"
+                  : "border-l-4 border-l-red-400 bg-red-50/40 hover:bg-red-50/60 dark:bg-red-900/10";
+                return (
+                  <TableRow key={r.id} className={rowClass}>
+                    <TableCell className="py-2">
+                      <span
+                        className={
+                          isPass
+                            ? "inline-flex rounded-full border border-green-300 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/20 dark:text-green-300"
+                            : "inline-flex rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300"
+                        }
+                      >
+                        {isPass ? "PASS" : "FAIL"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-2 whitespace-normal font-medium">
+                      {r.question}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground py-2 whitespace-normal">
+                      {r.notes ?? "—"}
+                    </TableCell>
+                    <TableCell className="py-2 text-right">
+                      {r.images?.length ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setGalleryImages(r.images);
+                            setActiveGalleryUrl(r.images[0]?.url ?? null);
+                            setGalleryOpen(true);
+                          }}
+                        >
+                          View ({r.images.length})
+                        </Button>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -245,6 +349,24 @@ export default function InspectionViewPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          <Card className="gap-3 py-3">
+            <CardHeader className="px-3">
+              <CardTitle className="text-base">Quality summary</CardTitle>
+            </CardHeader>
+            <CardContent className="px-3">
+              {reviewLoading ? (
+                <div className="flex min-h-[120px] items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <KpiCardGrid
+                  cards={reviewKpis}
+                  className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+                />
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -326,12 +448,7 @@ export default function InspectionViewPage() {
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
                   ) : (
-                    <DataTable<InspectionQuestionResult>
-                      columns={questionColumns}
-                      data={sectionRows}
-                      searchKey="question"
-                      rangeLabel="checks"
-                    />
+                    <SectionSimpleTable rows={sectionRows} />
                   )}
                 </CardContent>
               </Card>

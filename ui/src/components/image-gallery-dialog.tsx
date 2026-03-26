@@ -46,7 +46,7 @@ export function ImageGalleryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-6xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
@@ -63,7 +63,7 @@ export function ImageGalleryDialog({
               <img
                 src={active ?? ""}
                 alt={activeImage?.filename ?? "Inspection image"}
-                className="h-[420px] w-full rounded-md object-contain"
+                className="h-[70vh] max-h-[720px] w-full rounded-md object-contain"
               />
             </div>
 
@@ -71,7 +71,7 @@ export function ImageGalleryDialog({
               <div className="text-muted-foreground text-xs">
                 {activeImage?.filename ?? "Selected image"}
               </div>
-              <div className="grid gap-2 overflow-auto pr-1 md:max-h-[420px]">
+              <div className="grid max-h-[70vh] gap-2 overflow-auto pr-1 md:max-h-[720px]">
                 {images.map((img) => {
                   const isActive = img.url === active;
                   return (
