@@ -1,5 +1,12 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Eye } from "lucide-react";
+import {
+  ArrowUpDown,
+  Boxes,
+  Eye,
+  Layers3,
+  PackageCheck,
+  PackageX,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { DateRange } from "react-day-picker";
@@ -10,6 +17,7 @@ import {
   ImageGalleryDialog,
   type GalleryImage,
 } from "@/components/image-gallery-dialog";
+import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +56,12 @@ type FlaggedImageRow = {
   images: GalleryImage[];
 };
 
+type KpiSectionFilter =
+  | "all"
+  | "outer-packaging"
+  | "inner-packaging"
+  | "product";
+
 function sectionLabel(section: InspectionSectionKey) {
   if (section === "outer-packaging") return "Outer packaging";
   if (section === "inner-packaging") return "Inner packaging";
@@ -68,6 +82,7 @@ export default function FlaggedImagesPage() {
   });
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
   const [rows, setRows] = useState<FlaggedImageRow[]>([]);
+  const [kpiFilter, setKpiFilter] = useState<KpiSectionFilter>("all");
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [activeGalleryUrl, setActiveGalleryUrl] = useState<string | null>(null);
@@ -151,6 +166,66 @@ export default function FlaggedImagesPage() {
     () => rows.filter((r) => filteredInspectionIds.has(r.inspection_id)),
     [rows, filteredInspectionIds],
   );
+  const kpiCounts = useMemo(
+    () => ({
+      all: filteredRows.length,
+      outer: filteredRows.filter((r) => r.section === "outer-packaging").length,
+      inner: filteredRows.filter((r) => r.section === "inner-packaging").length,
+      product: filteredRows.filter((r) => r.section === "product").length,
+    }),
+    [filteredRows],
+  );
+
+  const kpiFilteredRows = useMemo(() => {
+    if (kpiFilter === "all") return filteredRows;
+    return filteredRows.filter((r) => r.section === kpiFilter);
+  }, [filteredRows, kpiFilter]);
+
+  const kpiCards: KpiCardProps[] = useMemo(
+    () => [
+      {
+        label: "All Flagged",
+        value: kpiCounts.all,
+        icon: Layers3,
+        onClick: () => setKpiFilter("all"),
+        className:
+          kpiFilter === "all"
+            ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
+            : "border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10/40",
+      },
+      {
+        label: "Outer Packaging",
+        value: kpiCounts.outer,
+        icon: Boxes,
+        onClick: () => setKpiFilter("outer-packaging"),
+        className:
+          kpiFilter === "outer-packaging"
+            ? "border-sky-400/40 bg-sky-50/60 dark:bg-sky-900/20"
+            : "border-sky-300/30 bg-sky-50/40 hover:bg-sky-50/70 dark:bg-sky-900/10",
+      },
+      {
+        label: "Inner Packaging",
+        value: kpiCounts.inner,
+        icon: PackageX,
+        onClick: () => setKpiFilter("inner-packaging"),
+        className:
+          kpiFilter === "inner-packaging"
+            ? "border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/20"
+            : "border-amber-300/30 bg-amber-50/40 hover:bg-amber-50/70 dark:bg-amber-900/10",
+      },
+      {
+        label: "Products Flagged",
+        value: kpiCounts.product,
+        icon: PackageCheck,
+        onClick: () => setKpiFilter("product"),
+        className:
+          kpiFilter === "product"
+            ? "border-emerald-400/40 bg-emerald-50/60 dark:bg-emerald-900/20"
+            : "border-emerald-300/30 bg-emerald-50/40 hover:bg-emerald-50/70 dark:bg-emerald-900/10",
+      },
+    ],
+    [kpiCounts, kpiFilter],
+  );
 
   const columns: ColumnDef<FlaggedImageRow>[] = [
     {
@@ -177,7 +252,9 @@ export default function FlaggedImagesPage() {
     {
       accessorKey: "product_serial",
       header: "Product",
-      cell: ({ row }) => <span className="font-mono">{row.original.product_serial}</span>,
+      cell: ({ row }) => (
+        <span className="font-mono">{row.original.product_serial}</span>
+      ),
     },
     {
       accessorKey: "inspector_name",
@@ -186,13 +263,17 @@ export default function FlaggedImagesPage() {
     {
       accessorKey: "section",
       header: "Section",
-      cell: ({ row }) => <Badge variant="secondary">{sectionLabel(row.original.section)}</Badge>,
+      cell: ({ row }) => (
+        <Badge variant="secondary">{sectionLabel(row.original.section)}</Badge>
+      ),
     },
     {
       accessorKey: "question",
       header: "Failed check",
       cell: ({ row }) => (
-        <span className="line-clamp-2 max-w-[380px] text-sm">{row.original.question}</span>
+        <span className="line-clamp-2 max-w-[380px] text-sm">
+          {row.original.question}
+        </span>
       ),
     },
     {
@@ -251,9 +332,9 @@ export default function FlaggedImagesPage() {
   ];
 
   const filters: DataTableFilter<FlaggedImageRow>[] = useMemo(() => {
-    const sectionOptions = Array.from(new Set(filteredRows.map((r) => r.section))).map(
-      (section) => ({ value: section, label: sectionLabel(section) }),
-    );
+    const sectionOptions = Array.from(
+      new Set(kpiFilteredRows.map((r) => r.section)),
+    ).map((section) => ({ value: section, label: sectionLabel(section) }));
     return [
       {
         id: "inspection_type",
@@ -269,7 +350,7 @@ export default function FlaggedImagesPage() {
         options: sectionOptions,
       },
     ];
-  }, [filteredRows]);
+  }, [kpiFilteredRows]);
 
   return (
     <>
@@ -290,7 +371,10 @@ export default function FlaggedImagesPage() {
             description="All failed-check images across inspections. Click an image to open the viewer."
           />
           <div className="flex items-center gap-2">
-            <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+            <CalendarDateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+            />
             <MultiSelectFiltersDialog
               title="Filters"
               description="Refine flagged images by inspection filters."
@@ -305,17 +389,23 @@ export default function FlaggedImagesPage() {
         {loading ? (
           <SkeletonTable />
         ) : (
-          <DataTable<FlaggedImageRow>
-            columns={columns}
-            data={filteredRows}
-            searchKey="product_serial"
-            filters={filters}
-            dateRangeFilter={{ dateAccessorKey: "created_at" }}
-            showDateRangePicker={false}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            rangeLabel="flagged images"
-          />
+          <div className="space-y-4">
+            <KpiCardGrid
+              cards={kpiCards}
+              className="grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
+            />
+            <DataTable<FlaggedImageRow>
+              columns={columns}
+              data={kpiFilteredRows}
+              searchKey="product_serial"
+              filters={filters}
+              dateRangeFilter={{ dateAccessorKey: "created_at" }}
+              showDateRangePicker={false}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              rangeLabel="flagged images"
+            />
+          </div>
         )}
       </div>
     </>

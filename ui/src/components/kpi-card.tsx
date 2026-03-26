@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 export type KpiChangeType = "positive" | "negative";
@@ -39,6 +40,20 @@ export function KpiCard({
   const displayValue =
     typeof value === "number" ? value.toLocaleString() : value;
   const showChange = change != null && changeType != null;
+  const valueRef = useRef<HTMLDivElement | null>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      const el = valueRef.current;
+      if (!el) return;
+      setHasOverflow(el.scrollWidth > el.clientWidth + 1);
+    };
+
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [displayValue]);
 
   const card = (
     <Card
@@ -79,12 +94,13 @@ export function KpiCard({
           ) : null}
         </div>
         <dd
+          ref={valueRef}
           className={cn(
             "text-foreground mt-2 text-3xl font-semibold",
             "relative overflow-hidden whitespace-nowrap pr-10",
-            "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-12",
-            "after:bg-gradient-to-l after:from-background after:to-transparent",
-            "after:transition-colors after:duration-200 group-hover:after:from-muted/40",
+            hasOverflow
+              ? "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-12 after:bg-gradient-to-l after:from-background after:to-transparent after:transition-colors after:duration-200 group-hover:after:from-muted/40"
+              : "",
           )}
         >
           {displayValue}
