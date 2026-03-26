@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
   DropdownMenu,
@@ -12,10 +13,15 @@ import {
   InspectionTypeBadge,
 } from "@/pages/dashboard/inspections/inspection-badge";
 import { formatDate } from "@/lib/core";
-import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
+import {
+  getInspectionQuestionResults,
+  type Inspection,
+  type InspectionQuestionResult,
+  type InspectionSectionKey,
+} from "@/pages/dashboard/inspections/inspection-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, Smartphone } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 export type InspectionsDataTableProps = {
@@ -23,6 +29,86 @@ export type InspectionsDataTableProps = {
   /** When true, hide the Device column (e.g. on device inspections tab). */
   hideDeviceColumn?: boolean;
 };
+
+function getSectionStatus(rows: InspectionQuestionResult[] | null) {
+  if (!rows || rows.length === 0) return null;
+  return rows.some((r) => r.status === "fail") ? "fail" : "pass";
+}
+
+function getSectionCounts(rows: InspectionQuestionResult[] | null) {
+  const total = rows?.length ?? 0;
+  const passed = rows ? rows.filter((r) => r.status === "pass").length : 0;
+  const failed = rows ? rows.filter((r) => r.status === "fail").length : 0;
+  return { total, passed, failed };
+}
+
+function inspectionTabHref(inspectionId: string, tab: InspectionSectionKey) {
+  const base = PAGES.inspectionViewPath(inspectionId);
+  const params = new URLSearchParams({ tab });
+  return `${base}?${params.toString()}`;
+}
+
+function SectionStatusCell({
+  inspectionId,
+  section,
+}: {
+  inspectionId: string;
+  section: InspectionSectionKey;
+}) {
+  const [rows, setRows] = useState<InspectionQuestionResult[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getInspectionQuestionResults(inspectionId, section).then((data) => {
+      if (!cancelled) {
+        setRows(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [inspectionId, section]);
+
+  const status = getSectionStatus(rows);
+  const counts = getSectionCounts(rows);
+  const label =
+    section === "outer-packaging"
+      ? "Outer"
+      : section === "inner-packaging"
+        ? "Inner"
+        : "Product";
+
+  return (
+    <Link
+      to={inspectionTabHref(inspectionId, section)}
+      className="inline-flex items-center no-underline"
+    >
+      <span className="sr-only">{label} check status</span>
+      {loading ? (
+        <span className="text-muted-foreground text-xs">…</span>
+      ) : status === null ? (
+        <span className="text-muted-foreground text-xs">—</span>
+      ) : (
+        <>
+          <Badge
+            variant="success"
+            className="rounded-r-none border-r-0 text-[10px]"
+          >
+            Pass {counts.passed}
+          </Badge>
+          <Badge
+            variant="destructive"
+            className="rounded-l-none border border-destructive/30 bg-destructive/10 text-[10px] text-destructive"
+          >
+            Fail {counts.failed}
+          </Badge>
+        </>
+      )}
+    </Link>
+  );
+}
 
 const deviceColumn: ColumnDef<Inspection> = {
   id: "device",
@@ -67,9 +153,7 @@ export default function InspectionsDataTable({
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <InspectionIdLinkBadge id={row.original.id} />
-      ),
+      cell: ({ row }) => <InspectionIdLinkBadge id={row.original.id} />,
     },
     {
       accessorKey: "inspector_name",
@@ -116,29 +200,37 @@ export default function InspectionsDataTable({
         row.getValue("product_serial") === filterValue,
     },
     {
-      accessorKey: "product_category_name",
-      header: ({ column }) => (
-        <Button
-          className="-ml-3"
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Product category
-          <ArrowUpDown className="ml-1 h-4 w-4" />
-        </Button>
-      ),
+      id: "outer_packaging",
+      header: "Outer",
       cell: ({ row }) => (
-        <span className="text-sm">
-          {row.original.product_category_name ?? "—"}
-        </span>
+        <SectionStatusCell
+          key={`${row.original.id}-outer-packaging`}
+          inspectionId={row.original.id}
+          section="outer-packaging"
+        />
       ),
-      filterFn: (row, _columnId, filterValue) =>
-        (row.getValue("product_category_name") ?? "") === filterValue,
     },
     {
-      accessorKey: "checklist_name",
-      header: "Checklist",
-      cell: ({ row }) => row.getValue("checklist_name"),
+      id: "inner_packaging",
+      header: "Inner",
+      cell: ({ row }) => (
+        <SectionStatusCell
+          key={`${row.original.id}-inner-packaging`}
+          inspectionId={row.original.id}
+          section="inner-packaging"
+        />
+      ),
+    },
+    {
+      id: "product_checks",
+      header: "Product",
+      cell: ({ row }) => (
+        <SectionStatusCell
+          key={`${row.original.id}-product`}
+          inspectionId={row.original.id}
+          section="product"
+        />
+      ),
     },
     {
       accessorKey: "inspection_type",
@@ -205,15 +297,6 @@ export default function InspectionsDataTable({
     )
       .sort()
       .map((name) => ({ value: name, label: name }));
-    const categoryOptions = Array.from(
-      new Set(
-        data
-          .map((i) => i.product_category_name)
-          .filter((n): n is string => Boolean(n)),
-      ),
-    )
-      .sort()
-      .map((name) => ({ value: name, label: name }));
     const productOptions = Array.from(
       new Set(data.map((i) => i.product_serial).filter(Boolean)),
     )
@@ -229,19 +312,22 @@ export default function InspectionsDataTable({
         ],
       },
       ...(inspectorOptions.length > 0
-        ? [{ id: "inspector_name" as const, title: "Inspector", options: inspectorOptions }]
-        : []),
-      ...(categoryOptions.length > 0
         ? [
             {
-              id: "product_category_name" as const,
-              title: "Product category",
-              options: categoryOptions,
+              id: "inspector_name" as const,
+              title: "Inspector",
+              options: inspectorOptions,
             },
           ]
         : []),
       ...(productOptions.length > 0
-        ? [{ id: "product_serial" as const, title: "Product", options: productOptions }]
+        ? [
+            {
+              id: "product_serial" as const,
+              title: "Product",
+              options: productOptions,
+            },
+          ]
         : []),
     ];
   }, [data]);

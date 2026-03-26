@@ -1,36 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PAGES } from "@/endpoints";
-import {
-  ImageGalleryDialog,
-  type GalleryImage,
-} from "@/components/image-gallery-dialog";
-import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  InspectionChecklistBadge,
-  InspectionProductBadge,
-  InspectionTypeBadge,
-} from "@/pages/dashboard/inspections/inspection-badge";
-import {
-  getInspectionById,
-  getInspectionRelationship,
-  getInspectionQuestionResults,
-  type Inspection,
-  type InspectionRelationship,
-  type InspectionQuestionResult,
-  type InspectionSectionKey,
-} from "@/pages/dashboard/inspections/inspection-service";
-import { formatDate } from "@/lib/core";
 import { ArrowLeft, ClipboardCheck, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -46,6 +13,34 @@ import {
   ArrowRight,
   ExternalLink,
 } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PAGES } from "@/endpoints";
+import {
+  ImageGalleryDialog,
+  type GalleryImage,
+} from "@/components/image-gallery-dialog";
+import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
+import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
+import { InspectionQuestionResultsTable } from "@/pages/dashboard/inspections/components/inspection-question-results-table";
+import {
+  InspectionChecklistBadge,
+  InspectionProductBadge,
+  InspectionTypeBadge,
+} from "@/pages/dashboard/inspections/inspection-badge";
+import {
+  getInspectionById,
+  getInspectionRelationship,
+  getInspectionQuestionResults,
+  type Inspection,
+  type InspectionRelationship,
+  type InspectionQuestionResult,
+  type InspectionSectionKey,
+} from "@/pages/dashboard/inspections/inspection-service";
+import { formatDate } from "@/lib/core";
 
 export default function InspectionViewPage() {
   const params = useParams<{ id: string }>();
@@ -77,6 +72,10 @@ export default function InspectionViewPage() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [activeGalleryUrl, setActiveGalleryUrl] = useState<string | null>(null);
+  const [checksDialogOpen, setChecksDialogOpen] = useState(false);
+  const [checksDialogMode, setChecksDialogMode] = useState<
+    "failed" | "passed"
+  >("failed");
 
   const tab = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -209,6 +208,10 @@ export default function InspectionViewPage() {
         icon: CheckCircle,
         className:
           "border-green-200 bg-green-50/30 hover:bg-green-50/50 dark:bg-green-900/10",
+        onClick: () => {
+          setChecksDialogMode("passed");
+          setChecksDialogOpen(true);
+        },
       },
       {
         label: "Failed checks",
@@ -216,6 +219,10 @@ export default function InspectionViewPage() {
         icon: XCircle,
         className:
           "border-red-200 bg-red-50/30 hover:bg-red-50/50 dark:bg-red-900/10",
+        onClick: () => {
+          setChecksDialogMode("failed");
+          setChecksDialogOpen(true);
+        },
       },
       {
         label: "Outer packaging",
@@ -240,6 +247,11 @@ export default function InspectionViewPage() {
     ];
   }, [reviewSummary]);
 
+  const checksBySection = useMemo(
+    () => ({ outer: outerRows, inner: innerRows, product: productRows }),
+    [innerRows, outerRows, productRows],
+  );
+
   const allImages = useMemo(() => {
     const source = [...outerRows, ...innerRows, ...productRows, ...deviceRows];
     return source.flatMap((row) =>
@@ -256,80 +268,6 @@ export default function InspectionViewPage() {
     () => allImages.map(({ url, filename }) => ({ url, filename })),
     [allImages],
   );
-
-  function SectionSimpleTable({ rows }: { rows: InspectionQuestionResult[] }) {
-    return (
-      <div className="rounded-md border">
-        <Table className="text-sm">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[110px]">Result</TableHead>
-              <TableHead>Question</TableHead>
-              <TableHead className="w-[40%]">Notes</TableHead>
-              <TableHead className="w-[120px] text-right">Images</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell
-                  colSpan={4}
-                  className="text-muted-foreground py-10 text-center"
-                >
-                  No checks
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((r) => {
-                const isPass = r.status === "pass";
-                const rowClass = isPass
-                  ? "border-l-4 border-l-green-400 bg-green-50/40 hover:bg-green-50/60 dark:bg-green-900/10"
-                  : "border-l-4 border-l-red-400 bg-red-50/40 hover:bg-red-50/60 dark:bg-red-900/10";
-                return (
-                  <TableRow key={r.id} className={rowClass}>
-                    <TableCell className="py-2">
-                      <span
-                        className={
-                          isPass
-                            ? "inline-flex rounded-full border border-green-300 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/20 dark:text-green-300"
-                            : "inline-flex rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300"
-                        }
-                      >
-                        {isPass ? "PASS" : "FAIL"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-2 whitespace-normal font-medium">
-                      {r.question}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground py-2 whitespace-normal">
-                      {r.notes ?? "—"}
-                    </TableCell>
-                    <TableCell className="py-2 text-right">
-                      {r.images?.length ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setGalleryImages(r.images);
-                            setActiveGalleryUrl(r.images[0]?.url ?? null);
-                            setGalleryOpen(true);
-                          }}
-                        >
-                          View ({r.images.length})
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -397,8 +335,8 @@ export default function InspectionViewPage() {
           <TabsTrigger value="outer-packaging">Outer Packaging</TabsTrigger>
           <TabsTrigger value="inner-packaging">Inner Packaging</TabsTrigger>
           <TabsTrigger value="product">Product</TabsTrigger>
-          <TabsTrigger value="relationship">Relationship</TabsTrigger>
           <TabsTrigger value="images">Inspection Images</TabsTrigger>
+          <TabsTrigger value="relationship">Relationship</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -419,6 +357,23 @@ export default function InspectionViewPage() {
               )}
             </CardContent>
           </Card>
+
+          <ChecksSummaryDialog
+            open={checksDialogOpen}
+            onOpenChange={setChecksDialogOpen}
+            mode={checksDialogMode}
+            onModeChange={setChecksDialogMode}
+            reviewCounts={{
+              passed: reviewSummary.passed,
+              failed: reviewSummary.failed,
+            }}
+            sectionRows={checksBySection}
+            onViewImages={(r) => {
+              setGalleryImages(r.images);
+              setActiveGalleryUrl(r.images[0]?.url ?? null);
+              setGalleryOpen(true);
+            }}
+          />
 
           <Card className="mt-[-12px]">
             <CardHeader>
@@ -507,7 +462,14 @@ export default function InspectionViewPage() {
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
                   ) : (
-                    <SectionSimpleTable rows={sectionRows} />
+                    <InspectionQuestionResultsTable
+                      rows={sectionRows}
+                      onViewImages={(r) => {
+                        setGalleryImages(r.images);
+                        setActiveGalleryUrl(r.images[0]?.url ?? null);
+                        setGalleryOpen(true);
+                      }}
+                    />
                   )}
                 </CardContent>
               </Card>

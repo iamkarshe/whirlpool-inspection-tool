@@ -1,14 +1,15 @@
+import { useEffect, useState } from "react";
+
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
+import { InspectionStatCards } from "@/pages/dashboard/inspections/components/inspection-stat-cards";
 import {
   getInspectionKpis,
   getInspections,
   type Inspection,
   type InspectionKpis,
 } from "@/pages/dashboard/inspections/inspection-service";
-import { InspectionStatCards } from "@/pages/dashboard/inspections/components/inspection-stat-cards";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
-import { useEffect, useState } from "react";
 
 export default function InspectionsPage() {
   const [kpis, setKpis] = useState<InspectionKpis | null>(null);
@@ -17,14 +18,14 @@ export default function InspectionsPage() {
   const [loadingTable, setLoadingTable] = useState(true);
 
   useEffect(() => {
-    setLoadingKpis(true);
+    queueMicrotask(() => setLoadingKpis(true));
     getInspectionKpis()
       .then(setKpis)
       .finally(() => setLoadingKpis(false));
   }, []);
 
   useEffect(() => {
-    setLoadingTable(true);
+    queueMicrotask(() => setLoadingTable(true));
     getInspections()
       .then(setInspections)
       .finally(() => setLoadingTable(false));

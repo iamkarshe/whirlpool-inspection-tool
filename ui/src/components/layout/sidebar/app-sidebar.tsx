@@ -1,3 +1,7 @@
+import { Globe, Smartphone, Tag } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+
 import { BrandLogo } from "@/components/brand-logo";
 import { CopyDebugDetailsDialog } from "@/components/dialog-copy-debug-details";
 import { NavMain } from "@/components/layout/sidebar/nav-main";
@@ -18,9 +22,6 @@ import {
 } from "@/components/ui/sidebar";
 import { PAGES } from "@/endpoints";
 import { useIsTablet } from "@/hooks/use-mobile";
-import { Globe, Smartphone, Tag } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
 const RELEASE_CODE = "v1.0.0";
 const LAST_UPDATED = "2026-03-05";
@@ -37,13 +38,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   );
   const [deviceDebugOpen, setDeviceDebugOpen] = useState(false);
 
+  // COMBAK
   useEffect(() => {
     if (isMobile) setOpenMobile(false);
-  }, [isMobile, setOpenMobile]);
+  }, [isMobile]);
 
+  // COMBAK
   useEffect(() => {
     setOpen(!isTablet);
-  }, [isTablet, setOpen]);
+  }, [isTablet]);
 
   useEffect(() => {
     fetch("https://api.ipify.org?format=json")

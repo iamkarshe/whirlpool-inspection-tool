@@ -20,6 +20,8 @@ export interface KpiCardProps {
   icon?: LucideIcon;
   /** Optional link target; when provided card is clickable */
   href?: string;
+  /** Optional click handler; when provided card is clickable */
+  onClick?: () => void;
   /** Optional extra class for the card */
   className?: string;
 }
@@ -31,6 +33,7 @@ export function KpiCard({
   changeType,
   icon: Icon,
   href,
+  onClick,
   className,
 }: KpiCardProps) {
   const displayValue =
@@ -43,7 +46,7 @@ export function KpiCard({
       className={cn(
         "w-full p-3 transition-colors duration-200",
         "border-border hover:bg-muted/40 hover:border-primary/20",
-        href ? "cursor-pointer" : null,
+        href || onClick ? "cursor-pointer" : null,
         className,
       )}
     >
@@ -87,6 +90,10 @@ export function KpiCard({
       <Link to={href} className="block no-underline">
         {card}
       </Link>
+    ) : onClick ? (
+      <button type="button" onClick={onClick} className="block w-full text-left">
+        {card}
+      </button>
     ) : (
       card
     )
