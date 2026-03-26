@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export type KpiChangeType = "positive" | "negative";
 
@@ -17,6 +18,8 @@ export interface KpiCardProps {
   changeType?: KpiChangeType;
   /** Optional icon shown next to the label */
   icon?: LucideIcon;
+  /** Optional link target; when provided card is clickable */
+  href?: string;
   /** Optional extra class for the card */
   className?: string;
 }
@@ -27,18 +30,20 @@ export function KpiCard({
   change,
   changeType,
   icon: Icon,
+  href,
   className,
 }: KpiCardProps) {
   const displayValue =
     typeof value === "number" ? value.toLocaleString() : value;
   const showChange = change != null && changeType != null;
 
-  return (
+  const card = (
     <Card
       title={label}
       className={cn(
         "w-full p-3 transition-colors duration-200",
         "border-border hover:bg-muted/40 hover:border-primary/20",
+        href ? "cursor-pointer" : null,
         className,
       )}
     >
@@ -75,6 +80,16 @@ export function KpiCard({
         </dd>
       </CardContent>
     </Card>
+  );
+
+  return (
+    href ? (
+      <Link to={href} className="block no-underline">
+        {card}
+      </Link>
+    ) : (
+      card
+    )
   );
 }
 

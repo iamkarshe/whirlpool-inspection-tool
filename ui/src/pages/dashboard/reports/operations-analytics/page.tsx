@@ -78,6 +78,7 @@ function buildSummaryKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: inspections.totalChange,
       changeType: inspections.totalChangeType,
       icon: ClipboardCheck,
+      href: "/dashboard/inspections",
     },
     {
       label: "Total logins",
@@ -85,6 +86,7 @@ function buildSummaryKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: logins.totalChange,
       changeType: logins.totalChangeType,
       icon: LogIn,
+      href: "/dashboard/admin/logins",
     },
     {
       label: "Total devices",
@@ -92,6 +94,7 @@ function buildSummaryKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: devices.totalChange,
       changeType: devices.totalChangeType,
       icon: LayoutGrid,
+      href: "/dashboard/admin/devices",
     },
     {
       label: "Active inspectors",
@@ -99,6 +102,7 @@ function buildSummaryKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: inspections.inspectorsChange,
       changeType: inspections.inspectorsChangeType,
       icon: Users,
+      href: "/dashboard/admin/users",
     },
   ];
 }
@@ -113,6 +117,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: inspections.totalChange,
       changeType: inspections.totalChangeType,
       icon: ClipboardCheck,
+      href: "/dashboard/inspections",
     },
     {
       label: "Inbound",
@@ -120,6 +125,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: inspections.inboundChange,
       changeType: inspections.inboundChangeType,
       icon: ArrowDownToLine,
+      href: "/dashboard/inspections",
     },
     {
       label: "Outbound",
@@ -127,6 +133,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: inspections.outboundChange,
       changeType: inspections.outboundChangeType,
       icon: ArrowUpFromLine,
+      href: "/dashboard/inspections",
     },
     {
       label: "Active inspectors",
@@ -134,6 +141,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: inspections.inspectorsChange,
       changeType: inspections.inspectorsChangeType,
       icon: Users,
+      href: "/dashboard/admin/users",
     },
     {
       label: "Total logins",
@@ -141,6 +149,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: logins.totalChange,
       changeType: logins.totalChangeType,
       icon: LogIn,
+      href: "/dashboard/admin/logins",
     },
     {
       label: "Successful logins",
@@ -148,6 +157,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: logins.successChange,
       changeType: logins.successChangeType,
       icon: CheckCircle,
+      href: "/dashboard/admin/logins",
     },
     {
       label: "Failed logins",
@@ -155,6 +165,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: logins.failedChange,
       changeType: logins.failedChangeType,
       icon: XCircle,
+      href: "/dashboard/admin/logins",
     },
     {
       label: "Unique users (logins)",
@@ -162,6 +173,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: logins.usersChange,
       changeType: logins.usersChangeType,
       icon: Users,
+      href: "/dashboard/admin/users",
     },
     {
       label: "Total devices",
@@ -169,6 +181,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: devices.totalChange,
       changeType: devices.totalChangeType,
       icon: LayoutGrid,
+      href: "/dashboard/admin/devices",
     },
     {
       label: "Active devices",
@@ -176,6 +189,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: devices.activeChange,
       changeType: devices.activeChangeType,
       icon: CircleDot,
+      href: "/dashboard/admin/devices",
     },
     {
       label: "Mobile devices",
@@ -183,6 +197,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: devices.mobileChange,
       changeType: devices.mobileChangeType,
       icon: Smartphone,
+      href: "/dashboard/admin/devices",
     },
     {
       label: "Desktop devices",
@@ -190,6 +205,7 @@ function buildAllKpiCards(kpis: OperationsAnalyticsKpis): KpiCardProps[] {
       change: devices.desktopChange,
       changeType: devices.desktopChangeType,
       icon: Monitor,
+      href: "/dashboard/admin/devices",
     },
   ];
 }
