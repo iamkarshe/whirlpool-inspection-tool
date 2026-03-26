@@ -1,9 +1,16 @@
-import { useTheme } from "@/hooks/use-theme";
-
 export function BrandLogo() {
-  const { theme } = useTheme();
-  const src = theme === "dark" ? "/logo-dark.svg" : "/logo.svg";
-
-  return <img src={src} alt="Whirlpool" />;
+  return (
+    <>
+      <img
+        src="/logo.svg"
+        alt="Whirlpool"
+        className="block dark:hidden"
+      />
+      <img
+        src="/logo-dark.svg"
+        alt="Whirlpool"
+        className="hidden dark:block"
+      />
+    </>
+  );
 }
-
