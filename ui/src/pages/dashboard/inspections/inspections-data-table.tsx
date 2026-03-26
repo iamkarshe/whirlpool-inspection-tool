@@ -12,7 +12,12 @@ import {
   InspectionIdLinkBadge,
   InspectionTypeBadge,
 } from "@/pages/dashboard/inspections/inspection-badge";
+import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
 import { formatDate } from "@/lib/core";
+import {
+  ImageGalleryDialog,
+  type GalleryImage,
+} from "@/components/image-gallery-dialog";
 import {
   getInspectionQuestionResults,
   type Inspection,
@@ -42,18 +47,14 @@ function getSectionCounts(rows: InspectionQuestionResult[] | null) {
   return { total, passed, failed };
 }
 
-function inspectionTabHref(inspectionId: string, tab: InspectionSectionKey) {
-  const base = PAGES.inspectionViewPath(inspectionId);
-  const params = new URLSearchParams({ tab });
-  return `${base}?${params.toString()}`;
-}
-
 function SectionStatusCell({
   inspectionId,
   section,
+  onOpenDialog,
 }: {
   inspectionId: string;
   section: InspectionSectionKey;
+  onOpenDialog: (inspectionId: string) => void;
 }) {
   const [rows, setRows] = useState<InspectionQuestionResult[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,9 +82,11 @@ function SectionStatusCell({
         : "Product";
 
   return (
-    <Link
-      to={inspectionTabHref(inspectionId, section)}
+    <button
+      type="button"
+      onClick={() => onOpenDialog(inspectionId)}
       className="inline-flex items-center no-underline"
+      title={`View ${label} checks`}
     >
       <span className="sr-only">{label} check status</span>
       {loading ? (
@@ -106,7 +109,7 @@ function SectionStatusCell({
           </Badge>
         </>
       )}
-    </Link>
+    </button>
   );
 }
 
@@ -140,6 +143,54 @@ export default function InspectionsDataTable({
   data,
   hideDeviceColumn = false,
 }: InspectionsDataTableProps) {
+  const [checksDialogOpen, setChecksDialogOpen] = useState(false);
+  const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
+    "failed",
+  );
+  const [checksDialogLoading, setChecksDialogLoading] = useState(false);
+  const [checksSectionRows, setChecksSectionRows] = useState<{
+    outer: InspectionQuestionResult[];
+    inner: InspectionQuestionResult[];
+    product: InspectionQuestionResult[];
+  }>({ outer: [], inner: [], product: [] });
+
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [activeGalleryUrl, setActiveGalleryUrl] = useState<string | null>(null);
+
+  const reviewCounts = useMemo(() => {
+    const source = [
+      ...checksSectionRows.outer,
+      ...checksSectionRows.inner,
+      ...checksSectionRows.product,
+    ];
+    const passed = source.filter((r) => r.status === "pass").length;
+    const failed = source.filter((r) => r.status === "fail").length;
+    return { passed, failed };
+  }, [
+    checksSectionRows.inner,
+    checksSectionRows.outer,
+    checksSectionRows.product,
+  ]);
+
+  const openChecksDialog = (inspectionId: string) => {
+    setChecksDialogMode("failed");
+    setChecksDialogOpen(true);
+    setChecksDialogLoading(true);
+
+    Promise.all([
+      getInspectionQuestionResults(inspectionId, "outer-packaging"),
+      getInspectionQuestionResults(inspectionId, "inner-packaging"),
+      getInspectionQuestionResults(inspectionId, "product"),
+    ])
+      .then(([outer, inner, product]) => {
+        setChecksSectionRows({ outer, inner, product });
+      })
+      .finally(() => {
+        setChecksDialogLoading(false);
+      });
+  };
+
   const columns: ColumnDef<Inspection>[] = [
     {
       accessorKey: "id",
@@ -207,6 +258,7 @@ export default function InspectionsDataTable({
           key={`${row.original.id}-outer-packaging`}
           inspectionId={row.original.id}
           section="outer-packaging"
+          onOpenDialog={openChecksDialog}
         />
       ),
     },
@@ -218,6 +270,7 @@ export default function InspectionsDataTable({
           key={`${row.original.id}-inner-packaging`}
           inspectionId={row.original.id}
           section="inner-packaging"
+          onOpenDialog={openChecksDialog}
         />
       ),
     },
@@ -229,6 +282,7 @@ export default function InspectionsDataTable({
           key={`${row.original.id}-product`}
           inspectionId={row.original.id}
           section="product"
+          onOpenDialog={openChecksDialog}
         />
       ),
     },
@@ -333,13 +387,41 @@ export default function InspectionsDataTable({
   }, [data]);
 
   return (
-    <DataTable<Inspection>
-      columns={columns}
-      data={data}
-      searchKey="product_serial"
-      filters={filters}
-      dateRangeFilter={{ dateAccessorKey: "created_at" }}
-      rangeLabel="inspections"
-    />
+    <>
+      <ImageGalleryDialog
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+        images={galleryImages}
+        activeUrl={activeGalleryUrl}
+        onActiveUrlChange={setActiveGalleryUrl}
+        title="Inspection images"
+        description="Click a thumbnail to preview, or download the selected image."
+      />
+
+      <ChecksSummaryDialog
+        open={checksDialogOpen}
+        onOpenChange={setChecksDialogOpen}
+        mode={checksDialogMode}
+        onModeChange={setChecksDialogMode}
+        reviewCounts={reviewCounts}
+        sectionRows={checksSectionRows}
+        onViewImages={(r) => {
+          setGalleryImages(r.images);
+          setActiveGalleryUrl(r.images[0]?.url ?? null);
+          setGalleryOpen(true);
+        }}
+      />
+
+      <div className={checksDialogLoading ? "opacity-100" : "opacity-100"}>
+        <DataTable<Inspection>
+          columns={columns}
+          data={data}
+          searchKey="product_serial"
+          filters={filters}
+          dateRangeFilter={{ dateAccessorKey: "created_at" }}
+          rangeLabel="inspections"
+        />
+      </div>
+    </>
   );
 }
