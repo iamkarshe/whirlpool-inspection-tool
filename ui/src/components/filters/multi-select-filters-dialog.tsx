@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { MultiSelectCombobox } from "@/components/filters/multi-select-combobox";
+import { ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export type MultiSelectFilterOption = {
   id: string;
@@ -23,6 +25,9 @@ export type MultiSelectFilterSection = {
   key: string;
   label: string;
   options: MultiSelectFilterOption[];
+  /** Optional contextual link rendered in section header. */
+  actionHref?: string;
+  actionLabel?: string;
 };
 
 export type MultiSelectFiltersValue = Record<string, string[]>;
@@ -134,7 +139,26 @@ export function MultiSelectFiltersDialog({
           {sections.map((section) => {
             const selected = draft[section.key] ?? [];
             return (
-              <div key={section.key} className="w-full">
+              <div
+                key={section.key}
+                className="w-full rounded-lg border bg-muted/10 p-3"
+              >
+                {(section.actionHref || section.actionLabel) && (
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {section.label}
+                    </p>
+                    {section.actionHref ? (
+                      <Link
+                        to={section.actionHref}
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        {section.actionLabel ?? `Open ${section.label}`}
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    ) : null}
+                  </div>
+                )}
                 <MultiSelectCombobox
                   label={section.label}
                   options={section.options}

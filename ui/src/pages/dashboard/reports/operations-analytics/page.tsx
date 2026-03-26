@@ -56,6 +56,8 @@ import {
   type OperationsSummaryByCategory,
   type OperationsTrendPoint,
 } from "@/pages/dashboard/reports/operations-analytics/operations-analytics-service";
+import { WeeklyTrendDetailsDialog } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-details-dialog";
+import { WeeklyTrendTooltipContent } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-tooltip-content";
 
 const trendChartConfig = {
   inspections: { label: "Inspections", color: "var(--chart-1)" },
@@ -205,6 +207,9 @@ export default function OperationsAnalyticsPage() {
   const [operators, setOperators] = useState<User[]>([]);
 
   const [filters, setFilters] = useState<OperationsAnalyticsFilters>({});
+  const [selectedTrendPoint, setSelectedTrendPoint] =
+    useState<OperationsTrendPoint | null>(null);
+  const [trendDialogOpen, setTrendDialogOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -272,6 +277,8 @@ export default function OperationsAnalyticsPage() {
       {
         key: "warehouseIds",
         label: "Warehouse",
+        actionHref: PAGES.DASHBOARD_MASTERS_WAREHOUSES,
+        actionLabel: "Open warehouses",
         options: warehouses.map((w) => ({
           id: w.id,
           label: `${w.warehouse_code} — ${w.name}`,
@@ -385,7 +392,7 @@ export default function OperationsAnalyticsPage() {
         <div className="lg:col-span-12 xl:col-span-8">
           <ChartCard
             title="Weekly trend"
-            description="Inspections, logins, and devices over the last 6 weeks"
+            description="Inspections, logins, and devices for the selected period"
           >
             <ChartContainer
               config={trendChartConfig}
@@ -394,6 +401,13 @@ export default function OperationsAnalyticsPage() {
               <BarChart
                 data={trend}
                 margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                onClick={(state) => {
+                  const payload = state?.activePayload?.[0]
+                    ?.payload as OperationsTrendPoint | undefined;
+                  if (!payload) return;
+                  setSelectedTrendPoint(payload);
+                  setTrendDialogOpen(true);
+                }}
               >
                 <XAxis
                   dataKey="week"
@@ -406,14 +420,17 @@ export default function OperationsAnalyticsPage() {
                   cursor={false}
                   content={
                     <ChartTooltipContent
-                      formatter={(v, name) => [
-                        v,
-                        name === "inspections"
-                          ? "Inspections"
-                          : name === "logins"
-                            ? "Logins"
-                            : "Devices",
-                      ]}
+                      className="min-w-[220px] gap-2 border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+                      hideLabel
+                      formatter={(v, name, item) => {
+                        return (
+                          <WeeklyTrendTooltipContent
+                            value={Number(v)}
+                            name={name}
+                            color={item.payload?.fill || item.color}
+                          />
+                        );
+                      }}
                     />
                   }
                 />
@@ -496,6 +513,12 @@ export default function OperationsAnalyticsPage() {
           )}
         </div>
       </div>
+
+      <WeeklyTrendDetailsDialog
+        open={trendDialogOpen}
+        onOpenChange={setTrendDialogOpen}
+        point={selectedTrendPoint}
+      />
     </div>
   );
 }
