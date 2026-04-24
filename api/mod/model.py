@@ -175,7 +175,7 @@ class ProductCategory(TimestampSoftDeleteMixin, Base):
 class Product(TimestampSoftDeleteMixin, Base):
     __tablename__ = "products"
     __table_args__ = (
-        UniqueConstraint("serial_number", name="uq_products_serial_number"),
+        UniqueConstraint("material_code", name="uq_products_material_code"),
         Index("ix_products_category_active", "product_category_id", "is_active"),
     )
 
@@ -187,10 +187,9 @@ class Product(TimestampSoftDeleteMixin, Base):
         index=True,
     )
 
-    serial_number: Mapped[str] = mapped_column(String(120), nullable=False)
-    manufacturing_date: Mapped[date] = mapped_column(Date, nullable=False)
-    batch_number: Mapped[str] = mapped_column(
-        String(64), nullable=False, server_default=""
+    material_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    material_description: Mapped[str] = mapped_column(
+        String(512), nullable=False, server_default=""
     )
 
     product_category: Mapped["ProductCategory"] = relationship(
