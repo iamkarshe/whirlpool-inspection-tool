@@ -53,7 +53,9 @@ def get_inspection_kpis(
     warehouse_uuid: uuid.UUID | None = Query(
         None, description="Optional filter by warehouse UUID"
     ),
-    plant_uuid: uuid.UUID | None = Query(None, description="Optional filter by plant UUID"),
+    plant_uuid: uuid.UUID | None = Query(
+        None, description="Optional filter by plant UUID"
+    ),
     db: Session = Depends(get_db),
 ):
     if date_to < date_from:
@@ -90,7 +92,9 @@ def get_inspections(
     warehouse_uuid: uuid.UUID | None = Query(
         None, description="Optional filter by warehouse UUID"
     ),
-    plant_uuid: uuid.UUID | None = Query(None, description="Optional filter by plant UUID"),
+    plant_uuid: uuid.UUID | None = Query(
+        None, description="Optional filter by plant UUID"
+    ),
     date_from: date | None = Query(None),
     date_to: date | None = Query(None),
     db: Session = Depends(get_db),
