@@ -80,3 +80,37 @@ def device_display_label(device: object | None) -> str:
     if fp:
         return fp
     return (getattr(device, "imei", None) or "").strip()
+
+
+def parse_product_barcode_16(barcode: str) -> dict[str, str]:
+    """Split a 16-character product barcode into fixed fields (1-based positions in spec)."""
+    s = (barcode or "").strip()
+    if len(s) != 16:
+        raise ValueError("Barcode must be exactly 16 characters")
+    material_code = s[0:5]
+    compressor_code = s[5:7]
+    manufacturing_year = s[7:9]
+    week_of_year = s[9:11]
+    serial_number = s[11:16]
+    if not material_code.isdigit():
+        raise ValueError("Material code (positions 1-5) must be five digits")
+    if not compressor_code.isdigit():
+        raise ValueError("Compressor code (positions 6-7) must be two digits")
+    if not manufacturing_year.isdigit():
+        raise ValueError("Manufacturing year (positions 8-9) must be two digits")
+    if not week_of_year.isdigit():
+        raise ValueError("Week of year (positions 10-11) must be two digits")
+    week_int = int(week_of_year)
+    if week_int < 1 or week_int > 53:
+        raise ValueError("Week of year must be between 01 and 53")
+    if not serial_number.isalnum():
+        raise ValueError(
+            "Serial number (positions 12-16) must be alphanumeric (letters or digits)"
+        )
+    return {
+        "material_code": material_code,
+        "compressor_code": compressor_code,
+        "manufacturing_year": manufacturing_year,
+        "week_of_year": week_of_year,
+        "serial_number": serial_number,
+    }

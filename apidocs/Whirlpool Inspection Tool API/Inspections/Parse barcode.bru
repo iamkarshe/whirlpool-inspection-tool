@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/inspections/parse-barcode
+  url: {{baseUrl}}/api/inspections/parse-barcode?barcode=31602012552BRQZR
   body: none
   auth: inherit
+}
+
+params:query {
+  barcode: 31602012552BRQZR
 }
 
 body:json {

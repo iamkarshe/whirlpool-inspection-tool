@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.helper import (
+    build_barcode_parse_response,
     compute_inspection_kpis,
     default_inspection_metrics,
     fetch_inspection_yes_no_metrics,
@@ -13,6 +14,7 @@ from mod.api.inspection.helper import (
     resolve_inspection_scope_filters,
 )
 from mod.api.inspection.response import (
+    BarcodeParseResponse,
     InspectionDetailResponse,
     InspectionKpisResponse,
     InspectionListResponse,
@@ -175,6 +177,24 @@ def get_inspections(
         per_page=per_page,
         total_pages=total_pages,
     )
+
+
+@router.get(
+    "/inspections/parse-barcode",
+    name="parse_inspection_barcode",
+    response_model=BarcodeParseResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def parse_inspection_barcode(
+    request: Request,
+    barcode: str = Query(
+        ...,
+        description="16-character barcode after trim: 1-5 material, 6-7 compressor, 8-9 year, 10-11 week, 12-16 serial",
+    ),
+    db: Session = Depends(get_db),
+):
+    return build_barcode_parse_response(db, barcode)
 
 
 @router.get(

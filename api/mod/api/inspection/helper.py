@@ -4,14 +4,19 @@ import uuid
 from datetime import date
 from typing import Any
 
-from sqlalchemy.orm import Session
+from fastapi import HTTPException
+from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.response import (
+    BarcodeParseResponse,
+    BarcodeParseSegments,
     InspectionDetailResponse,
     InspectionListItemResponse,
     InspectionPassFailCounts,
 )
 from mod.api.plant.helper import get_plant_by_uuid_or_404
+from mod.api.product.router import map_product
+from mod.api.product_category.helper import map_product_category
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
 from mod.model import (
     ChecklistField,
@@ -20,11 +25,13 @@ from mod.model import (
     Inspection,
     InspectionInput,
     InspectionType,
+    Product,
 )
 from utils.common import (
     checklist_inspection_layer_key,
     device_display_label,
     empty_pass_fail_counts,
+    parse_product_barcode_16,
     parse_yes_no_outcome,
     utc_end_exclusive_day_range,
 )
@@ -204,3 +211,30 @@ def compute_inspection_kpis(
         "outbound_passed": outbound_passed,
         "outbound_failed": outbound_failed,
     }
+
+
+def build_barcode_parse_response(db: Session, barcode: str) -> BarcodeParseResponse:
+    try:
+        fields = parse_product_barcode_16(barcode)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    material_code = fields["material_code"]
+    product = (
+        db.query(Product)
+        .options(joinedload(Product.product_category))
+        .filter(Product.material_code == material_code, Product.is_active.is_(True))
+        .first()
+    )
+    if product is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No active product found for material code {material_code}",
+        )
+    category = product.product_category
+    if category is None:
+        raise HTTPException(status_code=404, detail="Product has no category")
+    return BarcodeParseResponse(
+        segments=BarcodeParseSegments(**fields),
+        product=map_product(product),
+        product_category=map_product_category(category),
+    )

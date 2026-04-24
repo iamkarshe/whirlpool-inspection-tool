@@ -4,6 +4,23 @@ from typing import List
 
 from pydantic import BaseModel
 
+from mod.api.product.response import ProductResponse
+from mod.api.product_category.response import ProductCategoryResponse
+
+
+class BarcodeParseSegments(BaseModel):
+    material_code: str
+    compressor_code: str
+    manufacturing_year: str
+    week_of_year: str
+    serial_number: str
+
+
+class BarcodeParseResponse(BaseModel):
+    segments: BarcodeParseSegments
+    product: ProductResponse
+    product_category: ProductCategoryResponse
+
 
 class InspectionPassFailCounts(BaseModel):
     pass_count: int
