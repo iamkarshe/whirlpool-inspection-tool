@@ -2,11 +2,25 @@ import uuid
 from datetime import date, datetime
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import AnyUrl, BaseModel, Field, field_validator, model_validator
 
-from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
+from mod.api.inspection.checklist_inspection import (
+    ChecklistItemResponse,
+    ChecklistLayerPassFail,
+    InspectionInputItemResponse,
+    InspectionWithChecklistPayload,
+)
 from mod.api.product.response import ProductResponse
 from mod.api.product_category.response import ProductCategoryResponse
+from utils.common import (
+    INDIA_LAT_MAX,
+    INDIA_LAT_MIN,
+    INDIA_LNG_MAX,
+    INDIA_LNG_MIN,
+    is_valid_registration,
+    normalize_registration,
+    parse_to_utc_datetime,
+)
 
 
 class BarcodeParseSegments(BaseModel):
@@ -91,3 +105,101 @@ class InspectionDetailResponse(BaseModel):
     ip_address: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class InspectionFullResponse(InspectionDetailResponse):
+    """Detail row plus checklist inputs, images, and pass/fail counts (parse-barcode parity)."""
+
+    product_unit_id: int
+    inputs: list[InspectionInputItemResponse]
+    outer_packaging_images: list[str]
+    inner_packaging_images: list[str]
+    product_images: list[str]
+    outer_packaging_checks: ChecklistLayerPassFail
+    inner_packaging_checks: ChecklistLayerPassFail
+    product_checks: ChecklistLayerPassFail
+    checklist_pass_total: int
+    checklist_fail_total: int
+
+
+class ChecklistGroupBlock(BaseModel):
+    group_name: str
+    items: list[ChecklistItemResponse]
+
+
+class ActiveChecklistGroupedResponse(BaseModel):
+    groups: list[ChecklistGroupBlock]
+
+
+class ChecklistAnswerEntry(BaseModel):
+    id: int = Field(..., ge=1)
+    value: str
+    image_path: list[AnyUrl] = Field(default_factory=list)
+    remarks: str | None = None
+
+    @field_validator("image_path", mode="before")
+    @classmethod
+    def coerce_image_path_list(cls, v):
+        if v is None:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("image_path must be an array of URL strings")
+        out: list[str] = []
+        for i, item in enumerate(v):
+            if item is None:
+                raise ValueError(f"image_path[{i}] must not be null")
+            s = str(item).strip()
+            if not s:
+                raise ValueError(f"image_path[{i}] must be a non-empty URL string")
+            out.append(s)
+        return out
+
+    @model_validator(mode="after")
+    def normalize_entry(self):
+        self.value = (self.value or "").strip()
+        if self.remarks is not None:
+            r = self.remarks.strip()
+            self.remarks = r if r else None
+        return self
+
+
+class StartInboundInspectionRequest(BaseModel):
+    barcode: str = Field(..., min_length=1)
+    device_uuid: uuid.UUID
+    warehouse_code: str = Field(..., min_length=1)
+    supplier_plant_code: str = Field(..., min_length=1)
+    lat: float = Field(..., ge=INDIA_LAT_MIN, le=INDIA_LAT_MAX)
+    lng: float = Field(..., ge=INDIA_LNG_MIN, le=INDIA_LNG_MAX)
+    truck_number: str = Field(..., min_length=1)
+    dock_number: str | None = None
+    truck_docking_time: datetime
+    checklist_answers: list[ChecklistAnswerEntry] = Field(default_factory=list)
+
+    @field_validator("truck_number", mode="after")
+    @classmethod
+    def validate_truck_number(cls, v: str) -> str:
+        t = (v or "").strip()
+        if not is_valid_registration(t):
+            raise ValueError(
+                "truck_number must be a valid Indian vehicle registration "
+                "(state format, e.g. CG01AC23334, or Bharat series, e.g. 21BH1234AA)"
+            )
+        return normalize_registration(t)
+
+    @field_validator("truck_docking_time", mode="before")
+    @classmethod
+    def coerce_truck_docking_time(cls, v):
+        return parse_to_utc_datetime(v)
+
+    @model_validator(mode="after")
+    def normalize_and_validate_answers(self):
+        self.barcode = self.barcode.strip()
+        self.warehouse_code = self.warehouse_code.strip()
+        self.supplier_plant_code = self.supplier_plant_code.strip()
+        if self.dock_number is not None:
+            d = self.dock_number.strip()
+            self.dock_number = d if d else None
+        ids = [a.id for a in self.checklist_answers]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Duplicate checklist id in checklist_answers")
+        return self

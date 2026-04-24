@@ -1,22 +1,24 @@
 import csv
 import io
+import math
+import re
 from datetime import date, datetime, time, timedelta, timezone
+from typing import Any
 
 from fastapi import HTTPException, UploadFile
+from zoneinfo import ZoneInfo
 
-YES_NO_PASS_VALUES: frozenset[str] = frozenset(
-    {"yes", "y", "pass", "true", "1", "ok"}
-)
-YES_NO_FAIL_VALUES: frozenset[str] = frozenset(
-    {"no", "n", "fail", "false", "0"}
-)
+YES_NO_PASS_VALUES: frozenset[str] = frozenset({"yes", "y", "pass", "true", "1", "ok"})
+YES_NO_FAIL_VALUES: frozenset[str] = frozenset({"no", "n", "fail", "false", "0"})
 
 
 def to_proper_case(value: str) -> str:
     return " ".join(word.capitalize() for word in value.strip().split())
 
 
-def read_csv_upload(file: UploadFile, required_headers: set[str]) -> list[dict[str, str]]:
+def read_csv_upload(
+    file: UploadFile, required_headers: set[str]
+) -> list[dict[str, str]]:
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Please upload a CSV file")
 
@@ -61,7 +63,9 @@ def checklist_inspection_layer_key(group_name: str | None) -> str | None:
     return None
 
 
-def utc_end_exclusive_day_range(date_from: date, date_to: date) -> tuple[datetime, datetime]:
+def utc_end_exclusive_day_range(
+    date_from: date, date_to: date
+) -> tuple[datetime, datetime]:
     start = datetime.combine(date_from, time.min, tzinfo=timezone.utc)
     end_exclusive = datetime.combine(
         date_to + timedelta(days=1), time.min, tzinfo=timezone.utc
@@ -121,3 +125,73 @@ def parse_product_barcode_16(barcode: str) -> dict[str, str]:
         "week_of_year": week_of_year,
         "serial_number": serial_number,
     }
+
+
+INDIA_LAT_MIN = 6.0
+INDIA_LAT_MAX = 37.6
+INDIA_LNG_MIN = 68.0
+INDIA_LNG_MAX = 97.8
+MAX_INSPECTION_DISTANCE_KM_FROM_WAREHOUSE = 5.0
+
+
+def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r_km = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlmb = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlmb / 2) ** 2
+    c = 2 * math.asin(min(1.0, math.sqrt(a)))
+    return r_km * c
+
+
+REGISTRATION_SPACE_DASH_PATTERN = re.compile(r"[\s\-_]+")
+BHARAT_REGISTRATION_PATTERN = re.compile(r"^\d{2}BH\d{4}[A-Z]{2}$")
+STATE_REGISTRATION_PATTERN = re.compile(r"^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{3,5}$")
+
+
+def normalize_registration(s: str) -> str:
+    return REGISTRATION_SPACE_DASH_PATTERN.sub("", (s or "").upper())
+
+
+def is_valid_registration(s: str) -> bool:
+    n = normalize_registration(s)
+    if len(n) < 8 or len(n) > 13:
+        return False
+    return bool(
+        BHARAT_REGISTRATION_PATTERN.match(n) or STATE_REGISTRATION_PATTERN.match(n)
+    )
+
+
+DEFAULT_CLIENT_TIMEZONE = ZoneInfo("Asia/Kolkata")
+
+
+def parse_to_utc_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        dt = value
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=DEFAULT_CLIENT_TIMEZONE)
+        return dt.astimezone(timezone.utc)
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return datetime.combine(
+            value, time.min, tzinfo=DEFAULT_CLIENT_TIMEZONE
+        ).astimezone(timezone.utc)
+    if isinstance(value, (int, float)):
+        sec = float(value) / 1000.0 if float(value) > 1e12 else float(value)
+        return datetime.fromtimestamp(sec, tz=timezone.utc)
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            raise ValueError("datetime value is required")
+        if len(s) <= 10 and "T" not in s.upper():
+            d = date.fromisoformat(s[:10])
+            return datetime.combine(
+                d, time.min, tzinfo=DEFAULT_CLIENT_TIMEZONE
+            ).astimezone(timezone.utc)
+        s_norm = s.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(s_norm)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=DEFAULT_CLIENT_TIMEZONE)
+        return dt.astimezone(timezone.utc)
+    raise ValueError(
+        "Unsupported datetime; use ISO-8601 string, epoch seconds/ms, or datetime"
+    )

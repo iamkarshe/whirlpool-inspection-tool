@@ -4,20 +4,26 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
+from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
 from mod.api.inspection.helper import (
+    build_active_checklist_grouped_response,
     build_barcode_parse_response,
     compute_inspection_kpis,
+    create_inbound_inspection,
     default_inspection_metrics,
     fetch_inspection_yes_no_metrics,
-    map_inspection_detail,
+    get_inspection_entity_by_uuid,
     map_inspection_list_item,
+    present_inspection_full,
     resolve_inspection_scope_filters,
 )
 from mod.api.inspection.response import (
+    ActiveChecklistGroupedResponse,
     BarcodeParseResponse,
-    InspectionDetailResponse,
+    InspectionFullResponse,
     InspectionKpisResponse,
     InspectionListResponse,
+    StartInboundInspectionRequest,
 )
 from mod.api.middleware import auth_dependency
 from mod.model import Device, Inspection, InspectionType, Product, User
@@ -227,9 +233,38 @@ def parse_inspection_barcode(
 
 
 @router.get(
+    "/inspections/checklist",
+    name="get_active_inspection_checklist",
+    response_model=ActiveChecklistGroupedResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager", "operator"])
+def get_active_inspection_checklist(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    return build_active_checklist_grouped_response(db)
+
+
+@router.post(
+    "/inspections/inbound",
+    name="start_inbound_inspection",
+    response_model=InspectionWithChecklistPayload,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager", "operator"])
+def start_inbound_inspection(
+    request: Request,
+    body: StartInboundInspectionRequest,
+    db: Session = Depends(get_db),
+):
+    return create_inbound_inspection(db, request, body)
+
+
+@router.get(
     "/inspections/{inspection_uuid}",
     name="get_inspection_detail",
-    response_model=InspectionDetailResponse,
+    response_model=InspectionFullResponse,
 )
 @exception_handler_decorator
 @check_api_role(["superadmin", "manager"])
@@ -238,17 +273,7 @@ def get_inspection_detail(
     inspection_uuid: uuid.UUID,
     db: Session = Depends(get_db),
 ):
-    inspection = (
-        db.query(Inspection)
-        .options(
-            joinedload(Inspection.inspector),
-            joinedload(Inspection.device),
-            joinedload(Inspection.product),
-            joinedload(Inspection.product_unit),
-        )
-        .filter(Inspection.uuid == inspection_uuid)
-        .first()
-    )
+    inspection = get_inspection_entity_by_uuid(db, inspection_uuid)
     if inspection is None:
         raise HTTPException(status_code=404, detail="Inspection not found")
-    return map_inspection_detail(inspection)
+    return present_inspection_full(inspection)
