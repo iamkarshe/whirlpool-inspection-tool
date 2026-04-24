@@ -1,39 +1,24 @@
 meta {
-  name: Login
+  name: Device Inspections
   type: http
-  seq: 1
+  seq: 4
 }
 
-post {
-  url: {{baseUrl}}/auth/login
-  body: json
+get {
+  url: {{baseUrl}}/api/devices/e821a6d6-a65f-4f49-9d12-f7359475ca86/inspections
+  body: none
   auth: inherit
 }
 
 body:json {
   {
-    "email": "{{email}}",
-    "password": "{{password}}",
-    "device": {
-      "imei": "web_7f9c2c8a-5c63-4e5b-8d09-19a0d2e9e1d2",
-      "device_type": "desktop",
-      "device_fingerprint": "fp_5c8f2c44e91a3f",
-      "device_info": {
-        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120",
-        "platform": "Linux x86_64",
-        "language": "en-IN",
-        "timezone": "Asia/Kolkata",
-        "screen_resolution": "1920x1080"
-      },
-      "current_lat": 12.9716,
-      "current_lng": 77.5946
-    }
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
   }
-}
-
-script:post-response {
-  let data = res.body;
-  bru.setEnvVar("access_token", data.access_token, { persist: true });
 }
 
 example {
@@ -41,13 +26,17 @@ example {
   description: Successful Response
   
   request: {
-    url: {{baseUrl}}/auth/login
+    url: {{baseUrl}}/api/users
     method: POST
     mode: json
     body:json: {
       {
+        "name": "",
         "email": "",
-        "password": ""
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
       }
     }
   }
@@ -67,11 +56,9 @@ example {
       content: '''
         {
           "id": 0,
-          "uuid": "",
-          "name": "",
+          "full_name": "",
           "email": "",
           "role": "",
-          "designation": "",
           "is_active": false
         }
       '''
@@ -84,13 +71,17 @@ example {
   description: Validation Error
   
   request: {
-    url: {{baseUrl}}/auth/login
+    url: {{baseUrl}}/api/users
     method: POST
     mode: json
     body:json: {
       {
+        "name": "",
         "email": "",
-        "password": ""
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
       }
     }
   }
