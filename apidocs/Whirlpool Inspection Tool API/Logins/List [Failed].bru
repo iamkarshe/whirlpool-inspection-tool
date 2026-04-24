@@ -1,13 +1,22 @@
 meta {
-  name: Login Info
+  name: List [Failed]
   type: http
-  seq: 4
+  seq: 3
 }
 
 get {
-  url: {{baseUrl}}/api/logins/dbbe54c3-b92d-43fd-87fc-6211806592a5
+  url: {{baseUrl}}/api/logins?page=1&per_page=10&search=&sort_by=id&sort_dir=desc&status=failed
   body: none
   auth: inherit
+}
+
+params:query {
+  page: 1
+  per_page: 10
+  search: 
+  sort_by: id
+  sort_dir: desc
+  status: failed
 }
 
 body:json {

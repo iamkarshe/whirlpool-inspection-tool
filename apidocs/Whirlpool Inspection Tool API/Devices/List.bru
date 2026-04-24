@@ -1,11 +1,11 @@
 meta {
-  name: Logins
+  name: List
   type: http
   seq: 1
 }
 
 get {
-  url: {{baseUrl}}/api/logins?page=1&per_page=10&search=&sort_by=id&sort_dir=desc&status=successful
+  url: {{baseUrl}}/api/devices?page=1&per_page=10&search=&sort_by=id&sort_dir=desc&is_active=true
   body: none
   auth: inherit
 }
@@ -16,7 +16,7 @@ params:query {
   search: 
   sort_by: id
   sort_dir: desc
-  status: successful
+  is_active: true
 }
 
 body:json {

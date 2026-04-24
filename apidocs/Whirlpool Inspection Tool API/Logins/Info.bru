@@ -1,22 +1,13 @@
 meta {
-  name: Devices
+  name: Info
   type: http
-  seq: 1
+  seq: 4
 }
 
 get {
-  url: {{baseUrl}}/api/devices?page=1&per_page=10&search=&sort_by=id&sort_dir=desc&is_active=true
+  url: {{baseUrl}}/api/logins/dbbe54c3-b92d-43fd-87fc-6211806592a5
   body: none
   auth: inherit
-}
-
-params:query {
-  page: 1
-  per_page: 10
-  search: 
-  sort_by: id
-  sort_dir: desc
-  is_active: true
 }
 
 body:json {

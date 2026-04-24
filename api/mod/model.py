@@ -247,6 +247,8 @@ class Plant(TimestampSoftDeleteMixin, Base):
     city: Mapped[str] = mapped_column(String(120), nullable=False)
     postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
 
+    inspections: Mapped[list["Inspection"]] = relationship(back_populates="plant")
+
 
 class Checklist(TimestampSoftDeleteMixin, Base):
     __tablename__ = "checklists"
@@ -364,6 +366,7 @@ class Inspection(TimestampSoftDeleteMixin, Base):
         Index("ix_inspections_device_active", "device_id", "is_active"),
         Index("ix_inspections_checklist_active", "checklist_id", "is_active"),
         Index("ix_inspections_warehouse_code_active", "warehouse_code", "is_active"),
+        Index("ix_inspections_plant_code_active", "plant_code", "is_active"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -400,6 +403,12 @@ class Inspection(TimestampSoftDeleteMixin, Base):
         nullable=True,
         index=True,
     )
+    plant_code: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("plants.plant_code", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
 
     lat: Mapped[float | None] = mapped_column(Double, nullable=True)
     lng: Mapped[float | None] = mapped_column(Double, nullable=True)
@@ -411,6 +420,7 @@ class Inspection(TimestampSoftDeleteMixin, Base):
     product: Mapped["Product"] = relationship(back_populates="inspections")
     checklist: Mapped["Checklist"] = relationship(back_populates="inspections")
     warehouse: Mapped["Warehouse"] = relationship(back_populates="inspections")
+    plant: Mapped["Plant"] = relationship(back_populates="inspections")
 
     inputs: Mapped[list["InspectionInput"]] = relationship(back_populates="inspection")
     images: Mapped[list["InspectionImage"]] = relationship(back_populates="inspection")

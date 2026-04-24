@@ -14,7 +14,7 @@ from mod.api.warehouse.response import (
     WarehouseResponse,
     WarehouseUserResponse,
 )
-from mod.model import Device, Inspection, User, Warehouse
+from mod.model import Device, Inspection, Warehouse
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
@@ -106,7 +106,7 @@ def create_warehouse(
         lng=payload.lng,
         address=payload.address,
         city=payload.city,
-        postal_code=payload.postal_code,
+        postal_code=str(payload.postal_code),
         is_active=True,
     )
     db.add(warehouse)
@@ -244,7 +244,7 @@ def update_warehouse(
     warehouse.lng = payload.lng
     warehouse.address = payload.address
     warehouse.city = payload.city
-    warehouse.postal_code = payload.postal_code
+    warehouse.postal_code = str(payload.postal_code)
     warehouse.is_active = payload.is_active
 
     db.commit()

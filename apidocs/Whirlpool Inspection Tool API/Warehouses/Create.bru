@@ -1,23 +1,24 @@
 meta {
-  name: Device Info
+  name: Create
   type: http
-  seq: 3
+  seq: 2
 }
 
-get {
-  url: {{baseUrl}}/api/devices/e821a6d6-a65f-4f49-9d12-f7359475ca86
-  body: none
+post {
+  url: {{baseUrl}}/api/warehouses
+  body: json
   auth: inherit
 }
 
 body:json {
   {
-    "name": "New User",
-    "email": "user9@someone.com",
-    "mobile_number": "9406103499",
-    "password": "admim@cmp",
-    "role": "operator",
-    "designation": "Warehouse Operator"
+    "warehouse_code": "WH01",
+    "name": "New Warehouse",
+    "address": "Address for Warehouse",
+    "city": "Jaipur",
+    "lat": "11.36",
+    "lng": "15.36",
+    "postal_code": "111115"
   }
 }
 
