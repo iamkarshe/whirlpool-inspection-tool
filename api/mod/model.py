@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import enum
 import uuid
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import (
     Boolean,
     DateTime,
     Double,
+    Enum as SQLEnum,
     ForeignKey,
     Index,
     Integer,
@@ -34,7 +36,20 @@ class ChecklistFieldType(str, enum.Enum):
     dropdown = "dropdown"
     yes_no = "yes_no"
     date = "date"
-    text = "text"
+    free_text = "free_text"
+
+
+class ChecklistPhotoUploadRule(str, enum.Enum):
+    none = "none"
+    when_no = "when_no"
+    optional = "optional"
+    always = "always"
+
+
+class ChecklistGroup(str, enum.Enum):
+    outer_packaging = "Outer Packaging"
+    inner_packaging = "Inner Packaging"
+    product = "Product"
 
 
 class InspectionType(str, enum.Enum):
@@ -47,6 +62,59 @@ class LogLevel(str, enum.Enum):
     info = "info"
     warning = "warning"
     error = "error"
+
+
+class DamageType(str, enum.Enum):
+    packaging = "packaging"
+    cosmetic = "cosmetic"
+    accessories = "accessories"
+
+
+class DamageSeverity(str, enum.Enum):
+    minor = "minor"
+    major = "major"
+
+
+class DamageLikelyCause(str, enum.Enum):
+    transit = "transit"
+    handling = "handling"
+    packaging = "packaging"
+    manufacturing = "manufacturing"
+
+
+class DamageGrading(str, enum.Enum):
+    DGR = "DGR"
+    LDGR = "LDGR"
+    SCRAP = "SCRAP"
+
+
+def pg_str_enum(enum_cls: type, *, name: str, length: int) -> SQLEnum:
+    return SQLEnum(
+        enum_cls,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        values_callable=lambda cls: [m.value for m in cls],
+        length=length,
+    )
+
+
+DEVICE_TYPE_DB = pg_str_enum(DeviceType, name="device_type", length=16)
+CHECKLIST_FIELD_TYPE_DB = pg_str_enum(
+    ChecklistFieldType, name="checklist_field_type", length=16
+)
+CHECKLIST_PHOTO_RULE_DB = pg_str_enum(
+    ChecklistPhotoUploadRule, name="checklist_photo_upload_rule", length=16
+)
+CHECKLIST_GROUP_DB = pg_str_enum(ChecklistGroup, name="checklist_group", length=32)
+INSPECTION_TYPE_DB = pg_str_enum(InspectionType, name="inspection_type", length=16)
+LOG_LEVEL_DB = pg_str_enum(LogLevel, name="log_level", length=16)
+DAMAGE_TYPE_DB = pg_str_enum(DamageType, name="damage_type", length=32)
+DAMAGE_SEVERITY_DB = pg_str_enum(DamageSeverity, name="damage_severity", length=16)
+DAMAGE_LIKELY_CAUSE_DB = pg_str_enum(
+    DamageLikelyCause, name="damage_likely_cause", length=32
+)
+DAMAGE_GRADING_DB = pg_str_enum(DamageGrading, name="damage_grading", length=16)
 
 
 class TimestampSoftDeleteMixin:
@@ -138,7 +206,7 @@ class Device(TimestampSoftDeleteMixin, Base):
     )
 
     imei: Mapped[str] = mapped_column(String(48), nullable=False)
-    device_type: Mapped[DeviceType] = mapped_column(String(16), nullable=False)
+    device_type: Mapped[DeviceType] = mapped_column(DEVICE_TYPE_DB, nullable=False)
 
     device_fingerprint: Mapped[str] = mapped_column(String(255), nullable=False)
     device_info: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
@@ -181,7 +249,7 @@ class ProductCategory(TimestampSoftDeleteMixin, Base):
     )
 
     products: Mapped[list["Product"]] = relationship(back_populates="product_category")
-    checklists: Mapped[list["Checklist"]] = relationship(
+    inspections: Mapped[list["Inspection"]] = relationship(
         back_populates="product_category"
     )
 
@@ -209,6 +277,7 @@ class Product(TimestampSoftDeleteMixin, Base):
     product_category: Mapped["ProductCategory"] = relationship(
         back_populates="products"
     )
+    units: Mapped[list["ProductUnit"]] = relationship(back_populates="product")
     inspections: Mapped[list["Inspection"]] = relationship(back_populates="product")
     inspection_inputs: Mapped[list["InspectionInput"]] = relationship(
         back_populates="product"
@@ -217,6 +286,28 @@ class Product(TimestampSoftDeleteMixin, Base):
         back_populates="product"
     )
     logs: Mapped[list["Log"]] = relationship(back_populates="product")
+
+
+class ProductUnit(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "product_units"
+    __table_args__ = (
+        UniqueConstraint("barcode", name="uq_product_units_barcode"),
+        Index("ix_product_units_product_active", "product_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    barcode: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    product: Mapped["Product"] = relationship(back_populates="units")
+    inspections: Mapped[list["Inspection"]] = relationship(
+        back_populates="product_unit"
+    )
 
 
 class Sku(TimestampSoftDeleteMixin, Base):
@@ -289,119 +380,105 @@ class Checklist(TimestampSoftDeleteMixin, Base):
     __tablename__ = "checklists"
     __table_args__ = (
         UniqueConstraint(
-            "product_category_id", "name", name="uq_checklists_category_name"
+            "group_name", "item_text", name="uq_checklists_group_name_item_text"
         ),
-        Index("ix_checklists_category_active", "product_category_id", "is_active"),
+        Index("ix_checklists_active", "is_active"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    product_category_id: Mapped[int] = mapped_column(
-        ForeignKey("product_categories.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    group_name: Mapped[ChecklistGroup] = mapped_column(
+        CHECKLIST_GROUP_DB, nullable=False
     )
+    section: Mapped[str] = mapped_column(String(120), nullable=False)
+    item_text: Mapped[str] = mapped_column(String(512), nullable=False)
 
-    name: Mapped[str] = mapped_column(String(150), nullable=False)
-
-    product_category: Mapped["ProductCategory"] = relationship(
-        back_populates="checklists"
+    field_type: Mapped[ChecklistFieldType] = mapped_column(
+        CHECKLIST_FIELD_TYPE_DB, nullable=False
     )
-    groups: Mapped[list["ChecklistGroup"]] = relationship(
-        back_populates="checklist",
-        order_by="ChecklistGroup.group_order_idx",
-    )
-    fields: Mapped[list["ChecklistField"]] = relationship(back_populates="checklist")
-    inspections: Mapped[list["Inspection"]] = relationship(back_populates="checklist")
-
-
-class ChecklistGroup(TimestampSoftDeleteMixin, Base):
-    __tablename__ = "checklist_groups"
-    __table_args__ = (
-        UniqueConstraint(
-            "checklist_id", "name", name="uq_checklist_groups_checklist_name"
-        ),
-        UniqueConstraint(
-            "checklist_id", "group_order_idx", name="uq_checklist_groups_order_idx"
-        ),
-        Index("ix_checklist_groups_checklist_active", "checklist_id", "is_active"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-    checklist_id: Mapped[int] = mapped_column(
-        ForeignKey("checklists.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-
-    name: Mapped[str] = mapped_column(String(150), nullable=False)
-    group_order_idx: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )
-
-    checklist: Mapped["Checklist"] = relationship(back_populates="groups")
-    fields: Mapped[list["ChecklistField"]] = relationship(
-        back_populates="group",
-        order_by="ChecklistField.field_order_idx",
-    )
-
-
-class ChecklistField(TimestampSoftDeleteMixin, Base):
-    __tablename__ = "checklist_fields"
-    __table_args__ = (
-        UniqueConstraint(
-            "checklist_group_id", "name", name="uq_checklist_fields_group_name"
-        ),
-        UniqueConstraint(
-            "checklist_group_id",
-            "field_order_idx",
-            name="uq_checklist_fields_order_idx",
-        ),
-        Index("ix_checklist_fields_group_active", "checklist_group_id", "is_active"),
-        Index("ix_checklist_fields_checklist_id", "checklist_id"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-
-    checklist_id: Mapped[int] = mapped_column(
-        ForeignKey("checklists.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-
-    checklist_group_id: Mapped[int] = mapped_column(
-        ForeignKey("checklist_groups.id", ondelete="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-
-    name: Mapped[str] = mapped_column(String(180), nullable=False)
-    field_type: Mapped[ChecklistFieldType] = mapped_column(String(16), nullable=False)
-
     dropdown_options: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
 
-    field_order_idx: Mapped[int] = mapped_column(
+    allows_remarks: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="true"
+    )
+    photo_upload_rule: Mapped[ChecklistPhotoUploadRule] = mapped_column(
+        CHECKLIST_PHOTO_RULE_DB,
+        nullable=False,
+        server_default=ChecklistPhotoUploadRule.none.value,
+    )
+    min_upload_files: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
 
-    checklist: Mapped["Checklist"] = relationship(back_populates="fields")
-    group: Mapped["ChecklistGroup"] = relationship(back_populates="fields")
-
     inspection_inputs: Mapped[list["InspectionInput"]] = relationship(
-        back_populates="checklist_field"
+        back_populates="checklist"
+    )
+    inspection_images: Mapped[list["InspectionImage"]] = relationship(
+        back_populates="checklist"
     )
 
 
 class Inspection(TimestampSoftDeleteMixin, Base):
     __tablename__ = "inspections"
     __table_args__ = (
-        Index("ix_inspections_inspector_active", "inspector_id", "is_active"),
-        Index("ix_inspections_product_active", "product_id", "is_active"),
-        Index("ix_inspections_device_active", "device_id", "is_active"),
-        Index("ix_inspections_checklist_active", "checklist_id", "is_active"),
-        Index("ix_inspections_warehouse_code_active", "warehouse_code", "is_active"),
-        Index("ix_inspections_plant_code_active", "plant_code", "is_active"),
+        Index("ix_inspections_active_created_at", "is_active", "created_at"),
+        Index(
+            "ix_inspections_inspector_active_created",
+            "inspector_id",
+            "is_active",
+            "created_at",
+        ),
+        Index(
+            "ix_inspections_product_unit_active_created",
+            "product_unit_id",
+            "is_active",
+            "created_at",
+        ),
+        Index(
+            "ix_inspections_product_active_created",
+            "product_id",
+            "is_active",
+            "created_at",
+        ),
+        Index(
+            "ix_inspections_product_category_active_created",
+            "product_category_id",
+            "is_active",
+            "created_at",
+        ),
+        Index(
+            "ix_inspections_device_active_created",
+            "device_id",
+            "is_active",
+            "created_at",
+        ),
+        Index(
+            "ix_inspections_warehouse_code_active_created",
+            "warehouse_code",
+            "is_active",
+            "created_at",
+        ),
+        Index(
+            "ix_inspections_plant_code_active_created",
+            "plant_code",
+            "is_active",
+            "created_at",
+        ),
+        Index(
+            "ix_inspections_type_active_created",
+            "inspection_type",
+            "is_active",
+            "created_at",
+        ),
+        Index("ix_inspections_damage_type_active", "damage_type", "is_active"),
+        Index("ix_inspections_damage_severity_active", "damage_severity", "is_active"),
+        Index(
+            "ix_inspections_damage_likely_cause_active",
+            "damage_likely_cause",
+            "is_active",
+        ),
+        Index("ix_inspections_damage_grading_active", "damage_grading", "is_active"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -409,51 +486,76 @@ class Inspection(TimestampSoftDeleteMixin, Base):
     inspector_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,
-        index=True,
     )
 
     device_id: Mapped[int] = mapped_column(
         ForeignKey("devices.id", ondelete="RESTRICT"),
         nullable=False,
-        index=True,
     )
 
-    inspection_type: Mapped[InspectionType] = mapped_column(String(16), nullable=False)
+    inspection_type: Mapped[InspectionType] = mapped_column(
+        INSPECTION_TYPE_DB, nullable=False
+    )
+
+    product_unit_id: Mapped[int] = mapped_column(
+        ForeignKey("product_units.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
 
     product_id: Mapped[int] = mapped_column(
         ForeignKey("products.id", ondelete="RESTRICT"),
         nullable=False,
-        index=True,
     )
-
-    checklist_id: Mapped[int] = mapped_column(
-        ForeignKey("checklists.id", ondelete="RESTRICT"),
+    product_category_id: Mapped[int] = mapped_column(
+        ForeignKey("product_categories.id", ondelete="RESTRICT"),
         nullable=False,
-        index=True,
     )
 
     warehouse_code: Mapped[str] = mapped_column(
         String(64),
         ForeignKey("warehouses.warehouse_code", ondelete="RESTRICT"),
         nullable=True,
-        index=True,
     )
-    plant_code: Mapped[str] = mapped_column(
+    supplier_plant_code: Mapped[str | None] = mapped_column(
+        "plant_code",
         String(64),
         ForeignKey("plants.plant_code", ondelete="RESTRICT"),
         nullable=True,
-        index=True,
     )
 
     lat: Mapped[float | None] = mapped_column(Double, nullable=True)
     lng: Mapped[float | None] = mapped_column(Double, nullable=True)
 
+    serial_number: Mapped[str] = mapped_column(String(64), nullable=True)
+    manufactured_year: Mapped[int] = mapped_column(Integer, nullable=True)
+    truck_number: Mapped[str] = mapped_column(String(64), nullable=True)
+    truck_docking_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    dock_number: Mapped[str] = mapped_column(String(64), nullable=True)
+
+    damage_type: Mapped[DamageType | None] = mapped_column(
+        DAMAGE_TYPE_DB, nullable=True
+    )
+    damage_severity: Mapped[DamageSeverity | None] = mapped_column(
+        DAMAGE_SEVERITY_DB, nullable=True
+    )
+    damage_likely_cause: Mapped[DamageLikelyCause | None] = mapped_column(
+        DAMAGE_LIKELY_CAUSE_DB, nullable=True
+    )
+    damage_grading: Mapped[DamageGrading | None] = mapped_column(
+        DAMAGE_GRADING_DB, nullable=True
+    )
+
     ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
 
     inspector: Mapped["User"] = relationship(back_populates="inspections")
     device: Mapped["Device"] = relationship(back_populates="inspections")
+    product_unit: Mapped["ProductUnit"] = relationship(back_populates="inspections")
     product: Mapped["Product"] = relationship(back_populates="inspections")
-    checklist: Mapped["Checklist"] = relationship(back_populates="inspections")
+    product_category: Mapped["ProductCategory"] = relationship(
+        back_populates="inspections"
+    )
     warehouse: Mapped["Warehouse"] = relationship(back_populates="inspections")
     plant: Mapped["Plant"] = relationship(back_populates="inspections")
 
@@ -467,11 +569,12 @@ class InspectionInput(TimestampSoftDeleteMixin, Base):
     __table_args__ = (
         UniqueConstraint(
             "inspection_id",
-            "checklist_field_id",
-            name="uq_inspection_inputs_one_per_field",
+            "checklist_id",
+            name="uq_inspection_inputs_one_per_item",
         ),
         Index("ix_inspection_inputs_inspection_active", "inspection_id", "is_active"),
         Index("ix_inspection_inputs_product_active", "product_id", "is_active"),
+        Index("ix_inspection_inputs_checklist_id", "checklist_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -488,21 +591,19 @@ class InspectionInput(TimestampSoftDeleteMixin, Base):
         index=True,
     )
 
-    checklist_field_id: Mapped[int] = mapped_column(
-        ForeignKey("checklist_fields.id", ondelete="RESTRICT"),
+    checklist_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("checklists.id", ondelete="RESTRICT"),
         nullable=False,
-        index=True,
     )
 
-    field: Mapped[str] = mapped_column(String(180), nullable=False)
+    field: Mapped[str] = mapped_column(String(512), nullable=False)
     value: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     remarks: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
 
     product: Mapped["Product"] = relationship(back_populates="inspection_inputs")
     inspection: Mapped["Inspection"] = relationship(back_populates="inputs")
-    checklist_field: Mapped["ChecklistField"] = relationship(
-        back_populates="inspection_inputs"
-    )
+    checklist: Mapped["Checklist"] = relationship(back_populates="inspection_inputs")
 
 
 class InspectionImage(TimestampSoftDeleteMixin, Base):
@@ -510,6 +611,11 @@ class InspectionImage(TimestampSoftDeleteMixin, Base):
     __table_args__ = (
         Index("ix_inspection_images_inspection_active", "inspection_id", "is_active"),
         Index("ix_inspection_images_product_active", "product_id", "is_active"),
+        Index(
+            "ix_inspection_images_checklist_active",
+            "checklist_id",
+            "is_active",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -526,11 +632,20 @@ class InspectionImage(TimestampSoftDeleteMixin, Base):
         index=True,
     )
 
+    checklist_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("checklists.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     image_url: Mapped[str] = mapped_column(String(500), nullable=False)
     remarks: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
 
     product: Mapped["Product"] = relationship(back_populates="inspection_images")
     inspection: Mapped["Inspection"] = relationship(back_populates="images")
+    checklist: Mapped["Checklist | None"] = relationship(
+        back_populates="inspection_images"
+    )
 
 
 class Log(TimestampSoftDeleteMixin, Base):
@@ -540,6 +655,13 @@ class Log(TimestampSoftDeleteMixin, Base):
         Index("ix_logs_product_active", "product_id", "is_active"),
         Index("ix_logs_inspection_active", "inspection_id", "is_active"),
         Index("ix_logs_device_active", "device_id", "is_active"),
+        Index(
+            "ix_logs_device_active_created_at",
+            "device_id",
+            "is_active",
+            "created_at",
+        ),
+        Index("ix_logs_user_active_created_at", "user_id", "is_active", "created_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -569,7 +691,7 @@ class Log(TimestampSoftDeleteMixin, Base):
     )
 
     log_level: Mapped[LogLevel] = mapped_column(
-        String(16), nullable=False, server_default=LogLevel.info.value
+        LOG_LEVEL_DB, nullable=False, server_default=LogLevel.info.value
     )
     log_value: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
 

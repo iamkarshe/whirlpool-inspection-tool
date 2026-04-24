@@ -189,7 +189,10 @@ def get_device_inspections(
     query = (
         db.query(Inspection)
         .join(User, Inspection.inspector_id == User.id)
-        .options(joinedload(Inspection.inspector))
+        .options(
+            joinedload(Inspection.inspector),
+            joinedload(Inspection.product),
+        )
         .filter(Inspection.device_id == device.id)
     )
 
@@ -220,7 +223,6 @@ def get_device_inspections(
             if hasattr(inspection.inspection_type, "value")
             else str(inspection.inspection_type),
             product_id=inspection.product_id,
-            checklist_id=inspection.checklist_id,
             lat=inspection.lat,
             lng=inspection.lng,
             ip_address=str(inspection.ip_address)

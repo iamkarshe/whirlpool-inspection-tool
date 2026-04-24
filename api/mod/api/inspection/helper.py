@@ -7,9 +7,13 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
+from mod.api.inspection.checklist_inspection import (
+    map_latest_inbound_outbound_for_product_unit,
+)
 from mod.api.inspection.response import (
     BarcodeParseResponse,
     BarcodeParseSegments,
+    BarcodeParseUnitResponse,
     InspectionDetailResponse,
     InspectionListItemResponse,
     InspectionPassFailCounts,
@@ -19,13 +23,14 @@ from mod.api.product.router import map_product
 from mod.api.product_category.helper import map_product_category
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
 from mod.model import (
-    ChecklistField,
+    Checklist,
     ChecklistFieldType,
     ChecklistGroup,
     Inspection,
     InspectionInput,
     InspectionType,
     Product,
+    ProductUnit,
 )
 from utils.common import (
     checklist_inspection_layer_key,
@@ -56,13 +61,16 @@ def fetch_inspection_yes_no_metrics(db: Session, inspection_ids: list[int]) -> d
         return {}
     yes_no_value = ChecklistFieldType.yes_no.value
     rows = (
-        db.query(InspectionInput.inspection_id, ChecklistGroup.name, InspectionInput.value)
-        .join(ChecklistField, InspectionInput.checklist_field_id == ChecklistField.id)
-        .join(ChecklistGroup, ChecklistField.checklist_group_id == ChecklistGroup.id)
+        db.query(
+            InspectionInput.inspection_id,
+            Checklist.group_name,
+            InspectionInput.value,
+        )
+        .join(Checklist, InspectionInput.checklist_id == Checklist.id)
         .filter(
             InspectionInput.inspection_id.in_(inspection_ids),
             InspectionInput.is_active.is_(True),
-            ChecklistField.field_type == yes_no_value,
+            Checklist.field_type == yes_no_value,
         )
         .all()
     )
@@ -76,7 +84,12 @@ def fetch_inspection_yes_no_metrics(db: Session, inspection_ids: list[int]) -> d
         for iid in inspection_ids
     }
     for iid, group_name, raw_value in rows:
-        layer = checklist_inspection_layer_key(group_name)
+        group_label = (
+            group_name.value
+            if isinstance(group_name, ChecklistGroup)
+            else str(group_name)
+        )
+        layer = checklist_inspection_layer_key(group_label)
         outcome = parse_yes_no_outcome(raw_value)
         if layer is None or outcome is None:
             continue
@@ -112,9 +125,8 @@ def map_inspection_list_item(
         product_id=inspection.product_id,
         product_material_code=product.material_code if product else "",
         inspection_type=inspection_type_value(inspection),
-        checklist_id=inspection.checklist_id,
         warehouse_code=inspection.warehouse_code,
-        plant_code=inspection.plant_code,
+        plant_code=inspection.supplier_plant_code,
         outer=InspectionPassFailCounts(
             pass_count=metrics["outer"]["pass"],
             fail_count=metrics["outer"]["fail"],
@@ -146,9 +158,8 @@ def map_inspection_detail(inspection: Inspection) -> InspectionDetailResponse:
         product_id=inspection.product_id,
         product_material_code=product.material_code if product else "",
         inspection_type=inspection_type_value(inspection),
-        checklist_id=inspection.checklist_id,
         warehouse_code=inspection.warehouse_code,
-        plant_code=inspection.plant_code,
+        plant_code=inspection.supplier_plant_code,
         lat=inspection.lat,
         lng=inspection.lng,
         ip_address=str(inspection.ip_address) if inspection.ip_address is not None else None,
@@ -183,7 +194,7 @@ def compute_inspection_kpis(
     if warehouse_code is not None:
         query = query.filter(Inspection.warehouse_code == warehouse_code)
     if plant_code is not None:
-        query = query.filter(Inspection.plant_code == plant_code)
+        query = query.filter(Inspection.supplier_plant_code == plant_code)
     inspections = query.all()
     ids = [row[0] for row in inspections]
     metrics = fetch_inspection_yes_no_metrics(db, ids)
@@ -214,27 +225,64 @@ def compute_inspection_kpis(
 
 
 def build_barcode_parse_response(db: Session, barcode: str) -> BarcodeParseResponse:
+    full_barcode = (barcode or "").strip()
     try:
-        fields = parse_product_barcode_16(barcode)
+        fields = parse_product_barcode_16(full_barcode)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     material_code = fields["material_code"]
-    product = (
-        db.query(Product)
-        .options(joinedload(Product.product_category))
-        .filter(Product.material_code == material_code, Product.is_active.is_(True))
+    unit = (
+        db.query(ProductUnit)
+        .options(
+            joinedload(ProductUnit.product).joinedload(Product.product_category),
+        )
+        .filter(ProductUnit.barcode == full_barcode, ProductUnit.is_active.is_(True))
         .first()
     )
-    if product is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No active product found for material code {material_code}",
+
+    product: Product | None = None
+    if unit is not None:
+        product = unit.product
+        if product is None:
+            raise HTTPException(status_code=404, detail="Product unit has no product")
+    else:
+        product = (
+            db.query(Product)
+            .options(joinedload(Product.product_category))
+            .filter(
+                Product.material_code == material_code,
+                Product.is_active.is_(True),
+            )
+            .first()
         )
+        if product is None:
+            raise HTTPException(
+                status_code=404,
+                detail="No active product for this material code and no product unit for this barcode",
+            )
+
     category = product.product_category
     if category is None:
         raise HTTPException(status_code=404, detail="Product has no category")
+
+    product_unit_payload: BarcodeParseUnitResponse | None = None
+    inbound_payload = outbound_payload = None
+    if unit is not None:
+        product_unit_payload = BarcodeParseUnitResponse(
+            uuid=unit.uuid,
+            barcode=unit.barcode,
+            product_id=unit.product_id,
+        )
+        inbound_payload, outbound_payload = map_latest_inbound_outbound_for_product_unit(
+            db, unit.id
+        )
+
     return BarcodeParseResponse(
         segments=BarcodeParseSegments(**fields),
+        product_unit=product_unit_payload,
         product=map_product(product),
         product_category=map_product_category(category),
+        inbound_inspection=inbound_payload,
+        outbound_inspection=outbound_payload,
     )

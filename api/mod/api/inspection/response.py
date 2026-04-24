@@ -4,6 +4,7 @@ from typing import List
 
 from pydantic import BaseModel
 
+from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
 from mod.api.product.response import ProductResponse
 from mod.api.product_category.response import ProductCategoryResponse
 
@@ -16,10 +17,19 @@ class BarcodeParseSegments(BaseModel):
     serial_number: str
 
 
+class BarcodeParseUnitResponse(BaseModel):
+    uuid: uuid.UUID
+    barcode: str
+    product_id: int
+
+
 class BarcodeParseResponse(BaseModel):
     segments: BarcodeParseSegments
+    product_unit: BarcodeParseUnitResponse | None = None
     product: ProductResponse
     product_category: ProductCategoryResponse
+    inbound_inspection: InspectionWithChecklistPayload | None = None
+    outbound_inspection: InspectionWithChecklistPayload | None = None
 
 
 class InspectionPassFailCounts(BaseModel):
@@ -37,7 +47,6 @@ class InspectionListItemResponse(BaseModel):
     product_id: int
     product_material_code: str
     inspection_type: str
-    checklist_id: int
     warehouse_code: str | None
     plant_code: str | None
     outer: InspectionPassFailCounts
@@ -75,7 +84,6 @@ class InspectionDetailResponse(BaseModel):
     product_id: int
     product_material_code: str
     inspection_type: str
-    checklist_id: int
     warehouse_code: str | None
     plant_code: str | None
     lat: float | None

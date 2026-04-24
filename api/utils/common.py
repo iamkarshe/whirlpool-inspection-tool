@@ -69,6 +69,13 @@ def utc_end_exclusive_day_range(date_from: date, date_to: date) -> tuple[datetim
     return start, end_exclusive
 
 
+def default_utc_calendar_dates_last_7_days() -> tuple[date, date]:
+    """Inclusive UTC calendar dates: today and the prior 6 days (7 days total)."""
+    end = datetime.now(timezone.utc).date()
+    start = end - timedelta(days=6)
+    return start, end
+
+
 def empty_pass_fail_counts() -> dict[str, int]:
     return {"pass": 0, "fail": 0}
 

@@ -21,7 +21,10 @@ from mod.api.inspection.response import (
 )
 from mod.api.middleware import auth_dependency
 from mod.model import Device, Inspection, InspectionType, Product, User
-from utils.common import utc_end_exclusive_day_range
+from utils.common import (
+    default_utc_calendar_dates_last_7_days,
+    utc_end_exclusive_day_range,
+)
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
@@ -47,8 +50,14 @@ router = APIRouter(
 @check_api_role(["superadmin", "manager"])
 def get_inspection_kpis(
     request: Request,
-    date_from: date = Query(..., description="Range start (UTC calendar date)"),
-    date_to: date = Query(..., description="Range end (UTC calendar date, inclusive)"),
+    date_from: date | None = Query(
+        None,
+        description="Range start (UTC calendar date); omit with date_to for default: last 7 days including today",
+    ),
+    date_to: date | None = Query(
+        None,
+        description="Range end (UTC calendar date, inclusive); omit with date_from for default: last 7 days including today",
+    ),
     is_active: bool = Query(True),
     warehouse_uuid: uuid.UUID | None = Query(
         None, description="Optional filter by warehouse UUID"
@@ -58,6 +67,13 @@ def get_inspection_kpis(
     ),
     db: Session = Depends(get_db),
 ):
+    if (date_from is None) ^ (date_to is None):
+        raise HTTPException(
+            status_code=400,
+            detail="date_from and date_to must both be set or both omitted",
+        )
+    if date_from is None and date_to is None:
+        date_from, date_to = default_utc_calendar_dates_last_7_days()
     if date_to < date_from:
         raise HTTPException(
             status_code=400, detail="date_to must be on or after date_from"
@@ -95,8 +111,14 @@ def get_inspections(
     plant_uuid: uuid.UUID | None = Query(
         None, description="Optional filter by plant UUID"
     ),
-    date_from: date | None = Query(None),
-    date_to: date | None = Query(None),
+    date_from: date | None = Query(
+        None,
+        description="created_at range start (UTC date); omit with date_to for default: last 7 days including today",
+    ),
+    date_to: date | None = Query(
+        None,
+        description="created_at range end (UTC date, inclusive); omit with date_from for default: last 7 days including today",
+    ),
     db: Session = Depends(get_db),
 ):
     if (date_from is None) ^ (date_to is None):
@@ -104,6 +126,8 @@ def get_inspections(
             status_code=400,
             detail="date_from and date_to must both be set or both omitted",
         )
+    if date_from is None and date_to is None:
+        date_from, date_to = default_utc_calendar_dates_last_7_days()
     warehouse_code, plant_code = resolve_inspection_scope_filters(
         db, warehouse_uuid, plant_uuid
     )
@@ -116,19 +140,19 @@ def get_inspections(
             joinedload(Inspection.inspector),
             joinedload(Inspection.device),
             joinedload(Inspection.product),
+            joinedload(Inspection.product_unit),
         )
         .filter(Inspection.is_active.is_(is_active))
     )
     if warehouse_code is not None:
         query = query.filter(Inspection.warehouse_code == warehouse_code)
     if plant_code is not None:
-        query = query.filter(Inspection.plant_code == plant_code)
-    if date_from is not None and date_to is not None:
-        start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
-        query = query.filter(
-            Inspection.created_at >= start,
-            Inspection.created_at < end_exclusive,
-        )
+        query = query.filter(Inspection.supplier_plant_code == plant_code)
+    start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
+    query = query.filter(
+        Inspection.created_at >= start,
+        Inspection.created_at < end_exclusive,
+    )
     if inspection_type:
         try:
             it = InspectionType(inspection_type.strip().lower())
@@ -159,6 +183,7 @@ def get_inspections(
             "updated_at": Inspection.updated_at,
         },
         default_sort_field="created_at",
+        date_default_range=False,
     )
 
     total = query.count()
@@ -194,7 +219,7 @@ def parse_inspection_barcode(
     request: Request,
     barcode: str = Query(
         ...,
-        description="16-character barcode after trim: 1-5 material, 6-7 compressor, 8-9 year, 10-11 week, 12-16 serial",
+        description="16-character product barcode: 1-5 material, 6-7 compressor, 8-9 year, 10-11 week, 12-16 serial",
     ),
     db: Session = Depends(get_db),
 ):
@@ -219,6 +244,7 @@ def get_inspection_detail(
             joinedload(Inspection.inspector),
             joinedload(Inspection.device),
             joinedload(Inspection.product),
+            joinedload(Inspection.product_unit),
         )
         .filter(Inspection.uuid == inspection_uuid)
         .first()

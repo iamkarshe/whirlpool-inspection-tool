@@ -49,7 +49,6 @@ class DeviceInspectionResponse(BaseModel):
     inspector_name: str
     inspection_type: str
     product_id: int
-    checklist_id: int
     lat: float | None
     lng: float | None
     ip_address: str | None

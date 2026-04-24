@@ -37,7 +37,6 @@ class LoginInspectionResponse(BaseModel):
     uuid: uuid.UUID
     inspection_type: str
     product_id: int
-    checklist_id: int
     created_at: datetime
 
 

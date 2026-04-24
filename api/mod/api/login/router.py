@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import and_, func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from mod.api.login.helper import (
     map_login_detail,
@@ -187,7 +187,13 @@ def get_login_detail(
                 Inspection.created_at < next_login.created_at
             )
 
-        inspections = inspections_query.order_by(Inspection.created_at.asc()).all()
+        inspections = (
+            inspections_query.options(
+                joinedload(Inspection.product),
+            )
+            .order_by(Inspection.created_at.asc())
+            .all()
+        )
         response.inspections = [map_login_inspection(item) for item in inspections]
         response.inspections_done = len(response.inspections)
 

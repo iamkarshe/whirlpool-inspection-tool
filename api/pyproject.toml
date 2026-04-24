@@ -34,4 +34,4 @@ db-down-1 = "alembic downgrade -1"
 db-rev = "alembic revision -m"
 db-auto = "alembic revision --autogenerate -m"
 
-seed = "python -m scripts.seed_master"
+seed = "python -m scripts.seed"

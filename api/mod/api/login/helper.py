@@ -95,6 +95,5 @@ def map_login_inspection(inspection: Inspection) -> LoginInspectionResponse:
         if hasattr(inspection.inspection_type, "value")
         else str(inspection.inspection_type),
         product_id=inspection.product_id,
-        checklist_id=inspection.checklist_id,
         created_at=inspection.created_at,
     )

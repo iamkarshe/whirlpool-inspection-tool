@@ -1,0 +1,18 @@
+Sno,Group,Section,Checklist Item,Response (Yes/No),Remarks,Upload Photo ? (Y/N),Required Upload Files
+1,Outer Packaging,Carton,"Carton condition OK? (No tears, holes, crushing, deformation, or moisture damage)",Yes/No,Free text,Yes (if response is No),1
+2,Outer Packaging,Carton,Ensure there are NO forklift or handling marks,Yes/No,Free text,Yes (if response is No),1
+3,Outer Packaging,Carton,Ensure NO signs of re-taping or tampering?,Yes/No,Free text,Yes (if response is No),1
+4,Outer Packaging,Straps,All 3 straps securely in place?,Yes/No,Free text,Yes (if response is No),1
+5,Outer Packaging,Labels,MRP label present and legible?,Yes/No,Free text,Yes (if response is No),1
+6,Outer Packaging,Labels,Serial number label present and intact?,Yes/No,Free text,Yes (if response is No),1
+7,Outer Packaging,Labels,Energy rating label present?,Yes/No,Free text,Yes (if response is No),1
+8,Inner Packaging,Inner Packaging,"EPS foam (thermocol) intact? (Top, bottom, sides, and corners protected)",Yes/No,Free text,Yes (if response is No),1
+9,Inner Packaging,Inner Packaging,Machine protective cover present?,Yes/No,Free text,Yes (if response is No),1
+10,Product,Product Body Outside,"Ensure NO dents, scratches, crushing, or paint defects?",Yes/No,Free text,Yes (if response is No),1
+11,Product,Product Internal,"Lid, trays, and shelves in good condition (not broken/damaged)?",Yes/No,Free text,Yes (if response is No),1
+12,Product,Seals,Gaskets and seals intact?,Yes/No,Free text,Yes (if response is No),1
+13,Product,Accessories,Inlet hose available?,Yes/No,Free text,Yes (if response is No),1
+14,Product,Accessories,Outlet hose available?,Yes/No,Free text,Yes (if response is No),1
+15,Product,Accessories,User manual included?,Yes/No,Free text,Yes (if response is No),1
+16,Product,Accessories,Warranty card included?,Yes/No,Free text,Yes (if response is No),1
+17,Product,Accessories,Installation kit available?,Yes/No,Free text,Yes (if response is No),1

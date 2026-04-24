@@ -141,6 +141,7 @@ def get_warehouse_info(
         .options(
             joinedload(Inspection.inspector),
             joinedload(Inspection.device).joinedload(Device.user),
+            joinedload(Inspection.product),
         )
         .filter(Inspection.warehouse_code == warehouse.warehouse_code)
         .order_by(Inspection.created_at.desc())
@@ -191,7 +192,6 @@ def get_warehouse_info(
                 if hasattr(inspection.inspection_type, "value")
                 else str(inspection.inspection_type),
                 product_id=inspection.product_id,
-                checklist_id=inspection.checklist_id,
                 warehouse_code=inspection.warehouse_code,
                 created_at=inspection.created_at,
             )

@@ -139,8 +139,9 @@ def get_plant_info(
         .options(
             joinedload(Inspection.inspector),
             joinedload(Inspection.device).joinedload(Device.user),
+            joinedload(Inspection.product),
         )
-        .filter(Inspection.plant_code == plant.plant_code)
+        .filter(Inspection.supplier_plant_code == plant.plant_code)
         .order_by(Inspection.created_at.desc())
         .all()
     )
@@ -189,8 +190,7 @@ def get_plant_info(
                 if hasattr(inspection.inspection_type, "value")
                 else str(inspection.inspection_type),
                 product_id=inspection.product_id,
-                checklist_id=inspection.checklist_id,
-                plant_code=inspection.plant_code,
+                plant_code=inspection.supplier_plant_code,
                 created_at=inspection.created_at,
             )
         )

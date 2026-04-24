@@ -57,7 +57,6 @@ class PlantInspectionResponse(BaseModel):
     device_id: int
     inspection_type: str
     product_id: int
-    checklist_id: int
     plant_code: str | None
     created_at: datetime
 

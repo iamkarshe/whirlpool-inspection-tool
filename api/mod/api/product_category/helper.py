@@ -48,8 +48,7 @@ def map_product_category_inspection(inspection: Inspection) -> ProductCategoryIn
         if hasattr(inspection.inspection_type, "value")
         else str(inspection.inspection_type),
         product_id=inspection.product_id,
-        checklist_id=inspection.checklist_id,
         warehouse_code=inspection.warehouse_code,
-        plant_code=inspection.plant_code,
+        plant_code=inspection.supplier_plant_code,
         created_at=inspection.created_at,
     )

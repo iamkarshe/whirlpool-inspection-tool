@@ -5,6 +5,8 @@ from fastapi import Query
 from pydantic import BaseModel, Field
 from sqlalchemy import or_
 
+from utils.common import default_utc_calendar_dates_last_7_days, utc_end_exclusive_day_range
+
 T = TypeVar("T")
 R = TypeVar("R")
 
@@ -65,9 +67,18 @@ def get_pagination_params(
     search: Optional[str] = Query(None),
     sort_by: Optional[str] = Query("id"),
     sort_dir: str = Query("asc"),
-    date_field: Optional[str] = Query(None),
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
+    date_field: Optional[str] = Query(
+        None,
+        description="Column key from the route's allowed date_fields (e.g. created_at)",
+    ),
+    date_from: Optional[date] = Query(
+        None,
+        description="With date_field: range start (UTC date); omit both dates for default last 7 days including today",
+    ),
+    date_to: Optional[date] = Query(
+        None,
+        description="With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today",
+    ),
 ) -> PaginationParams:
     return PaginationParams(
         page=page,
@@ -88,6 +99,8 @@ def apply_standard_filters(
     date_fields: Optional[Dict[str, Any]] = None,
     sort_fields: Optional[Dict[str, Any]] = None,
     default_sort_field: str = "id",
+    *,
+    date_default_range: bool = True,
 ) -> Query:
     # Search
     if params.search and search_columns:
@@ -97,10 +110,19 @@ def apply_standard_filters(
     # Date range
     if date_fields and params.date_field in date_fields:
         field = date_fields[params.date_field]
-        if params.date_from:
-            query = query.filter(field >= params.date_from)
-        if params.date_to:
-            query = query.filter(field <= params.date_to)
+        if (
+            date_default_range
+            and params.date_from is None
+            and params.date_to is None
+        ):
+            d0, d1 = default_utc_calendar_dates_last_7_days()
+            start, end_exclusive = utc_end_exclusive_day_range(d0, d1)
+            query = query.filter(field >= start, field < end_exclusive)
+        else:
+            if params.date_from:
+                query = query.filter(field >= params.date_from)
+            if params.date_to:
+                query = query.filter(field <= params.date_to)
 
     # Sorting
     if sort_fields:

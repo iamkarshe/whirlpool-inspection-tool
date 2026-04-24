@@ -57,7 +57,6 @@ class WarehouseInspectionResponse(BaseModel):
     device_id: int
     inspection_type: str
     product_id: int
-    checklist_id: int
     warehouse_code: str | None
     created_at: datetime
 

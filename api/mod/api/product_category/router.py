@@ -80,15 +80,13 @@ def get_product_categories(
             .all()
         )
         inspection_counts = dict(
-            db.query(pc_fk, func.count(Inspection.id))
+            db.query(Inspection.product_category_id, func.count(Inspection.id))
             .select_from(Inspection)
-            .join(Product, Inspection.product_id == Product.id)
             .filter(
-                pc_fk.in_(ids),
-                Product.is_active.is_(is_active),
+                Inspection.product_category_id.in_(ids),
                 Inspection.is_active.is_(is_active),
             )
-            .group_by(pc_fk)
+            .group_by(Inspection.product_category_id)
             .all()
         )
 
@@ -156,11 +154,14 @@ def get_product_category_inspections(
         db.query(Inspection)
         .join(Product, Inspection.product_id == Product.id)
         .filter(
-            Product.product_category_id == category.id,
+            Inspection.product_category_id == category.id,
             Product.is_active.is_(is_active),
             Inspection.is_active.is_(is_active),
         )
-        .options(joinedload(Inspection.inspector))
+        .options(
+            joinedload(Inspection.inspector),
+            joinedload(Inspection.product_unit),
+        )
     )
     query = apply_standard_filters(
         query=query,
