@@ -9,6 +9,9 @@ from fastapi.templating import Jinja2Templates
 from mod.api.device.router import router as device_router
 from mod.api.login.router import router as login_router
 from mod.api.plant.router import router as plant_router
+from mod.api.product.router import router as product_router
+from mod.api.product_category.router import router as product_category_router
+from mod.api.sku.router import router as sku_router
 from mod.api.user.router import router as user_router
 from mod.api.warehouse.router import router as warehouse_router
 from mod.auth.router import router as auth_router
@@ -55,6 +58,9 @@ app.include_router(device_router)
 app.include_router(login_router)
 app.include_router(warehouse_router)
 app.include_router(plant_router)
+app.include_router(product_router)
+app.include_router(product_category_router)
+app.include_router(sku_router)
 
 # Jinja2 templates config.
 templates = Jinja2Templates(directory="template")

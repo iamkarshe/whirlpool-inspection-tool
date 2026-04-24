@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import date
 from typing import Any
 
 from sqlalchemy import (
     Boolean,
-    Date,
     DateTime,
     Double,
     ForeignKey,
@@ -162,9 +160,25 @@ class Device(TimestampSoftDeleteMixin, Base):
 
 class ProductCategory(TimestampSoftDeleteMixin, Base):
     __tablename__ = "product_categories"
+    __table_args__ = (
+        UniqueConstraint(
+            "category_type",
+            "sub_category_type",
+            "category_code",
+            "category_description",
+            name="uq_product_categories_composite",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(2048), nullable=False)
+
+    category_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    sub_category_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    category_code: Mapped[str] = mapped_column(String(128), nullable=False)
+    category_description: Mapped[str] = mapped_column(
+        String(512), nullable=False, server_default=""
+    )
 
     products: Mapped[list["Product"]] = relationship(back_populates="product_category")
     checklists: Mapped[list["Checklist"]] = relationship(
@@ -203,6 +217,28 @@ class Product(TimestampSoftDeleteMixin, Base):
         back_populates="product"
     )
     logs: Mapped[list["Log"]] = relationship(back_populates="product")
+
+
+class Sku(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "skus"
+    __table_args__ = (
+        UniqueConstraint("material_code", name="uq_skus_material_code"),
+        Index("ix_skus_category_active", "category", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    category: Mapped[str] = mapped_column(String(120), nullable=False)
+    sub_category: Mapped[str] = mapped_column(String(120), nullable=False)
+    category_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    category_description: Mapped[str] = mapped_column(
+        String(512), nullable=False, server_default=""
+    )
+    material_code: Mapped[str] = mapped_column(String(120), nullable=False)
+    material_description: Mapped[str] = mapped_column(
+        String(512), nullable=False, server_default=""
+    )
+    source_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
 
 class Warehouse(TimestampSoftDeleteMixin, Base):

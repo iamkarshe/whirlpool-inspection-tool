@@ -20,7 +20,9 @@ def truncate_all(db: Session):
         "checklists",
         "products",
         "product_categories",
+        "skus",
         "warehouses",
+        "plants",
         "devices",
         "users",
         "roles",
@@ -62,10 +64,23 @@ def seed_product_categories(db: Session):
         "Air Conditioner",
     ]
 
+    sub_category_type = "General"
     for name in categories:
+        category_code = "SEED_" + name.upper().replace(" ", "_")
+        category_description = ""
+        base_name = f"{name} {sub_category_type} {category_description}".strip()
+        display_name = (
+            f"{base_name} ({category_code})"
+            if base_name
+            else f"({category_code})"
+        )
         category = ProductCategory(
             uuid=uuid.uuid4(),
-            name=name,
+            name=display_name,
+            category_type=name,
+            sub_category_type=sub_category_type,
+            category_code=category_code,
+            category_description=category_description,
             is_active=True,
         )
 
@@ -127,7 +142,6 @@ def main():
         truncate_all(db)
 
         seed_roles(db)
-        seed_product_categories(db)
         seed_users(db)
 
         print("Seed completed successfully")
