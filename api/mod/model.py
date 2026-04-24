@@ -222,6 +222,28 @@ class Warehouse(TimestampSoftDeleteMixin, Base):
     lng: Mapped[float | None] = mapped_column(Double, nullable=True)
 
     address: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+    city: Mapped[str] = mapped_column(String(120), nullable=False)
+    postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
+
+
+class Plant(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "plants"
+    __table_args__ = (
+        UniqueConstraint("plant_code", name="uq_plants_code"),
+        UniqueConstraint("name", name="uq_plants_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    plant_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+
+    lat: Mapped[float | None] = mapped_column(Double, nullable=True)
+    lng: Mapped[float | None] = mapped_column(Double, nullable=True)
+
+    address: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+    city: Mapped[str] = mapped_column(String(120), nullable=False)
+    postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
 
 
 class Checklist(TimestampSoftDeleteMixin, Base):

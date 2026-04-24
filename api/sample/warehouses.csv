@@ -1,0 +1,49 @@
+﻿warehouse_code,name,address,city,postal_code,lat,lng
+FI13,Pune NDC,"Ghat No : 1456, Global Wings Services Pvt Ltd, Taluka Shirur, Ranjangaon Ganpati, Pune,Maharashtra, 412209","Taluka Shirur.,Maharashtr",412220,18.779421,74.249645
+RI10,FG Faridabad,"C/O ADARSH MARKETING,44 KM MILESTONE,MATHURA ROAD
+ VILL- SOFTA, DISTT- PALWAL",PALWAL HARYANA,121102,28.260147177470163, 77.29012355899349
+RI13,FG Jammu,"PLOT NO. 71,PHASE 3, INDUSTRIAL AREA,GANGYAL",JAMMU (J&K),180010,32.67657095918611, 74.87771310778113
+RI21,FG Mumbai Bhiwandi,"Gala No. 1A to 5B, PEB Structure,B No C , Survey No. 22/1, 22/2, 22/3
+ Village Dapode, Tal. Bhiwandi-421302","Taluka Bhiwandi, Thane",421302,19.312562,73.135976
+RI24,FG Nagpur,"100/2, VILLAGE NIMJI,TAL-KALMESHWAR,","NAGPUR, MAHARASTRA",441501,21.147549,78.884805
+RI25,FG Ahmedabad,"ANMOL LAXMI INDUSTRIAL AND LOGISTIC
+ SURVEY NO - 600/602/601/617 WAREHOUSE NO,4 / 5 , N H NO-8,VILLAGE - KANERA","VILLAGE - KANERA , TEHSIL",387540,22.819665,72.611381
+RI29,FG Chennai,"Alamathi Village, Ponneri Taluk,Plot No.A1, Survey no.295/2A4B","Kannagi Street,T.H.Road,C",600052,13.201376443873963, 80.12097008519112
+RI31,FG Bangalore,"Survey No.45/1 Heggadadeanapura Village,Dasanapura, Hobli Bangalore, North Taluk
+ Rural Dist, Bangalore",BANGALORE,562123,13.093023446901908, 77.37107057128526
+RI34,FG Hyderabad,"Survey No. 578,581,Rampally Dayara Keesara Mandal,Rangareddy District Hyderabad",Rangareddy District Hyder,501301,17.48633039408249, 78.66059468741489
+RI36,FG Guntur,"R S No. 172/1 and 173/1C,Thakkelpadu Village, Peddakakani Mandal,Guntur Dist, Andhra Pradesh.","GUNTUR, ANDHRA PRADESH",522509,16.302774704768495, 80.49943573772038
+RI38,FG Salem,"NTL LOGISTICS PLUS INDIA (P) LTD.,CHINNAGOUNDAPALAYAM,BEHIND A.V.S COLLEGE
+ RAMALINGAPURAM (PO),Attur Road,","Attur Rd, SALEM, TAMILNAD",636106,11.661326539500635, 78.25885235572403
+RI43,FG Guwahati,"Bhagya Kalita Comp,Boragaon(W)","GUWAHATI, ASSAM",781033,26.086986,91.558534
+RI52,FG Lucknow,"M/s Varuna Spinning Mill,19.8 Km Stone , Kanpur Road,","LUCKNOW, UTTAR PRADESH",227101,26.709341,80.835317
+RI62,New- Ranchi,"Plot No- 5 ,Tatisilwai Industrial Area,
+ Phase 1, Tatisilwai, Ranchi, Jharkhand",Ranchi,835103,23.374475,85.430452
+RI67,New-Bhopal,Bhopal,"Bhopal, Madhya Pradesh",462038,23.332544,77.404179
+RI70,FG Hubli,"Gabbur Industrial Area, Gabbur","Hubli,Karnataka",584113,15.32308070528134, 75.14433631368041
+RI75,CFA Pune ,"Ghat No : 1456, Global Wings Services Pvt Ltd, Taluka Shirur, Ranjangaon Ganpati, Pune,Maharashtra, 412209","Taluka Shirur.,Maharashtr",412220,18.779421,74.249645
+RI74,CFA Mohali,Khewat Khata No. 249/449,"Patiala, Punjab",140417,30.443074467977965,76.731865
+RI91,RDC Central,"Village:Mitroul,Tehsil -Hodal",Disst- Palwal,121105,28.036129748228923, 77.34338754974259
+RI92,RDC North,"KM Stone(LHS), Mathura Road","Village Softa,Teh &Distt",121102,28.260147177470163, 77.29012355899349
+RIA4,FG Hosur,"Nagondapalli Village, Denkanik",Hosur Taluk,635110,12.668225763217636, 77.79512812762226
+RIA8,Madurai - New,"Survey No. 78/3H, 78/3I, 78/3J",Madurai,625402,10.018149131595994, 78.04274631350015
+RIB6,FG Ghaziabad,Khasra no-187,"Greater Noida, UP",203207,28.56679700734628, 77.53522772522057
+RIB7,Delhi CFA,"2, 3/1, 6//1, 2/1, 2/2, 3/1, 3",SONIPAT HARYANA,131103,28.90145561256726, 77.05847135222044
+RIE1,FG Podicherry,"Mannadipet Commune, Pondicherr",Pondicherry,605102,11.928876686051996, 79.65966281880247
+RIE2,NDC - Puducherry,"Mannadipet Commune, Pondicherr",Pondicherry,605102,11.928876686051996, 79.65966281880247
+RIE3,FG Raipur,"new Dhamtari Road, dumartarai","RAIPUR, CHATTISGARH",492015,21.199761,81.693934
+RIE4,FG Surat,"Block No : 65, 66,67 & 70,Next to Nayara Petrol pump,
+ Village Arak, Taluka Jalalpore",Gujarat,396475,21.049449,72979576
+RIE5,FG Jaipur,"B-117, ROAD NO. 9, VKIA,Jaipur",Jaipur,302013,26.986037,75.774689
+RIE6,FG Kolkata,"Kanishka Enterprise,NH2, Delhi Road, Village – Bangihati
+ Mallickpara, Serampore",Serampore,712203,22.7332,88.317126
+RIE7,RDC East,"Kanishka Enterprise,NH2, Delhi Road, Village – Bangihati,Mallickpara","Serampore, West Bengal",712203,22.7332,88.317126
+RIF2,CFA Delhi-2,"M/s Tirath Buildwell LLP,Block-A,Vill- Kheri Manajat,Tehsil -Rai,
+ Khasra No-2/21/1, 21/2, 3/22/1, 23/1,5/1
+ ist-Sonipat, Haryana",Sonipat Haryana,131103,28.90145561256726, 77.05847135222044
+RIF5,FG Patna,"Khatan No. 15 and Khera No. 11 and 12,Opposite Chhapak Water Park, N.H. 30,Patna Bakhtiyarpur Road, Fatuha,","PATNA, BIHAR",803201,25.533416,85.271127
+RIF6,FG Cuttack,"Plot No : 905,908,911,Khata No: 403/354,403/1050,403/355,
+ Imamnagar (Near Kharia Bridge),Plot No : 905,908,911,PO: Bhairpur, PS: Jagatpur,Tehasil: Salepur,","Cuttack, ORISSA",754200,20.493572,85.944194
+RIF8,FG Cochin,"C/o M/s Forza Warehousing LLP,Survey No. 321/1 Part, in Block No. 6,Village: Thrikkakara North,Ernakulam","COCHIN, KERALA",682021,10.055266148334015, 76.35052889834537
+RIF9,FG - Vishakapatnam,"C/o Virtue Shipping & Logistics,Sy NO.95/5 to 95/15, Lenkelapalem
+ Near J N Pharmacy, Parawada,Visakhapatnam",Visakhapatnam,531019,17.676187853764734, 83.09641246916159

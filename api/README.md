@@ -143,6 +143,17 @@ uv run alembic revision --autogenerate -m "initial migration"
 uv run alembic upgrade head
 ```
 
+3. After changes into `model.py` use following command to auto-generate the migration 
+
+```bash
+alembic revision --autogenerate -m "add plants and warehouse location columns"
+```
+
+4. Apply it using: 
+```bash
+alembic upgrade head
+```
+
 ## Rules (must follow)
 
 - Never run `Base.metadata.create_all()` in the API.

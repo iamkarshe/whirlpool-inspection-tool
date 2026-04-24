@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from mod.api.device.router import router as device_router
+from mod.api.login.router import router as login_router
 from mod.api.user.router import router as user_router
 from mod.auth.router import router as auth_router
 from mod.tagmetadata import tags_metadata
@@ -49,6 +50,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(device_router)
+app.include_router(login_router)
 
 # Jinja2 templates config.
 templates = Jinja2Templates(directory="template")
