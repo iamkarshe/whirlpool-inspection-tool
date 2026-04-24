@@ -1,0 +1,4 @@
+plant_code,name,address,city,lat,lng,postal_code,is_active
+PI01,Factory-FRO,"Plot No. 28, NIT,Faridabad","Faridabad,Haryana",28.3732418520447,77.3003070040275,121001,TRUE
+PI11,Factory - Pune,"A4 MIDC RAJNANGAON, TAL SHIRUR","PUNE,Maharashtra",18.779492,74.276968,412220,TRUE
+PI21,Factory - Pondy,Thirubhuvanai Village,Pondicherry,11.9319391999683,79.6552854599902,605107,TRUE

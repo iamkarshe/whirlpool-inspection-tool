@@ -1,0 +1,117 @@
+meta {
+  name: Create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/plants
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "plant_code": "WH01",
+    "name": "New Warehouse",
+    "address": "Address for Warehouse",
+    "city": "Jaipur",
+    "lat": "11.36",
+    "lng": "15.36",
+    "postal_code": "111115"
+  }
+}
+
+example {
+  name: 200 Response
+  description: Successful Response
+  
+  request: {
+    url: {{baseUrl}}/api/users
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "",
+        "email": "",
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": 0,
+          "full_name": "",
+          "email": "",
+          "role": "",
+          "is_active": false
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 Response
+  description: Validation Error
+  
+  request: {
+    url: {{baseUrl}}/api/users
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "",
+        "email": "",
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "detail": [
+            {
+              "loc": [],
+              "msg": "",
+              "type": "",
+              "input": "",
+              "ctx": {}
+            }
+          ]
+        }
+      '''
+    }
+  }
+}
