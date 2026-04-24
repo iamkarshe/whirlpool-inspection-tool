@@ -1,14 +1,24 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 
 from mod.api.middleware import auth_dependency
+from mod.api.product.router import map_product
+from mod.api.product_category.helper import (
+    get_product_category_or_404,
+    map_product_category,
+    map_product_category_inspection,
+)
 from mod.api.product_category.response import (
+    ProductCategoryInspectionListResponse,
+    ProductCategoryListItemResponse,
     ProductCategoryListResponse,
+    ProductCategoryProductsResponse,
     ProductCategoryResponse,
 )
-from mod.model import ProductCategory
+from mod.model import Inspection, Product, ProductCategory
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
@@ -16,6 +26,7 @@ from utils.pagination import (
     apply_standard_filters,
     build_paginated_response,
     get_pagination_params,
+    paginate_query,
 )
 
 router = APIRouter(
@@ -23,17 +34,6 @@ router = APIRouter(
     dependencies=[Depends(auth_dependency)],
     prefix="/api",
 )
-
-
-def map_product_category(product_category: ProductCategory) -> ProductCategoryResponse:
-    return ProductCategoryResponse(
-        id=product_category.id,
-        uuid=product_category.uuid,
-        name=product_category.name,
-        is_active=bool(product_category.is_active),
-        created_at=product_category.created_at,
-        updated_at=product_category.updated_at,
-    )
 
 
 @router.get("/product-categories", response_model=ProductCategoryListResponse)
@@ -62,12 +62,129 @@ def get_product_categories(
         },
         default_sort_field="id",
     )
-    return build_paginated_response(
+
+    total = query.count()
+    page = params.page if params.page >= 1 else 1
+    per_page = params.per_page if params.per_page >= 1 else 1
+    items: list[ProductCategory] = paginate_query(query, page=page, per_page=per_page).all()
+
+    ids = [c.id for c in items]
+    product_counts: dict[int, int] = {}
+    inspection_counts: dict[int, int] = {}
+    if ids:
+        pc_fk = Product.product_category_id
+        product_counts = dict(
+            db.query(pc_fk, func.count(Product.id))
+            .filter(pc_fk.in_(ids), Product.is_active.is_(is_active))
+            .group_by(pc_fk)
+            .all()
+        )
+        inspection_counts = dict(
+            db.query(pc_fk, func.count(Inspection.id))
+            .select_from(Inspection)
+            .join(Product, Inspection.product_id == Product.id)
+            .filter(
+                pc_fk.in_(ids),
+                Product.is_active.is_(is_active),
+                Inspection.is_active.is_(is_active),
+            )
+            .group_by(pc_fk)
+            .all()
+        )
+
+    base_rows = [map_product_category(c) for c in items]
+    data = [
+        ProductCategoryListItemResponse(
+            **row.model_dump(),
+            products_count=product_counts.get(c.id, 0),
+            inspections_count=inspection_counts.get(c.id, 0),
+        )
+        for row, c in zip(base_rows, items, strict=True)
+    ]
+
+    total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+    return ProductCategoryListResponse(
+        data=data,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
+
+
+@router.get(
+    "/product-categories/{product_category_uuid}/products",
+    response_model=ProductCategoryProductsResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def get_product_category_products(
+    request: Request,
+    product_category_uuid: uuid.UUID,
+    is_active: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    category = get_product_category_or_404(db, product_category_uuid)
+    products = (
+        db.query(Product)
+        .options(joinedload(Product.product_category))
+        .filter(
+            Product.product_category_id == category.id,
+            Product.is_active.is_(is_active),
+        )
+        .order_by(Product.id.asc())
+        .all()
+    )
+    return ProductCategoryProductsResponse(data=[map_product(p) for p in products])
+
+
+@router.get(
+    "/product-categories/{product_category_uuid}/inspections",
+    response_model=ProductCategoryInspectionListResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def get_product_category_inspections(
+    request: Request,
+    product_category_uuid: uuid.UUID,
+    params: PaginationParams = Depends(get_pagination_params),
+    is_active: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    category = get_product_category_or_404(db, product_category_uuid)
+    query = (
+        db.query(Inspection)
+        .join(Product, Inspection.product_id == Product.id)
+        .filter(
+            Product.product_category_id == category.id,
+            Product.is_active.is_(is_active),
+            Inspection.is_active.is_(is_active),
+        )
+        .options(joinedload(Inspection.inspector))
+    )
+    query = apply_standard_filters(
+        query=query,
+        params=params,
+        search_columns=[Product.material_code, Product.material_description],
+        date_fields={
+            "created_at": Inspection.created_at,
+            "updated_at": Inspection.updated_at,
+        },
+        sort_fields={
+            "id": Inspection.id,
+            "created_at": Inspection.created_at,
+            "updated_at": Inspection.updated_at,
+        },
+        default_sort_field="id",
+    )
+
+    payload = build_paginated_response(
         query=query,
         page=params.page,
         per_page=params.per_page,
-        mapper=map_product_category,
+        mapper=map_product_category_inspection,
     )
+    return ProductCategoryInspectionListResponse(**payload)
 
 
 @router.get("/product-categories/{product_category_uuid}", response_model=ProductCategoryResponse)
@@ -78,9 +195,4 @@ def get_product_category(
     product_category_uuid: uuid.UUID,
     db: Session = Depends(get_db),
 ):
-    product_category = (
-        db.query(ProductCategory).filter(ProductCategory.uuid == product_category_uuid).first()
-    )
-    if product_category is None:
-        raise HTTPException(status_code=404, detail="Product category not found")
-    return map_product_category(product_category)
+    return map_product_category(get_product_category_or_404(db, product_category_uuid))

@@ -1,21 +1,13 @@
 meta {
-  name: List
+  name: Products
   type: http
-  seq: 1
+  seq: 3
 }
 
 get {
-  url: {{baseUrl}}/api/product-categories?page=1&per_page=10&search=43000020&sort_by=id&sort_dir=desc
+  url: {{baseUrl}}/api/product-categories/1df59bb0-237a-4c1c-9530-f575bbeb84b2/products
   body: none
   auth: inherit
-}
-
-params:query {
-  page: 1
-  per_page: 10
-  search: 43000020
-  sort_by: id
-  sort_dir: desc
 }
 
 body:json {
