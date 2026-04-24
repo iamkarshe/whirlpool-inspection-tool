@@ -221,7 +221,7 @@ class Warehouse(TimestampSoftDeleteMixin, Base):
     lat: Mapped[float | None] = mapped_column(Double, nullable=True)
     lng: Mapped[float | None] = mapped_column(Double, nullable=True)
 
-    address: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+    address: Mapped[str] = mapped_column(String(512), nullable=False, server_default="")
     city: Mapped[str] = mapped_column(String(120), nullable=False)
     postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
 
@@ -243,7 +243,7 @@ class Plant(TimestampSoftDeleteMixin, Base):
     lat: Mapped[float | None] = mapped_column(Double, nullable=True)
     lng: Mapped[float | None] = mapped_column(Double, nullable=True)
 
-    address: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+    address: Mapped[str] = mapped_column(String(512), nullable=False, server_default="")
     city: Mapped[str] = mapped_column(String(120), nullable=False)
     postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
 
