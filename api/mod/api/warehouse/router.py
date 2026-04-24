@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 
 from mod.api.middleware import auth_dependency
-from mod.api.warehouse.helper import map_warehouse
+from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404, map_warehouse
 from mod.api.warehouse.request import WarehouseCreateRequest, WarehouseUpdateRequest
 from mod.api.warehouse.response import (
     WarehouseDeviceResponse,
@@ -134,9 +134,7 @@ def get_warehouse_info(
     warehouse_uuid: uuid.UUID,
     db: Session = Depends(get_db),
 ):
-    warehouse = db.query(Warehouse).filter(Warehouse.uuid == warehouse_uuid).first()
-    if warehouse is None:
-        raise HTTPException(status_code=404, detail="Warehouse not found")
+    warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
 
     inspections = (
         db.query(Inspection)
@@ -221,9 +219,7 @@ def update_warehouse(
     payload: WarehouseUpdateRequest,
     db: Session = Depends(get_db),
 ):
-    warehouse = db.query(Warehouse).filter(Warehouse.uuid == warehouse_uuid).first()
-    if warehouse is None:
-        raise HTTPException(status_code=404, detail="Warehouse not found")
+    warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
 
     duplicate_code = (
         db.query(Warehouse)
@@ -271,9 +267,7 @@ def delete_warehouse(
     warehouse_uuid: uuid.UUID,
     db: Session = Depends(get_db),
 ):
-    warehouse = db.query(Warehouse).filter(Warehouse.uuid == warehouse_uuid).first()
-    if warehouse is None:
-        raise HTTPException(status_code=404, detail="Warehouse not found")
+    warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
 
     warehouse.is_active = False
     db.commit()

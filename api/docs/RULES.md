@@ -7,7 +7,7 @@
 
 - Use UUID in API path params for resource lookup (`/{resource_uuid}`), never numeric database IDs.
 - Keep routers thin: mappers, `get_*_or_404` loaders, and similar helpers live in `mod/api/<module>/helper.py`, not in the router file.
-- Keep common functions in utils/common.py.
+- Reusable helpers and shared literals belong in `utils/common.py` with normal names (no leading underscore on module-level constants or on helpers intended for reuse across modules).
 
 ### Database migrations
 

@@ -1,3 +1,8 @@
+import uuid
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
 from mod.api.warehouse.response import WarehouseResponse
 from mod.model import Warehouse
 
@@ -17,3 +22,10 @@ def map_warehouse(warehouse: Warehouse) -> WarehouseResponse:
         created_at=warehouse.created_at,
         updated_at=warehouse.updated_at,
     )
+
+
+def get_warehouse_by_uuid_or_404(db: Session, warehouse_uuid: uuid.UUID) -> Warehouse:
+    warehouse = db.query(Warehouse).filter(Warehouse.uuid == warehouse_uuid).first()
+    if warehouse is None:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+    return warehouse

@@ -1,5 +1,17 @@
+import uuid
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
 from mod.api.plant.response import PlantResponse
 from mod.model import Plant
+
+
+def get_plant_by_uuid_or_404(db: Session, plant_uuid: uuid.UUID) -> Plant:
+    plant = db.query(Plant).filter(Plant.uuid == plant_uuid).first()
+    if plant is None:
+        raise HTTPException(status_code=404, detail="Plant not found")
+    return plant
 
 
 def map_plant(plant: Plant) -> PlantResponse:
