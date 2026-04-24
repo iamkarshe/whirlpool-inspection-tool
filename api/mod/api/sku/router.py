@@ -201,10 +201,10 @@ def upload_skus_csv(
         category_unique_name = (
             f"{base_name} ({category_code})" if base_name else f"({category_code})"
         )
-        if len(category_unique_name) > 2048:
+        if len(category_unique_name) > 128:
             skipped += 1
             errors.append(
-                f"Row {row_number}: combined category name exceeds 2048 characters "
+                f"Row {row_number}: combined category name exceeds 128 characters "
                 f"(category + sub_category + category_description + category_code)"
             )
             continue

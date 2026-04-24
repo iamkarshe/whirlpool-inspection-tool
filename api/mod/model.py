@@ -171,7 +171,7 @@ class ProductCategory(TimestampSoftDeleteMixin, Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(2048), nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
 
     category_type: Mapped[str] = mapped_column(String(32), nullable=False)
     sub_category_type: Mapped[str] = mapped_column(String(32), nullable=False)
