@@ -95,6 +95,13 @@ class InspectionReviewStatus(str, enum.Enum):
     REJECTED = "REJECTED"
 
 
+class InspectionInputReviewStatus(str, enum.Enum):
+    OK = "OK"
+    FLAGGED = "FLAGGED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
 def pg_str_enum(enum_cls: type, *, name: str, length: int) -> SQLEnum:
     return SQLEnum(
         enum_cls,
@@ -124,6 +131,21 @@ DAMAGE_LIKELY_CAUSE_DB = pg_str_enum(
 DAMAGE_GRADING_DB = pg_str_enum(DamageGrading, name="damage_grading", length=16)
 REVIEW_STATUS_DB = pg_str_enum(
     InspectionReviewStatus, name="inspection_review_status", length=20
+)
+REVIEW_STATUS_EVENT_FROM_DB = pg_str_enum(
+    InspectionReviewStatus, name="inspection_review_evt_from", length=20
+)
+REVIEW_STATUS_EVENT_TO_DB = pg_str_enum(
+    InspectionReviewStatus, name="inspection_review_evt_to", length=20
+)
+INPUT_REVIEW_STATUS_DB = pg_str_enum(
+    InspectionInputReviewStatus, name="inspection_input_review_status", length=20
+)
+INPUT_REVIEW_EVENT_FROM_DB = pg_str_enum(
+    InspectionInputReviewStatus, name="inspection_input_review_evt_from", length=20
+)
+INPUT_REVIEW_EVENT_TO_DB = pg_str_enum(
+    InspectionInputReviewStatus, name="inspection_input_review_evt_to", length=20
 )
 
 
@@ -198,6 +220,20 @@ class User(TimestampSoftDeleteMixin, Base):
     inspections: Mapped[list["Inspection"]] = relationship(
         back_populates="inspector",
         foreign_keys="[Inspection.inspector_id]",
+    )
+    reviewed_inspections: Mapped[list["Inspection"]] = relationship(
+        back_populates="reviewer",
+        foreign_keys="[Inspection.reviewer_id]",
+    )
+    inspection_review_events: Mapped[list["InspectionReviewEvent"]] = relationship(
+        back_populates="actor",
+        foreign_keys="[InspectionReviewEvent.actor_user_id]",
+    )
+    inspection_input_review_events: Mapped[list["InspectionInputReviewEvent"]] = (
+        relationship(
+            back_populates="actor",
+            foreign_keys="[InspectionInputReviewEvent.actor_user_id]",
+        )
     )
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
 
@@ -582,6 +618,10 @@ class Inspection(TimestampSoftDeleteMixin, Base):
         back_populates="inspections",
         foreign_keys=[inspector_id],
     )
+    reviewer: Mapped["User | None"] = relationship(
+        back_populates="reviewed_inspections",
+        foreign_keys=[reviewer_id],
+    )
     device: Mapped["Device"] = relationship(back_populates="inspections")
     product_unit: Mapped["ProductUnit"] = relationship(back_populates="inspections")
     product: Mapped["Product"] = relationship(back_populates="inspections")
@@ -594,6 +634,53 @@ class Inspection(TimestampSoftDeleteMixin, Base):
     inputs: Mapped[list["InspectionInput"]] = relationship(back_populates="inspection")
     images: Mapped[list["InspectionImage"]] = relationship(back_populates="inspection")
     logs: Mapped[list["Log"]] = relationship(back_populates="inspection")
+    review_events: Mapped[list["InspectionReviewEvent"]] = relationship(
+        back_populates="inspection",
+    )
+
+
+class InspectionReviewEvent(Base):
+    __tablename__ = "inspection_review_events"
+    __table_args__ = (
+        Index("ix_inspection_review_events_inspection_id", "inspection_id"),
+        Index("ix_inspection_review_events_actor_user_id", "actor_user_id"),
+        Index(
+            "ix_inspection_review_events_inspection_created",
+            "inspection_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    inspection_id: Mapped[int] = mapped_column(
+        ForeignKey("inspections.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    from_status: Mapped[InspectionReviewStatus | None] = mapped_column(
+        REVIEW_STATUS_EVENT_FROM_DB,
+        nullable=True,
+    )
+    to_status: Mapped[InspectionReviewStatus] = mapped_column(
+        REVIEW_STATUS_EVENT_TO_DB,
+        nullable=False,
+    )
+    actor_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    inspection: Mapped["Inspection"] = relationship(back_populates="review_events")
+    actor: Mapped["User"] = relationship(
+        back_populates="inspection_review_events",
+        foreign_keys=[actor_user_id],
+    )
 
 
 class InspectionInput(TimestampSoftDeleteMixin, Base):
@@ -607,6 +694,11 @@ class InspectionInput(TimestampSoftDeleteMixin, Base):
         Index("ix_inspection_inputs_inspection_active", "inspection_id", "is_active"),
         Index("ix_inspection_inputs_product_active", "product_id", "is_active"),
         Index("ix_inspection_inputs_checklist_id", "checklist_id"),
+        Index(
+            "ix_inspection_inputs_input_review_status_active",
+            "input_review_status",
+            "is_active",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -633,9 +725,64 @@ class InspectionInput(TimestampSoftDeleteMixin, Base):
     value: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     remarks: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
 
+    input_review_status: Mapped[InspectionInputReviewStatus] = mapped_column(
+        INPUT_REVIEW_STATUS_DB,
+        nullable=False,
+        server_default=InspectionInputReviewStatus.OK.value,
+    )
+
     product: Mapped["Product"] = relationship(back_populates="inspection_inputs")
     inspection: Mapped["Inspection"] = relationship(back_populates="inputs")
     checklist: Mapped["Checklist"] = relationship(back_populates="inspection_inputs")
+    review_events: Mapped[list["InspectionInputReviewEvent"]] = relationship(
+        back_populates="inspection_input",
+    )
+
+
+class InspectionInputReviewEvent(Base):
+    __tablename__ = "inspection_input_review_events"
+    __table_args__ = (
+        Index("ix_insp_input_review_events_input_id", "inspection_input_id"),
+        Index("ix_insp_input_review_events_actor_user_id", "actor_user_id"),
+        Index(
+            "ix_insp_input_review_events_input_created",
+            "inspection_input_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    inspection_input_id: Mapped[int] = mapped_column(
+        ForeignKey("inspection_inputs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    from_status: Mapped[InspectionInputReviewStatus | None] = mapped_column(
+        INPUT_REVIEW_EVENT_FROM_DB,
+        nullable=True,
+    )
+    to_status: Mapped[InspectionInputReviewStatus] = mapped_column(
+        INPUT_REVIEW_EVENT_TO_DB,
+        nullable=False,
+    )
+    actor_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    inspection_input: Mapped["InspectionInput"] = relationship(
+        back_populates="review_events"
+    )
+    actor: Mapped["User"] = relationship(
+        back_populates="inspection_input_review_events",
+        foreign_keys=[actor_user_id],
+    )
 
 
 class InspectionImage(TimestampSoftDeleteMixin, Base):
