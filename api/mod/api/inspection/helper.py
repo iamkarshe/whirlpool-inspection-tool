@@ -319,6 +319,34 @@ def update_inspection_review_status(
     return present_inspection_full(loaded)
 
 
+def deactivate_inspection(
+    db: Session,
+    inspection_uuid: uuid.UUID,
+) -> InspectionFullResponse:
+    inspection = (
+        db.query(Inspection)
+        .filter(Inspection.uuid == inspection_uuid)
+        .with_for_update()
+        .first()
+    )
+    if inspection is None:
+        raise HTTPException(status_code=404, detail="Inspection not found")
+    if inspection.is_active is False:
+        raise HTTPException(status_code=400, detail="Inspection is not active")
+
+    inspection.is_active = False
+    db.commit()
+
+    loaded = (
+        apply_inspection_api_loads(db.query(Inspection))
+        .filter(Inspection.id == inspection.id)
+        .first()
+    )
+    if loaded is None:
+        raise HTTPException(status_code=500, detail="Inspection reload failed")
+    return present_inspection_full(loaded)
+
+
 def apply_inspection_api_loads(query):
     """Eager loads for inspection API payloads (detail + checklist/images)."""
     return query.options(

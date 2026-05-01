@@ -10,6 +10,7 @@ from mod.api.inspection.helper import (
     build_barcode_parse_response,
     compute_inspection_kpis,
     create_inbound_inspection,
+    deactivate_inspection,
     default_inspection_metrics,
     fetch_inspection_yes_no_metrics,
     get_inspection_entity_by_uuid,
@@ -280,6 +281,21 @@ def patch_inspection_review_status(
     db: Session = Depends(get_db),
 ):
     return update_inspection_review_status(db, request, inspection_uuid, body)
+
+
+@router.delete(
+    "/inspections/{inspection_uuid}",
+    name="delete_inspection",
+    response_model=InspectionFullResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def delete_inspection(
+    request: Request,
+    inspection_uuid: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    return deactivate_inspection(db, inspection_uuid)
 
 
 @router.get(
