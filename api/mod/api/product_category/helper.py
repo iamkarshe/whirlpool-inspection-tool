@@ -1,29 +1,18 @@
 import uuid
 
 from fastapi import HTTPException
-from sqlalchemy import and_, case, func
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from mod.api.inspection.group_metrics import (
+    EMPTY_INSPECTION_BREAKDOWN,
+    inspection_totals_and_breakdown,
+)
 from mod.api.product_category.response import (
     ProductCategoryInspectionResponse,
     ProductCategoryResponse,
 )
-from mod.model import (
-    Inspection,
-    InspectionReviewStatus,
-    InspectionType,
-    Product,
-    ProductCategory,
-)
-
-EMPTY_INSPECTION_BREAKDOWN: dict[str, int] = {
-    "inspection_inbound_under_review": 0,
-    "inspection_outbound_under_review": 0,
-    "inspection_inbound_approved": 0,
-    "inspection_outbound_approved": 0,
-    "inspection_inbound_rejected": 0,
-    "inspection_outbound_rejected": 0,
-}
+from mod.model import Inspection, Product, ProductCategory
 
 
 def map_product_category(product_category: ProductCategory) -> ProductCategoryResponse:
@@ -53,119 +42,9 @@ def product_category_list_metrics(
         .group_by(pc_fk)
         .all()
     )
-    inspection_counts = dict(
-        db.query(Inspection.product_category_id, func.count(Inspection.id))
-        .select_from(Inspection)
-        .filter(
-            Inspection.product_category_id.in_(category_ids),
-            Inspection.is_active.is_(is_active),
-        )
-        .group_by(Inspection.product_category_id)
-        .all()
+    inspection_counts, inspection_breakdown = inspection_totals_and_breakdown(
+        db, Inspection.product_category_id, category_ids, is_active
     )
-    inb = InspectionType.inbound
-    out = InspectionType.outbound
-    st = InspectionReviewStatus
-    rows = (
-        db.query(
-            Inspection.product_category_id,
-            func.sum(
-                case(
-                    (
-                        and_(
-                            Inspection.inspection_type == inb,
-                            Inspection.review_status == st.IN_REVIEW,
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ).label("inspection_inbound_under_review"),
-            func.sum(
-                case(
-                    (
-                        and_(
-                            Inspection.inspection_type == out,
-                            Inspection.review_status == st.IN_REVIEW,
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ).label("inspection_outbound_under_review"),
-            func.sum(
-                case(
-                    (
-                        and_(
-                            Inspection.inspection_type == inb,
-                            Inspection.review_status == st.APPROVED,
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ).label("inspection_inbound_approved"),
-            func.sum(
-                case(
-                    (
-                        and_(
-                            Inspection.inspection_type == out,
-                            Inspection.review_status == st.APPROVED,
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ).label("inspection_outbound_approved"),
-            func.sum(
-                case(
-                    (
-                        and_(
-                            Inspection.inspection_type == inb,
-                            Inspection.review_status == st.REJECTED,
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ).label("inspection_inbound_rejected"),
-            func.sum(
-                case(
-                    (
-                        and_(
-                            Inspection.inspection_type == out,
-                            Inspection.review_status == st.REJECTED,
-                        ),
-                        1,
-                    ),
-                    else_=0,
-                )
-            ).label("inspection_outbound_rejected"),
-        )
-        .filter(
-            Inspection.product_category_id.in_(category_ids),
-            Inspection.is_active.is_(is_active),
-        )
-        .group_by(Inspection.product_category_id)
-    )
-    inspection_breakdown: dict[int, dict[str, int]] = {}
-    for row in rows:
-        inspection_breakdown[row.product_category_id] = {
-            "inspection_inbound_under_review": int(
-                row.inspection_inbound_under_review or 0
-            ),
-            "inspection_outbound_under_review": int(
-                row.inspection_outbound_under_review or 0
-            ),
-            "inspection_inbound_approved": int(row.inspection_inbound_approved or 0),
-            "inspection_outbound_approved": int(
-                row.inspection_outbound_approved or 0
-            ),
-            "inspection_inbound_rejected": int(row.inspection_inbound_rejected or 0),
-            "inspection_outbound_rejected": int(
-                row.inspection_outbound_rejected or 0
-            ),
-        }
     return product_counts, inspection_counts, inspection_breakdown
 
 

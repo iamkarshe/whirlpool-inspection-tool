@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <title>DigiLog API Documentation</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/@scalar/themes@0.9.55/dist/presets/elysiajs.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --scalar-custom-header-height: 50px;
+      }
+      .custom-header {
+        height: var(--scalar-custom-header-height);
+        background-color: var(--scalar-background-1);
+        box-shadow: inset 0 -1px 0 var(--scalar-border-color);
+        color: var(--scalar-color-1);
+        font-size: var(--scalar-font-size-2);
+        padding: 0 18px;
+        position: sticky;
+        justify-content: space-between;
+        top: 0;
+        z-index: 100;
+      }
+      .custom-header,
+      .custom-header nav {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+      .custom-header nav a {
+        text-decoration: none;
+      }
+      .custom-header a:hover {
+        color: var(--scalar-color-2);
+      }
+      .custom-header b small {
+        opacity: 0.4;
+        font-size: 80%;
+        text-transform: uppercase;
+        vertical-align: middle;
+        letter-spacing: 2px;
+        padding-left: 10px;
+      }
+      .darklight-reference {
+        display: none !important;
+      }
+      .view-swagger-doc {
+        font-size: 14px;
+        letter-spacing: -0.4px;
+      }
+      .view-swagger-doc b {
+        font-weight: bold;
+      }
+    </style>
+    <link rel="shortcut icon" href="favicon.png" />
+  </head>
+  <body>
+    <header class="custom-header scalar-app">
+      <b> Whirlpool Inspection Tool API </b>
+    </header>
+
+    <div id="app"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+
+    <!-- Initialize the Scalar API Reference -->
+    <script>
+      Scalar.createApiReference("#app", {
+        url: "{{ api_spec_url }}",
+        showToolbar: "never",
+      });
+    </script>
+  </body>
+</html>
+
+<!-- powered by Scopt Analytics -->

@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from mod.api.middleware import auth_dependency
+from mod.api.sku.helper import map_sku
 from mod.api.sku.response import SkuListResponse, SkuResponse
 from mod.model import Product, ProductCategory, Sku
 from utils.common import read_csv_upload
@@ -27,22 +28,6 @@ router = APIRouter(
     dependencies=[Depends(auth_dependency)],
     prefix="/api",
 )
-
-
-def map_sku(sku: Sku) -> SkuResponse:
-    return SkuResponse(
-        id=sku.id,
-        uuid=sku.uuid,
-        category=sku.category,
-        sub_category=sku.sub_category,
-        category_code=sku.category_code,
-        category_description=sku.category_description,
-        material_code=sku.material_code,
-        material_description=sku.material_description,
-        is_active=bool(sku.is_active),
-        created_at=sku.created_at,
-        updated_at=sku.updated_at,
-    )
 
 
 @router.get("/skus", response_model=SkuListResponse)

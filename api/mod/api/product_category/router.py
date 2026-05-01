@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
 from mod.api.middleware import auth_dependency
-from mod.api.product.router import map_product
+from mod.api.product.helper import map_product
 from mod.api.product_category.helper import (
     EMPTY_INSPECTION_BREAKDOWN,
     get_product_category_or_404,

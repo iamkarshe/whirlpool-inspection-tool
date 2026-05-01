@@ -24,7 +24,7 @@ app_version = "1.0.3"
 
 app = FastAPI(
     title=app_name,
-    description=f"Backend APIs for {app_name} developed by Scopt Analytics for MK Agrotech {app_name} platform.",
+    description=f"APIs for {app_name} developed by Scopt Analytics for {app_name} platform.",
     version=app_version,
     contact={
         "name": "Scopt Analytics",
@@ -76,6 +76,17 @@ def health():
 @app.get("/version")
 def version():
     return {"message": app_name, "version": app_version}
+
+
+# API Docs.
+@app.get("/api-docs", include_in_schema=False)
+async def api_docs(
+    request: Request,
+):
+    api_spec_url = "/openapi.json"
+    return templates.TemplateResponse(
+        "api-docs/index.html", {"request": request, "api_spec_url": api_spec_url}
+    )
 
 
 # ReactJS build

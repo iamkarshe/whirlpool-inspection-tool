@@ -3,16 +3,22 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
+from mod.api.inspection.group_metrics import EMPTY_INSPECTION_BREAKDOWN
 from mod.api.middleware import auth_dependency
-from mod.api.product.response import ProductListResponse, ProductResponse
+from mod.api.product.helper import map_product, product_list_inspection_metrics
+from mod.api.product.response import (
+    ProductListItemResponse,
+    ProductListResponse,
+    ProductResponse,
+)
 from mod.model import Product, ProductCategory
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
-    build_paginated_response,
     get_pagination_params,
+    paginate_query,
 )
 
 router = APIRouter(
@@ -20,20 +26,6 @@ router = APIRouter(
     dependencies=[Depends(auth_dependency)],
     prefix="/api",
 )
-
-
-def map_product(product: Product) -> ProductResponse:
-    return ProductResponse(
-        id=product.id,
-        uuid=product.uuid,
-        product_category_id=product.product_category_id,
-        product_category_name=product.product_category.name if product.product_category else "",
-        material_code=product.material_code,
-        material_description=product.material_description,
-        is_active=bool(product.is_active),
-        created_at=product.created_at,
-        updated_at=product.updated_at,
-    )
 
 
 @router.get("/products", response_model=ProductListResponse)
@@ -64,7 +56,34 @@ def get_products(
         },
         default_sort_field="id",
     )
-    return build_paginated_response(query=query, page=params.page, per_page=params.per_page, mapper=map_product)
+    total = query.count()
+    page = params.page if params.page >= 1 else 1
+    per_page = params.per_page if params.per_page >= 1 else 1
+    items: list[Product] = paginate_query(query, page=page, per_page=per_page).all()
+
+    ids = [p.id for p in items]
+    inspection_counts, inspection_breakdown = product_list_inspection_metrics(
+        db, ids, is_active
+    )
+
+    base_rows = [map_product(p) for p in items]
+    data = [
+        ProductListItemResponse(
+            **row.model_dump(),
+            inspections_count=inspection_counts.get(p.id, 0),
+            **(inspection_breakdown.get(p.id) or EMPTY_INSPECTION_BREAKDOWN),
+        )
+        for row, p in zip(base_rows, items, strict=True)
+    ]
+
+    total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+    return ProductListResponse(
+        data=data,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
 
 
 @router.get("/products/{product_uuid}", response_model=ProductResponse)

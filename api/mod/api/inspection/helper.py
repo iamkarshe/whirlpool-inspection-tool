@@ -27,7 +27,7 @@ from mod.api.inspection.response import (
     StartInboundInspectionRequest,
 )
 from mod.api.plant.helper import get_plant_by_uuid_or_404
-from mod.api.product.router import map_product
+from mod.api.product.helper import map_product
 from mod.api.product_category.helper import map_product_category
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
 from mod.model import (
