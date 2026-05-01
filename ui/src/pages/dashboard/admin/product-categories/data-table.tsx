@@ -76,7 +76,7 @@ export default function ProductCategoriesDataTable({
         const c = row.original;
         return (
           <Link
-            to={PAGES.productCategoryViewPath(c.id)}
+            to={PAGES.productCategoryViewPath(c.uuid)}
             className="text-primary hover:underline"
           >
             {c.name}
@@ -91,7 +91,7 @@ export default function ProductCategoriesDataTable({
         const c = row.original;
         return (
           <ProductCategoryProductsCountBadge
-            categoryId={c.id}
+            categoryUuid={c.uuid}
             count={c.products_count}
           />
         );
@@ -102,7 +102,7 @@ export default function ProductCategoriesDataTable({
       header: "Total inspections",
       cell: ({ row }) => {
         const c = row.original;
-        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections`;
+        const href = `${PAGES.productCategoryViewPath(c.uuid)}/inspections`;
         return (
           <Link to={href} className="inline-block">
             <Badge variant="secondary" className={linkBadgeClass}>
@@ -118,7 +118,7 @@ export default function ProductCategoriesDataTable({
       header: "Inbound approved",
       cell: ({ row }) => {
         const c = row.original;
-        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/inbound`;
+        const href = `${PAGES.productCategoryViewPath(c.uuid)}/inspections/inbound`;
         return (
           <Link to={href} className="inline-block">
             <Badge variant="success" className={linkBadgeClass}>
@@ -135,7 +135,7 @@ export default function ProductCategoriesDataTable({
       header: "Inbound rejected",
       cell: ({ row }) => {
         const c = row.original;
-        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/inbound-failed`;
+        const href = `${PAGES.productCategoryViewPath(c.uuid)}/inspections/inbound-failed`;
         return (
           <Link to={href} className="inline-block">
             <Badge
@@ -155,7 +155,7 @@ export default function ProductCategoriesDataTable({
       header: "Outbound approved",
       cell: ({ row }) => {
         const c = row.original;
-        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/outbound`;
+        const href = `${PAGES.productCategoryViewPath(c.uuid)}/inspections/outbound`;
         return (
           <Link to={href} className="inline-block">
             <Badge variant="success" className={linkBadgeClass}>
@@ -172,7 +172,7 @@ export default function ProductCategoriesDataTable({
       header: "Outbound rejected",
       cell: ({ row }) => {
         const c = row.original;
-        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/outbound-failed`;
+        const href = `${PAGES.productCategoryViewPath(c.uuid)}/inspections/outbound-failed`;
         return (
           <Link to={href} className="inline-block">
             <Badge
@@ -203,7 +203,7 @@ export default function ProductCategoriesDataTable({
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link
-                  to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product_category_id=${category.id}`}
+                  to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product_category_id=${category.uuid}`}
                   className="flex items-center"
                 >
                   <LineChart className="mr-2 h-4 w-4" />
@@ -212,7 +212,7 @@ export default function ProductCategoriesDataTable({
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
-                  to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.id}`}
+                  to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.uuid}`}
                   className="flex items-center"
                 >
                   <BarChart3 className="mr-2 h-4 w-4" />

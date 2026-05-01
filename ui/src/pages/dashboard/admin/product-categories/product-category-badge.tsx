@@ -6,15 +6,15 @@ import { Link } from "react-router-dom";
 const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`;
 
 export function ProductCategoryProductsCountBadge({
-  categoryId,
+  categoryUuid,
   count,
 }: {
-  categoryId: number;
+  categoryUuid: string;
   count: number;
 }) {
   return (
     <Link
-      to={`${PAGES.productCategoryViewPath(categoryId)}/products`}
+      to={`${PAGES.productCategoryViewPath(categoryUuid)}/products`}
       className="inline-block"
     >
       <Badge variant="secondary" className={linkBadgeClass}>

@@ -36,10 +36,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { PAGES } from "@/endpoints";
-import {
-  getProductCategories,
-  type ProductCategory,
-} from "@/pages/dashboard/admin/product-categories/product-category-service";
+import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
 import {
   getUsers,
   type User,
@@ -59,6 +56,7 @@ import {
 } from "@/pages/dashboard/reports/operations-analytics/operations-analytics-service";
 import { WeeklyTrendDetailsDialog } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-details-dialog";
 import { WeeklyTrendTooltipContent } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-tooltip-content";
+import { fetchAllProductCategories } from "@/services/product-categories-api";
 
 const trendChartConfig = {
   inspections: { label: "Inspections", color: "var(--chart-1)" },
@@ -202,7 +200,9 @@ export default function OperationsAnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [productCategories, setProductCategories] = useState<ProductCategory[]>(
+  const [productCategories, setProductCategories] = useState<
+    ProductCategoryListItemResponse[]
+  >(
     [],
   );
   const [operators, setOperators] = useState<User[]>([]);
@@ -255,7 +255,7 @@ export default function OperationsAnalyticsPage() {
   }, [filters]);
 
   useEffect(() => {
-    Promise.all([getWarehouses(), getProductCategories(), getUsers()]).then(
+    Promise.all([getWarehouses(), fetchAllProductCategories(), getUsers()]).then(
       ([w, c, u]) => {
         setWarehouses(w);
         setProductCategories(c);

@@ -2,6 +2,7 @@ import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-
 import { getProductCategories } from "@/api/generated/product-categories/product-categories";
 import type { GetProductCategoriesApiProductCategoriesGetParams } from "@/api/generated/model/getProductCategoriesApiProductCategoriesGetParams";
 import type { ProductCategoryListResponse } from "@/api/generated/model/productCategoryListResponse";
+import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
 
 export type ProductCategoriesListParams = Pick<
   GetProductCategoriesApiProductCategoriesGetParams,
@@ -24,4 +25,31 @@ export async function fetchProductCategoriesPage(
     },
     request?.signal ? { signal: request.signal } : undefined,
   );
+}
+
+export async function fetchAllProductCategories(
+  request?: { signal?: AbortSignal },
+): Promise<ProductCategoryListItemResponse[]> {
+  const api = getProductCategories();
+  const perPage = 100;
+  let page = 1;
+  let totalPages = 1;
+  const rows: ProductCategoryListItemResponse[] = [];
+
+  while (page <= totalPages) {
+    const res = await api.getProductCategoriesApiProductCategoriesGet(
+      {
+        page,
+        per_page: perPage,
+        sort_by: "id",
+        sort_dir: "desc",
+      },
+      request?.signal ? { signal: request.signal } : undefined,
+    );
+    rows.push(...res.data);
+    totalPages = Math.max(1, res.total_pages ?? 1);
+    page += 1;
+  }
+
+  return rows;
 }
