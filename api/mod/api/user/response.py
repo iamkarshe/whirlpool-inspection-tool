@@ -13,6 +13,8 @@ class UserResponse(BaseModel):
     role: str
     designation: str
     is_active: bool
+    allowed_warehouse: list[str]
+    allowed_plants: list[str]
 
 
 class UserListResponse(BaseModel):
