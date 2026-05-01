@@ -193,11 +193,29 @@ const InspectionsPage = lazy(
 const InboundInspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/inbound/page"),
 );
+const InboundInReviewInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/inbound/in-review/page"),
+);
+const InboundRejectedInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/inbound/rejected/page"),
+);
+const InboundApprovedInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/inbound/approved/page"),
+);
 const InboundFailedInspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/inbound-failed/page"),
 );
 const OutboundInspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/outbound/page"),
+);
+const OutboundInReviewInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/outbound/in-review/page"),
+);
+const OutboundRejectedInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/outbound/rejected/page"),
+);
+const OutboundApprovedInspectionsPage = lazy(
+  () => import("@/pages/dashboard/inspections/outbound/approved/page"),
 );
 const OutboundFailedInspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/outbound-failed/page"),
@@ -650,6 +668,33 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "inspections/inbound/in-review",
+        handle: { title: "In-review inbound" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <InboundInReviewInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/inbound/rejected",
+        handle: { title: "Rejected inbound" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <InboundRejectedInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/inbound/approved",
+        handle: { title: "Approved inbound" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <InboundApprovedInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "inspections/inbound-failed",
         handle: { title: "Inbound Failed" },
         element: (
@@ -664,6 +709,33 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <OutboundInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/outbound/in-review",
+        handle: { title: "In-review outbound" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <OutboundInReviewInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/outbound/rejected",
+        handle: { title: "Rejected outbound" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <OutboundRejectedInspectionsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "inspections/outbound/approved",
+        handle: { title: "Approved outbound" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <OutboundApprovedInspectionsPage />
           </Suspense>
         ),
       },

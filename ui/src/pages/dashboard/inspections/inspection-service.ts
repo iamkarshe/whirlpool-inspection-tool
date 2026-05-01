@@ -20,6 +20,8 @@ export interface Inspection {
   checklist_name: string;
   inspection_type: InspectionType;
   created_at: string;
+  review_status?: string;
+  is_under_review?: boolean;
 }
 
 export type InspectionSectionKey =
@@ -196,6 +198,8 @@ const inspections: Inspection[] = [
     checklist_name: "Front Load Pre-Dispatch",
     inspection_type: "outbound",
     created_at: "2024-03-01T10:30:00Z",
+    review_status: "pending_review",
+    is_under_review: true,
   },
   {
     id: "a1b2c3d4-e5f6-7890-abcd-222222222222",
@@ -211,6 +215,8 @@ const inspections: Inspection[] = [
     checklist_name: "Front Load Pre-Dispatch",
     inspection_type: "inbound",
     created_at: "2024-03-02T14:00:00Z",
+    review_status: "pending_review",
+    is_under_review: true,
   },
   {
     id: "a1b2c3d4-e5f6-7890-abcd-333333333333",
@@ -226,6 +232,8 @@ const inspections: Inspection[] = [
     checklist_name: "Refrigerator QC",
     inspection_type: "outbound",
     created_at: "2024-03-03T09:15:00Z",
+    review_status: "rejected",
+    is_under_review: false,
   },
   {
     id: "a1b2c3d4-e5f6-7890-abcd-444444444444",
@@ -241,6 +249,42 @@ const inspections: Inspection[] = [
     checklist_name: "Front Load Pre-Dispatch",
     inspection_type: "inbound",
     created_at: "2024-03-04T11:45:00Z",
+    review_status: "rejected",
+    is_under_review: false,
+  },
+  {
+    id: "a1b2c3d4-e5f6-7890-abcd-555555555555",
+    inspector_id: 2,
+    inspector_name: "Priya Verma",
+    device_id: "550e8400-e29b-41d4-a716-446655440002",
+    device_fingerprint: "fp-android-def456",
+    product_id: 4,
+    product_serial: "WH-MW-2024-004100",
+    product_category_id: 1,
+    product_category_name: "Front Load Washing Machines",
+    checklist_id: 1,
+    checklist_name: "Front Load Pre-Dispatch",
+    inspection_type: "inbound",
+    created_at: "2024-03-05T08:05:00Z",
+    review_status: "approved",
+    is_under_review: false,
+  },
+  {
+    id: "a1b2c3d4-e5f6-7890-abcd-666666666666",
+    inspector_id: 3,
+    inspector_name: "Rahul Gupta",
+    device_id: "550e8400-e29b-41d4-a716-446655440004",
+    device_fingerprint: "fp-android-ggg999",
+    product_id: 5,
+    product_serial: "WH-AC-SPLIT-2024-005050",
+    product_category_id: 2,
+    product_category_name: "Top Load Washing Machines",
+    checklist_id: 2,
+    checklist_name: "Refrigerator QC",
+    inspection_type: "outbound",
+    created_at: "2024-03-05T16:20:00Z",
+    review_status: "approved",
+    is_under_review: false,
   },
 ];
 

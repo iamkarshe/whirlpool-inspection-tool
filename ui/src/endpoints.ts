@@ -21,8 +21,20 @@ export const PAGES = {
   DASHBOARD_INSPECTIONS: "/dashboard/inspections",
   DASHBOARD_INSPECTIONS_INBOUND: "/dashboard/inspections/inbound",
   DASHBOARD_INSPECTIONS_INBOUND_FAILED: "/dashboard/inspections/inbound-failed",
+  DASHBOARD_INSPECTIONS_INBOUND_IN_REVIEW:
+    "/dashboard/inspections/inbound/in-review",
+  DASHBOARD_INSPECTIONS_INBOUND_REJECTED:
+    "/dashboard/inspections/inbound/rejected",
+  DASHBOARD_INSPECTIONS_INBOUND_APPROVED:
+    "/dashboard/inspections/inbound/approved",
   DASHBOARD_INSPECTIONS_OUTBOUND: "/dashboard/inspections/outbound",
   DASHBOARD_INSPECTIONS_OUTBOUND_FAILED: "/dashboard/inspections/outbound-failed",
+  DASHBOARD_INSPECTIONS_OUTBOUND_IN_REVIEW:
+    "/dashboard/inspections/outbound/in-review",
+  DASHBOARD_INSPECTIONS_OUTBOUND_REJECTED:
+    "/dashboard/inspections/outbound/rejected",
+  DASHBOARD_INSPECTIONS_OUTBOUND_APPROVED:
+    "/dashboard/inspections/outbound/approved",
   DASHBOARD_INSPECTIONS_FLAGGED: "/dashboard/inspections/flagged",
   DASHBOARD_INSPECTIONS_FLAGGED_IMAGES: "/dashboard/inspections/flagged-images",
   inspectionViewPath: (id: string) => `${PAGES.DASHBOARD_INSPECTIONS}/${id}`,

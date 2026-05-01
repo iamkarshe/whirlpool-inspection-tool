@@ -1,8 +1,10 @@
 import { inspectionScopePresets } from "@/pages/dashboard/inspections/inspection-scope-config";
 import { InspectionsScopedListPage } from "@/pages/dashboard/inspections/inspections-scoped-list-page";
 
-export default function OutboundInspectionsPage() {
+export default function InboundApprovedInspectionsPage() {
   return (
-    <InspectionsScopedListPage config={inspectionScopePresets.outbound} />
+    <InspectionsScopedListPage
+      config={inspectionScopePresets.inboundApproved}
+    />
   );
 }
