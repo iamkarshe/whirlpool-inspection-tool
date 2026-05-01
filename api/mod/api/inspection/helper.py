@@ -415,7 +415,10 @@ def compute_inspection_kpis(
     plant_code: str | None = None,
 ) -> dict[str, int]:
     start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
-    query = db.query(Inspection.id, Inspection.inspection_type).filter(
+    query = db.query(
+        Inspection.inspection_type,
+        Inspection.review_status,
+    ).filter(
         Inspection.is_active.is_(is_active),
         Inspection.created_at >= start,
         Inspection.created_at < end_exclusive,
@@ -425,31 +428,35 @@ def compute_inspection_kpis(
     if plant_code is not None:
         query = query.filter(Inspection.supplier_plant_code == plant_code)
     inspections = query.all()
-    ids = [row[0] for row in inspections]
-    metrics = fetch_inspection_yes_no_metrics(db, ids)
-    inbound = InspectionType.inbound.value
-    outbound = InspectionType.outbound.value
+    inbound = InspectionType.inbound
+    outbound = InspectionType.outbound
+    rst = InspectionReviewStatus
     total = len(inspections)
-    inbound_passed = inbound_failed = outbound_passed = outbound_failed = 0
-    for iid, insp_type in inspections:
-        t = insp_type.value if hasattr(insp_type, "value") else str(insp_type)
-        passed = metrics.get(iid, default_inspection_metrics())["passed"]
-        if t == inbound:
-            if passed:
-                inbound_passed += 1
-            else:
-                inbound_failed += 1
-        elif t == outbound:
-            if passed:
-                outbound_passed += 1
-            else:
-                outbound_failed += 1
+    inbound_in_review = inbound_approved = inbound_rejected = 0
+    outbound_in_review = outbound_approved = outbound_rejected = 0
+    for insp_type, review_status in inspections:
+        if insp_type == inbound:
+            if review_status == rst.IN_REVIEW:
+                inbound_in_review += 1
+            elif review_status == rst.APPROVED:
+                inbound_approved += 1
+            elif review_status == rst.REJECTED:
+                inbound_rejected += 1
+        elif insp_type == outbound:
+            if review_status == rst.IN_REVIEW:
+                outbound_in_review += 1
+            elif review_status == rst.APPROVED:
+                outbound_approved += 1
+            elif review_status == rst.REJECTED:
+                outbound_rejected += 1
     return {
         "total_inspections": total,
-        "inbound_passed": inbound_passed,
-        "inbound_failed": inbound_failed,
-        "outbound_passed": outbound_passed,
-        "outbound_failed": outbound_failed,
+        "inbound_in_review": inbound_in_review,
+        "inbound_approved": inbound_approved,
+        "inbound_rejected": inbound_rejected,
+        "outbound_in_review": outbound_in_review,
+        "outbound_approved": outbound_approved,
+        "outbound_rejected": outbound_rejected,
     }
 
 

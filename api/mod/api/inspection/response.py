@@ -93,10 +93,12 @@ class InspectionKpisResponse(BaseModel):
     date_from: date
     date_to: date
     total_inspections: int
-    inbound_passed: int
-    inbound_failed: int
-    outbound_passed: int
-    outbound_failed: int
+    inbound_in_review: int
+    inbound_approved: int
+    inbound_rejected: int
+    outbound_in_review: int
+    outbound_approved: int
+    outbound_rejected: int
 
 
 class InspectionDropdownOption(BaseModel):
