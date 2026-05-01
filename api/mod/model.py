@@ -88,6 +88,13 @@ class DamageGrading(str, enum.Enum):
     SCRAP = "SCRAP"
 
 
+class InspectionReviewStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    IN_REVIEW = "IN_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
 def pg_str_enum(enum_cls: type, *, name: str, length: int) -> SQLEnum:
     return SQLEnum(
         enum_cls,
@@ -115,6 +122,9 @@ DAMAGE_LIKELY_CAUSE_DB = pg_str_enum(
     DamageLikelyCause, name="damage_likely_cause", length=32
 )
 DAMAGE_GRADING_DB = pg_str_enum(DamageGrading, name="damage_grading", length=16)
+REVIEW_STATUS_DB = pg_str_enum(
+    InspectionReviewStatus, name="inspection_review_status", length=20
+)
 
 
 class TimestampSoftDeleteMixin:
@@ -185,7 +195,10 @@ class User(TimestampSoftDeleteMixin, Base):
 
     role: Mapped["Role"] = relationship(back_populates="users")
     devices: Mapped[list["Device"]] = relationship(back_populates="user")
-    inspections: Mapped[list["Inspection"]] = relationship(back_populates="inspector")
+    inspections: Mapped[list["Inspection"]] = relationship(
+        back_populates="inspector",
+        foreign_keys="[Inspection.inspector_id]",
+    )
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
 
 
@@ -549,7 +562,26 @@ class Inspection(TimestampSoftDeleteMixin, Base):
 
     ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
 
-    inspector: Mapped["User"] = relationship(back_populates="inspections")
+    is_under_review: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    review_status: Mapped[InspectionReviewStatus] = mapped_column(
+        REVIEW_STATUS_DB,
+        nullable=False,
+        server_default=InspectionReviewStatus.IN_REVIEW.value,
+    )
+    reviewer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    reviewed_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    inspector: Mapped["User"] = relationship(
+        back_populates="inspections",
+        foreign_keys=[inspector_id],
+    )
     device: Mapped["Device"] = relationship(back_populates="inspections")
     product_unit: Mapped["ProductUnit"] = relationship(back_populates="inspections")
     product: Mapped["Product"] = relationship(back_populates="inspections")

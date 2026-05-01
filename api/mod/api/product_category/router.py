@@ -1,15 +1,16 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from mod.api.middleware import auth_dependency
 from mod.api.product.router import map_product
 from mod.api.product_category.helper import (
+    EMPTY_INSPECTION_BREAKDOWN,
     get_product_category_or_404,
     map_product_category,
     map_product_category_inspection,
+    product_category_list_metrics,
 )
 from mod.api.product_category.response import (
     ProductCategoryInspectionListResponse,
@@ -66,29 +67,14 @@ def get_product_categories(
     total = query.count()
     page = params.page if params.page >= 1 else 1
     per_page = params.per_page if params.per_page >= 1 else 1
-    items: list[ProductCategory] = paginate_query(query, page=page, per_page=per_page).all()
+    items: list[ProductCategory] = paginate_query(
+        query, page=page, per_page=per_page
+    ).all()
 
     ids = [c.id for c in items]
-    product_counts: dict[int, int] = {}
-    inspection_counts: dict[int, int] = {}
-    if ids:
-        pc_fk = Product.product_category_id
-        product_counts = dict(
-            db.query(pc_fk, func.count(Product.id))
-            .filter(pc_fk.in_(ids), Product.is_active.is_(is_active))
-            .group_by(pc_fk)
-            .all()
-        )
-        inspection_counts = dict(
-            db.query(Inspection.product_category_id, func.count(Inspection.id))
-            .select_from(Inspection)
-            .filter(
-                Inspection.product_category_id.in_(ids),
-                Inspection.is_active.is_(is_active),
-            )
-            .group_by(Inspection.product_category_id)
-            .all()
-        )
+    product_counts, inspection_counts, inspection_breakdown = (
+        product_category_list_metrics(db, ids, is_active)
+    )
 
     base_rows = [map_product_category(c) for c in items]
     data = [
@@ -96,6 +82,7 @@ def get_product_categories(
             **row.model_dump(),
             products_count=product_counts.get(c.id, 0),
             inspections_count=inspection_counts.get(c.id, 0),
+            **(inspection_breakdown.get(c.id) or EMPTY_INSPECTION_BREAKDOWN),
         )
         for row, c in zip(base_rows, items, strict=True)
     ]
@@ -188,7 +175,10 @@ def get_product_category_inspections(
     return ProductCategoryInspectionListResponse(**payload)
 
 
-@router.get("/product-categories/{product_category_uuid}", response_model=ProductCategoryResponse)
+@router.get(
+    "/product-categories/{product_category_uuid}",
+    response_model=ProductCategoryResponse,
+)
 @exception_handler_decorator
 @check_api_role(["superadmin", "manager"])
 def get_product_category(

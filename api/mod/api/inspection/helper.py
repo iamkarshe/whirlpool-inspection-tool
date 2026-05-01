@@ -39,6 +39,7 @@ from mod.model import (
     Inspection,
     InspectionImage,
     InspectionInput,
+    InspectionReviewStatus,
     InspectionType,
     Plant,
     Product,
@@ -600,6 +601,8 @@ def create_inbound_inspection(
             dock_number=body.dock_number,
             truck_docking_time=body.truck_docking_time,
             ip_address=client_ip,
+            review_status=InspectionReviewStatus.IN_REVIEW,
+            is_under_review=True,
         )
         db.add(inspection)
         db.flush()

@@ -23,6 +23,12 @@ class ProductCategoryResponse(BaseModel):
 class ProductCategoryListItemResponse(ProductCategoryResponse):
     products_count: int
     inspections_count: int
+    inspection_inbound_under_review: int
+    inspection_outbound_under_review: int
+    inspection_inbound_approved: int
+    inspection_outbound_approved: int
+    inspection_inbound_rejected: int
+    inspection_outbound_rejected: int
 
 
 class ProductCategoryListResponse(BaseModel):
