@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { PAGES } from "@/endpoints";
 import { useIsTablet } from "@/hooks/use-mobile";
+import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
 
 const RELEASE_CODE = "v1.0.0";
 const LAST_UPDATED = "2026-03-05";
@@ -33,7 +34,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(
     () => {
       if (typeof window === "undefined") return null;
-      return window.localStorage.getItem("whirlpool.deviceFingerprint");
+      try {
+        return getOrCreatePersistentDeviceId();
+      } catch {
+        return window.localStorage.getItem("whirlpool.deviceFingerprint");
+      }
     },
   );
   const [deviceDebugOpen, setDeviceDebugOpen] = useState(false);
@@ -57,21 +62,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   useEffect(() => {
     if (typeof window === "undefined" || deviceFingerprint) return;
-
-    const key = "whirlpool.deviceFingerprint";
-    const id =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `fp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-    window.localStorage.setItem(key, id);
     const rafId = window.requestAnimationFrame(() => {
-      setDeviceFingerprint(id);
+      try {
+        setDeviceFingerprint(getOrCreatePersistentDeviceId());
+      } catch {
+        setDeviceFingerprint(null);
+      }
     });
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-    };
+    return () => window.cancelAnimationFrame(rafId);
   }, [deviceFingerprint]);
 
   const deviceDebugText = useMemo(() => {

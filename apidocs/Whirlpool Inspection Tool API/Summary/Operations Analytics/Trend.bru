@@ -5,9 +5,14 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/reports/operations-analytics
+  url: {{baseUrl}}/api/reports/operations-trend?date_from=2026-05-01&date_to=2026-05-07
   body: none
   auth: inherit
+}
+
+params:query {
+  date_from: 2026-05-01
+  date_to: 2026-05-07
 }
 
 body:json {
