@@ -1,6 +1,7 @@
 import type {
   ColumnDef,
   ColumnFiltersState,
+  PaginationState,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -34,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Popover,
   PopoverContent,
@@ -47,6 +49,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 import { filterByCalendarDateRange } from "@/lib/date-range-filter";
 import { downloadCsv as downloadCsvFile, toCsv } from "@/lib/csv";
 
@@ -65,6 +68,20 @@ export type DataTableFilter<TData> = {
 export type DataTableDateRangeFilter<TData> = {
   /** Accessor key on TData that holds the date (ISO string or parseable date). */
   dateAccessorKey: keyof TData & string;
+};
+
+/**
+ * Server-driven list: current page rows in `data`, totals and paging/sorting/search owned by parent.
+ * Shared list helpers: `@/components/ui/data-table-server` (`sortingStateToApiSortQuery`, default page size, search debounce).
+ */
+export type DataTableServerSideConfig = {
+  totalRowCount: number;
+  pagination: PaginationState;
+  onPaginationChange: (pagination: PaginationState) => void;
+  sorting: SortingState;
+  onSortingChange: (sorting: SortingState) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
 };
 
 export interface DataTableProps<TData> {
@@ -110,6 +127,13 @@ export interface DataTableProps<TData> {
   downloadCsv?: (
     rows: TData[],
   ) => { headers: string[]; rows: Record<string, unknown>[] };
+  /** When set, pagination/sorting/search are controlled by the parent (API-backed lists). */
+  serverSide?: DataTableServerSideConfig;
+  /**
+   * When set with `serverSide`, the toolbar (search, columns, etc.) stays mounted.
+   * The table body shows skeleton rows while empty, or a light overlay over rows while re-fetching.
+   */
+  isLoading?: boolean;
 }
 
 function formatColumnLabel(input: string) {
@@ -137,6 +161,8 @@ export function DataTable<TData>({
   rangeLabel,
   downloadCsvFileName,
   downloadCsv,
+  serverSide,
+  isLoading = false,
 }: DataTableProps<TData>) {
   const columnsStorageKey = React.useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -146,6 +172,22 @@ export function DataTable<TData>({
   }, [rangeLabel]);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
+  });
+
+  const sortingState = serverSide ? serverSide.sorting : sorting;
+  const setSortingState = serverSide
+    ? serverSide.onSortingChange
+    : setSorting;
+
+  const paginationState = serverSide
+    ? serverSide.pagination
+    : pagination;
+  const setPaginationState = serverSide
+    ? serverSide.onPaginationChange
+    : setPagination;
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
@@ -191,16 +233,43 @@ export function DataTable<TData>({
     );
   }, [data, dateRange, dateRangeFilter]);
 
+  const isServerSide = serverSide !== undefined;
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredData,
     columns,
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      const next =
+        typeof updater === "function" ? updater(sortingState) : updater;
+      setSortingState(next);
+    },
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    ...(isServerSide
+      ? {
+          manualPagination: true,
+          manualSorting: true,
+          manualFiltering: true,
+          pageCount: Math.max(
+            1,
+            Math.ceil(
+              serverSide!.totalRowCount /
+                Math.max(1, serverSide!.pagination.pageSize),
+            ),
+          ),
+          rowCount: serverSide!.totalRowCount,
+        }
+      : {
+          getPaginationRowModel: getPaginationRowModel(),
+          getSortedRowModel: getSortedRowModel(),
+          getFilteredRowModel: getFilteredRowModel(),
+        }),
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function" ? updater(paginationState) : updater;
+      setPaginationState(next);
+    },
     onColumnVisibilityChange: (updater) => {
       setColumnVisibility((prev) => {
         const next =
@@ -222,14 +291,27 @@ export function DataTable<TData>({
     },
     onRowSelectionChange: setRowSelection,
     state: {
-      sorting,
+      sorting: sortingState,
+      pagination: paginationState,
       columnFilters,
       columnVisibility,
       rowSelection,
     },
   });
 
+  const serverLoading = isServerSide && isLoading;
+  const skeletonRowCount = serverSide
+    ? Math.min(Math.max(1, serverSide.pagination.pageSize), 50)
+    : 8;
+
   const pageRangeText = React.useMemo(() => {
+    if (serverSide) {
+      const { totalRowCount, pagination: p } = serverSide;
+      if (totalRowCount === 0) return `Showing 0 ${rangeLabel ?? "row(s)"}`;
+      const start = p.pageIndex * p.pageSize + 1;
+      const end = Math.min(totalRowCount, (p.pageIndex + 1) * p.pageSize);
+      return `Showing ${start}–${end} of ${totalRowCount} ${rangeLabel ?? "row(s)"}`;
+    }
     const total = table.getFilteredRowModel().rows.length;
     if (total === 0) return `Showing 0 ${rangeLabel ?? "row(s)"}`;
 
@@ -237,7 +319,7 @@ export function DataTable<TData>({
     const start = pageIndex * pageSize + 1;
     const end = Math.min(total, (pageIndex + 1) * pageSize);
     return `Showing ${start}–${end} of ${total} ${rangeLabel ?? "row(s)"}`;
-  }, [rangeLabel, table]);
+  }, [rangeLabel, serverSide, table]);
 
   return (
     <div className="rounded-lg border bg-background px-4 py-2 text-sm text-muted-foreground my-3">
@@ -251,7 +333,14 @@ export function DataTable<TData>({
                 className="shrink-0"
               />
             ) : null}
-            {searchKey ? (
+            {serverSide ? (
+              <Input
+                placeholder="Search..."
+                value={serverSide.search}
+                onChange={(event) => serverSide.onSearchChange(event.target.value)}
+                className="max-w-xs"
+              />
+            ) : searchKey ? (
               <Input
                 placeholder="Search..."
                 value={
@@ -356,7 +445,16 @@ export function DataTable<TData>({
           </DropdownMenu>
         </div>
 
-        <div className="rounded-md border">
+        <div
+          className="relative rounded-md border"
+          aria-busy={serverLoading || undefined}
+        >
+          {serverLoading && filteredData.length > 0 ? (
+            <div
+              className="bg-background/45 pointer-events-auto absolute inset-0 z-[1] cursor-wait"
+              aria-hidden
+            />
+          ) : null}
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -375,7 +473,27 @@ export function DataTable<TData>({
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
+              {serverLoading && !filteredData.length ? (
+                Array.from({ length: skeletonRowCount }, (_, i) => {
+                  const headerGroup = table.getHeaderGroups()[0];
+                  const headers = headerGroup?.headers ?? [];
+                  return (
+                    <TableRow key={`loading-${i}`}>
+                      {headers.length > 0
+                        ? headers.map((header) => (
+                            <TableCell key={header.id}>
+                              <Skeleton className="h-5 max-w-[160px]" />
+                            </TableCell>
+                          ))
+                        : columns.map((col, j) => (
+                            <TableCell key={`${String(col.id ?? j)}-${j}`}>
+                              <Skeleton className="h-5 max-w-[160px]" />
+                            </TableCell>
+                          ))}
+                    </TableRow>
+                  );
+                })
+              ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
@@ -422,7 +540,7 @@ export function DataTable<TData>({
               variant="outline"
               size="sm"
               onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              disabled={!table.getCanPreviousPage() || serverLoading}
             >
               Previous
             </Button>
@@ -430,7 +548,7 @@ export function DataTable<TData>({
               variant="outline"
               size="sm"
               onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              disabled={!table.getCanNextPage() || serverLoading}
             >
               Next
             </Button>

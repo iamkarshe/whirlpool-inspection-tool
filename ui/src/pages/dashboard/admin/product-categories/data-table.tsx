@@ -1,13 +1,6 @@
-import {
-  ArrowUpDown,
-  BarChart3,
-  LineChart,
-  MoreHorizontal,
-  Trash2,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-
-import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
+import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
+import type { DataTableServerSideConfig } from "@/components/ui/data-table";
+import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import {
@@ -17,180 +10,238 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
-import { ProductCategoryProductsCountBadge } from "./product-category-badge";
-import type { ProductCategory } from "./product-category-service";
+import { ProductCategoryProductsCountBadge } from "@/pages/dashboard/admin/product-categories/product-category-badge";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowDownToLine,
+  ArrowUpDown,
+  ArrowUpFromLine,
+  BarChart3,
+  CheckCircle2,
+  ClipboardList,
+  LineChart,
+  MoreHorizontal,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
+const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`;
 
 interface ProductCategoriesDataTableProps {
-  data: ProductCategory[];
-  onDeleteCategory?: (category: ProductCategory) => void;
+  data: ProductCategoryListItemResponse[];
+  serverSide: DataTableServerSideConfig;
+  isLoading?: boolean;
+  onDeleteCategory?: (category: ProductCategoryListItemResponse) => void;
 }
 
 export default function ProductCategoriesDataTable({
   data,
+  serverSide,
+  isLoading,
   onDeleteCategory,
 }: ProductCategoriesDataTableProps) {
-  return (
-    <DataTable<ProductCategory>
-      columns={[
-        {
-          accessorKey: "name",
-          header: ({ column }) => (
-            <Button
-              className="-ml-3"
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
+  const columns: ColumnDef<ProductCategoryListItemResponse>[] = [
+    {
+      accessorKey: "id",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          ID
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground font-mono text-xs">
+          {row.original.id}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const c = row.original;
+        return (
+          <Link
+            to={PAGES.productCategoryViewPath(c.id)}
+            className="text-primary hover:underline"
+          >
+            {c.name}
+          </Link>
+        );
+      },
+    },
+    {
+      id: "products",
+      header: "Products",
+      cell: ({ row }) => {
+        const c = row.original;
+        return (
+          <ProductCategoryProductsCountBadge
+            categoryId={c.id}
+            count={c.products_count}
+          />
+        );
+      },
+    },
+    {
+      id: "inspections_total",
+      header: "Total inspections",
+      cell: ({ row }) => {
+        const c = row.original;
+        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections`;
+        return (
+          <Link to={href} className="inline-block">
+            <Badge variant="secondary" className={linkBadgeClass}>
+              <ClipboardList />
+              {c.inspections_count}
+            </Badge>
+          </Link>
+        );
+      },
+    },
+    {
+      id: "inbound_approved",
+      header: "Inbound approved",
+      cell: ({ row }) => {
+        const c = row.original;
+        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/inbound`;
+        return (
+          <Link to={href} className="inline-block">
+            <Badge variant="success" className={linkBadgeClass}>
+              <ArrowDownToLine />
+              <CheckCircle2 />
+              {c.inspection_inbound_approved}
+            </Badge>
+          </Link>
+        );
+      },
+    },
+    {
+      id: "inbound_rejected",
+      header: "Inbound rejected",
+      cell: ({ row }) => {
+        const c = row.original;
+        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/inbound-failed`;
+        return (
+          <Link to={href} className="inline-block">
+            <Badge
+              variant="destructive"
+              className={`${linkBadgeClass} border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive`}
             >
-              Name
-              <ArrowUpDown className="ml-1 h-4 w-4" />
-            </Button>
-          ),
-          cell: ({ row }) => {
-            const c = row.original;
-            return (
-              <Link
-                to={PAGES.productCategoryViewPath(c.id)}
-                className="text-primary hover:underline"
+              <ArrowDownToLine />
+              <XCircle />
+              {c.inspection_inbound_rejected}
+            </Badge>
+          </Link>
+        );
+      },
+    },
+    {
+      id: "outbound_approved",
+      header: "Outbound approved",
+      cell: ({ row }) => {
+        const c = row.original;
+        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/outbound`;
+        return (
+          <Link to={href} className="inline-block">
+            <Badge variant="success" className={linkBadgeClass}>
+              <ArrowUpFromLine />
+              <CheckCircle2 />
+              {c.inspection_outbound_approved}
+            </Badge>
+          </Link>
+        );
+      },
+    },
+    {
+      id: "outbound_rejected",
+      header: "Outbound rejected",
+      cell: ({ row }) => {
+        const c = row.original;
+        const href = `${PAGES.productCategoryViewPath(c.id)}/inspections/outbound-failed`;
+        return (
+          <Link to={href} className="inline-block">
+            <Badge
+              variant="destructive"
+              className={`${linkBadgeClass} border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive`}
+            >
+              <ArrowUpFromLine />
+              <XCircle />
+              {c.inspection_outbound_rejected}
+            </Badge>
+          </Link>
+        );
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const category = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link
+                  to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product_category_id=${category.id}`}
+                  className="flex items-center"
+                >
+                  <LineChart className="mr-2 h-4 w-4" />
+                  Operations analytics
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.id}`}
+                  className="flex items-center"
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Executive analytics
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => {
+                  onDeleteCategory?.(category);
+                }}
               >
-                {row.getValue("name")}
-              </Link>
-            );
-          },
-        },
-        {
-          id: "products",
-          header: "Products",
-          cell: ({ row }) => {
-            const c = row.original;
-            return (
-              <ProductCategoryProductsCountBadge
-                categoryId={c.id}
-                count={c.products_count ?? 0}
-              />
-            );
-          },
-        },
-        {
-          id: "inspections_total",
-          header: "Total inspections",
-          cell: ({ row }) => {
-            const c = row.original;
-            return (
-              <InspectionCountBadge
-                scope={{ productCategoryId: c.id }}
-                kind="total"
-                linkBasePath={PAGES.productCategoryViewPath(c.id)}
-              />
-            );
-          },
-        },
-        {
-          id: "inspections_inbound_passed",
-          header: "Inbound passed",
-          cell: ({ row }) => {
-            const c = row.original;
-            return (
-              <InspectionCountBadge
-                scope={{ productCategoryId: c.id }}
-                kind="inboundPassed"
-                linkBasePath={PAGES.productCategoryViewPath(c.id)}
-              />
-            );
-          },
-        },
-        {
-          id: "inspections_inbound_failed",
-          header: "Inbound failed",
-          cell: ({ row }) => {
-            const c = row.original;
-            return (
-              <InspectionCountBadge
-                scope={{ productCategoryId: c.id }}
-                kind="inboundFailed"
-                linkBasePath={PAGES.productCategoryViewPath(c.id)}
-              />
-            );
-          },
-        },
-        {
-          id: "inspections_outbound_passed",
-          header: "Outbound passed",
-          cell: ({ row }) => {
-            const c = row.original;
-            return (
-              <InspectionCountBadge
-                scope={{ productCategoryId: c.id }}
-                kind="outboundPassed"
-                linkBasePath={PAGES.productCategoryViewPath(c.id)}
-              />
-            );
-          },
-        },
-        {
-          id: "inspections_outbound_failed",
-          header: "Outbound failed",
-          cell: ({ row }) => {
-            const c = row.original;
-            return (
-              <InspectionCountBadge
-                scope={{ productCategoryId: c.id }}
-                kind="outboundFailed"
-                linkBasePath={PAGES.productCategoryViewPath(c.id)}
-              />
-            );
-          },
-        },
-        {
-          id: "actions",
-          enableHiding: false,
-          cell: ({ row }) => {
-            const category = row.original;
-            return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product_category_id=${category.id}`}
-                      className="flex items-center"
-                    >
-                      <LineChart className="mr-2 h-4 w-4" />
-                      Operations analytics
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.id}`}
-                      className="flex items-center"
-                    >
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      Executive analytics
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => {
-                      onDeleteCategory?.(category);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                    Delete category
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            );
-          },
-        },
-      ]}
+                <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                Delete category
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  return (
+    <DataTable<ProductCategoryListItemResponse>
+      columns={columns}
       data={data}
-      searchKey="name"
       rangeLabel="product categories"
+      serverSide={serverSide}
+      isLoading={isLoading}
     />
   );
 }

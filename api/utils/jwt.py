@@ -28,7 +28,7 @@ def create_access_token(user_id: int) -> str:
 def verify_access_token(request: Request = Security(security)) -> int:
     """Verify JWT token and return user ID."""
     token = request.headers.get("Authorization")
-    token = str(token).replace("Bearer ", "")
+    token = token[7:] if token.lower().startswith("bearer ") else token
 
     if not token:
         raise HTTPException(

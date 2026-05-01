@@ -1,41 +1,107 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useServerTableData } from "@/hooks/use-server-table-data";
+import type { PaginationState, SortingState } from "@tanstack/react-table";
+import { toast } from "sonner";
 
+import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
 import CsvUploadDialog from "@/components/csv-upload-dialog";
 import ConfirmDeleteDialog from "@/components/dialog-confirm-delete";
 import PageActionBar from "@/components/page-action-bar";
-import SkeletonTable from "@/components/skeleton7";
-import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
 import {
-  getProductCategories,
-  type ProductCategory,
-} from "@/pages/dashboard/admin/product-categories/product-category-service";
+  DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
+  DEFAULT_SERVER_DATA_TABLE_SEARCH_DEBOUNCE_MS,
+  sortingStateToApiSortQuery,
+} from "@/components/ui/data-table-server";
+import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
+import { fetchProductCategoriesPage } from "@/services/product-categories-api";
+
+const PRODUCT_CATEGORY_LIST_SORT = {
+  allowedColumns: ["id", "name", "created_at", "updated_at"] as const,
+  defaultSort: { sort_by: "id", sort_dir: "desc" as const },
+};
 
 export default function ProductCategoriesPage() {
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
+  });
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "id", desc: true },
+  ]);
+  const [searchDraft, setSearchDraft] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [categoryToDelete, setCategoryToDelete] =
-    useState<ProductCategory | null>(null);
+    useState<ProductCategoryListItemResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const committedSearchRef = useRef<string | null>(null);
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await getProductCategories();
-        setCategories(data);
-      } finally {
-        setIsLoading(false);
+    const timer = window.setTimeout(() => {
+      const committed = searchDraft.trim();
+      const previousCommitted = committedSearchRef.current;
+      if (previousCommitted !== null && previousCommitted !== committed) {
+        setPagination((p) => ({ ...p, pageIndex: 0 }));
       }
-    };
+      committedSearchRef.current = committed;
+      setSearchQuery(committed);
+    }, DEFAULT_SERVER_DATA_TABLE_SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [searchDraft]);
 
-    fetchCategories();
+  const handleSortingChange = useCallback((next: SortingState) => {
+    setSorting(next);
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
   }, []);
 
+  const {
+    rows,
+    total,
+    isLoading,
+    error: loadError,
+  } = useServerTableData<ProductCategoryListItemResponse>({
+    pagination,
+    searchQuery,
+    sorting,
+    errorMessage: "Failed to load product categories.",
+    load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
+      const { sort_by, sort_dir } = sortingStateToApiSortQuery(
+        s,
+        PRODUCT_CATEGORY_LIST_SORT,
+      );
+      const res = await fetchProductCategoriesPage(
+        {
+          page: p.pageIndex + 1,
+          per_page: p.pageSize,
+          search: q.length > 0 ? q : null,
+          sort_by,
+          sort_dir,
+        },
+        { signal },
+      );
+      return { data: res.data, total: res.total };
+    },
+  });
+
   const handleCsvSubmit = (file: File) => {
-    // TODO: wire real CSV upload; for now this is mocked.
     console.log("Mock CSV upload", file);
+    toast.success("CSV upload is not wired to the API yet.");
   };
 
   const categoryCsvTemplate = "name\n" + "Front Load Washing Machines\n";
+
+  const serverSide = useMemo(
+    () => ({
+      totalRowCount: total,
+      pagination,
+      onPaginationChange: setPagination,
+      sorting,
+      onSortingChange: handleSortingChange,
+      search: searchDraft,
+      onSearchChange: setSearchDraft,
+    }),
+    [total, pagination, sorting, handleSortingChange, searchDraft],
+  );
 
   return (
     <div className="space-y-6">
@@ -52,14 +118,16 @@ export default function ProductCategoriesPage() {
         />
       </PageActionBar>
 
-      {isLoading ? (
-        <SkeletonTable />
-      ) : (
-        <ProductCategoriesDataTable
-          data={categories}
-          onDeleteCategory={(category) => setCategoryToDelete(category)}
-        />
-      )}
+      {loadError && !isLoading ? (
+        <p className="text-destructive text-sm">{loadError}</p>
+      ) : null}
+
+      <ProductCategoriesDataTable
+        data={rows}
+        serverSide={serverSide}
+        isLoading={isLoading}
+        onDeleteCategory={(category) => setCategoryToDelete(category)}
+      />
 
       <ConfirmDeleteDialog
         open={categoryToDelete !== null}
@@ -81,8 +149,9 @@ export default function ProductCategoriesPage() {
           if (!categoryToDelete) return;
           try {
             setIsDeleting(true);
-            // TODO: wire real delete API; mocked for now.
-            console.log("Mock delete product category", categoryToDelete);
+            toast.info(
+              "Delete product category API is not available in the client yet.",
+            );
           } finally {
             setIsDeleting(false);
             setCategoryToDelete(null);
