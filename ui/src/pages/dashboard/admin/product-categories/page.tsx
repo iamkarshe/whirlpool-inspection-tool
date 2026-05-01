@@ -88,8 +88,6 @@ export default function ProductCategoriesPage() {
     toast.success("CSV upload is not wired to the API yet.");
   };
 
-  const categoryCsvTemplate = "name\n" + "Front Load Washing Machines\n";
-
   const serverSide = useMemo(
     () => ({
       totalRowCount: total,
@@ -112,8 +110,8 @@ export default function ProductCategoriesPage() {
         <CsvUploadDialog
           title="Upload Products"
           description="Select a CSV file containing products to import."
-          templateFilename="product-categories-template.csv"
-          templateContent={categoryCsvTemplate}
+          templateFilename="skus-template.csv"
+          templateDownloadUrl="/api/skus/csv/template"
           onSubmit={handleCsvSubmit}
         />
       </PageActionBar>

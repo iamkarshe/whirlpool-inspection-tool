@@ -1,3 +1,4 @@
+import { apiClient } from "@/api/axios-instance";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { FileDown, Loader2, Upload } from "lucide-react";
 import type { ReactNode, SubmitEvent } from "react";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 
 export type CsvUploadDialogProps = {
   /** Dialog title (e.g. "Upload Warehouses") */
@@ -21,8 +23,10 @@ export type CsvUploadDialogProps = {
   description: string;
   /** Filename for the template download (e.g. "warehouses-template.csv") */
   templateFilename: string;
-  /** Full CSV string for the template (header + example row(s)) */
-  templateContent: string;
+  /** Full CSV string for the template when not using `templateDownloadUrl`. */
+  templateContent?: string;
+  /** When set, "Template CSV" downloads via GET (e.g. `/api/skus/csv/template`) using the app axios client (auth). */
+  templateDownloadUrl?: string;
   /** Called when the user submits the form with a file selected */
   onSubmit: (file: File) => void;
   /** Optional custom trigger (button). Defaults to outline "Upload CSV" button with icon. */
@@ -43,6 +47,7 @@ export default function CsvUploadDialog({
   description,
   templateFilename,
   templateContent,
+  templateDownloadUrl,
   onSubmit,
   trigger = defaultTrigger,
   accept = ".csv",
@@ -51,19 +56,18 @@ export default function CsvUploadDialog({
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     if (!next) {
       setFile(null);
       setIsUploading(false);
+      setIsDownloadingTemplate(false);
     }
   };
 
-  const handleDownloadTemplate = () => {
-    const blob = new Blob([templateContent], {
-      type: "text/csv;charset=utf-8;",
-    });
+  const triggerTemplateDownload = (blob: Blob) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -72,6 +76,32 @@ export default function CsvUploadDialog({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadTemplate = async () => {
+    if (templateDownloadUrl) {
+      setIsDownloadingTemplate(true);
+      try {
+        const { data } = await apiClient.get<Blob>(templateDownloadUrl, {
+          responseType: "blob",
+        });
+        triggerTemplateDownload(data);
+      } catch {
+        toast.error("Could not download the CSV template.");
+      } finally {
+        setIsDownloadingTemplate(false);
+      }
+      return;
+    }
+    if (templateContent !== undefined && templateContent !== "") {
+      triggerTemplateDownload(
+        new Blob([templateContent], {
+          type: "text/csv;charset=utf-8;",
+        }),
+      );
+      return;
+    }
+    toast.error("No template is configured for download.");
   };
 
   const handleSubmit = (event: SubmitEvent) => {
@@ -98,7 +128,7 @@ export default function CsvUploadDialog({
         <form className="space-y-4" onSubmit={handleSubmit}>
           <Label
             htmlFor={inputId}
-            className={`block space-y-2 ${isUploading ? "pointer-events-none opacity-60" : ""}`}
+            className={`block space-y-2 ${isUploading || isDownloadingTemplate ? "pointer-events-none opacity-60" : ""}`}
           >
             <span className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 px-4 py-6 transition-colors hover:border-muted-foreground/50 hover:bg-muted/50">
               <Upload className="h-8 w-8 text-muted-foreground" />
@@ -126,11 +156,20 @@ export default function CsvUploadDialog({
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleDownloadTemplate}
-              disabled={isUploading}
+              onClick={() => void handleDownloadTemplate()}
+              disabled={isUploading || isDownloadingTemplate}
             >
-              <FileDown className="mr-1 h-4 w-4" />
-              Template CSV
+              {isDownloadingTemplate ? (
+                <>
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  Downloading…
+                </>
+              ) : (
+                <>
+                  <FileDown className="mr-1 h-4 w-4" />
+                  Template CSV
+                </>
+              )}
             </Button>
             <Button type="submit" disabled={!file || isUploading}>
               {isUploading ? (
