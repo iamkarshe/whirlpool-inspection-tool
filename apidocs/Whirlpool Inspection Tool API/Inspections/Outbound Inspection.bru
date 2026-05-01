@@ -1,0 +1,229 @@
+meta {
+  name: Outbound Inspection
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/inspections/outbound
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "barcode": "31602012552BRQZR",
+    "device_uuid": "7de8fcf5-c393-4d1e-b1e8-3768d521bf11",
+    "warehouse_code": "RIF9",
+    "supplier_plant_code": "PI21",
+    "lat": 17.67618,
+    "lng": 83.09641,
+    "truck_number": "CG01AC23334",
+    "truck_docking_time": "2026-04-25T10:00:00Z",
+    "dock_number": "a",
+    "damage_type": "A",
+    "damage_severity": "X",
+    "damage_likely_cause": "s",
+    "damage_grading": "w",
+    "checklist_answers": [
+      {
+        "id": 1,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 2,
+        "value": "no",
+        "image_path": [
+          "s3://123.jpg"
+        ],
+        "remarks": "Found problem"
+      },
+      {
+        "id": 3,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 4,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 5,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 6,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 7,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 8,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 9,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 10,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 11,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 12,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 13,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 14,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 15,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 16,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      },
+      {
+        "id": 17,
+        "value": "yes",
+        "image_path": [],
+        "remarks": null
+      }
+    ]
+  }
+}
+
+example {
+  name: 200 Response
+  description: Successful Response
+  
+  request: {
+    url: {{baseUrl}}/api/users
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "",
+        "email": "",
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": 0,
+          "full_name": "",
+          "email": "",
+          "role": "",
+          "is_active": false
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 Response
+  description: Validation Error
+  
+  request: {
+    url: {{baseUrl}}/api/users
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "",
+        "email": "",
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "detail": [
+            {
+              "loc": [],
+              "msg": "",
+              "type": "",
+              "input": "",
+              "ctx": {}
+            }
+          ]
+        }
+      '''
+    }
+  }
+}

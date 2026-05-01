@@ -12,7 +12,13 @@ from mod.api.inspection.checklist_inspection import (
 )
 from mod.api.product.response import ProductResponse
 from mod.api.product_category.response import ProductCategoryResponse
-from mod.model import InspectionReviewStatus
+from mod.model import (
+    DamageGrading,
+    DamageLikelyCause,
+    DamageSeverity,
+    DamageType,
+    InspectionReviewStatus,
+)
 from utils.common import (
     INDIA_LAT_MAX,
     INDIA_LAT_MIN,
@@ -91,6 +97,22 @@ class InspectionKpisResponse(BaseModel):
     inbound_failed: int
     outbound_passed: int
     outbound_failed: int
+
+
+class InspectionDropdownOption(BaseModel):
+    value: str
+    label: str
+
+
+class InspectionMetadataResponse(BaseModel):
+    inspection_types: list[InspectionDropdownOption]
+    warehouses: list[InspectionDropdownOption]
+    plants: list[InspectionDropdownOption]
+    damage_types: list[InspectionDropdownOption]
+    damage_severities: list[InspectionDropdownOption]
+    damage_causes: list[InspectionDropdownOption]
+    damage_grades: list[InspectionDropdownOption]
+    review_statuses: list[InspectionDropdownOption]
 
 
 class InspectionReviewHistoryItem(BaseModel):
@@ -206,6 +228,10 @@ class StartInboundInspectionRequest(BaseModel):
     lng: float = Field(..., ge=INDIA_LNG_MIN, le=INDIA_LNG_MAX)
     truck_number: str = Field(..., min_length=1)
     dock_number: str | None = None
+    damage_type: DamageType | None = None
+    damage_severity: DamageSeverity | None = None
+    damage_cause: DamageLikelyCause | None = None
+    damage_grade: DamageGrading | None = None
     truck_docking_time: datetime
     checklist_answers: list[ChecklistAnswerEntry] = Field(default_factory=list)
 
@@ -230,6 +256,54 @@ class StartInboundInspectionRequest(BaseModel):
         self.barcode = self.barcode.strip()
         self.warehouse_code = self.warehouse_code.strip()
         self.supplier_plant_code = self.supplier_plant_code.strip()
+        if self.dock_number is not None:
+            d = self.dock_number.strip()
+            self.dock_number = d if d else None
+        ids = [a.id for a in self.checklist_answers]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Duplicate checklist id in checklist_answers")
+        return self
+
+
+class StartOutboundInspectionRequest(BaseModel):
+    barcode: str = Field(..., min_length=1)
+    device_uuid: uuid.UUID
+    warehouse_code: str = Field(..., min_length=1)
+    supplier_plant_code: str | None = None
+    lat: float = Field(..., ge=INDIA_LAT_MIN, le=INDIA_LAT_MAX)
+    lng: float = Field(..., ge=INDIA_LNG_MIN, le=INDIA_LNG_MAX)
+    truck_number: str = Field(..., min_length=1)
+    dock_number: str | None = None
+    damage_type: DamageType | None = None
+    damage_severity: DamageSeverity | None = None
+    damage_cause: DamageLikelyCause | None = None
+    damage_grade: DamageGrading | None = None
+    truck_docking_time: datetime
+    checklist_answers: list[ChecklistAnswerEntry] = Field(default_factory=list)
+
+    @field_validator("truck_number", mode="after")
+    @classmethod
+    def validate_truck_number(cls, v: str) -> str:
+        t = (v or "").strip()
+        if not is_valid_registration(t):
+            raise ValueError(
+                "truck_number must be a valid Indian vehicle registration "
+                "(state format, e.g. CG01AC23334, or Bharat series, e.g. 21BH1234AA)"
+            )
+        return normalize_registration(t)
+
+    @field_validator("truck_docking_time", mode="before")
+    @classmethod
+    def coerce_truck_docking_time(cls, v):
+        return parse_to_utc_datetime(v)
+
+    @model_validator(mode="after")
+    def normalize_and_validate_answers(self):
+        self.barcode = self.barcode.strip()
+        self.warehouse_code = self.warehouse_code.strip()
+        if self.supplier_plant_code is not None:
+            s = self.supplier_plant_code.strip()
+            self.supplier_plant_code = s if s else None
         if self.dock_number is not None:
             d = self.dock_number.strip()
             self.dock_number = d if d else None

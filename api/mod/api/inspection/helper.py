@@ -22,11 +22,14 @@ from mod.api.inspection.response import (
     ChecklistGroupBlock,
     InspectionDetailResponse,
     InspectionFullResponse,
+    InspectionMetadataResponse,
+    InspectionDropdownOption,
     InspectionListItemResponse,
     InspectionPassFailCounts,
     InspectionReviewHistoryItem,
     InspectionReviewStatusUpdateRequest,
     StartInboundInspectionRequest,
+    StartOutboundInspectionRequest,
 )
 from mod.api.plant.helper import get_plant_by_uuid_or_404
 from mod.api.product.helper import map_product
@@ -47,6 +50,10 @@ from mod.model import (
     Plant,
     Product,
     ProductUnit,
+    DamageGrading,
+    DamageLikelyCause,
+    DamageSeverity,
+    DamageType,
     Warehouse,
 )
 from utils.common import (
@@ -535,6 +542,65 @@ def build_active_checklist_grouped_response(
     return ActiveChecklistGroupedResponse(groups=groups)
 
 
+def build_inspection_metadata_response(db: Session) -> InspectionMetadataResponse:
+    warehouses = (
+        db.query(Warehouse)
+        .filter(Warehouse.is_active.is_(True))
+        .order_by(Warehouse.warehouse_code.asc())
+        .all()
+    )
+    plants = (
+        db.query(Plant)
+        .filter(Plant.is_active.is_(True))
+        .order_by(Plant.plant_code.asc())
+        .all()
+    )
+
+    def to_label(value: str) -> str:
+        return value.replace("_", " ").title()
+
+    return InspectionMetadataResponse(
+        inspection_types=[
+            InspectionDropdownOption(value=e.value, label=to_label(e.value))
+            for e in InspectionType
+        ],
+        warehouses=[
+            InspectionDropdownOption(
+                value=w.warehouse_code,
+                label=f"{w.warehouse_code} - {w.name}",
+            )
+            for w in warehouses
+        ],
+        plants=[
+            InspectionDropdownOption(
+                value=p.plant_code,
+                label=f"{p.plant_code} - {p.name}",
+            )
+            for p in plants
+        ],
+        damage_types=[
+            InspectionDropdownOption(value=e.value, label=to_label(e.value))
+            for e in DamageType
+        ],
+        damage_severities=[
+            InspectionDropdownOption(value=e.value, label=to_label(e.value))
+            for e in DamageSeverity
+        ],
+        damage_causes=[
+            InspectionDropdownOption(value=e.value, label=to_label(e.value))
+            for e in DamageLikelyCause
+        ],
+        damage_grades=[
+            InspectionDropdownOption(value=e.value, label=e.value)
+            for e in DamageGrading
+        ],
+        review_statuses=[
+            InspectionDropdownOption(value=e.value, label=to_label(e.value))
+            for e in InspectionReviewStatus
+        ],
+    )
+
+
 def get_or_create_product_unit_for_barcode(
     db: Session,
     barcode: str,
@@ -578,10 +644,11 @@ def get_or_create_product_unit_for_barcode(
     return product, unit, fields
 
 
-def create_inbound_inspection(
+def create_inspection(
     db: Session,
     request: Request,
-    body: StartInboundInspectionRequest,
+    body: StartInboundInspectionRequest | StartOutboundInspectionRequest,
+    inspection_type: InspectionType,
 ) -> InspectionWithChecklistPayload:
     committed = False
     try:
@@ -590,21 +657,26 @@ def create_inbound_inspection(
             db.query(ProductUnit).filter(ProductUnit.barcode == full_barcode).first()
         )
         if unit_row is not None:
-            dup_inbound = (
+            duplicate = (
                 db.query(Inspection)
                 .filter(
                     Inspection.product_unit_id == unit_row.id,
-                    Inspection.inspection_type == InspectionType.inbound,
+                    Inspection.inspection_type == inspection_type,
                     Inspection.is_active.is_(True),
                 )
                 .first()
             )
-            if dup_inbound is not None:
+            if duplicate is not None:
+                inspection_type_text = (
+                    inspection_type.value
+                    if hasattr(inspection_type, "value")
+                    else str(inspection_type)
+                ).capitalize()
                 raise HTTPException(
                     status_code=409,
                     detail={
-                        "message": "Inbound already exists for this product unit",
-                        "inspection_uuid": str(dup_inbound.uuid),
+                        "message": f"{inspection_type_text} already exists for this product unit",
+                        "inspection_uuid": str(duplicate.uuid),
                     },
                 )
 
@@ -652,18 +724,20 @@ def create_inbound_inspection(
                 },
             )
 
-        if (
-            db.query(Plant)
-            .filter(
-                Plant.plant_code == body.supplier_plant_code,
-                Plant.is_active.is_(True),
-            )
-            .first()
-        ) is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Plant not found for supplier_plant_code",
-            )
+        supplier_plant_code = body.supplier_plant_code
+        if supplier_plant_code is not None:
+            if (
+                db.query(Plant)
+                .filter(
+                    Plant.plant_code == supplier_plant_code,
+                    Plant.is_active.is_(True),
+                )
+                .first()
+            ) is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Plant not found for supplier_plant_code",
+                )
 
         checklist_rows = (
             db.query(Checklist)
@@ -724,12 +798,12 @@ def create_inbound_inspection(
             uuid=uuid.uuid4(),
             inspector_id=request.state.user_id,
             device_id=device.id,
-            inspection_type=InspectionType.inbound,
+            inspection_type=inspection_type,
             product_unit_id=unit.id,
             product_id=product.id,
             product_category_id=product.product_category_id,
             warehouse_code=body.warehouse_code,
-            supplier_plant_code=body.supplier_plant_code,
+            supplier_plant_code=supplier_plant_code,
             lat=body.lat,
             lng=body.lng,
             serial_number=serial_number,
@@ -737,6 +811,10 @@ def create_inbound_inspection(
             truck_number=body.truck_number,
             dock_number=body.dock_number,
             truck_docking_time=body.truck_docking_time,
+            damage_type=body.damage_type,
+            damage_severity=body.damage_severity,
+            damage_likely_cause=body.damage_cause,
+            damage_grading=body.damage_grade,
             ip_address=client_ip,
             review_status=InspectionReviewStatus.IN_REVIEW,
             is_under_review=True,
@@ -796,3 +874,19 @@ def create_inbound_inspection(
         if not committed:
             db.rollback()
         raise exc
+
+
+def create_inbound_inspection(
+    db: Session,
+    request: Request,
+    body: StartInboundInspectionRequest,
+) -> InspectionWithChecklistPayload:
+    return create_inspection(db, request, body, InspectionType.inbound)
+
+
+def create_outbound_inspection(
+    db: Session,
+    request: Request,
+    body: StartOutboundInspectionRequest,
+) -> InspectionWithChecklistPayload:
+    return create_inspection(db, request, body, InspectionType.outbound)

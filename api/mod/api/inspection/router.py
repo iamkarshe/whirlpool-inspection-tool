@@ -8,8 +8,10 @@ from mod.api.inspection.checklist_inspection import InspectionWithChecklistPaylo
 from mod.api.inspection.helper import (
     build_active_checklist_grouped_response,
     build_barcode_parse_response,
+    build_inspection_metadata_response,
     compute_inspection_kpis,
     create_inbound_inspection,
+    create_outbound_inspection,
     deactivate_inspection,
     default_inspection_metrics,
     fetch_inspection_yes_no_metrics,
@@ -25,8 +27,10 @@ from mod.api.inspection.response import (
     InspectionFullResponse,
     InspectionKpisResponse,
     InspectionListResponse,
+    InspectionMetadataResponse,
     InspectionReviewStatusUpdateRequest,
     StartInboundInspectionRequest,
+    StartOutboundInspectionRequest,
 )
 from mod.api.middleware import auth_dependency
 from mod.model import Device, Inspection, InspectionType, Product, User
@@ -252,6 +256,20 @@ def get_active_inspection_checklist(
     return build_active_checklist_grouped_response(db)
 
 
+@router.get(
+    "/inspections/metadata",
+    name="get_inspection_metadata",
+    response_model=InspectionMetadataResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager", "operator"])
+def get_inspection_metadata(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    return build_inspection_metadata_response(db)
+
+
 @router.post(
     "/inspections/inbound",
     name="start_inbound_inspection",
@@ -265,6 +283,21 @@ def start_inbound_inspection(
     db: Session = Depends(get_db),
 ):
     return create_inbound_inspection(db, request, body)
+
+
+@router.post(
+    "/inspections/outbound",
+    name="start_outbound_inspection",
+    response_model=InspectionWithChecklistPayload,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager", "operator"])
+def start_outbound_inspection(
+    request: Request,
+    body: StartOutboundInspectionRequest,
+    db: Session = Depends(get_db),
+):
+    return create_outbound_inspection(db, request, body)
 
 
 @router.patch(

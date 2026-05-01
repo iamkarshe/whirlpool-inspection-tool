@@ -1,18 +1,23 @@
 meta {
-  name: Delete
+  name: Operations Analytics
   type: http
-  seq: 8
+  seq: 1
 }
 
-delete {
-  url: {{baseUrl}}/api/inspections/42c7d5cc-bc39-4f6f-9b66-16d62d35ad77
+get {
+  url: {{baseUrl}}/api/reports/operations-analytics
   body: none
   auth: inherit
 }
 
 body:json {
   {
-    "review_status": "APPROVED"
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
   }
 }
 

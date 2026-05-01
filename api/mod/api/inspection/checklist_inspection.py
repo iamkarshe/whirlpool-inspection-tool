@@ -72,6 +72,11 @@ class InspectionWithChecklistPayload(BaseModel):
     product_unit_id: int
     warehouse_code: str | None
     plant_code: str | None
+    dock_number: str | None
+    damage_type: str | None
+    damage_severity: str | None
+    damage_cause: str | None
+    damage_grade: str | None
     created_at: datetime
     updated_at: datetime
     inputs: list[InspectionInputItemResponse]
@@ -215,6 +220,17 @@ def map_inspection_with_checklist_inputs(
         product_unit_id=inspection.product_unit_id,
         warehouse_code=inspection.warehouse_code,
         plant_code=inspection.supplier_plant_code,
+        dock_number=inspection.dock_number,
+        damage_type=_enum_str(inspection.damage_type) if inspection.damage_type else None,
+        damage_severity=_enum_str(inspection.damage_severity)
+        if inspection.damage_severity
+        else None,
+        damage_cause=_enum_str(inspection.damage_likely_cause)
+        if inspection.damage_likely_cause
+        else None,
+        damage_grade=_enum_str(inspection.damage_grading)
+        if inspection.damage_grading
+        else None,
         created_at=inspection.created_at,
         updated_at=inspection.updated_at,
         inputs=mapped,
