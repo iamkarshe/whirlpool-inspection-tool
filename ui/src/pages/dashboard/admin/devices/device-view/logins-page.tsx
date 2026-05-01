@@ -2,7 +2,7 @@ import SkeletonTable from "@/components/skeleton7";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import LoginsDataTable from "@/pages/dashboard/admin/logins/data-table";
 import {
-  getLoginsByUserId,
+  getLoginsByUserHints,
   type LoginActivity,
 } from "@/pages/dashboard/admin/logins/login-service";
 import { useEffect, useState } from "react";
@@ -20,20 +20,22 @@ export default function DeviceViewLoginsPage() {
     queueMicrotask(() => {
       if (!cancelled) setLoading(true);
     });
-    getLoginsByUserId(device.user_id)
+    const abort = new AbortController();
+    getLoginsByUserHints(
+      { name: device.user_name },
+      { signal: abort.signal },
+    )
       .then((data) => {
         if (!cancelled) setLogins(data);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
+      abort.abort();
     };
-  }, [device.user_id]);
+  }, [device.user_name]);
 
   if (loading) {
     return <SkeletonTable />;

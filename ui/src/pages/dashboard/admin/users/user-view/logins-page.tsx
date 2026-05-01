@@ -4,7 +4,7 @@ import { useOutletContext } from "react-router-dom";
 
 import LoginsDataTable from "@/pages/dashboard/admin/logins/data-table";
 import type { LoginActivity } from "@/pages/dashboard/admin/logins/login-service";
-import { getLoginsByUserId } from "@/pages/dashboard/admin/logins/login-service";
+import { getLoginsByUserHints } from "@/pages/dashboard/admin/logins/login-service";
 import type { UserViewContext } from "./context";
 
 export default function UserViewLoginsPage() {
@@ -17,7 +17,11 @@ export default function UserViewLoginsPage() {
     queueMicrotask(() => {
       if (!cancelled) setLoading(true);
     });
-    getLoginsByUserId(user.id)
+    const abort = new AbortController();
+    getLoginsByUserHints(
+      { email: user.email, name: user.name },
+      { signal: abort.signal },
+    )
       .then((data) => {
         if (!cancelled) setLogins(data);
       })
@@ -26,8 +30,9 @@ export default function UserViewLoginsPage() {
       });
     return () => {
       cancelled = true;
+      abort.abort();
     };
-  }, [user.id]);
+  }, [user.email, user.id, user.name]);
 
   if (loading) {
     return (

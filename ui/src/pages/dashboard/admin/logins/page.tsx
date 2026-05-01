@@ -1,23 +1,23 @@
+import { useEffect, useMemo, useState } from "react";
+
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
-import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
+import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
+import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import LoginsDataTable from "@/pages/dashboard/admin/logins/data-table";
 import { LoginStatCards } from "@/pages/dashboard/admin/logins/components/login-stat-cards";
-import {
-  getLogins,
-  getLoginKpis,
-  type LoginActivity,
-  type LoginKpis,
-} from "@/pages/dashboard/admin/logins/login-service";
-import { useEffect, useState } from "react";
+import type { LoginActivity, LoginKpis } from "@/pages/dashboard/admin/logins/login-types";
+import { getLoginKpis } from "@/pages/dashboard/admin/logins/login-service";
+import { fetchLoginsPage } from "@/services/logins-api";
 
 export default function LoginsPage() {
   const [kpis, setKpis] = useState<LoginKpis | null>(null);
-  const [logins, setLogins] = useState<LoginActivity[]>([]);
   const [loadingKpis, setLoadingKpis] = useState(true);
-  const [loadingTable, setLoadingTable] = useState(true);
+  const [apiFilters, setApiFilters] = useState<Record<string, string>>({
+    status: "",
+  });
 
   useEffect(() => {
     setLoadingKpis(true);
@@ -26,12 +26,61 @@ export default function LoginsPage() {
       .finally(() => setLoadingKpis(false));
   }, []);
 
-  useEffect(() => {
-    setLoadingTable(true);
-    getLogins()
-      .then(setLogins)
-      .finally(() => setLoadingTable(false));
-  }, []);
+  const LOGIN_LIST_SORT = {
+    allowedColumns: [
+      "id",
+      "user_name",
+      "email",
+      "logged_at",
+      "ip_address",
+      "status",
+      "device_source",
+    ] as const,
+    defaultSort: { sort_by: "id", sort_dir: "desc" as const },
+  };
+
+  const { rows, isLoading, error, serverSide } =
+    useControlledServerTable<LoginActivity>({
+      initialSorting: [{ id: "logged_at", desc: true }],
+      dataScopeKey: apiFilters.status,
+      errorMessage: "Failed to load logins.",
+      load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
+        const { sort_by, sort_dir } = sortingStateToApiSortQuery(
+          s,
+          LOGIN_LIST_SORT,
+        );
+        const statusFilter = apiFilters.status;
+        return fetchLoginsPage(
+          {
+            page: p.pageIndex + 1,
+            per_page: p.pageSize,
+            search: q.length > 0 ? q : null,
+            sort_by,
+            sort_dir,
+            status:
+              statusFilter === "successful" || statusFilter === "failed"
+                ? statusFilter
+                : null,
+          },
+          { signal },
+        );
+      },
+    });
+
+  const serverSideWithFilters = useMemo(
+    () => ({
+      ...serverSide,
+      filters: apiFilters,
+      onFilterChange: (id: string, value: string) => {
+        setApiFilters((prev) => ({ ...prev, [id]: value }));
+        serverSide.onPaginationChange({
+          ...serverSide.pagination,
+          pageIndex: 0,
+        });
+      },
+    }),
+    [apiFilters, serverSide],
+  );
 
   return (
     <div className="space-y-4">
@@ -58,11 +107,14 @@ export default function LoginsPage() {
         </div>
 
         <div className="lg:col-span-12">
-          {loadingTable ? (
-            <SkeletonTable />
-          ) : (
-            <LoginsDataTable data={logins} />
-          )}
+          {error && !isLoading ? (
+            <p className="text-destructive text-sm">{error}</p>
+          ) : null}
+          <LoginsDataTable
+            data={rows}
+            serverSide={serverSideWithFilters}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ import { CheckCircle, Globe, Info, XCircle } from "lucide-react";
 
 const TECH_BADGE_CLASS = "font-mono text-xs font-normal";
 
-export function LoginIdBadge({ id }: { id: string }) {
+export function LoginIdBadge({ id }: { id: string | number }) {
   return (
     <Badge variant="outline" className={cn(TECH_BADGE_CLASS, "max-w-full truncate")}>
       {id}

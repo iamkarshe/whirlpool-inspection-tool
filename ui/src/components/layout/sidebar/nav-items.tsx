@@ -61,7 +61,15 @@ export const navItems: NavGroup[] = [
             href: PAGES.DASHBOARD_INSPECTIONS_INBOUND,
           },
           {
-            title: "Inbound Failed",
+            title: "In-review Inbound",
+            href: PAGES.DASHBOARD_INSPECTIONS_INBOUND_FAILED,
+          },
+          {
+            title: "Rejected Inbound",
+            href: PAGES.DASHBOARD_INSPECTIONS_INBOUND_FAILED,
+          },
+          {
+            title: "Approved Inbound",
             href: PAGES.DASHBOARD_INSPECTIONS_INBOUND_FAILED,
           },
           {
@@ -69,7 +77,15 @@ export const navItems: NavGroup[] = [
             href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND,
           },
           {
-            title: "Outbound Failed",
+            title: "In-review Outbound",
+            href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
+          },
+          {
+            title: "Rejected Outbound",
+            href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
+          },
+          {
+            title: "Approved Outbound",
             href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_FAILED,
           },
           {
