@@ -9,6 +9,7 @@ import type {
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { DialogFooter } from "@/components/ui/dialog";
@@ -28,6 +29,7 @@ import {
   fetchUsersPage,
   userApiErrorMessage,
 } from "@/services/users-api";
+import { AlertCircle } from "lucide-react";
 
 type UserFormValues = {
   name: string;
@@ -43,7 +45,11 @@ const USER_LIST_SORT = {
   defaultSort: { sort_by: "id", sort_dir: "desc" as const },
 };
 
-export default function UsersPage() {
+function isValidIndianMobile(value: string): boolean {
+  return /^5\d{9}$/.test(value);
+}
+
+function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const [formValues, setFormValues] = useState<UserFormValues>({
     name: "",
     email: "",
@@ -53,6 +59,153 @@ export default function UsersPage() {
     designation: "",
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    if (createError) setCreateError(null);
+    if (name === "mobile_number") {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      setFormValues((previous) => ({ ...previous, mobile_number: digits }));
+      return;
+    }
+    setFormValues((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const handleSubmit = async (event: SubmitEvent) => {
+    event.preventDefault();
+    setCreateError(null);
+    const mobile = formValues.mobile_number.trim();
+    if (!isValidIndianMobile(mobile)) {
+      setCreateError(
+        "Mobile number must be exactly 10 digits and start with 5.",
+      );
+      return;
+    }
+    const payload: UserCreateRequest = {
+      name: formValues.name.trim(),
+      email: formValues.email.trim(),
+      mobile_number: mobile,
+      password: formValues.password,
+      role: formValues.role || undefined,
+      designation: formValues.designation.trim() || undefined,
+    };
+    setIsCreating(true);
+    try {
+      await createUser(payload);
+      toast.success("User created.");
+      setFormValues({
+        name: "",
+        email: "",
+        mobile_number: "",
+        password: "",
+        role: "",
+        designation: "",
+      });
+      onCreated();
+    } catch (e: unknown) {
+      setCreateError(userApiErrorMessage(e, "Could not create user."));
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          name="name"
+          value={formValues.name}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formValues.email}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="mobile_number">Mobile number</Label>
+        <Input
+          id="mobile_number"
+          name="mobile_number"
+          type="tel"
+          inputMode="numeric"
+          maxLength={10}
+          pattern="^5[0-9]{9}$"
+          value={formValues.mobile_number}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          value={formValues.password}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="role">Role</Label>
+        <Select
+          value={formValues.role}
+          onValueChange={(value) => {
+            if (createError) setCreateError(null);
+            setFormValues((previous) => ({
+              ...previous,
+              role: value as UserCreateRequestRole,
+            }));
+          }}
+        >
+          <SelectTrigger id="role" className="w-full">
+            <SelectValue placeholder="Select role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="manager">Manager</SelectItem>
+            <SelectItem value="operator">Operator</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="designation">Designation</Label>
+        <Input
+          id="designation"
+          name="designation"
+          value={formValues.designation}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      {createError ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Could not create user</AlertTitle>
+          <AlertDescription>{createError}</AlertDescription>
+        </Alert>
+      ) : null}
+      <DialogFooter>
+        <Button type="submit" disabled={isCreating}>
+          {isCreating ? "Saving..." : "Save user"}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+export default function UsersPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [apiFilters, setApiFilters] = useState<Record<string, string>>({
     is_active: "",
@@ -105,42 +258,6 @@ export default function UsersPage() {
     [apiFilters, serverSide],
   );
 
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setFormValues((previous) => ({ ...previous, [name]: value }));
-  };
-
-  const handleSubmit = async (event: SubmitEvent) => {
-    event.preventDefault();
-    const payload: UserCreateRequest = {
-      name: formValues.name.trim(),
-      email: formValues.email.trim(),
-      mobile_number: formValues.mobile_number.trim(),
-      password: formValues.password,
-      role: formValues.role || undefined,
-      designation: formValues.designation.trim() || undefined,
-    };
-    setIsCreating(true);
-    try {
-      await createUser(payload);
-      toast.success("User created.");
-      setFormValues({
-        name: "",
-        email: "",
-        mobile_number: "",
-        password: "",
-        role: "",
-        designation: "",
-      });
-      setReloadKey((v) => v + 1);
-    } catch (e: unknown) {
-      toast.error(userApiErrorMessage(e, "Could not create user."));
-      throw e;
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <PageActionBar
@@ -152,86 +269,7 @@ export default function UsersPage() {
           title="Add user"
           description="Create a new user for the system."
         >
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formValues.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formValues.email}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mobile_number">Mobile number</Label>
-              <Input
-                id="mobile_number"
-                name="mobile_number"
-                type="tel"
-                value={formValues.mobile_number}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formValues.password}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select
-                value={formValues.role}
-                onValueChange={(value) =>
-                  setFormValues((previous) => ({
-                    ...previous,
-                    role: value as UserCreateRequestRole,
-                  }))
-                }
-              >
-                <SelectTrigger id="role" className="w-full">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="operator">Operator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="designation">Designation</Label>
-              <Input
-                id="designation"
-                name="designation"
-                value={formValues.designation}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={isCreating}>
-                {isCreating ? "Saving..." : "Save user"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <CreateUserForm onCreated={() => setReloadKey((v) => v + 1)} />
         </CreateEntryDialog>
       </PageActionBar>
       {error && !isLoading ? (
