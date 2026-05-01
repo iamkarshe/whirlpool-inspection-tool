@@ -13,7 +13,6 @@ import type {
   InspectionFullResponse,
   InspectionKpisResponse,
   InspectionListResponse,
-  InspectionMetadataResponse,
   InspectionReviewStatusUpdateRequest,
   InspectionWithChecklistPayload,
   ParseInspectionBarcodeApiInspectionsParseBarcodeGetParams,
@@ -72,17 +71,6 @@ const getActiveInspectionChecklistApiInspectionsChecklistGet = (
  options?: SecondParameter<typeof customInstance<ActiveChecklistGroupedResponse>>,) => {
       return customInstance<ActiveChecklistGroupedResponse>(
       {url: `/api/inspections/checklist`, method: 'GET'
-    },
-      options);
-    }
-  /**
- * @summary Get Inspection Metadata
- */
-const getInspectionMetadataApiInspectionsMetadataGet = (
-
- options?: SecondParameter<typeof customInstance<InspectionMetadataResponse>>,) => {
-      return customInstance<InspectionMetadataResponse>(
-      {url: `/api/inspections/metadata`, method: 'GET'
     },
       options);
     }
@@ -148,12 +136,11 @@ const getInspectionDetailApiInspectionsInspectionUuidGet = (
     },
       options);
     }
-  return {getInspectionKpisApiInspectionsKpisGet,getInspectionsApiInspectionsGet,parseInspectionBarcodeApiInspectionsParseBarcodeGet,getActiveInspectionChecklistApiInspectionsChecklistGet,getInspectionMetadataApiInspectionsMetadataGet,startInboundInspectionApiInspectionsInboundPost,startOutboundInspectionApiInspectionsOutboundPost,patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch,deleteInspectionApiInspectionsInspectionUuidDelete,getInspectionDetailApiInspectionsInspectionUuidGet}};
+  return {getInspectionKpisApiInspectionsKpisGet,getInspectionsApiInspectionsGet,parseInspectionBarcodeApiInspectionsParseBarcodeGet,getActiveInspectionChecklistApiInspectionsChecklistGet,startInboundInspectionApiInspectionsInboundPost,startOutboundInspectionApiInspectionsOutboundPost,patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch,deleteInspectionApiInspectionsInspectionUuidDelete,getInspectionDetailApiInspectionsInspectionUuidGet}};
 export type GetInspectionKpisApiInspectionsKpisGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionKpisApiInspectionsKpisGet']>>>
 export type GetInspectionsApiInspectionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionsApiInspectionsGet']>>>
 export type ParseInspectionBarcodeApiInspectionsParseBarcodeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['parseInspectionBarcodeApiInspectionsParseBarcodeGet']>>>
 export type GetActiveInspectionChecklistApiInspectionsChecklistGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getActiveInspectionChecklistApiInspectionsChecklistGet']>>>
-export type GetInspectionMetadataApiInspectionsMetadataGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionMetadataApiInspectionsMetadataGet']>>>
 export type StartInboundInspectionApiInspectionsInboundPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['startInboundInspectionApiInspectionsInboundPost']>>>
 export type StartOutboundInspectionApiInspectionsOutboundPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['startOutboundInspectionApiInspectionsOutboundPost']>>>
 export type PatchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch']>>>

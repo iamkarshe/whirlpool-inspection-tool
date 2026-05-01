@@ -1,10 +1,11 @@
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
+import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import { PAGES } from "@/endpoints";
-import type { Plant } from "@/pages/dashboard/admin/plants/plant-service";
 import {
   Building2,
   ClipboardCheck,
   MapPin,
+  MapPinned,
   Smartphone,
   Users,
 } from "lucide-react";
@@ -35,6 +36,26 @@ export function PlantAddressBadge({
     >
       <MapPin />
       <span className="uppercase">{address}</span>
+    </Badge>
+  );
+}
+
+export function PlantCityBadge({
+  city,
+  maxWidth = true,
+}: {
+  city: string;
+  maxWidth?: boolean;
+}) {
+  const trimmed = city.trim();
+  if (!trimmed) return null;
+  return (
+    <Badge
+      variant="outline"
+      className={`${BADGE_ICON_CLASS} ${maxWidth ? "max-w-[200px] truncate" : ""}`}
+    >
+      <MapPinned />
+      <span className="uppercase">{trimmed}</span>
     </Badge>
   );
 }
@@ -101,10 +122,11 @@ export function PlantInspectionsCountBadge({
   );
 }
 
-export function PlantHeaderBadges({ plant }: { plant: Plant }) {
+export function PlantHeaderBadges({ plant }: { plant: PlantResponse }) {
   return (
     <>
       <PlantCodeBadge code={plant.plant_code} />
+      <PlantCityBadge city={plant.city} />
       <PlantAddressBadge address={plant.address} />
     </>
   );

@@ -18,11 +18,6 @@ export interface InspectionWithChecklistPayload {
   product_unit_id: number;
   warehouse_code: string | null;
   plant_code: string | null;
-  dock_number: string | null;
-  damage_type: string | null;
-  damage_severity: string | null;
-  damage_cause: string | null;
-  damage_grade: string | null;
   created_at: string;
   updated_at: string;
   inputs: InspectionInputItemResponse[];

@@ -1,18 +1,23 @@
+import type { ChangeEvent, SubmitEvent } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
+import type { PlantCreateRequest } from "@/api/generated/model/plantCreateRequest";
+import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import CsvUploadDialog from "@/components/csv-upload-dialog";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
-import SkeletonTable from "@/components/skeleton7";
+import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import {
-  getPlants,
-  type Plant,
-} from "@/pages/dashboard/admin/plants/plant-service";
-import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+  createPlant,
+  fetchPlantsPage,
+  plantsApiErrorMessage,
+  uploadPlantsCsv,
+} from "@/services/plants-api";
 import PlantsDataTable from "./data-table";
 
 type PlantFormValues = {
@@ -21,6 +26,13 @@ type PlantFormValues = {
   address: string;
   lat: string;
   lng: string;
+  city: string;
+  postal_code: string;
+};
+
+const PLANT_LIST_SORT = {
+  allowedColumns: ["id", "name", "plant_code", "created_at", "updated_at"] as const,
+  defaultSort: { sort_by: "id", sort_dir: "desc" as const },
 };
 
 export default function PlantsPage() {
@@ -30,41 +42,80 @@ export default function PlantsPage() {
     address: "",
     lat: "",
     lng: "",
+    city: "",
+    postal_code: "",
   });
-
-  const [plants, setPlants] = useState<Plant[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPlants = async () => {
-      try {
-        const data = await getPlants();
-        setPlants(data);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchPlants();
-  }, []);
+  const [isCreating, setIsCreating] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const { rows, isLoading, error, serverSide } =
+    useControlledServerTable<PlantResponse>({
+      initialSorting: [{ id: "id", desc: true }],
+      refreshKey: reloadKey,
+      errorMessage: "Failed to load plants.",
+      load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
+        const { sort_by, sort_dir } = sortingStateToApiSortQuery(s, PLANT_LIST_SORT);
+        const res = await fetchPlantsPage(
+          {
+            page: p.pageIndex + 1,
+            per_page: p.pageSize,
+            search: q.length > 0 ? q : null,
+            sort_by,
+            sort_dir,
+          },
+          { signal },
+        );
+        return { data: res.data, total: res.total };
+      },
+    });
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: SubmitEvent) => {
+  const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
-    console.log("Mock create plant", formValues);
+    const payload: PlantCreateRequest = {
+      name: formValues.name.trim(),
+      plant_code: formValues.plant_code.trim(),
+      address: formValues.address.trim(),
+      city: formValues.city.trim(),
+      lat: Number(formValues.lat),
+      lng: Number(formValues.lng),
+      postal_code: Number(formValues.postal_code),
+    };
+    setIsCreating(true);
+    try {
+      await createPlant(payload);
+      toast.success("Plant created.");
+      setFormValues({
+        name: "",
+        plant_code: "",
+        address: "",
+        lat: "",
+        lng: "",
+        city: "",
+        postal_code: "",
+      });
+      setReloadKey((v) => v + 1);
+    } catch (e: unknown) {
+      toast.error(plantsApiErrorMessage(e, "Could not create plant."));
+      throw e;
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const handleCsvSubmit = (file: File) => {
-    console.log("Mock plants CSV upload", file);
-    toast.success("CSV uploaded successfully.");
+  const handleCsvSubmit = async (file: File) => {
+    try {
+      await uploadPlantsCsv(file);
+      toast.success("Plants CSV uploaded.");
+      setReloadKey((v) => v + 1);
+    } catch (e: unknown) {
+      toast.error(plantsApiErrorMessage(e, "Could not upload the CSV."));
+      throw e;
+    }
   };
-
-  const plantCsvTemplate =
-    "name,plant_code,address,lat,lng\n" +
-    "Pune North Plant,PL-PUN-01,Hinjawadi Pune Maharashtra,18.5204,73.8567\n";
 
   return (
     <div className="space-y-6">
@@ -73,7 +124,7 @@ export default function PlantsPage() {
           title="Upload Plants"
           description="Select a CSV file containing plants to import."
           templateFilename="plants-template.csv"
-          templateContent={plantCsvTemplate}
+          templateDownloadUrl="/api/plants/csv/template"
           onSubmit={handleCsvSubmit}
         />
 
@@ -139,14 +190,44 @@ export default function PlantsPage() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={formValues.city}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="postal_code">Postal code</Label>
+                <Input
+                  id="postal_code"
+                  name="postal_code"
+                  type="number"
+                  min={0}
+                  value={formValues.postal_code}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
             <DialogFooter>
-              <Button type="submit">Save plant</Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? "Saving..." : "Save plant"}
+              </Button>
             </DialogFooter>
           </form>
         </CreateEntryDialog>
       </PageActionBar>
 
-      {isLoading ? <SkeletonTable /> : <PlantsDataTable data={plants} />}
+      {error && !isLoading ? (
+        <p className="text-destructive text-sm">{error}</p>
+      ) : null}
+
+      <PlantsDataTable data={rows} serverSide={serverSide} isLoading={isLoading} />
     </div>
   );
 }

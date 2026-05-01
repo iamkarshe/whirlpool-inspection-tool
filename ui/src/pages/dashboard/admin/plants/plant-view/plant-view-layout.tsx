@@ -2,16 +2,17 @@ import { TabbedContent } from "@/components/tabbed-content";
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
 import { PlantHeaderBadges } from "@/pages/dashboard/admin/plants/plant-badge";
-import type { Plant } from "@/pages/dashboard/admin/plants/plant-service";
-import { loadPlantView } from "@/pages/dashboard/admin/plants/plant-view/controller";
+import type { PlantViewContext } from "@/pages/dashboard/admin/plants/plant-view/context";
+import { fetchPlantInfo, plantsApiErrorMessage } from "@/services/plants-api";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function PlantViewLayout() {
   const params = useParams<{ id: string }>();
-  const id = params.id ?? "";
-  const [plant, setPlant] = useState<Plant | null | undefined>(undefined);
+  const plantUuid = params.id ?? "";
+  const [viewData, setViewData] = useState<PlantViewContext | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,9 +21,19 @@ export default function PlantViewLayout() {
       if (!cancelled) setLoading(true);
     });
 
-    loadPlantView(id)
+    fetchPlantInfo(plantUuid)
       .then((d) => {
-        if (!cancelled) setPlant(d);
+        if (cancelled) return;
+        setViewData({
+          plant: d.plant,
+          users: d.users,
+          devices: d.devices,
+        });
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        toast.error(plantsApiErrorMessage(e, "Failed to load plant."));
+        setViewData(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -31,7 +42,7 @@ export default function PlantViewLayout() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [plantUuid]);
 
   if (loading) {
     return (
@@ -41,7 +52,7 @@ export default function PlantViewLayout() {
     );
   }
 
-  if (plant === null || plant === undefined) {
+  if (viewData === null) {
     return (
       <div className="space-y-4">
         <p className="text-muted-foreground">Plant not found.</p>
@@ -55,10 +66,10 @@ export default function PlantViewLayout() {
     );
   }
 
-  const basePath = PAGES.plantViewPath(plant.id);
-  const usersPath = PAGES.plantUsersPath(plant.id);
-  const devicesPath = PAGES.plantDevicesPath(plant.id);
-  const inspectionsPath = PAGES.plantInspectionsPath(plant.id);
+  const basePath = PAGES.plantViewPath(viewData.plant.uuid);
+  const usersPath = PAGES.plantUsersPath(viewData.plant.uuid);
+  const devicesPath = PAGES.plantDevicesPath(viewData.plant.uuid);
+  const inspectionsPath = PAGES.plantInspectionsPath(viewData.plant.uuid);
   const tabs = [
     { label: "Details", to: basePath, end: true },
     { label: "Users", to: usersPath },
@@ -75,15 +86,15 @@ export default function PlantViewLayout() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{plant.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{viewData.plant.name}</h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <PlantHeaderBadges plant={plant} />
+            <PlantHeaderBadges plant={viewData.plant} />
           </div>
         </div>
       </div>
 
       <TabbedContent tabs={tabs} className="my-0">
-        <Outlet context={{ plant }} />
+        <Outlet context={viewData} />
       </TabbedContent>
     </div>
   );

@@ -27,12 +27,7 @@ export default function WarehouseViewLayout() {
     fetchWarehouseInfo(warehouseUuid)
       .then((d) => {
         if (cancelled) return;
-        setViewData({
-          warehouse: d.warehouse,
-          users: d.users,
-          devices: d.devices,
-          inspections: d.inspections,
-        });
+        setViewData(d);
       })
       .catch((e: unknown) => {
         if (cancelled) return;

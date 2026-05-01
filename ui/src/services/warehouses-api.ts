@@ -1,10 +1,12 @@
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { GetWarehousesApiWarehousesGetParams } from "@/api/generated/model/getWarehousesApiWarehousesGetParams";
 import type { WarehouseCreateRequest } from "@/api/generated/model/warehouseCreateRequest";
+import type { WarehouseDeviceResponse } from "@/api/generated/model/warehouseDeviceResponse";
 import type { WarehouseInfoResponse } from "@/api/generated/model/warehouseInfoResponse";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
 import type { WarehouseListResponse } from "@/api/generated/model/warehouseListResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
+import type { WarehouseUserResponse } from "@/api/generated/model/warehouseUserResponse";
 import { getInspections } from "@/api/generated/inspections/inspections";
 import { getWarehouses } from "@/api/generated/warehouses/warehouses";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
@@ -28,6 +30,53 @@ export type WarehouseInspectionsListParams = {
   date_from?: string | null;
   date_to?: string | null;
 };
+
+export type WarehouseStats = {
+  total_inspections: number;
+  devices_count: number;
+  users_count: number;
+  inbound_total: number;
+  inbound_in_review: number;
+  inbound_approved: number;
+  inbound_rejected: number;
+  outbound_total: number;
+  outbound_in_review: number;
+  outbound_approved: number;
+  outbound_rejected: number;
+};
+
+export type WarehouseResponseWithStats = WarehouseResponse & {
+  stats?: WarehouseStats;
+};
+
+export type WarehouseInfoViewData = {
+  warehouse: WarehouseResponseWithStats;
+  users: WarehouseUserResponse[];
+  devices: WarehouseDeviceResponse[];
+};
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeWarehouseInfo(raw: unknown): WarehouseInfoViewData {
+  if (!isObjectRecord(raw)) {
+    throw new Error("Invalid warehouse response.");
+  }
+  if ("warehouse" in raw) {
+    const wrapped = raw as WarehouseInfoResponse;
+    return {
+      warehouse: wrapped.warehouse as WarehouseResponseWithStats,
+      users: wrapped.users ?? [],
+      devices: wrapped.devices ?? [],
+    };
+  }
+  return {
+    warehouse: raw as WarehouseResponseWithStats,
+    users: [],
+    devices: [],
+  };
+}
 
 export async function fetchWarehousesPage(
   params: WarehousesListParams,
@@ -53,12 +102,13 @@ export async function fetchWarehousesPage(
 export async function fetchWarehouseInfo(
   warehouseUuid: string,
   request?: { signal?: AbortSignal },
-): Promise<WarehouseInfoResponse> {
+): Promise<WarehouseInfoViewData> {
   const api = getWarehouses();
-  return api.getWarehouseInfoApiWarehousesWarehouseUuidGet(
+  const response = await api.getWarehouseInfoApiWarehousesWarehouseUuidGet(
     warehouseUuid,
     request?.signal ? { signal: request.signal } : undefined,
   );
+  return normalizeWarehouseInfo(response);
 }
 
 export async function fetchWarehouseInspectionsPage(

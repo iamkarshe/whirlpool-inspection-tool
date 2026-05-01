@@ -1,11 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableServerSideConfig,
+} from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import { PAGES } from "@/endpoints";
 import {
   PlantCodeBadge,
@@ -14,7 +18,6 @@ import {
   PlantInspectionsCountBadge,
   PlantUsersCountBadge,
 } from "@/pages/dashboard/admin/plants/plant-badge";
-import type { Plant } from "@/pages/dashboard/admin/plants/plant-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
@@ -29,9 +32,9 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const plantColumns: ColumnDef<Plant>[] = [
+const plantColumns: ColumnDef<PlantResponse>[] = [
   {
-    accessorKey: "id",
+    accessorKey: "uuid",
     header: ({ column }) => (
       <Button
         className="-ml-3"
@@ -42,7 +45,7 @@ const plantColumns: ColumnDef<Plant>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <PlantIdLinkBadge id={row.original.id} />,
+    cell: ({ row }) => <PlantIdLinkBadge id={row.original.uuid} />,
   },
   {
     accessorKey: "name",
@@ -99,7 +102,7 @@ const plantColumns: ColumnDef<Plant>[] = [
     header: "Users",
     cell: ({ row }) => {
       const p = row.original;
-      return <PlantUsersCountBadge plantId={p.id} count={p.users_count ?? 0} />;
+      return <PlantUsersCountBadge plantId={p.uuid} count={0} />;
     },
   },
   {
@@ -108,7 +111,7 @@ const plantColumns: ColumnDef<Plant>[] = [
     cell: ({ row }) => {
       const p = row.original;
       return (
-        <PlantDevicesCountBadge plantId={p.id} count={p.devices_count ?? 0} />
+        <PlantDevicesCountBadge plantId={p.uuid} count={0} />
       );
     },
   },
@@ -119,8 +122,8 @@ const plantColumns: ColumnDef<Plant>[] = [
       const p = row.original;
       return (
         <PlantInspectionsCountBadge
-          plantId={p.id}
-          count={p.inspections_count ?? 0}
+          plantId={p.uuid}
+          count={0}
         />
       );
     },
@@ -129,7 +132,7 @@ const plantColumns: ColumnDef<Plant>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const id = row.original.id;
+      const id = row.original.uuid;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -196,16 +199,23 @@ const plantColumns: ColumnDef<Plant>[] = [
 ];
 
 interface PlantsDataTableProps {
-  data: Plant[];
+  data: PlantResponse[];
+  serverSide: DataTableServerSideConfig;
+  isLoading?: boolean;
 }
 
-export default function PlantsDataTable({ data }: PlantsDataTableProps) {
+export default function PlantsDataTable({
+  data,
+  serverSide,
+  isLoading,
+}: PlantsDataTableProps) {
   return (
-    <DataTable<Plant>
+    <DataTable<PlantResponse>
       columns={plantColumns}
       data={data}
-      searchKey="name"
       rangeLabel="plants"
+      serverSide={serverSide}
+      isLoading={isLoading}
     />
   );
 }

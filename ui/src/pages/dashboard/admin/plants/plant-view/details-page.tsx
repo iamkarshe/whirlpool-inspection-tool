@@ -1,11 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlantCodeBadge } from "@/pages/dashboard/admin/plants/plant-badge";
-import type { Plant } from "@/pages/dashboard/admin/plants/plant-service";
+import type { PlantViewContext } from "@/pages/dashboard/admin/plants/plant-view/context";
 import { MapPin } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
-
-type PlantViewContext = { plant: Plant };
 
 export default function PlantViewDetailsPage() {
   const { plant } = useOutletContext<PlantViewContext>();
@@ -36,6 +34,14 @@ export default function PlantViewDetailsPage() {
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Address</p>
           <p className="text-sm">{plant.address}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-sm">City</p>
+          <p className="text-sm">{plant.city}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-sm">Postal code</p>
+          <p className="font-mono text-sm">{plant.postal_code}</p>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Latitude</p>
