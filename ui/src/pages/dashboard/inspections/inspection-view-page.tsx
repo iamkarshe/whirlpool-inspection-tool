@@ -21,7 +21,6 @@ import {
   type Inspection,
   type InspectionRelationship,
   type InspectionQuestionResult,
-  type InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-service";
 import { formatDate, setPageTitle } from "@/lib/core";
 import { InspectionOverviewTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-overview-tab";
@@ -51,11 +50,6 @@ export default function InspectionViewPage() {
     undefined,
   );
   const [loading, setLoading] = useState(true);
-
-  const [sectionLoading, setSectionLoading] = useState(false);
-  const [sectionRows, setSectionRows] = useState<InspectionQuestionResult[]>(
-    [],
-  );
 
   const [reviewLoading, setReviewLoading] = useState(false);
   const [outerRows, setOuterRows] = useState<InspectionQuestionResult[]>([]);
@@ -100,13 +94,6 @@ export default function InspectionViewPage() {
     ]);
     return allowed.has(t) ? t : "overview";
   }, [location.search]);
-
-  const sectionKey = useMemo((): InspectionSectionKey | null => {
-    if (tab === "outer-packaging") return "outer-packaging";
-    if (tab === "inner-packaging") return "inner-packaging";
-    if (tab === "product") return "product";
-    return null;
-  }, [tab]);
 
   const activeTabTitle = useMemo(() => {
     return inspectionTabTitle(tab);
@@ -157,22 +144,6 @@ export default function InspectionViewPage() {
       cancelled = true;
     };
   }, [id]);
-
-  useEffect(() => {
-    if (!sectionKey) return;
-    let cancelled = false;
-    queueMicrotask(() => setSectionLoading(true));
-    getInspectionQuestionResults(id, sectionKey)
-      .then((rows) => {
-        if (!cancelled) setSectionRows(rows);
-      })
-      .finally(() => {
-        if (!cancelled) setSectionLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id, sectionKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -471,21 +442,25 @@ export default function InspectionViewPage() {
             }}
           />
 
-          {(["outer-packaging", "inner-packaging", "product"] as const).map(
-            (k) => (
-              <InspectionSectionTab
-                key={k}
-                value={k}
-                sectionLoading={sectionLoading}
-                rows={sectionRows}
-                onViewImages={(r) => {
-                  setGalleryImages(r.images);
-                  setActiveGalleryUrl(r.images[0]?.url ?? null);
-                  setGalleryOpen(true);
-                }}
-              />
-            ),
-          )}
+          {(
+            [
+              { value: "outer-packaging" as const, rows: outerRows },
+              { value: "inner-packaging" as const, rows: innerRows },
+              { value: "product" as const, rows: productRows },
+            ] as const
+          ).map(({ value, rows }) => (
+            <InspectionSectionTab
+              key={value}
+              value={value}
+              sectionLoading={reviewLoading}
+              rows={rows}
+              onViewImages={(r) => {
+                setGalleryImages(r.images);
+                setActiveGalleryUrl(r.images[0]?.url ?? null);
+                setGalleryOpen(true);
+              }}
+            />
+          ))}
 
           <InspectionRelationshipTab
             relationshipLoading={relationshipLoading}

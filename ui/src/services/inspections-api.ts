@@ -5,6 +5,7 @@ import type { InspectionFullResponse } from "@/api/generated/model/inspectionFul
 import type { GetInspectionKpisApiInspectionsKpisGetParams } from "@/api/generated/model/getInspectionKpisApiInspectionsKpisGetParams";
 import type { GetInspectionsApiInspectionsGetParams } from "@/api/generated/model/getInspectionsApiInspectionsGetParams";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
+import type { ChecklistItemResponse } from "@/api/generated/model/checklistItemResponse";
 import type { InspectionInputItemResponse } from "@/api/generated/model/inspectionInputItemResponse";
 import type { InspectionListItemResponse } from "@/api/generated/model/inspectionListItemResponse";
 import type { InspectionPassFailCounts } from "@/api/generated/model/inspectionPassFailCounts";
@@ -296,9 +297,31 @@ function valueToQuestionStatus(raw: string): InspectionQuestionStatus {
 
 function apiSectionMatches(
   inspectionSection: InspectionSectionKey,
-  checklistSection: string,
+  checklist: Pick<ChecklistItemResponse, "group_name" | "section">,
 ): boolean {
-  const s = checklistSection.toLowerCase().replace(/_/g, " ");
+  const g = (checklist.group_name ?? "").toLowerCase().trim();
+  const sec = (checklist.section ?? "").toLowerCase().replace(/_/g, " ").trim();
+
+  if (g.length > 0) {
+    switch (inspectionSection) {
+      case "outer-packaging":
+        return g.includes("outer");
+      case "inner-packaging":
+        return g.includes("inner");
+      case "product":
+        return (
+          g.includes("product") &&
+          !g.includes("outer") &&
+          !g.includes("inner")
+        );
+      case "device":
+        return g.includes("device");
+      default:
+        return false;
+    }
+  }
+
+  const s = sec;
   switch (inspectionSection) {
     case "outer-packaging":
       return s.includes("outer");
@@ -334,7 +357,7 @@ export function mapInputsForSection(
   for (const input of inputs) {
     if (
       input.is_active === false ||
-      !apiSectionMatches(inspectionSection, input.checklist.section)
+      !apiSectionMatches(inspectionSection, input.checklist)
     ) {
       continue;
     }
