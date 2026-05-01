@@ -6,20 +6,13 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Upl
 from fastapi.responses import StreamingResponse
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from mod.api.middleware import auth_dependency
 from mod.api.plant.helper import map_plant
 from mod.api.plant.request import PlantCreateRequest, PlantUpdateRequest
-from mod.api.plant.response import (
-    PlantDeviceResponse,
-    PlantInfoResponse,
-    PlantInspectionResponse,
-    PlantListResponse,
-    PlantResponse,
-    PlantUserResponse,
-)
-from mod.model import Device, Inspection, Plant
+from mod.api.plant.response import PlantListResponse, PlantResponse
+from mod.model import Plant
 from utils.common import read_csv_upload, to_proper_case
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
@@ -120,8 +113,8 @@ def create_plant(
 @router.get(
     "/plants/{plant_uuid}",
     name="get_plant_info",
-    description="Get plant with users, devices and inspections",
-    response_model=PlantInfoResponse,
+    description="Get plant details",
+    response_model=PlantResponse,
 )
 @exception_handler_decorator
 @check_api_role(["superadmin", "manager"])
@@ -133,74 +126,7 @@ def get_plant_info(
     plant = db.query(Plant).filter(Plant.uuid == plant_uuid).first()
     if plant is None:
         raise HTTPException(status_code=404, detail="Plant not found")
-
-    inspections = (
-        db.query(Inspection)
-        .options(
-            joinedload(Inspection.inspector),
-            joinedload(Inspection.device).joinedload(Device.user),
-            joinedload(Inspection.product),
-        )
-        .filter(Inspection.supplier_plant_code == plant.plant_code)
-        .order_by(Inspection.created_at.desc())
-        .all()
-    )
-
-    users_map: dict[int, PlantUserResponse] = {}
-    devices_map: dict[int, PlantDeviceResponse] = {}
-    inspection_rows: list[PlantInspectionResponse] = []
-
-    for inspection in inspections:
-        inspector = inspection.inspector
-        device = inspection.device
-
-        if inspector and inspector.id not in users_map:
-            users_map[inspector.id] = PlantUserResponse(
-                id=inspector.id,
-                uuid=inspector.uuid,
-                name=inspector.name,
-                email=inspector.email,
-                mobile_number=inspector.mobile_number,
-                designation=inspector.designation,
-                is_active=bool(inspector.is_active),
-            )
-
-        if device and device.id not in devices_map:
-            devices_map[device.id] = PlantDeviceResponse(
-                id=device.id,
-                uuid=device.uuid,
-                user_id=device.user_id,
-                user_name=device.user.name if device.user else "",
-                imei=device.imei,
-                device_type=device.device_type.value
-                if hasattr(device.device_type, "value")
-                else str(device.device_type),
-                is_locked=bool(device.is_locked),
-                is_active=bool(device.is_active),
-            )
-
-        inspection_rows.append(
-            PlantInspectionResponse(
-                id=inspection.id,
-                uuid=inspection.uuid,
-                inspector_id=inspection.inspector_id,
-                inspector_name=inspector.name if inspector else "",
-                device_id=inspection.device_id,
-                inspection_type=inspection.inspection_type.value
-                if hasattr(inspection.inspection_type, "value")
-                else str(inspection.inspection_type),
-                product_id=inspection.product_id,
-                plant_code=inspection.supplier_plant_code,
-                created_at=inspection.created_at,
-            )
-        )
-
-    return PlantInfoResponse(
-        plant=map_plant(plant),
-        users=list(users_map.values()),
-        devices=list(devices_map.values()),
-        inspections=inspection_rows,
-    )
+    return map_plant(plant)
 
 
 @router.put(

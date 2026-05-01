@@ -5,21 +5,14 @@ import uuid
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from mod.api.middleware import auth_dependency
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404, map_warehouse
 from mod.api.warehouse.request import WarehouseCreateRequest, WarehouseUpdateRequest
-from mod.api.warehouse.response import (
-    WarehouseDeviceResponse,
-    WarehouseInfoResponse,
-    WarehouseInspectionResponse,
-    WarehouseListResponse,
-    WarehouseResponse,
-    WarehouseUserResponse,
-)
-from mod.model import Device, Inspection, Warehouse
+from mod.api.warehouse.response import WarehouseListResponse, WarehouseResponse
+from mod.model import Warehouse
 from utils.common import read_csv_upload, to_proper_case
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
@@ -124,8 +117,8 @@ def create_warehouse(
 @router.get(
     "/warehouses/{warehouse_uuid}",
     name="get_warehouse_info",
-    description="Get warehouse with users, devices and inspections",
-    response_model=WarehouseInfoResponse,
+    description="Get warehouse details",
+    response_model=WarehouseResponse,
 )
 @exception_handler_decorator
 @check_api_role(["superadmin", "manager"])
@@ -135,74 +128,7 @@ def get_warehouse_info(
     db: Session = Depends(get_db),
 ):
     warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
-
-    inspections = (
-        db.query(Inspection)
-        .options(
-            joinedload(Inspection.inspector),
-            joinedload(Inspection.device).joinedload(Device.user),
-            joinedload(Inspection.product),
-        )
-        .filter(Inspection.warehouse_code == warehouse.warehouse_code)
-        .order_by(Inspection.created_at.desc())
-        .all()
-    )
-
-    users_map: dict[int, WarehouseUserResponse] = {}
-    devices_map: dict[int, WarehouseDeviceResponse] = {}
-    inspection_rows: list[WarehouseInspectionResponse] = []
-
-    for inspection in inspections:
-        inspector = inspection.inspector
-        device = inspection.device
-
-        if inspector and inspector.id not in users_map:
-            users_map[inspector.id] = WarehouseUserResponse(
-                id=inspector.id,
-                uuid=inspector.uuid,
-                name=inspector.name,
-                email=inspector.email,
-                mobile_number=inspector.mobile_number,
-                designation=inspector.designation,
-                is_active=bool(inspector.is_active),
-            )
-
-        if device and device.id not in devices_map:
-            devices_map[device.id] = WarehouseDeviceResponse(
-                id=device.id,
-                uuid=device.uuid,
-                user_id=device.user_id,
-                user_name=device.user.name if device.user else "",
-                imei=device.imei,
-                device_type=device.device_type.value
-                if hasattr(device.device_type, "value")
-                else str(device.device_type),
-                is_locked=bool(device.is_locked),
-                is_active=bool(device.is_active),
-            )
-
-        inspection_rows.append(
-            WarehouseInspectionResponse(
-                id=inspection.id,
-                uuid=inspection.uuid,
-                inspector_id=inspection.inspector_id,
-                inspector_name=inspector.name if inspector else "",
-                device_id=inspection.device_id,
-                inspection_type=inspection.inspection_type.value
-                if hasattr(inspection.inspection_type, "value")
-                else str(inspection.inspection_type),
-                product_id=inspection.product_id,
-                warehouse_code=inspection.warehouse_code,
-                created_at=inspection.created_at,
-            )
-        )
-
-    return WarehouseInfoResponse(
-        warehouse=map_warehouse(warehouse),
-        users=list(users_map.values()),
-        devices=list(devices_map.values()),
-        inspections=inspection_rows,
-    )
+    return map_warehouse(warehouse)
 
 
 @router.put(

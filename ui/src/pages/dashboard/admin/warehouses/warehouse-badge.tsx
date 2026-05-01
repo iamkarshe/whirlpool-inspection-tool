@@ -134,7 +134,6 @@ export function WarehouseHeaderBadges({
     <>
       <WarehouseCodeBadge code={warehouse.warehouse_code} />
       <WarehouseCityBadge city={warehouse.city} />
-      <WarehouseAddressBadge address={warehouse.address} />
     </>
   );
 }
