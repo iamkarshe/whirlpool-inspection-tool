@@ -1,12 +1,10 @@
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
 import { getInspectionsByUserId } from "@/pages/dashboard/inspections/inspection-service";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-
-type UserViewContext = { user: User };
+import type { UserViewContext } from "./context";
 
 export default function UserViewInspectionsPage() {
   const { user } = useOutletContext<UserViewContext>();

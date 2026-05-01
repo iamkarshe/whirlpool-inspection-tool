@@ -1,20 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
 import { UserBadges } from "@/pages/dashboard/admin/users/user-badge";
-import {
-  getUserById,
-  type User,
-} from "@/pages/dashboard/admin/users/user-service";
 import { TabbedContent } from "@/components/tabbed-content";
+import type { UserViewContext } from "@/pages/dashboard/admin/users/user-view/context";
+import { fetchAllUsers, userApiErrorMessage } from "@/services/users-api";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function UserViewLayout() {
   const params = useParams<{ id: string }>();
   const idParam = params.id ?? "";
   const id = parseInt(idParam, 10);
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [user, setUser] = useState<UserViewContext["user"] | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,9 +24,15 @@ export default function UserViewLayout() {
     }
     let cancelled = false;
     setLoading(true);
-    getUserById(id)
-      .then((data) => {
-        if (!cancelled) setUser(data);
+    fetchAllUsers()
+      .then((rows) => {
+        if (cancelled) return;
+        setUser(rows.find((u) => u.id === id) ?? null);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        toast.error(userApiErrorMessage(e, "Failed to load user."));
+        setUser(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

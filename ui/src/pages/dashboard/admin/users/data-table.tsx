@@ -11,7 +11,11 @@ import { Link } from "react-router-dom";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableFilter,
+  type DataTableServerSideConfig,
+} from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +25,9 @@ import {
 import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
 import { UserStatusBadge } from "@/pages/dashboard/admin/users/user-badge";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 
-const userColumns: ColumnDef<User>[] = [
+const userColumns: ColumnDef<UserResponse>[] = [
   {
     accessorKey: "name",
     header: "Name",
@@ -156,7 +160,7 @@ const userColumns: ColumnDef<User>[] = [
   },
 ];
 
-const userFilters: DataTableFilter<User>[] = [
+const userFilters: DataTableFilter<UserResponse>[] = [
   {
     id: "is_active",
     title: "Status",
@@ -169,25 +173,32 @@ const userFilters: DataTableFilter<User>[] = [
     id: "role",
     title: "Role",
     options: [
-      { value: "Manager", label: "Manager" },
-      { value: "Operator", label: "Operator" },
-      { value: "Admin", label: "Admin" },
+      { value: "manager", label: "Manager" },
+      { value: "operator", label: "Operator" },
+      { value: "admin", label: "Admin" },
     ],
   },
 ];
 
 interface UsersDataTableProps {
-  data: User[];
+  data: UserResponse[];
+  serverSide: DataTableServerSideConfig;
+  isLoading?: boolean;
 }
 
-export default function UsersDataTable({ data }: UsersDataTableProps) {
+export default function UsersDataTable({
+  data,
+  serverSide,
+  isLoading,
+}: UsersDataTableProps) {
   return (
-    <DataTable<User>
+    <DataTable<UserResponse>
       columns={userColumns}
       data={data}
-      searchKey="name"
       filters={userFilters}
       rangeLabel="users"
+      serverSide={serverSide}
+      isLoading={isLoading}
     />
   );
 }

@@ -82,6 +82,8 @@ export type DataTableServerSideConfig = {
   onSortingChange: (sorting: SortingState) => void;
   search: string;
   onSearchChange: (value: string) => void;
+  filters?: Record<string, string>;
+  onFilterChange?: (id: string, value: string) => void;
 };
 
 export interface DataTableProps<TData> {
@@ -372,23 +374,33 @@ export function DataTable<TData>({
                             key={option.value}
                             value={option.value}
                             onSelect={(value) => {
+                              if (serverSide?.onFilterChange) {
+                                const current =
+                                  serverSide.filters?.[filter.id] ?? "";
+                                serverSide.onFilterChange(
+                                  filter.id,
+                                  current === value ? "" : value,
+                                );
+                                return;
+                              }
                               const column = table.getColumn(filter.id);
                               const current = column?.getFilterValue() as
                                 | string
                                 | undefined;
-                              column?.setFilterValue(
-                                current === value ? "" : value,
-                              );
+                              column?.setFilterValue(current === value ? "" : value);
                             }}
                           >
                             <div className="flex items-center space-x-3 py-1">
                               <Checkbox
                                 checked={
-                                  (table
-                                    .getColumn(filter.id)
-                                    ?.getFilterValue() as
-                                    | string
-                                    | undefined) === option.value
+                                  serverSide
+                                    ? (serverSide.filters?.[filter.id] ?? "") ===
+                                      option.value
+                                    : (table
+                                        .getColumn(filter.id)
+                                        ?.getFilterValue() as
+                                        | string
+                                        | undefined) === option.value
                                 }
                                 aria-label={option.label}
                               />

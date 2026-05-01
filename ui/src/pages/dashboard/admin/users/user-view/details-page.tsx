@@ -10,11 +10,9 @@ import {
   UserRoleBadge,
   UserStatusBadge,
 } from "@/pages/dashboard/admin/users/user-badge";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
 import { User as UserIcon } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
-
-type UserViewContext = { user: User };
+import type { UserViewContext } from "./context";
 
 export default function UserViewDetailsPage() {
   const { user } = useOutletContext<UserViewContext>();

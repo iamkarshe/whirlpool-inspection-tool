@@ -1,5 +1,5 @@
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 import {
   Briefcase,
   CheckCircle,
@@ -29,13 +29,22 @@ const roleIcon: Record<string, React.ComponentType<{ className?: string }>> = {
   Operator: UserIcon,
 };
 
+function normalizeRoleLabel(role: string): string {
+  const lower = role.toLowerCase();
+  if (lower === "admin") return "Admin";
+  if (lower === "manager") return "Manager";
+  if (lower === "operator") return "Operator";
+  return role;
+}
+
 export function UserRoleBadge({ role }: { role: string }) {
-  const variant = roleVariant[role] ?? "secondary";
-  const Icon = roleIcon[role] ?? UserIcon;
+  const label = normalizeRoleLabel(role);
+  const variant = roleVariant[label] ?? "secondary";
+  const Icon = roleIcon[label] ?? UserIcon;
   return (
     <Badge variant={variant} className={BADGE_ICON_CLASS}>
       <Icon />
-      {role.toUpperCase()}
+      {label.toUpperCase()}
     </Badge>
   );
 }
@@ -59,7 +68,7 @@ export function UserStatusBadge({ isActive }: { isActive: boolean }) {
   );
 }
 
-export function UserBadges({ user }: { user: User }) {
+export function UserBadges({ user }: { user: UserResponse }) {
   return (
     <>
       <UserRoleBadge role={user.role} />

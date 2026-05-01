@@ -5,9 +5,7 @@ import { useOutletContext } from "react-router-dom";
 import LoginsDataTable from "@/pages/dashboard/admin/logins/data-table";
 import type { LoginActivity } from "@/pages/dashboard/admin/logins/login-service";
 import { getLoginsByUserId } from "@/pages/dashboard/admin/logins/login-service";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
-
-type UserViewContext = { user: User };
+import type { UserViewContext } from "./context";
 
 export default function UserViewLoginsPage() {
   const { user } = useOutletContext<UserViewContext>();

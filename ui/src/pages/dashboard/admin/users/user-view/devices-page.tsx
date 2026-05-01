@@ -1,12 +1,10 @@
 import DevicesDataTable from "@/pages/dashboard/admin/devices/data-table";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
 import { getDevicesByUserId } from "@/pages/dashboard/admin/devices/device-service";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-
-type UserViewContext = { user: User };
+import type { UserViewContext } from "./context";
 
 export default function UserViewDevicesPage() {
   const { user } = useOutletContext<UserViewContext>();
