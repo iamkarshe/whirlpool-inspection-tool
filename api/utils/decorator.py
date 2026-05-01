@@ -98,3 +98,58 @@ def check_api_role(allowed_roles: List[str]):
         return wrapper
 
     return decorator
+
+
+def _request_from_args(args: tuple, kwargs: dict) -> Optional[Request]:
+    for arg in args:
+        if isinstance(arg, Request):
+            return arg
+    return kwargs.get("request")
+
+
+def apply_operator_scope_filters(func: Callable):
+    """For routes that list inspections: operators only see rows they inspected.
+
+    Sets ``request.state.inspector_scope_user_id`` to the current user's id when
+    the caller is an operator but not a manager or superadmin; otherwise ``None``.
+    Handlers should filter ``Inspection.inspector_id`` when this is set.
+    """
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        request = _request_from_args(args, kwargs)
+        if request is None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "success": False,
+                    "error": "Request context missing",
+                    "pass_request_ctx": True,
+                },
+            )
+        role_raw = getattr(request.state, "role", "") or ""
+        roles = [r.strip() for r in role_raw.split(",") if r.strip()]
+        if (
+            "operator" in roles
+            and "superadmin" not in roles
+            and "manager" not in roles
+        ):
+            uid = getattr(request.state, "user_id", None)
+            if uid is None:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={
+                        "success": False,
+                        "error": "Not authenticated",
+                    },
+                )
+            request.state.inspector_scope_user_id = int(uid)
+        else:
+            request.state.inspector_scope_user_id = None
+
+        result = func(*args, **kwargs)
+        if callable(getattr(result, "__await__", None)):
+            return await result
+        return result
+
+    return wrapper

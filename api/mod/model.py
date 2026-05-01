@@ -7,6 +7,7 @@ from typing import Any
 
 from sqlalchemy import (
     Boolean,
+    Column,
     DateTime,
     Double,
     Enum as SQLEnum,
@@ -14,6 +15,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Table,
     Text,
     UniqueConstraint,
     func,
@@ -176,6 +178,43 @@ class TimestampSoftDeleteMixin:
     )
 
 
+user_allowed_warehouses_tbl = Table(
+    "user_allowed_warehouses",
+    Base.metadata,
+    Column(
+        "user_id",
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "warehouse_code",
+        String(64),
+        ForeignKey("warehouses.warehouse_code", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Index("ix_user_allowed_warehouses_user_id", "user_id"),
+)
+
+user_allowed_plants_tbl = Table(
+    "user_allowed_plants",
+    Base.metadata,
+    Column(
+        "user_id",
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "plant_code",
+        String(64),
+        ForeignKey("plants.plant_code", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Index("ix_user_allowed_plants_user_id", "user_id"),
+)
+
+
 class Role(TimestampSoftDeleteMixin, Base):
     __tablename__ = "roles"
 
@@ -236,6 +275,22 @@ class User(TimestampSoftDeleteMixin, Base):
         )
     )
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
+    warehouses_scope: Mapped[list["Warehouse"]] = relationship(
+        secondary=user_allowed_warehouses_tbl,
+        back_populates="users_with_warehouse_access",
+    )
+    plants_scope: Mapped[list["Plant"]] = relationship(
+        secondary=user_allowed_plants_tbl,
+        back_populates="users_with_plant_access",
+    )
+
+    @property
+    def allowed_warehouse(self) -> list[str]:
+        return [w.warehouse_code for w in self.warehouses_scope]
+
+    @property
+    def allowed_plants(self) -> list[str]:
+        return [p.plant_code for p in self.plants_scope]
 
 
 class Device(TimestampSoftDeleteMixin, Base):
@@ -401,6 +456,10 @@ class Warehouse(TimestampSoftDeleteMixin, Base):
     postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
 
     inspections: Mapped[list["Inspection"]] = relationship(back_populates="warehouse")
+    users_with_warehouse_access: Mapped[list["User"]] = relationship(
+        secondary=user_allowed_warehouses_tbl,
+        back_populates="warehouses_scope",
+    )
 
 
 class Plant(TimestampSoftDeleteMixin, Base):
@@ -423,6 +482,10 @@ class Plant(TimestampSoftDeleteMixin, Base):
     postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
 
     inspections: Mapped[list["Inspection"]] = relationship(back_populates="plant")
+    users_with_plant_access: Mapped[list["User"]] = relationship(
+        secondary=user_allowed_plants_tbl,
+        back_populates="plants_scope",
+    )
 
 
 class Checklist(TimestampSoftDeleteMixin, Base):

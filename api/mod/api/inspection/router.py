@@ -39,7 +39,11 @@ from utils.common import (
     utc_end_exclusive_day_range,
 )
 from utils.db import get_db
-from utils.decorator import check_api_role, exception_handler_decorator
+from utils.decorator import (
+    apply_operator_scope_filters,
+    check_api_role,
+    exception_handler_decorator,
+)
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
@@ -110,7 +114,8 @@ def get_inspection_kpis(
     response_model=InspectionListResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(["superadmin", "manager", "operator"])
+@apply_operator_scope_filters
 def get_inspections(
     request: Request,
     params: PaginationParams = Depends(get_pagination_params),
@@ -156,6 +161,9 @@ def get_inspections(
         )
         .filter(Inspection.is_active.is_(is_active))
     )
+    inspector_scope_id = getattr(request.state, "inspector_scope_user_id", None)
+    if inspector_scope_id is not None:
+        query = query.filter(Inspection.inspector_id == inspector_scope_id)
     if warehouse_code is not None:
         query = query.filter(Inspection.warehouse_code == warehouse_code)
     if plant_code is not None:
@@ -230,7 +238,7 @@ def get_inspections(
     response_model=BarcodeParseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(["superadmin", "manager", "operator"])
 def parse_inspection_barcode(
     request: Request,
     barcode: str = Query(

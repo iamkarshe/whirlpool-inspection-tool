@@ -107,6 +107,8 @@ export const PAGES = {
 
   OPS_HOME: "/ops",
   OPS_NEW_INSPECTION: "/ops/new-inspection",
+  OPS_NEW_INSPECTION_INBOUND: "/ops/new-inspection/inbound",
+  OPS_NEW_INSPECTION_OUTBOUND: "/ops/new-inspection/outbound",
   OPS_DATA: "/ops/data",
   OPS_SEARCH: "/ops/search",
   OPS_SETTINGS: "/ops/settings",

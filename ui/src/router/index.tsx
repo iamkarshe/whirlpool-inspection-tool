@@ -248,8 +248,17 @@ const KnowledgeBasePage = lazy(
 );
 const OpsLayout = lazy(() => import("@/pages/ops/layout"));
 const OpsHomePage = lazy(() => import("@/pages/ops/home/page"));
+const OpsNewInspectionLayout = lazy(
+  () => import("@/pages/ops/new-inspection/layout"),
+);
 const OpsNewInspectionPage = lazy(
   () => import("@/pages/ops/new-inspection/page"),
+);
+const OpsNewInspectionInboundPage = lazy(
+  () => import("@/pages/ops/new-inspection/inbound/page"),
+);
+const OpsNewInspectionOutboundPage = lazy(
+  () => import("@/pages/ops/new-inspection/outbound/page"),
 );
 const OpsDataPage = lazy(() => import("@/pages/ops/data/page"));
 const OpsSearchPage = lazy(() => import("@/pages/ops/search/page"));
@@ -304,12 +313,40 @@ export const router = createBrowserRouter([
           },
           {
             path: "new-inspection",
-            handle: { title: "New Inspection" },
             element: (
               <Suspense fallback={<PageLoader />}>
-                <OpsNewInspectionPage />
+                <OpsNewInspectionLayout />
               </Suspense>
             ),
+            children: [
+              {
+                index: true,
+                handle: { title: "New Inspection" },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <OpsNewInspectionPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: "inbound",
+                handle: { title: "New Inbound Inspection" },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <OpsNewInspectionInboundPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: "outbound",
+                handle: { title: "New Outbound Inspection" },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <OpsNewInspectionOutboundPage />
+                  </Suspense>
+                ),
+              },
+            ],
           },
           {
             path: "data",
