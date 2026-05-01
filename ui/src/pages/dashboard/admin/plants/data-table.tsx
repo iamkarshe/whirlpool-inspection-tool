@@ -14,7 +14,6 @@ import { PAGES } from "@/endpoints";
 import {
   PlantCodeBadge,
   PlantDevicesCountBadge,
-  PlantIdLinkBadge,
   PlantInspectionsCountBadge,
   PlantUsersCountBadge,
 } from "@/pages/dashboard/admin/plants/plant-badge";
@@ -34,18 +33,22 @@ import { Link } from "react-router-dom";
 
 const plantColumns: ColumnDef<PlantResponse>[] = [
   {
-    accessorKey: "uuid",
+    accessorKey: "plant_code",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Plant ID
+        Code
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <PlantIdLinkBadge id={row.original.uuid} />,
+    cell: ({ row }) => (
+      <Link to={PAGES.plantViewPath(row.original.uuid)} className="inline-block">
+        <PlantCodeBadge code={row.original.plant_code} />
+      </Link>
+    ),
   },
   {
     accessorKey: "name",
@@ -60,20 +63,6 @@ const plantColumns: ColumnDef<PlantResponse>[] = [
       </Button>
     ),
     cell: ({ row }) => row.getValue("name"),
-  },
-  {
-    accessorKey: "plant_code",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Code
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => <PlantCodeBadge code={row.original.plant_code} />,
   },
   {
     accessorKey: "address",

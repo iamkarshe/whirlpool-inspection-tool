@@ -14,7 +14,6 @@ import { PAGES } from "@/endpoints";
 import {
   WarehouseCodeBadge,
   WarehouseDevicesCountBadge,
-  WarehouseIdLinkBadge,
   WarehouseInspectionsCountBadge,
   WarehouseUsersCountBadge,
 } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
@@ -34,18 +33,22 @@ import { Link } from "react-router-dom";
 
 const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
   {
-    accessorKey: "id",
+    accessorKey: "warehouse_code",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Warehouse ID
+        Code
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <WarehouseIdLinkBadge id={row.original.uuid} />,
+    cell: ({ row }) => (
+      <Link to={PAGES.warehouseViewPath(row.original.uuid)} className="inline-block">
+        <WarehouseCodeBadge code={row.original.warehouse_code} />
+      </Link>
+    ),
   },
   {
     accessorKey: "name",
@@ -60,22 +63,6 @@ const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
       </Button>
     ),
     cell: ({ row }) => row.getValue("name"),
-  },
-  {
-    accessorKey: "warehouse_code",
-    header: ({ column }) => (
-      <Button
-        className="-ml-3"
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Code
-        <ArrowUpDown className="ml-1 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <WarehouseCodeBadge code={row.original.warehouse_code} />
-    ),
   },
   {
     accessorKey: "address",

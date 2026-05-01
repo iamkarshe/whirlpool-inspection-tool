@@ -5,9 +5,11 @@ import type { GetPlantsApiPlantsGetParams } from "@/api/generated/model/getPlant
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
 import type { PlantCreateRequest } from "@/api/generated/model/plantCreateRequest";
+import type { PlantDeviceResponse } from "@/api/generated/model/plantDeviceResponse";
 import type { PlantInfoResponse } from "@/api/generated/model/plantInfoResponse";
 import type { PlantListResponse } from "@/api/generated/model/plantListResponse";
 import type { PlantResponse } from "@/api/generated/model/plantResponse";
+import type { PlantUserResponse } from "@/api/generated/model/plantUserResponse";
 import { getPlants } from "@/api/generated/plants/plants";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 
@@ -22,6 +24,35 @@ export type PlantInspectionsListParams = Pick<
 > & {
   plant_uuid: string;
 };
+
+export type PlantInfoViewData = {
+  plant: PlantResponse;
+  users: PlantUserResponse[];
+  devices: PlantDeviceResponse[];
+};
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizePlantInfo(raw: unknown): PlantInfoViewData {
+  if (!isObjectRecord(raw)) {
+    throw new Error("Invalid plant response.");
+  }
+  if ("plant" in raw) {
+    const wrapped = raw as PlantInfoResponse;
+    return {
+      plant: wrapped.plant,
+      users: wrapped.users ?? [],
+      devices: wrapped.devices ?? [],
+    };
+  }
+  return {
+    plant: raw as PlantResponse,
+    users: [],
+    devices: [],
+  };
+}
 
 export async function fetchPlantsPage(
   params: PlantsListParams,
@@ -47,12 +78,13 @@ export async function fetchPlantsPage(
 export async function fetchPlantInfo(
   plantUuid: string,
   request?: { signal?: AbortSignal },
-): Promise<PlantInfoResponse> {
+): Promise<PlantInfoViewData> {
   const api = getPlants();
-  return api.getPlantInfoApiPlantsPlantUuidGet(
+  const response = await api.getPlantInfoApiPlantsPlantUuidGet(
     plantUuid,
     request?.signal ? { signal: request.signal } : undefined,
   );
+  return normalizePlantInfo(response);
 }
 
 export async function fetchPlantInspectionsPage(
