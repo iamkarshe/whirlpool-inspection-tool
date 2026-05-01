@@ -1,23 +1,16 @@
-import { useSessionUser } from "@/hooks/use-session-user";
 import { BookOpenText, ClipboardList, ScanLine, Search } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-function firstNameFromDisplayName(name: string): string | null {
-  const part = name.trim().split(/\s+/)[0];
-  return part?.length ? part : null;
-}
+import { useSessionUser } from "@/hooks/use-session-user";
+import { firstNameFromDisplayName } from "@/lib/ops-user-display";
 
 export default function OpsHomePage() {
   const navigate = useNavigate();
   const sessionUser = useSessionUser();
 
   const greetingLead = useMemo(() => {
-    const first =
-      sessionUser?.name?.trim()?.length ?
-        firstNameFromDisplayName(sessionUser.name)
-      : null;
-    return first ?? "there";
+    return firstNameFromDisplayName(sessionUser?.name) ?? "there";
   }, [sessionUser?.name]);
 
   return (

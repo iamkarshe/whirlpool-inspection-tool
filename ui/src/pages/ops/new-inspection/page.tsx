@@ -1,11 +1,8 @@
 import { Barcode, ScanLine } from "lucide-react";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import type { BarcodeParseResponse } from "@/api/generated/model/barcodeParseResponse";
-import type { InspectionWithChecklistPayload } from "@/api/generated/model/inspectionWithChecklistPayload";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,12 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PAGES } from "@/endpoints";
-import {
-  opsInspectionApiError,
-  parseInspectionBarcode,
-} from "@/services/ops-inspections-api";
-
-const BARCODE_LEN = 16;
+import { OPS_BARCODE_LEN } from "@/pages/ops/new-inspection/constants";
 
 function getDefaultScannerEnabled() {
   if (typeof window === "undefined") return false;
@@ -30,94 +22,40 @@ function getDefaultScannerEnabled() {
   return coarsePointer || smallViewport;
 }
 
-function summarizeInspection(ins: InspectionWithChecklistPayload): string {
-  const pass = ins.checklist_pass_total ?? 0;
-  const fail = ins.checklist_fail_total ?? 0;
-  return `${pass} pass · ${fail} fail`;
-}
-
-function formatWhen(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
-
 export default function OpsNewInspectionPage() {
-  const [, setSearchParams] = useSearchParams();
-  const autoParsedRef = useRef(false);
-  const parseRequestIdRef = useRef(0);
+  const navigate = useNavigate();
 
   const [inspectionCode, setInspectionCode] = useState(() => {
     const params = new URLSearchParams(
       typeof window !== "undefined" ? window.location.search : "",
     );
-    return (params.get("barcode") ?? "").replace(/\s+/g, "").slice(0, BARCODE_LEN);
+    return (params.get("barcode") ?? "")
+      .replace(/\s+/g, "")
+      .slice(0, OPS_BARCODE_LEN);
   });
-  const [parsed, setParsed] = useState<BarcodeParseResponse | null>(null);
-  const [parsing, setParsing] = useState(false);
   const [scannerEnabled, setScannerEnabled] = useState(() =>
     getDefaultScannerEnabled(),
   );
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanErrorOpen, setScanErrorOpen] = useState(false);
 
-  const isCodeValid = inspectionCode.trim().length === BARCODE_LEN;
+  const isCodeValid = inspectionCode.trim().length === OPS_BARCODE_LEN;
 
-  const runParse = useCallback(
-    async (barcode: string) => {
-      const normalized = barcode.replace(/\s+/g, "").slice(0, BARCODE_LEN);
-      if (normalized.length !== BARCODE_LEN) return;
-
-      const reqId = ++parseRequestIdRef.current;
-      setParsing(true);
-      try {
-        const res = await parseInspectionBarcode(normalized);
-        if (parseRequestIdRef.current !== reqId) return;
-        setParsed(res);
-        setSearchParams(
-          (prev) => {
-            const next = new URLSearchParams(prev);
-            next.set("barcode", normalized);
-            return next;
-          },
-          { replace: true },
-        );
-      } catch (e: unknown) {
-        if (parseRequestIdRef.current !== reqId) return;
-        setParsed(null);
-        toast.error(opsInspectionApiError(e, "Could not read this barcode."));
-      } finally {
-        if (parseRequestIdRef.current === reqId) setParsing(false);
-      }
-    },
-    [setSearchParams],
-  );
+  const goToUnit = (barcode: string) => {
+    const normalized = barcode.replace(/\s+/g, "").slice(0, OPS_BARCODE_LEN);
+    if (normalized.length !== OPS_BARCODE_LEN) return;
+    navigate(PAGES.opsNewInspectionUnitPath(normalized));
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const fromUrl = (params.get("barcode") ?? "")
       .replace(/\s+/g, "")
-      .slice(0, BARCODE_LEN);
-    if (
-      fromUrl.length === BARCODE_LEN &&
-      !autoParsedRef.current
-    ) {
-      autoParsedRef.current = true;
-      setInspectionCode(fromUrl);
-      void runParse(fromUrl);
+      .slice(0, OPS_BARCODE_LEN);
+    if (fromUrl.length === OPS_BARCODE_LEN) {
+      navigate(PAGES.opsNewInspectionUnitPath(fromUrl), { replace: true });
     }
-  }, [runParse]);
-
-  const startInboundTo = `${PAGES.OPS_NEW_INSPECTION_INBOUND}?barcode=${encodeURIComponent(inspectionCode.trim())}`;
-  const startOutboundTo = `${PAGES.OPS_NEW_INSPECTION_OUTBOUND}?barcode=${encodeURIComponent(inspectionCode.trim())}`;
-
-  const inbound = parsed?.inbound_inspection ?? null;
-  const outbound = parsed?.outbound_inspection ?? null;
-  const showsTypeChoice =
-    parsed && inbound === null && outbound === null;
+  }, [navigate]);
 
   return (
     <div className="space-y-4">
@@ -126,8 +64,8 @@ export default function OpsNewInspectionPage() {
           New inspection
         </p>
         <p className="text-sm text-muted-foreground">
-          Scan or enter the 16-character barcode, then confirm the product before
-          starting inbound or outbound.
+          Scan or enter the {OPS_BARCODE_LEN}-character barcode. You will
+          confirm the product and choose inbound or outbound on the next screen.
         </p>
       </header>
 
@@ -159,11 +97,13 @@ export default function OpsNewInspectionPage() {
                 onScan={(detectedCodes) => {
                   const raw = detectedCodes[0]?.rawValue ?? "";
                   if (!raw) return;
-                  const normalized = raw.replace(/\s+/g, "").slice(0, BARCODE_LEN);
+                  const normalized = raw
+                    .replace(/\s+/g, "")
+                    .slice(0, OPS_BARCODE_LEN);
                   setInspectionCode(normalized);
-                  if (normalized.length === BARCODE_LEN) {
+                  if (normalized.length === OPS_BARCODE_LEN) {
                     setScannerEnabled(false);
-                    void runParse(normalized);
+                    goToUnit(normalized);
                   }
                 }}
                 onError={(error) => {
@@ -191,7 +131,8 @@ export default function OpsNewInspectionPage() {
               <p className="text-xs text-destructive">{scanError}</p>
             ) : (
               <p className="text-xs text-muted-foreground text-center">
-                Point the camera at the barcode. We use the first 16 characters.
+                Point the camera at the barcode. We use the first{" "}
+                {OPS_BARCODE_LEN} characters.
               </p>
             )}
           </div>
@@ -215,25 +156,27 @@ export default function OpsNewInspectionPage() {
               value={inspectionCode}
               onChange={(event) =>
                 setInspectionCode(
-                  event.target.value.replace(/\s+/g, "").slice(0, BARCODE_LEN),
+                  event.target.value
+                    .replace(/\s+/g, "")
+                    .slice(0, OPS_BARCODE_LEN),
                 )
               }
-              placeholder={`Enter ${BARCODE_LEN} characters`}
+              placeholder={`Enter ${OPS_BARCODE_LEN} characters`}
               className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
           <p className="text-center text-[11px] text-muted-foreground">
-            {inspectionCode.length}/{BARCODE_LEN} characters
+            {inspectionCode.length}/{OPS_BARCODE_LEN} characters
           </p>
         </div>
 
         <Button
           type="button"
           className="w-full"
-          disabled={!isCodeValid || parsing}
-          onClick={() => void runParse(inspectionCode.trim())}
+          disabled={!isCodeValid}
+          onClick={() => goToUnit(inspectionCode.trim())}
         >
-          {parsing ? "Looking up…" : "Look up product"}
+          Continue
         </Button>
       </section>
 
@@ -246,8 +189,8 @@ export default function OpsNewInspectionPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="text-muted-foreground text-sm">
-            Check camera permissions and ensure no other app is using the camera.
-            You can continue with manual code entry.
+            Check camera permissions and ensure no other app is using the
+            camera. You can continue with manual code entry.
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setScanErrorOpen(false)}>
@@ -256,121 +199,6 @@ export default function OpsNewInspectionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {parsed ? (
-        <div className="space-y-4">
-          <section className="rounded-3xl border bg-card/80 p-4 shadow-sm">
-            <p className="text-sm font-semibold">Product</p>
-            <p className="mt-2 text-base font-medium leading-snug">
-              {parsed.product.material_description}
-            </p>
-            <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
-              <div className="flex flex-wrap gap-x-2 gap-y-1">
-                <dt className="font-medium text-foreground">Category</dt>
-                <dd>{parsed.product_category.name}</dd>
-              </div>
-              <div className="flex flex-wrap gap-x-2 gap-y-1">
-                <dt className="font-medium text-foreground">Material</dt>
-                <dd>{parsed.product.material_code}</dd>
-              </div>
-              {parsed.product_unit?.barcode ? (
-                <div className="flex flex-wrap gap-x-2 gap-y-1">
-                  <dt className="font-medium text-foreground">Unit barcode</dt>
-                  <dd className="font-mono">{parsed.product_unit.barcode}</dd>
-                </div>
-              ) : null}
-            </dl>
-          </section>
-
-          {(inbound || outbound) && (
-            <section className="space-y-2">
-              <p className="text-sm font-semibold">Existing inspections</p>
-              <div className="space-y-2">
-                {inbound ? (
-                  <ExistingInspectionRow
-                    label="Inbound"
-                    inspection={inbound}
-                  />
-                ) : null}
-                {outbound ? (
-                  <ExistingInspectionRow
-                    label="Outbound"
-                    inspection={outbound}
-                  />
-                ) : null}
-              </div>
-            </section>
-          )}
-
-          {showsTypeChoice ? (
-            <section className="space-y-2 rounded-3xl border border-dashed bg-muted/15 p-4">
-              <p className="text-sm font-semibold">Start inspection</p>
-              <p className="text-sm text-muted-foreground">
-                No inspection exists for this unit yet. Choose the flow you need.
-              </p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Button asChild className="w-full">
-                  <Link to={startInboundTo}>Inbound</Link>
-                </Button>
-                <Button asChild className="w-full" variant="secondary">
-                  <Link to={startOutboundTo}>Outbound</Link>
-                </Button>
-              </div>
-            </section>
-          ) : (
-            <section className="space-y-2">
-              {inbound === null ? (
-                <Button asChild className="w-full sm:w-auto">
-                  <Link to={startInboundTo}>Start inbound inspection</Link>
-                </Button>
-              ) : null}
-              {outbound === null ? (
-                <Button asChild variant="secondary" className="w-full sm:w-auto">
-                  <Link to={startOutboundTo}>Start outbound inspection</Link>
-                </Button>
-              ) : null}
-              {inbound && outbound ? (
-                <p className="text-sm text-muted-foreground">
-                  Both inbound and outbound inspections already exist for this
-                  unit. Open one above or use Search to find others.
-                </p>
-              ) : null}
-            </section>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-type ExistingInspectionRowProps = {
-  label: string;
-  inspection: InspectionWithChecklistPayload;
-};
-
-function ExistingInspectionRow({
-  label,
-  inspection,
-}: ExistingInspectionRowProps) {
-  return (
-    <div className="flex flex-col gap-2 rounded-2xl border bg-background/60 p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-sm font-semibold">{label}</p>
-        <p className="text-xs text-muted-foreground">
-          {formatWhen(inspection.created_at)} · {summarizeInspection(inspection)}
-        </p>
-        {inspection.warehouse_code ? (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Warehouse {inspection.warehouse_code}
-            {inspection.plant_code ? ` · Plant ${inspection.plant_code}` : ""}
-          </p>
-        ) : null}
-      </div>
-      <Button asChild size="sm" variant="outline" className="shrink-0">
-        <Link to={PAGES.opsInspectionDetailPath(inspection.uuid)}>
-          View
-        </Link>
-      </Button>
     </div>
   );
 }

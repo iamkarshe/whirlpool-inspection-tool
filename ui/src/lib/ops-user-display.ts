@@ -1,3 +1,13 @@
+/** First whitespace-delimited token of a display name, for greetings; empty input → null. */
+export function firstNameFromDisplayName(
+  name: string | undefined | null,
+): string | null {
+  const trimmed = typeof name === "string" ? name.trim() : "";
+  if (!trimmed) return null;
+  const first = trimmed.split(/\s+/).filter(Boolean)[0];
+  return first ?? null;
+}
+
 /** Two-letter avatar initials from a display name. */
 export function userInitialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

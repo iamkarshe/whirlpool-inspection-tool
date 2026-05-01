@@ -254,6 +254,9 @@ const OpsNewInspectionLayout = lazy(
 const OpsNewInspectionPage = lazy(
   () => import("@/pages/ops/new-inspection/page"),
 );
+const OpsNewInspectionUnitPage = lazy(
+  () => import("@/pages/ops/new-inspection/unit/page"),
+);
 const OpsNewInspectionInboundPage = lazy(
   () => import("@/pages/ops/new-inspection/inbound/page"),
 );
@@ -325,6 +328,15 @@ export const router = createBrowserRouter([
                 element: (
                   <Suspense fallback={<PageLoader />}>
                     <OpsNewInspectionPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: "unit/:barcode",
+                handle: { title: "Inspection" },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <OpsNewInspectionUnitPage />
                   </Suspense>
                 ),
               },
