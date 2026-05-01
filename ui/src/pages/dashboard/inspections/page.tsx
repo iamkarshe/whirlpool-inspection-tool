@@ -6,12 +6,14 @@ import SkeletonTable from "@/components/skeleton7";
 import { InspectionStatCards } from "@/pages/dashboard/inspections/components/inspection-stat-cards";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  getInspectionKpis,
+  getInspectionKpisForDateRange,
   getInspections,
   type Inspection,
   type InspectionKpis,
 } from "@/pages/dashboard/inspections/inspection-service";
+import { inspectionsApiErrorMessage } from "@/services/inspections-api";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import type { DateRange } from "react-day-picker";
 import {
@@ -23,20 +25,23 @@ import {
   parseInspectionFiltersFromSearch,
   type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
+import { AlertCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 export default function InspectionsPage() {
   const location = useLocation();
   const [kpis, setKpis] = useState<InspectionKpis | null>(null);
+  const [kpiError, setKpiError] = useState<string | null>(null);
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loadingKpis, setLoadingKpis] = useState(true);
   const [loadingTable, setLoadingTable] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(() =>
-    mergeInspectionFilters(
-      defaultInspectionFilters(),
-      parseInspectionFiltersFromSearch(location.search),
-    ),
+  const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(
+    () =>
+      mergeInspectionFilters(
+        defaultInspectionFilters(),
+        parseInspectionFiltersFromSearch(location.search),
+      ),
   );
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
@@ -51,14 +56,25 @@ export default function InspectionsPage() {
   );
 
   useEffect(() => {
-    queueMicrotask(() => setLoadingKpis(true));
-    getInspectionKpis(
-      dateRange?.from ? dateRange.from.toISOString() : undefined,
-      dateRange?.to ? dateRange.to.toISOString() : undefined,
-    )
+    const ac = new AbortController();
+    queueMicrotask(() => {
+      setLoadingKpis(true);
+      setKpiError(null);
+    });
+    getInspectionKpisForDateRange(dateRange, { signal: ac.signal })
       .then(setKpis)
-      .finally(() => setLoadingKpis(false));
-  }, [dateRange?.from, dateRange?.to]);
+      .catch((e) => {
+        if (ac.signal.aborted) return;
+        setKpis(null);
+        setKpiError(
+          inspectionsApiErrorMessage(e, "Could not load inspection KPIs."),
+        );
+      })
+      .finally(() => {
+        if (!ac.signal.aborted) setLoadingKpis(false);
+      });
+    return () => ac.abort();
+  }, [dateRange]);
 
   useEffect(() => {
     queueMicrotask(() => setLoadingTable(true));
@@ -92,7 +108,14 @@ export default function InspectionsPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-12">
+        <div className="lg:col-span-12 space-y-4">
+          {kpiError ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Inspection KPIs unavailable</AlertTitle>
+              <AlertDescription>{kpiError}</AlertDescription>
+            </Alert>
+          ) : null}
           {loadingKpis ? (
             <KpiLoader count={4} />
           ) : kpis ? (

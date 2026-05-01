@@ -115,12 +115,42 @@ export function mapInspectionFullToInspection(
 }
 
 export function mapKpisResponse(api: InspectionKpisResponse): InspectionKpis {
+  const inboundApproved = api.inbound_approved ?? api.inbound_passed;
+  const outboundApproved = api.outbound_approved ?? api.outbound_passed;
+
   return {
     totalInspections: api.total_inspections,
+    inboundInReview: api.inbound_in_review ?? 0,
+    inboundRejected: api.inbound_rejected ?? 0,
+    inboundApproved,
+    outboundInReview: api.outbound_in_review ?? 0,
+    outboundRejected: api.outbound_rejected ?? 0,
+    outboundApproved,
     inboundPassed: api.inbound_passed,
     inboundFailed: api.inbound_failed,
     outboundPassed: api.outbound_passed,
     outboundFailed: api.outbound_failed,
+    periodFrom: api.date_from,
+    periodTo: api.date_to,
+  };
+}
+
+export function formatCalendarDateForApi(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function inspectionKpisParamsFromDateRange(range: {
+  from?: Date;
+  to?: Date;
+}): GetInspectionKpisApiInspectionsKpisGetParams {
+  if (!range.from) return {};
+  const end = range.to ?? range.from;
+  return {
+    date_from: formatCalendarDateForApi(range.from),
+    date_to: formatCalendarDateForApi(end),
   };
 }
 

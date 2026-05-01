@@ -14,4 +14,10 @@ export interface InspectionKpisResponse {
   inbound_failed: number;
   outbound_passed: number;
   outbound_failed: number;
+  inbound_in_review?: number;
+  inbound_rejected?: number;
+  inbound_approved?: number;
+  outbound_in_review?: number;
+  outbound_rejected?: number;
+  outbound_approved?: number;
 }

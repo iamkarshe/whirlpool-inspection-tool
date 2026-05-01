@@ -45,6 +45,12 @@ export async function getOperationsAnalyticsKpis(
   return {
     inspections: {
       totalInspections: scaleInt(inspections.totalInspections, scale),
+      inboundInReview: scaleInt(inspections.inboundInReview, scale),
+      inboundRejected: scaleInt(inspections.inboundRejected, scale),
+      inboundApproved: scaleInt(inspections.inboundApproved, scale),
+      outboundInReview: scaleInt(inspections.outboundInReview, scale),
+      outboundRejected: scaleInt(inspections.outboundRejected, scale),
+      outboundApproved: scaleInt(inspections.outboundApproved, scale),
       inboundPassed: scaleInt(inspections.inboundPassed, scale),
       inboundFailed: scaleInt(inspections.inboundFailed, scale),
       outboundPassed: scaleInt(inspections.outboundPassed, scale),

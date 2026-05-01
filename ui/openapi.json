@@ -4463,6 +4463,30 @@
           "outbound_failed": {
             "type": "integer",
             "title": "Outbound Failed"
+          },
+          "inbound_in_review": {
+            "type": "integer",
+            "title": "Inbound In Review"
+          },
+          "inbound_rejected": {
+            "type": "integer",
+            "title": "Inbound Rejected"
+          },
+          "inbound_approved": {
+            "type": "integer",
+            "title": "Inbound Approved"
+          },
+          "outbound_in_review": {
+            "type": "integer",
+            "title": "Outbound In Review"
+          },
+          "outbound_rejected": {
+            "type": "integer",
+            "title": "Outbound Rejected"
+          },
+          "outbound_approved": {
+            "type": "integer",
+            "title": "Outbound Approved"
           }
         },
         "type": "object",

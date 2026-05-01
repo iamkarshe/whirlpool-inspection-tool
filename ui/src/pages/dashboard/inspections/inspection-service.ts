@@ -17,11 +17,14 @@ import type {
   InspectionRelationship,
   InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-types";
+import type { DateRange } from "react-day-picker";
+
 import {
   fetchAllInspectionRows,
   fetchInspectionDetail,
   fetchInspectionInputsAsQuestionRows,
   fetchInspectionKpis,
+  inspectionKpisParamsFromDateRange,
   isoToApiDate,
   mapInspectionFullToInspection,
 } from "@/services/inspections-api";
@@ -112,9 +115,26 @@ export async function getInspectionsByUserId(
 export async function getInspectionKpis(
   dateFrom?: string,
   dateTo?: string,
+  opts?: { signal?: AbortSignal },
 ): Promise<InspectionKpis> {
-  return fetchInspectionKpis({
-    date_from: isoToApiDate(dateFrom) ?? null,
-    date_to: isoToApiDate(dateTo) ?? null,
-  });
+  return fetchInspectionKpis(
+    {
+      date_from: isoToApiDate(dateFrom) ?? null,
+      date_to: isoToApiDate(dateTo) ?? null,
+    },
+    opts,
+  );
+}
+
+export async function getInspectionKpisForDateRange(
+  range: DateRange | undefined,
+  opts?: { signal?: AbortSignal },
+): Promise<InspectionKpis> {
+  return fetchInspectionKpis(
+    inspectionKpisParamsFromDateRange({
+      from: range?.from,
+      to: range?.to,
+    }),
+    opts,
+  );
 }

@@ -59,8 +59,18 @@ export type InspectionRelationship = {
 
 export interface InspectionKpis {
   totalInspections: number;
+  /** Quality-review lane counts from `/api/inspections/kpis`. */
+  inboundInReview: number;
+  inboundRejected: number;
+  inboundApproved: number;
+  outboundInReview: number;
+  outboundRejected: number;
+  outboundApproved: number;
+  /** Checklist pass/fail totals (legacy API fields; used e.g. Operations Analytics). */
   inboundPassed: number;
   inboundFailed: number;
   outboundPassed: number;
   outboundFailed: number;
+  periodFrom?: string;
+  periodTo?: string;
 }
