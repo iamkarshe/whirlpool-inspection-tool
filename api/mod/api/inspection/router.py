@@ -16,6 +16,7 @@ from mod.api.inspection.helper import (
     map_inspection_list_item,
     present_inspection_full,
     resolve_inspection_scope_filters,
+    update_inspection_review_status,
 )
 from mod.api.inspection.response import (
     ActiveChecklistGroupedResponse,
@@ -23,6 +24,7 @@ from mod.api.inspection.response import (
     InspectionFullResponse,
     InspectionKpisResponse,
     InspectionListResponse,
+    InspectionReviewStatusUpdateRequest,
     StartInboundInspectionRequest,
 )
 from mod.api.middleware import auth_dependency
@@ -119,11 +121,11 @@ def get_inspections(
     ),
     date_from: date | None = Query(
         None,
-        description="created_at range start (UTC date); omit with date_to for default: last 7 days including today",
+        description="created_at range start (UTC date); provide with date_to to apply date filtering",
     ),
     date_to: date | None = Query(
         None,
-        description="created_at range end (UTC date, inclusive); omit with date_from for default: last 7 days including today",
+        description="created_at range end (UTC date, inclusive); provide with date_from to apply date filtering",
     ),
     db: Session = Depends(get_db),
 ):
@@ -132,8 +134,6 @@ def get_inspections(
             status_code=400,
             detail="date_from and date_to must both be set or both omitted",
         )
-    if date_from is None and date_to is None:
-        date_from, date_to = default_utc_calendar_dates_last_7_days()
     warehouse_code, plant_code = resolve_inspection_scope_filters(
         db, warehouse_uuid, plant_uuid
     )
@@ -144,6 +144,7 @@ def get_inspections(
         .outerjoin(User, Inspection.inspector_id == User.id)
         .options(
             joinedload(Inspection.inspector),
+            joinedload(Inspection.reviewer),
             joinedload(Inspection.device),
             joinedload(Inspection.product),
             joinedload(Inspection.product_unit),
@@ -154,11 +155,16 @@ def get_inspections(
         query = query.filter(Inspection.warehouse_code == warehouse_code)
     if plant_code is not None:
         query = query.filter(Inspection.supplier_plant_code == plant_code)
-    start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
-    query = query.filter(
-        Inspection.created_at >= start,
-        Inspection.created_at < end_exclusive,
-    )
+    if date_from is not None and date_to is not None:
+        if date_to < date_from:
+            raise HTTPException(
+                status_code=400, detail="date_to must be on or after date_from"
+            )
+        start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
+        query = query.filter(
+            Inspection.created_at >= start,
+            Inspection.created_at < end_exclusive,
+        )
     if inspection_type:
         try:
             it = InspectionType(inspection_type.strip().lower())
@@ -191,7 +197,6 @@ def get_inspections(
         default_sort_field="created_at",
         date_default_range=False,
     )
-
     total = query.count()
     page = params.page if params.page >= 1 else 1
     per_page = params.per_page if params.per_page >= 1 else 1
@@ -259,6 +264,22 @@ def start_inbound_inspection(
     db: Session = Depends(get_db),
 ):
     return create_inbound_inspection(db, request, body)
+
+
+@router.patch(
+    "/inspections/{inspection_uuid}/review-status",
+    name="patch_inspection_review_status",
+    response_model=InspectionFullResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def patch_inspection_review_status(
+    request: Request,
+    inspection_uuid: uuid.UUID,
+    body: InspectionReviewStatusUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    return update_inspection_review_status(db, request, inspection_uuid, body)
 
 
 @router.get(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 from fastapi import HTTPException, Request
@@ -24,6 +24,8 @@ from mod.api.inspection.response import (
     InspectionFullResponse,
     InspectionListItemResponse,
     InspectionPassFailCounts,
+    InspectionReviewHistoryItem,
+    InspectionReviewStatusUpdateRequest,
     StartInboundInspectionRequest,
 )
 from mod.api.plant.helper import get_plant_by_uuid_or_404
@@ -39,6 +41,7 @@ from mod.model import (
     Inspection,
     InspectionImage,
     InspectionInput,
+    InspectionReviewEvent,
     InspectionReviewStatus,
     InspectionType,
     Plant,
@@ -155,8 +158,11 @@ def map_inspection_list_item(
     inspection: Inspection, metrics: dict[str, Any]
 ) -> InspectionListItemResponse:
     inspector = inspection.inspector
+    reviewer = inspection.reviewer
     device = inspection.device
     product = inspection.product
+    rs = inspection.review_status
+    review_status_str = rs.value if hasattr(rs, "value") else str(rs)
     return InspectionListItemResponse(
         id=inspection.id,
         uuid=inspection.uuid,
@@ -167,6 +173,10 @@ def map_inspection_list_item(
         product_id=inspection.product_id,
         product_material_code=product.material_code if product else "",
         inspection_type=inspection_type_value(inspection),
+        review_status=review_status_str,
+        reviewer_id=inspection.reviewer_id,
+        reviewer_name=reviewer.name if reviewer else None,
+        reviewed_at=inspection.reviewed_at,
         warehouse_code=inspection.warehouse_code,
         plant_code=inspection.supplier_plant_code,
         outer=InspectionPassFailCounts(
@@ -190,6 +200,27 @@ def map_inspection_detail(inspection: Inspection) -> InspectionDetailResponse:
     inspector = inspection.inspector
     device = inspection.device
     product = inspection.product
+    reviewer = inspection.reviewer
+    rs = inspection.review_status
+    review_status_str = rs.value if hasattr(rs, "value") else str(rs)
+    events = sorted(
+        inspection.review_events or [],
+        key=lambda e: e.created_at,
+        reverse=True,
+    )
+    review_history = [
+        InspectionReviewHistoryItem(
+            from_status=e.from_status.value if e.from_status is not None else None,
+            to_status=e.to_status.value
+            if hasattr(e.to_status, "value")
+            else str(e.to_status),
+            actor_user_id=e.actor_user_id,
+            actor_name=e.actor.name if getattr(e, "actor", None) else "",
+            comment=e.comment,
+            created_at=e.created_at,
+        )
+        for e in events
+    ]
     return InspectionDetailResponse(
         id=inspection.id,
         uuid=inspection.uuid,
@@ -207,18 +238,96 @@ def map_inspection_detail(inspection: Inspection) -> InspectionDetailResponse:
         ip_address=str(inspection.ip_address)
         if inspection.ip_address is not None
         else None,
+        review_status=review_status_str,
+        is_under_review=bool(inspection.is_under_review),
+        reviewer_id=inspection.reviewer_id,
+        reviewer_name=reviewer.name if reviewer else None,
+        reviewed_at=inspection.reviewed_at,
+        reviewed_comment=inspection.reviewed_comment,
+        review_history=review_history,
         created_at=inspection.created_at,
         updated_at=inspection.updated_at,
     )
+
+
+def update_inspection_review_status(
+    db: Session,
+    request: Request,
+    inspection_uuid: uuid.UUID,
+    body: InspectionReviewStatusUpdateRequest,
+) -> InspectionFullResponse:
+    inspection = (
+        db.query(Inspection)
+        .filter(Inspection.uuid == inspection_uuid)
+        .with_for_update()
+        .first()
+    )
+    if inspection is None:
+        raise HTTPException(status_code=404, detail="Inspection not found")
+
+    new_status = body.review_status
+    if inspection.review_status == new_status:
+        raise HTTPException(
+            status_code=400,
+            detail="Inspection already has this review_status",
+        )
+    actor_id = getattr(request.state, "user_id", None)
+    if actor_id is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    from_status_enum = inspection.review_status
+    db.add(
+        InspectionReviewEvent(
+            inspection_id=inspection.id,
+            from_status=from_status_enum,
+            to_status=new_status,
+            actor_user_id=int(actor_id),
+            comment=body.comment,
+        )
+    )
+
+    inspection.review_status = new_status
+    inspection.reviewer_id = int(actor_id)
+    if body.comment is not None:
+        inspection.reviewed_comment = body.comment
+    inspection.is_under_review = new_status in (
+        InspectionReviewStatus.PENDING,
+        InspectionReviewStatus.IN_REVIEW,
+    )
+
+    if new_status in (
+        InspectionReviewStatus.APPROVED,
+        InspectionReviewStatus.REJECTED,
+    ):
+        inspection.reviewed_at = datetime.now(timezone.utc)
+    elif new_status in (
+        InspectionReviewStatus.PENDING,
+        InspectionReviewStatus.IN_REVIEW,
+    ):
+        inspection.reviewed_at = None
+
+    db.commit()
+    db.refresh(inspection)
+
+    loaded = (
+        apply_inspection_api_loads(db.query(Inspection))
+        .filter(Inspection.id == inspection.id)
+        .first()
+    )
+    if loaded is None:
+        raise HTTPException(status_code=500, detail="Inspection reload failed")
+    return present_inspection_full(loaded)
 
 
 def apply_inspection_api_loads(query):
     """Eager loads for inspection API payloads (detail + checklist/images)."""
     return query.options(
         joinedload(Inspection.inspector),
+        joinedload(Inspection.reviewer),
         joinedload(Inspection.device),
         joinedload(Inspection.product),
         joinedload(Inspection.product_unit),
+        joinedload(Inspection.review_events).joinedload(InspectionReviewEvent.actor),
         joinedload(Inspection.inputs).joinedload(InspectionInput.checklist),
         joinedload(Inspection.images).joinedload(InspectionImage.checklist),
     )

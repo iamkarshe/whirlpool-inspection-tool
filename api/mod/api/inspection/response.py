@@ -12,6 +12,7 @@ from mod.api.inspection.checklist_inspection import (
 )
 from mod.api.product.response import ProductResponse
 from mod.api.product_category.response import ProductCategoryResponse
+from mod.model import InspectionReviewStatus
 from utils.common import (
     INDIA_LAT_MAX,
     INDIA_LAT_MIN,
@@ -61,6 +62,10 @@ class InspectionListItemResponse(BaseModel):
     product_id: int
     product_material_code: str
     inspection_type: str
+    review_status: str
+    reviewer_id: int | None
+    reviewer_name: str | None
+    reviewed_at: datetime | None
     warehouse_code: str | None
     plant_code: str | None
     outer: InspectionPassFailCounts
@@ -88,6 +93,28 @@ class InspectionKpisResponse(BaseModel):
     outbound_failed: int
 
 
+class InspectionReviewHistoryItem(BaseModel):
+    from_status: str | None
+    to_status: str
+    actor_user_id: int
+    actor_name: str
+    comment: str | None
+    created_at: datetime
+
+
+class InspectionReviewStatusUpdateRequest(BaseModel):
+    review_status: InspectionReviewStatus
+    comment: str | None = Field(None, max_length=4000)
+
+    @field_validator("comment", mode="after")
+    @classmethod
+    def strip_comment(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip()
+        return s if s else None
+
+
 class InspectionDetailResponse(BaseModel):
     id: int
     uuid: uuid.UUID
@@ -103,6 +130,13 @@ class InspectionDetailResponse(BaseModel):
     lat: float | None
     lng: float | None
     ip_address: str | None
+    review_status: str
+    is_under_review: bool
+    reviewer_id: int | None
+    reviewer_name: str | None
+    reviewed_at: datetime | None
+    reviewed_comment: str | None
+    review_history: list[InspectionReviewHistoryItem]
     created_at: datetime
     updated_at: datetime
 
