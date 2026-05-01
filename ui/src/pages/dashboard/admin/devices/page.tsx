@@ -1,7 +1,5 @@
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
-import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
@@ -10,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import {
   Select,
   SelectContent,
@@ -18,21 +17,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import { DeviceStatCards } from "@/pages/dashboard/admin/devices/components/device-stat-cards";
 import DevicesDataTable from "@/pages/dashboard/admin/devices/data-table";
 import {
-  getDeviceKpis,
-  getDevices,
   type Device,
   type DeviceKpis,
   type DeviceType,
 } from "@/pages/dashboard/admin/devices/device-service";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 import {
-  getUsers,
-  type User,
-} from "@/pages/dashboard/admin/users/user-service";
+  deviceApiErrorMessage,
+  fetchDeviceKpis,
+  fetchDevicesPage,
+} from "@/services/devices-api";
+import { fetchAllUsers } from "@/services/users-api";
 import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 type DeviceFormValues = {
   user_id: number;
@@ -54,35 +56,77 @@ export default function DevicesPage() {
   });
 
   const [kpis, setKpis] = useState<DeviceKpis | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserResponse[]>([]);
   const [loadingKpis, setLoadingKpis] = useState(true);
-  const [loadingTable, setLoadingTable] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [apiFilters, setApiFilters] = useState<Record<string, string>>({
+    is_active: "",
+  });
 
   useEffect(() => {
     setLoadingKpis(true);
-    getDeviceKpis()
+    fetchDeviceKpis()
       .then(setKpis)
       .finally(() => setLoadingKpis(false));
   }, []);
 
   useEffect(() => {
-    const fetchDevicesAndUsers = async () => {
-      try {
-        setLoadingTable(true);
-        const [devicesData, usersData] = await Promise.all([
-          getDevices(),
-          getUsers(),
-        ]);
-        setDevices(devicesData);
-        setUsers(usersData);
-      } finally {
-        setLoadingTable(false);
-      }
-    };
-
-    fetchDevicesAndUsers();
+    fetchAllUsers().then(setUsers);
   }, []);
+
+  const DEVICE_LIST_SORT = {
+    allowedColumns: [
+      "id",
+      "user_name",
+      "imei",
+      "device_type",
+      "updated_at",
+    ] as const,
+    defaultSort: { sort_by: "id", sort_dir: "desc" as const },
+  };
+  const { rows: devices, isLoading, error, serverSide } =
+    useControlledServerTable<Device>({
+      initialSorting: [{ id: "id", desc: true }],
+      refreshKey: reloadKey,
+      dataScopeKey: apiFilters.is_active,
+      errorMessage: "Failed to load devices.",
+      load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
+        const { sort_by, sort_dir } = sortingStateToApiSortQuery(
+          s,
+          DEVICE_LIST_SORT,
+        );
+        return fetchDevicesPage(
+          {
+            page: p.pageIndex + 1,
+            per_page: p.pageSize,
+            search: q.length > 0 ? q : null,
+            sort_by,
+            sort_dir,
+            is_active:
+              apiFilters.is_active === "true"
+                ? true
+                : apiFilters.is_active === "false"
+                  ? false
+                  : undefined,
+          },
+          { signal },
+        );
+      },
+    });
+  const serverSideWithFilters = useMemo(
+    () => ({
+      ...serverSide,
+      filters: apiFilters,
+      onFilterChange: (id: string, value: string) => {
+        setApiFilters((prev) => ({ ...prev, [id]: value }));
+        serverSide.onPaginationChange({
+          ...serverSide.pagination,
+          pageIndex: 0,
+        });
+      },
+    }),
+    [apiFilters, serverSide],
+  );
 
   const handleInputChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -100,7 +144,7 @@ export default function DevicesPage() {
 
   const handleSubmit = (event: SubmitEvent) => {
     event.preventDefault();
-    console.log("Mock create device", formValues);
+    toast.info("Create device API is not available in the client yet.");
   };
 
   return (
@@ -111,10 +155,6 @@ export default function DevicesPage() {
           description="Manage registered devices and view activity for the selected period."
         />
         <div className="flex flex-wrap items-center gap-2">
-          <CalendarDateRangePicker />
-          <Button variant="outline" size="sm">
-            Download
-          </Button>
           <CreateEntryDialog
             triggerLabel="Add Device"
             title="Add device"
@@ -229,11 +269,16 @@ export default function DevicesPage() {
         </div>
 
         <div className="lg:col-span-12">
-          {loadingTable ? (
-            <SkeletonTable />
-          ) : (
-            <DevicesDataTable data={devices} />
-          )}
+          {error && !isLoading ? (
+            <p className="text-destructive text-sm">{error}</p>
+          ) : null}
+          <DevicesDataTable
+            data={devices}
+            serverSide={serverSideWithFilters}
+            isLoading={isLoading}
+            onRefresh={() => setReloadKey((v) => v + 1)}
+            onActionError={(message) => toast.error(message)}
+          />
         </div>
       </div>
     </div>

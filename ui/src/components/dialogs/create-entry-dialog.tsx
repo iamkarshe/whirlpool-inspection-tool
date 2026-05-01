@@ -18,6 +18,8 @@ export function CreateEntryDialog({
   description,
   children,
   contentClassName,
+  open,
+  onOpenChange,
 }: {
   triggerLabel: string;
   triggerVariant?: React.ComponentProps<typeof Button>["variant"];
@@ -26,9 +28,11 @@ export function CreateEntryDialog({
   description?: string;
   children: ReactNode;
   contentClassName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant={triggerVariant} size={triggerSize}>
           <span className="mr-1">+</span>

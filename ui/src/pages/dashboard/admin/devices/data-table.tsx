@@ -1,5 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableFilter,
+  type DataTableServerSideConfig,
+} from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +21,11 @@ import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import DialogDeleteDevice from "@/pages/dashboard/admin/devices/dialog-delete-device";
 import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device";
 import type { ColumnDef } from "@tanstack/react-table";
+import {
+  deleteDevice,
+  deviceApiErrorMessage,
+  lockDevice,
+} from "@/services/devices-api";
 import {
   ArrowUpDown,
   ClipboardList,
@@ -208,29 +217,23 @@ const deviceFilters: DataTableFilter<Device>[] = [
       { value: "false", label: "Inactive" },
     ],
   },
-  {
-    id: "device_type",
-    title: "Type",
-    options: [
-      { value: "desktop", label: "Desktop" },
-      { value: "mobile", label: "Mobile" },
-    ],
-  },
-  {
-    id: "is_locked",
-    title: "Locked",
-    options: [
-      { value: "true", label: "Locked" },
-      { value: "false", label: "Unlocked" },
-    ],
-  },
 ];
 
 interface DevicesDataTableProps {
   data: Device[];
+  serverSide: DataTableServerSideConfig;
+  isLoading?: boolean;
+  onRefresh?: () => void;
+  onActionError?: (message: string) => void;
 }
 
-export default function DevicesDataTable({ data }: DevicesDataTableProps) {
+export default function DevicesDataTable({
+  data,
+  serverSide,
+  isLoading,
+  onRefresh,
+  onActionError,
+}: DevicesDataTableProps) {
   const [deviceToLock, setDeviceToLock] = useState<Device | null>(null);
   const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
 
@@ -244,10 +247,10 @@ export default function DevicesDataTable({ data }: DevicesDataTableProps) {
       <DataTable<Device>
         columns={deviceColumns}
         data={data}
-        searchKey="user_name"
         filters={deviceFilters}
-        dateRangeFilter={{ dateAccessorKey: "last_active_at" }}
         rangeLabel="devices"
+        serverSide={serverSide}
+        isLoading={isLoading}
       />
       <DialogLockDevice
         open={deviceToLock !== null}
@@ -256,8 +259,11 @@ export default function DevicesDataTable({ data }: DevicesDataTableProps) {
         }}
         device={deviceToLock}
         onConfirm={(device) => {
-          // TODO: wire lock device API
-          console.log("Lock device", device);
+          void lockDevice(device.id)
+            .then(() => onRefresh?.())
+            .catch((e: unknown) => {
+              onActionError?.(deviceApiErrorMessage(e, "Could not lock device."));
+            });
         }}
       />
       <DialogDeleteDevice
@@ -267,8 +273,13 @@ export default function DevicesDataTable({ data }: DevicesDataTableProps) {
         }}
         device={deviceToDelete}
         onConfirm={(device) => {
-          // TODO: wire delete device API
-          console.log("Delete device", device);
+          void deleteDevice(device.id)
+            .then(() => onRefresh?.())
+            .catch((e: unknown) => {
+              onActionError?.(
+                deviceApiErrorMessage(e, "Could not delete device."),
+              );
+            });
         }}
       />
     </>

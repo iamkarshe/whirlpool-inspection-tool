@@ -46,7 +46,7 @@ const USER_LIST_SORT = {
 };
 
 function isValidIndianMobile(value: string): boolean {
-  return /^5\d{9}$/.test(value);
+  return /^[5-9][0-9]{9}$/.test(value);
 }
 
 function CreateUserForm({ onCreated }: { onCreated: () => void }) {
@@ -141,7 +141,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
           type="tel"
           inputMode="numeric"
           maxLength={10}
-          pattern="^5[0-9]{9}$"
+          pattern="^[5-9][0-9]{9}$"
           value={formValues.mobile_number}
           onChange={handleInputChange}
           required
@@ -207,6 +207,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
 
 export default function UsersPage() {
   const [reloadKey, setReloadKey] = useState(0);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [apiFilters, setApiFilters] = useState<Record<string, string>>({
     is_active: "",
     role: "",
@@ -268,8 +269,15 @@ export default function UsersPage() {
           triggerLabel="Add User"
           title="Add user"
           description="Create a new user for the system."
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
         >
-          <CreateUserForm onCreated={() => setReloadKey((v) => v + 1)} />
+          <CreateUserForm
+            onCreated={() => {
+              setReloadKey((v) => v + 1);
+              setCreateDialogOpen(false);
+            }}
+          />
         </CreateEntryDialog>
       </PageActionBar>
       {error && !isLoading ? (

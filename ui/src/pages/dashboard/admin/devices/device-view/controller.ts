@@ -1,7 +1,7 @@
 import {
-  getDeviceById,
   type Device,
 } from "@/pages/dashboard/admin/devices/device-service";
+import { fetchDeviceDetail } from "@/services/devices-api";
 
 /**
  * Load device for the view page by id (UUID string).
@@ -11,5 +11,9 @@ export async function loadDeviceView(id: string): Promise<Device | null> {
   if (!id || typeof id !== "string" || id.trim() === "") {
     return null;
   }
-  return getDeviceById(id);
+  try {
+    return await fetchDeviceDetail(id);
+  } catch {
+    return null;
+  }
 }
