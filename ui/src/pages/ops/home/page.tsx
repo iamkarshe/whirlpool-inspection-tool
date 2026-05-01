@@ -1,8 +1,24 @@
+import { useSessionUser } from "@/hooks/use-session-user";
 import { BookOpenText, ClipboardList, ScanLine, Search } from "lucide-react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+
+function firstNameFromDisplayName(name: string): string | null {
+  const part = name.trim().split(/\s+/)[0];
+  return part?.length ? part : null;
+}
 
 export default function OpsHomePage() {
   const navigate = useNavigate();
+  const sessionUser = useSessionUser();
+
+  const greetingLead = useMemo(() => {
+    const first =
+      sessionUser?.name?.trim()?.length ?
+        firstNameFromDisplayName(sessionUser.name)
+      : null;
+    return first ?? "there";
+  }, [sessionUser?.name]);
 
   return (
     <div className="space-y-4">
@@ -11,7 +27,7 @@ export default function OpsHomePage() {
           Today's Work
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Ready to inspect?
+          Hi, {greetingLead} — ready to inspect?
         </h1>
         <p className="text-sm text-muted-foreground">
           Four quick actions to keep your warehouse in top shape.

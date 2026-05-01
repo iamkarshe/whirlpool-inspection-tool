@@ -1,8 +1,10 @@
 import { useSyncExternalStore } from "react";
 
+import { WHIRLPOOL_SESSION_CHANGED_EVENT } from "@/lib/session-events";
+
 const SESSION_USER_PAYLOAD_KEY = "whirlpool.user";
 
-type SessionUser = {
+export type SessionUser = {
   id: number;
   uuid: string;
   name: string;
@@ -51,10 +53,27 @@ function readSessionUser(): SessionUser | null {
 function subscribe(onStoreChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   const onStorage = (event: StorageEvent) => {
-    if (event.key === SESSION_USER_PAYLOAD_KEY) onStoreChange();
+    if (
+      event.key === SESSION_USER_PAYLOAD_KEY ||
+      event.key === null ||
+      event.key === "whirlpool.access_token"
+    ) {
+      cachedRaw = null;
+      cachedUser = null;
+      onStoreChange();
+    }
+  };
+  const onSessionChanged = () => {
+    cachedRaw = null;
+    cachedUser = null;
+    onStoreChange();
   };
   window.addEventListener("storage", onStorage);
-  return () => window.removeEventListener("storage", onStorage);
+  window.addEventListener(WHIRLPOOL_SESSION_CHANGED_EVENT, onSessionChanged);
+  return () => {
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener(WHIRLPOOL_SESSION_CHANGED_EVENT, onSessionChanged);
+  };
 }
 
 export function useSessionUser(): SessionUser | null {

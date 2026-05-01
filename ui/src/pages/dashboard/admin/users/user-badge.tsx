@@ -18,22 +18,23 @@ type BadgeVariant =
   | "success";
 
 const roleVariant: Record<string, BadgeVariant> = {
-  Admin: "info",
+  Superadmin: "info",
   Manager: "default",
   Operator: "secondary",
 };
 
 const roleIcon: Record<string, React.ComponentType<{ className?: string }>> = {
-  Admin: Shield,
+  Superadmin: Shield,
   Manager: UserCog,
   Operator: UserIcon,
 };
 
 function normalizeRoleLabel(role: string): string {
-  const lower = role.toLowerCase();
-  if (lower === "admin") return "Admin";
+  const lower = role.toLowerCase().trim();
+  if (lower === "superadmin") return "Superadmin";
   if (lower === "manager") return "Manager";
   if (lower === "operator") return "Operator";
+  if (lower === "admin") return "Superadmin";
   return role;
 }
 

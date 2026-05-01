@@ -2,10 +2,24 @@ import { isAxiosError } from "axios";
 import type { GetUsersApiUsersGetParams } from "@/api/generated/model/getUsersApiUsersGetParams";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { UserCreateRequest } from "@/api/generated/model/userCreateRequest";
+import {
+  UserCreateRequestRole,
+  type UserCreateRequestRole,
+} from "@/api/generated/model/userCreateRequestRole";
 import type { UserListResponse } from "@/api/generated/model/userListResponse";
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import { getUsers } from "@/api/generated/users/users";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
+
+const CREATABLE_USER_ROLES: ReadonlySet<UserCreateRequestRole> = new Set([
+  UserCreateRequestRole.operator,
+  UserCreateRequestRole.manager,
+]);
+
+/** Superadmins cannot be managed through admin create/update/delete UI. */
+export function isSuperadminRoleName(role: string): boolean {
+  return role.trim().toLowerCase() === "superadmin";
+}
 
 export type UsersListParams = Pick<
   GetUsersApiUsersGetParams,
@@ -41,6 +55,9 @@ export async function createUser(
   payload: UserCreateRequest,
   request?: { signal?: AbortSignal },
 ): Promise<UserResponse> {
+  if (payload.role != null && !CREATABLE_USER_ROLES.has(payload.role)) {
+    throw new Error("Only manager and operator accounts can be created here.");
+  }
   const api = getUsers();
   return api.createUserApiUsersPost(
     payload,

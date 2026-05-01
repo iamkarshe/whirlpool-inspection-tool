@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
+import { isSuperadminRoleName } from "@/services/users-api";
 import { getAvatarImage } from "@/lib/utils";
 import { UserStatusBadge } from "@/pages/dashboard/admin/users/user-badge";
 import type { UserResponse } from "@/api/generated/model/userResponse";
@@ -149,10 +150,12 @@ const userColumns: ColumnDef<UserResponse>[] = [
                 View inspections
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-              Delete
-            </DropdownMenuItem>
+            {!isSuperadminRoleName(user.role) ? (
+              <DropdownMenuItem className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                Delete
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -175,7 +178,6 @@ const userFilters: DataTableFilter<UserResponse>[] = [
     options: [
       { value: "manager", label: "Manager" },
       { value: "operator", label: "Operator" },
-      { value: "admin", label: "Admin" },
     ],
   },
 ];

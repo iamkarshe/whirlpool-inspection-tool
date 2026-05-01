@@ -4,6 +4,7 @@ import type { LoginResponse } from "@/api/generated/model/loginResponse";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import { buildLoginDeviceInfo } from "@/lib/device-fingerprint";
 import { PAGES } from "@/endpoints";
+import { WHIRLPOOL_SESSION_CHANGED_EVENT } from "@/lib/session-events";
 import { isAxiosError } from "axios";
 
 const SESSION_ACCESS_TOKEN_KEY = "whirlpool.access_token";
@@ -38,15 +39,28 @@ function normalizeLoginErrorMessage(err: unknown): string {
   return status ? `Could not login (HTTP ${status}).` : "Could not reach the server. Check API URL.";
 }
 
-/** Maps API role strings to legacy `localStorage` key used by `check-app`. */
+/** Canonical API roles: `superadmin` | `manager` | `operator` (lowercase). */
 export function resolvePostLoginHref(roleRaw: string): string {
-  const r = roleRaw.toLowerCase();
-  const isOps =
-    r.includes("ops") ||
-    r.includes("operator") ||
-    r.includes("warehouse") ||
-    r === "staff";
-  return isOps ? PAGES.OPS_HOME : PAGES.DASHBOARD;
+  const r = roleRaw.trim().toLowerCase();
+  if (r === "operator" || r === "manager") return PAGES.OPS_HOME;
+  if (r === "superadmin") return PAGES.DASHBOARD;
+  return PAGES.DASHBOARD;
+}
+
+function notifySessionChanged(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(WHIRLPOOL_SESSION_CHANGED_EVENT));
+}
+
+/** Clears persisted auth and Axios bearer header (logout). */
+export function clearAuthenticatedSession(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(SESSION_ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(SESSION_TOKEN_TYPE_KEY);
+  window.localStorage.removeItem(SESSION_USER_PAYLOAD_KEY);
+  window.localStorage.removeItem(SESSION_ROLE_LEGACY_KEY);
+  Reflect.deleteProperty(apiClient.defaults.headers.common, "Authorization");
+  notifySessionChanged();
 }
 
 /** Persists bearer token and primes axios for subsequent `/api/*` calls. */
@@ -77,6 +91,7 @@ export function persistAuthenticatedSession(login: LoginResponse): void {
     SESSION_ROLE_LEGACY_KEY,
     target === PAGES.OPS_HOME ? "ops" : "admin",
   );
+  notifySessionChanged();
 }
 
 export async function loginWithEmailPassword(

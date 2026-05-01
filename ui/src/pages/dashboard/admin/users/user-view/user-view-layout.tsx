@@ -79,7 +79,7 @@ export default function UserViewLayout() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link to={PAGES.DASHBOARD_ADMIN_USERS} aria-label="Back to users">
+          <Link to={PAGES.DASHBOARD_ADMIN_USERS}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>

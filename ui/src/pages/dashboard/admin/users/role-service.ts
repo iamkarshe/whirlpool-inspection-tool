@@ -5,11 +5,10 @@ export interface Role {
   description: string;
 }
 
-/** For dropdown: value is role (API key), label can be role or description */
+/** Roles assignable via admin UI forms (never `superadmin`). */
 export const roles: Role[] = [
-  { id: 1, role: "manager", description: "Plant or area manager" },
-  { id: 2, role: "operator", description: "Line operator or inspector" },
-  { id: 3, role: "admin", description: "System administrator" },
+  { id: 1, role: "manager", description: "Plant or area manager (ops + oversight)" },
+  { id: 2, role: "operator", description: "Line operator or inspector (ops PWA)" },
 ];
 
 export const getRoles = async (): Promise<Role[]> => {

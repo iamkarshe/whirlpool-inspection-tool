@@ -1,4 +1,6 @@
 import { BrandLogo } from "@/components/brand-logo";
+import { useSessionUser } from "@/hooks/use-session-user";
+import { userInitialsFromName } from "@/lib/ops-user-display";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,13 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { setPageTitle } from "@/lib/core";
 import { cn } from "@/lib/utils";
-import {
-  CircleUserRound,
-  Home,
-  LineChart,
-  ScanLine,
-  Settings2,
-} from "lucide-react";
+import { Home, LineChart, ScanLine, Settings2 } from "lucide-react";
 import React, { useEffect } from "react";
 import {
   NavLink,
@@ -52,7 +48,12 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const matches = useMatches();
+  const sessionUser = useSessionUser();
   const [showDesktopWarning, setShowDesktopWarning] = React.useState(false);
+
+  const headerInitials = sessionUser?.name?.trim()?.length
+    ? userInitialsFromName(sessionUser.name)
+    : "?";
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -137,7 +138,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Whirlpool Inspection Tool
+              {import.meta.env.VITE_APP_TITLE}
             </p>
 
             {shouldRenderLogo && <BrandLogo />}
@@ -153,9 +154,12 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
           <button
             type="button"
             onClick={() => navigate("/ops/account")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+            title={
+              sessionUser?.name?.trim()?.length ? sessionUser.name : "Account"
+            }
+            className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full border bg-primary/10 px-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/15"
           >
-            <CircleUserRound className="h-5 w-5" />
+            {headerInitials}
           </button>
         </div>
       </header>
