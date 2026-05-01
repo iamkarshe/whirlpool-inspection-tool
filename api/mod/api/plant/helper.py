@@ -3,6 +3,7 @@ import uuid
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from mod.api.facility_metrics import FacilityStatsResponse, empty_facility_stats
 from mod.api.plant.response import PlantResponse
 from mod.model import Plant
 
@@ -14,7 +15,11 @@ def get_plant_by_uuid_or_404(db: Session, plant_uuid: uuid.UUID) -> Plant:
     return plant
 
 
-def map_plant(plant: Plant) -> PlantResponse:
+def map_plant(
+    plant: Plant,
+    *,
+    stats: FacilityStatsResponse | None = None,
+) -> PlantResponse:
     return PlantResponse(
         id=plant.id,
         uuid=plant.uuid,
@@ -28,4 +33,5 @@ def map_plant(plant: Plant) -> PlantResponse:
         is_active=bool(plant.is_active),
         created_at=plant.created_at,
         updated_at=plant.updated_at,
+        stats=stats if stats is not None else empty_facility_stats(),
     )

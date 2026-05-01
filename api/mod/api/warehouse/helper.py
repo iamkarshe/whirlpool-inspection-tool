@@ -3,11 +3,16 @@ import uuid
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from mod.api.facility_metrics import FacilityStatsResponse, empty_facility_stats
 from mod.api.warehouse.response import WarehouseResponse
 from mod.model import Warehouse
 
 
-def map_warehouse(warehouse: Warehouse) -> WarehouseResponse:
+def map_warehouse(
+    warehouse: Warehouse,
+    *,
+    stats: FacilityStatsResponse | None = None,
+) -> WarehouseResponse:
     return WarehouseResponse(
         id=warehouse.id,
         uuid=warehouse.uuid,
@@ -21,6 +26,7 @@ def map_warehouse(warehouse: Warehouse) -> WarehouseResponse:
         is_active=bool(warehouse.is_active),
         created_at=warehouse.created_at,
         updated_at=warehouse.updated_at,
+        stats=stats if stats is not None else empty_facility_stats(),
     )
 
 

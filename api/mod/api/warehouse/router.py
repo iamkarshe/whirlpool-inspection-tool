@@ -8,6 +8,11 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
+from mod.api.facility_metrics import (
+    empty_facility_stats,
+    facility_stats_batch_by_warehouse_code,
+    facility_stats_for_warehouse,
+)
 from mod.api.middleware import auth_dependency
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404, map_warehouse
 from mod.api.warehouse.request import WarehouseCreateRequest, WarehouseUpdateRequest
@@ -19,8 +24,8 @@ from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
-    build_paginated_response,
     get_pagination_params,
+    paginate_query,
 )
 
 router = APIRouter(
@@ -65,11 +70,27 @@ def get_warehouses(
         default_sort_field="id",
     )
 
-    return build_paginated_response(
-        query=query,
-        page=params.page,
-        per_page=params.per_page,
-        mapper=map_warehouse,
+    total = query.count()
+    page = params.page
+    per_page = params.per_page
+    items = paginate_query(query, page=page, per_page=per_page).all()
+    stats_map = facility_stats_batch_by_warehouse_code(
+        db, [w.warehouse_code for w in items], is_active=True
+    )
+    data = [
+        map_warehouse(
+            w,
+            stats=stats_map.get(w.warehouse_code, empty_facility_stats()),
+        )
+        for w in items
+    ]
+    total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+    return WarehouseListResponse(
+        data=data,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
     )
 
 
@@ -111,7 +132,7 @@ def create_warehouse(
     db.add(warehouse)
     db.commit()
     db.refresh(warehouse)
-    return map_warehouse(warehouse)
+    return map_warehouse(warehouse, stats=empty_facility_stats())
 
 
 @router.get(
@@ -128,7 +149,8 @@ def get_warehouse_info(
     db: Session = Depends(get_db),
 ):
     warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
-    return map_warehouse(warehouse)
+    stats = facility_stats_for_warehouse(db, warehouse.warehouse_code, is_active=True)
+    return map_warehouse(warehouse, stats=stats)
 
 
 @router.put(
@@ -177,7 +199,8 @@ def update_warehouse(
 
     db.commit()
     db.refresh(warehouse)
-    return map_warehouse(warehouse)
+    stats = facility_stats_for_warehouse(db, warehouse.warehouse_code, is_active=True)
+    return map_warehouse(warehouse, stats=stats)
 
 
 @router.delete(
@@ -198,7 +221,8 @@ def delete_warehouse(
     warehouse.is_active = False
     db.commit()
     db.refresh(warehouse)
-    return map_warehouse(warehouse)
+    stats = facility_stats_for_warehouse(db, warehouse.warehouse_code, is_active=True)
+    return map_warehouse(warehouse, stats=stats)
 
 
 @router.get(

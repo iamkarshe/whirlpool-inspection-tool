@@ -8,6 +8,11 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from mod.api.facility_metrics import (
+    empty_facility_stats,
+    facility_stats_batch_by_plant_code,
+    facility_stats_for_plant,
+)
 from mod.api.middleware import auth_dependency
 from mod.api.plant.helper import map_plant
 from mod.api.plant.request import PlantCreateRequest, PlantUpdateRequest
@@ -19,8 +24,8 @@ from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
-    build_paginated_response,
     get_pagination_params,
+    paginate_query,
 )
 
 router = APIRouter(
@@ -65,11 +70,24 @@ def get_plants(
         default_sort_field="id",
     )
 
-    return build_paginated_response(
-        query=query,
-        page=params.page,
-        per_page=params.per_page,
-        mapper=map_plant,
+    total = query.count()
+    page = params.page
+    per_page = params.per_page
+    items = paginate_query(query, page=page, per_page=per_page).all()
+    stats_map = facility_stats_batch_by_plant_code(
+        db, [p.plant_code for p in items], is_active=True
+    )
+    data = [
+        map_plant(p, stats=stats_map.get(p.plant_code, empty_facility_stats()))
+        for p in items
+    ]
+    total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+    return PlantListResponse(
+        data=data,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
     )
 
 
@@ -107,7 +125,7 @@ def create_plant(
     db.add(plant)
     db.commit()
     db.refresh(plant)
-    return map_plant(plant)
+    return map_plant(plant, stats=empty_facility_stats())
 
 
 @router.get(
@@ -126,7 +144,8 @@ def get_plant_info(
     plant = db.query(Plant).filter(Plant.uuid == plant_uuid).first()
     if plant is None:
         raise HTTPException(status_code=404, detail="Plant not found")
-    return map_plant(plant)
+    stats = facility_stats_for_plant(db, plant.plant_code, is_active=True)
+    return map_plant(plant, stats=stats)
 
 
 @router.put(
@@ -172,7 +191,8 @@ def update_plant(
 
     db.commit()
     db.refresh(plant)
-    return map_plant(plant)
+    stats = facility_stats_for_plant(db, plant.plant_code, is_active=True)
+    return map_plant(plant, stats=stats)
 
 
 @router.delete(
@@ -195,7 +215,8 @@ def delete_plant(
     plant.is_active = False
     db.commit()
     db.refresh(plant)
-    return map_plant(plant)
+    stats = facility_stats_for_plant(db, plant.plant_code, is_active=True)
+    return map_plant(plant, stats=stats)
 
 
 @router.get(

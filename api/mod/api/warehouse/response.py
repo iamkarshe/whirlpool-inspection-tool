@@ -4,6 +4,8 @@ from typing import List
 
 from pydantic import BaseModel
 
+from mod.api.facility_metrics import FacilityStatsResponse
+
 
 class WarehouseResponse(BaseModel):
     id: int
@@ -18,6 +20,7 @@ class WarehouseResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    stats: FacilityStatsResponse
 
 
 class WarehouseListResponse(BaseModel):
