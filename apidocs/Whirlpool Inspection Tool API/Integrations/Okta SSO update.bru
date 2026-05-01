@@ -1,0 +1,114 @@
+meta {
+  name: Okta SSO update
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/integrations/okta-sso
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "okta_domain": "https://dev-123456.okta.com",
+    "client_id": "0oa1abcdEFGH2IJKL5d7",
+    "redirect_uri": "https://app.yourdomain.com/auth/okta/callback",
+    "client_secret": "abcd1234EFGH5678ijklMNOP9012qrstUVWX"
+  }
+}
+
+example {
+  name: 200 Response
+  description: Successful Response
+  
+  request: {
+    url: {{baseUrl}}/api/users
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "",
+        "email": "",
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": 0,
+          "full_name": "",
+          "email": "",
+          "role": "",
+          "is_active": false
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 Response
+  description: Validation Error
+  
+  request: {
+    url: {{baseUrl}}/api/users
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "name": "",
+        "email": "",
+        "mobile_number": "",
+        "password": "",
+        "role": "",
+        "designation": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "detail": [
+            {
+              "loc": [],
+              "msg": "",
+              "type": "",
+              "input": "",
+              "ctx": {}
+            }
+          ]
+        }
+      '''
+    }
+  }
+}
