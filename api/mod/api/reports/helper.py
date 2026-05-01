@@ -99,6 +99,88 @@ def operations_analytics_counts(
                 else_=0,
             )
         ).label("total_pending"),
+        func.sum(
+            case(
+                (
+                    and_(
+                        Inspection.inspection_type == InspectionType.inbound,
+                        Inspection.review_status == InspectionReviewStatus.APPROVED,
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("inbound_approved"),
+        func.sum(
+            case(
+                (
+                    and_(
+                        Inspection.inspection_type == InspectionType.inbound,
+                        Inspection.review_status == InspectionReviewStatus.REJECTED,
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("inbound_failed"),
+        func.sum(
+            case(
+                (
+                    and_(
+                        Inspection.inspection_type == InspectionType.inbound,
+                        Inspection.review_status.in_(
+                            [
+                                InspectionReviewStatus.PENDING,
+                                InspectionReviewStatus.IN_REVIEW,
+                            ]
+                        ),
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("inbound_pending"),
+        func.sum(
+            case(
+                (
+                    and_(
+                        Inspection.inspection_type == InspectionType.outbound,
+                        Inspection.review_status == InspectionReviewStatus.APPROVED,
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("outbound_approved"),
+        func.sum(
+            case(
+                (
+                    and_(
+                        Inspection.inspection_type == InspectionType.outbound,
+                        Inspection.review_status == InspectionReviewStatus.REJECTED,
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("outbound_failed"),
+        func.sum(
+            case(
+                (
+                    and_(
+                        Inspection.inspection_type == InspectionType.outbound,
+                        Inspection.review_status.in_(
+                            [
+                                InspectionReviewStatus.PENDING,
+                                InspectionReviewStatus.IN_REVIEW,
+                            ]
+                        ),
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+        ).label("outbound_pending"),
     ).filter(*inspection_filters)
     inspection_row = inspection_agg.one()
     total = int(inspection_row.total or 0)
@@ -107,6 +189,12 @@ def operations_analytics_counts(
     total_approved = int(inspection_row.total_approved or 0)
     total_failed = int(inspection_row.total_failed or 0)
     total_pending = int(inspection_row.total_pending or 0)
+    inbound_approved = int(inspection_row.inbound_approved or 0)
+    inbound_failed = int(inspection_row.inbound_failed or 0)
+    inbound_pending = int(inspection_row.inbound_pending or 0)
+    outbound_approved = int(inspection_row.outbound_approved or 0)
+    outbound_failed = int(inspection_row.outbound_failed or 0)
+    outbound_pending = int(inspection_row.outbound_pending or 0)
     success_ratio = (total_approved / total) if total > 0 else 0.0
     failure_ratio = (total_failed / total) if total > 0 else 0.0
 
@@ -142,6 +230,12 @@ def operations_analytics_counts(
             Log.created_at < end_exclusive,
         )
     logins = login_query.count()
+    unique_login_users = (
+        login_query.filter(Log.user_id.isnot(None))
+        .with_entities(Log.user_id)
+        .distinct()
+        .count()
+    )
 
     return {
         "total": total,
@@ -150,12 +244,19 @@ def operations_analytics_counts(
         "total_approved": total_approved,
         "total_failed": total_failed,
         "total_pending": total_pending,
+        "inbound_approved": inbound_approved,
+        "inbound_failed": inbound_failed,
+        "inbound_pending": inbound_pending,
+        "outbound_approved": outbound_approved,
+        "outbound_failed": outbound_failed,
+        "outbound_pending": outbound_pending,
         "success_ratio": success_ratio,
         "failure_ratio": failure_ratio,
         "passed": total_approved,
         "in_review": total_pending,
         "flagged": flagged_count,
         "logins": logins,
+        "unique_login_users": unique_login_users,
     }
 
 

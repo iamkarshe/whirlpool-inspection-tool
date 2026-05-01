@@ -12,12 +12,19 @@ class OperationsAnalyticsResponse(BaseModel):
     total_approved: int
     total_failed: int
     total_pending: int
+    inbound_approved: int
+    inbound_failed: int
+    inbound_pending: int
+    outbound_approved: int
+    outbound_failed: int
+    outbound_pending: int
     success_ratio: float
     failure_ratio: float
     passed: int
     in_review: int
     flagged: int
     logins: int
+    unique_login_users: int
 
 
 class OperationsTrendWarehouseItem(BaseModel):
