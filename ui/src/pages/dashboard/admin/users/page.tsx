@@ -1,5 +1,5 @@
 import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
+import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
@@ -257,6 +258,8 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
 export default function UsersPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editUser, setEditUser] = useState<UserResponse | null>(null);
+  const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
   const [apiFilters, setApiFilters] = useState<Record<string, string>>({
     is_active: "",
     role: "",
@@ -336,7 +339,22 @@ export default function UsersPage() {
         data={rows}
         serverSide={serverSideWithFilters}
         isLoading={isLoading}
+        onEditUser={onEditUser}
       />
+      {editUser ?
+        <EditUserDialog
+          key={editUser.uuid}
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditUser(null);
+          }}
+          user={editUser}
+          onSaved={() => {
+            setReloadKey((v) => v + 1);
+            setEditUser(null);
+          }}
+        />
+      : null}
     </div>
   );
 }

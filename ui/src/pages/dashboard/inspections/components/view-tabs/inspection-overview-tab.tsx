@@ -90,12 +90,7 @@ export function InspectionOverviewTab({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <p className="text-muted-foreground text-sm">Inspector</p>
-            <Link
-              to={PAGES.userViewPath(inspection.inspector_id)}
-              className="text-primary hover:underline"
-            >
-              {inspection.inspector_name}
-            </Link>
+            <span className="font-medium">{inspection.inspector_name}</span>
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground text-sm">Device</p>

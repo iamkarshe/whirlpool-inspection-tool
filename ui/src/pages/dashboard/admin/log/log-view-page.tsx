@@ -113,12 +113,7 @@ export default function LogViewPage() {
             {log.user_id != null && log.user_name ? (
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">User</span>
-                <Link
-                  to={PAGES.userViewPath(log.user_id)}
-                  className="text-primary hover:underline"
-                >
-                  {log.user_name}
-                </Link>
+                <span className="font-medium">{log.user_name}</span>
               </div>
             ) : null}
             {log.details ? (

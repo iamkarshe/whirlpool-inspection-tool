@@ -29,14 +29,21 @@ const columns: ColumnDef<DeviceUserAssignment>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <Link
-        to={PAGES.userViewPath(row.original.user_id)}
-        className="text-primary hover:underline font-medium"
-      >
-        {row.original.user_name}
-      </Link>
-    ),
+    cell: ({ row }) => {
+      const uuid = row.original.user_uuid?.trim();
+      const name = row.original.user_name;
+      if (!uuid) {
+        return <span className="font-medium">{name}</span>;
+      }
+      return (
+        <Link
+          to={PAGES.userViewPath(uuid)}
+          className="text-primary hover:underline font-medium"
+        >
+          {name}
+        </Link>
+      );
+    },
   },
   {
     accessorKey: "email",

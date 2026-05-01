@@ -5,10 +5,19 @@
  */
 export type DeviceType = "desktop" | "mobile";
 
+/** Mock user UUIDs aligned with `user_id` in seed data (profile URLs use UUID). */
+export const MOCK_USER_UUID_BY_NUMERIC_ID: Record<number, string> = {
+  1: "11111111-1111-4111-8111-111111111111",
+  2: "22222222-2222-4222-8222-222222222222",
+  3: "33333333-3333-4333-8333-333333333333",
+};
+
 export interface Device {
   /** Device ID is UUID (string). */
   id: string;
   user_id: number;
+  /** When set, user profile links resolve; otherwise derived from MOCK_USER_UUID_BY_NUMERIC_ID in mocks. */
+  user_uuid?: string;
   user_name: string;
   imei: string;
   device_type: DeviceType;
@@ -24,6 +33,7 @@ export const devices: Device[] = [
   {
     id: "550e8400-e29b-41d4-a716-446655440001",
     user_id: 1,
+    user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[1],
     user_name: "Amit Sharma",
     imei: "354789012345678",
     device_type: "mobile",
@@ -36,6 +46,7 @@ export const devices: Device[] = [
   {
     id: "550e8400-e29b-41d4-a716-446655440002",
     user_id: 2,
+    user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[2],
     user_name: "Priya Verma",
     imei: "861234567890123",
     device_type: "mobile",
@@ -48,6 +59,7 @@ export const devices: Device[] = [
   {
     id: "550e8400-e29b-41d4-a716-446655440003",
     user_id: 1,
+    user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[1],
     user_name: "Amit Sharma",
     imei: "N/A",
     device_type: "desktop",
@@ -125,6 +137,7 @@ export const getDevicesByUserId = async (
 /** Current or previous user assignment for a device (for device view "User" tab). */
 export interface DeviceUserAssignment {
   user_id: number;
+  user_uuid?: string;
   user_name: string;
   email: string;
   role: string;
@@ -138,6 +151,7 @@ const deviceUserAssignments: Record<string, DeviceUserAssignment[]> = {
   "550e8400-e29b-41d4-a716-446655440001": [
     {
       user_id: 1,
+      user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[1],
       user_name: "Amit Sharma",
       email: "amit.sharma@whirlpool.com",
       role: "Manager",
@@ -147,6 +161,7 @@ const deviceUserAssignments: Record<string, DeviceUserAssignment[]> = {
     },
     {
       user_id: 2,
+      user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[2],
       user_name: "Priya Verma",
       email: "priya.verma@whirlpool.com",
       role: "Operator",
@@ -158,6 +173,7 @@ const deviceUserAssignments: Record<string, DeviceUserAssignment[]> = {
   "550e8400-e29b-41d4-a716-446655440002": [
     {
       user_id: 2,
+      user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[2],
       user_name: "Priya Verma",
       email: "priya.verma@whirlpool.com",
       role: "Operator",
@@ -169,6 +185,7 @@ const deviceUserAssignments: Record<string, DeviceUserAssignment[]> = {
   "550e8400-e29b-41d4-a716-446655440003": [
     {
       user_id: 1,
+      user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[1],
       user_name: "Amit Sharma",
       email: "amit.sharma@whirlpool.com",
       role: "Manager",
@@ -178,6 +195,7 @@ const deviceUserAssignments: Record<string, DeviceUserAssignment[]> = {
     },
     {
       user_id: 3,
+      user_uuid: MOCK_USER_UUID_BY_NUMERIC_ID[3],
       user_name: "Rahul Gupta",
       email: "rahul.gupta@whirlpool.com",
       role: "Operator",
@@ -203,6 +221,9 @@ export async function getDeviceUsers(
         resolve([
           {
             user_id: device.user_id,
+            user_uuid:
+              device.user_uuid ??
+              MOCK_USER_UUID_BY_NUMERIC_ID[device.user_id],
             user_name: device.user_name,
             email: "",
             role: "",

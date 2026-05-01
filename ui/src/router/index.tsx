@@ -495,7 +495,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/users/:id",
+        path: "admin/users/:userUuid",
         handle: { title: "User details" },
         element: (
           <Suspense fallback={<PageLoader />}>

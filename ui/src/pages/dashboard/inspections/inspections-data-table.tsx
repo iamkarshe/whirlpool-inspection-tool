@@ -329,12 +329,7 @@ export default function InspectionsDataTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <Link
-          to={PAGES.userViewPath(row.original.inspector_id)}
-          className="text-primary hover:underline"
-        >
-          {row.getValue("inspector_name")}
-        </Link>
+        <span className="font-medium">{row.getValue("inspector_name")}</span>
       ),
       filterFn: (row, _columnId, filterValue) =>
         row.getValue("inspector_name") === filterValue,

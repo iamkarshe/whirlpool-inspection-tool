@@ -56,17 +56,17 @@ export const PAGES = {
   productViewPath: (productId: number | string) =>
     `${PAGES.DASHBOARD_MASTERS_PRODUCTS}/${productId}`,
 
-  userViewPath: (id: number) => `/dashboard/admin/users/${id}`,
-  userViewDevicesPath: (userId: number) =>
-    `/dashboard/admin/users/${userId}/devices`,
-  userViewInspectionsPath: (userId: number) =>
-    `/dashboard/admin/users/${userId}/inspections`,
-  userViewLoginsPath: (userId: number) =>
-    `/dashboard/admin/users/${userId}/logins`,
-  userDevicesPath: (userId: number) =>
-    `/dashboard/admin/devices?user_id=${userId}`,
-  userInspectionsPath: (userId: number) =>
-    `${PAGES.DASHBOARD_INSPECTIONS}?user_id=${userId}`,
+  userViewPath: (userUuid: string) => `/dashboard/admin/users/${userUuid}`,
+  userViewDevicesPath: (userUuid: string) =>
+    `/dashboard/admin/users/${userUuid}/devices`,
+  userViewInspectionsPath: (userUuid: string) =>
+    `/dashboard/admin/users/${userUuid}/inspections`,
+  userViewLoginsPath: (userUuid: string) =>
+    `/dashboard/admin/users/${userUuid}/logins`,
+  userDevicesPath: (userUuid: string) =>
+    `/dashboard/admin/devices?user_uuid=${encodeURIComponent(userUuid)}`,
+  userInspectionsPath: (userUuid: string) =>
+    `${PAGES.DASHBOARD_INSPECTIONS}?user_uuid=${encodeURIComponent(userUuid)}`,
   deviceViewPath: (id: string) => `/dashboard/admin/devices/${id}`,
   deviceInspectionsPath: (id: string) =>
     `/dashboard/admin/devices/${id}/inspections`,

@@ -98,11 +98,12 @@ export function DeviceLockedBadge({ isLocked }: { isLocked: boolean }) {
 
 export function DeviceUserBadge({
   userName,
-  userId,
+  userUuid,
   asLink = false,
 }: {
   userName: string;
-  userId?: number;
+  /** When set with asLink, wraps the badge in a profile link. */
+  userUuid?: string | null;
   asLink?: boolean;
 }) {
   const content = (
@@ -111,10 +112,11 @@ export function DeviceUserBadge({
       <span className="uppercase">{userName}</span>
     </Badge>
   );
-  if (asLink && typeof userId === "number") {
+  const uuid = userUuid?.trim();
+  if (asLink && uuid) {
     return (
       <Link
-        to={PAGES.userViewPath(userId)}
+        to={PAGES.userViewPath(uuid)}
         title={`Open user ${userName}`}
         className="inline-block cursor-pointer transition-colors hover:text-primary"
       >
@@ -144,7 +146,11 @@ export function DeviceFingerprintBadge({
 export function DeviceHeaderBadges({ device }: { device: Device }) {
   return (
     <>
-      <DeviceUserBadge userName={device.user_name} userId={device.user_id} asLink />
+      <DeviceUserBadge
+        userName={device.user_name}
+        userUuid={device.user_uuid}
+        asLink
+      />
     </>
   );
 }

@@ -138,7 +138,11 @@ function DeviceDetailCard({
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">User</p>
-          <DeviceUserBadge userName={device.user_name} userId={device.user_id} asLink />
+          <DeviceUserBadge
+            userName={device.user_name}
+            userUuid={device.user_uuid}
+            asLink
+          />
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">IMEI</p>

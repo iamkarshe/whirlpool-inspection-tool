@@ -37,11 +37,8 @@ import {
 } from "@/components/ui/chart";
 import { PAGES } from "@/endpoints";
 import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
-import {
-  getUsers,
-  type User,
-} from "@/pages/dashboard/admin/users/user-service";
 import {
   getOperationsAnalyticsKpis,
   getOperationsSummaryByCategory,
@@ -54,6 +51,7 @@ import {
 import { WeeklyTrendDetailsDialog } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-details-dialog";
 import { WeeklyTrendTooltipContent } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-tooltip-content";
 import { fetchAllProductCategories } from "@/services/product-categories-api";
+import { fetchAllUsers } from "@/services/users-api";
 import { fetchAllWarehouses } from "@/services/warehouses-api";
 
 const trendChartConfig = {
@@ -253,13 +251,19 @@ export default function OperationsAnalyticsPage() {
   }, [filters]);
 
   useEffect(() => {
-    Promise.all([fetchAllWarehouses(), fetchAllProductCategories(), getUsers()]).then(
-      ([w, c, u]) => {
-        setWarehouses(w);
-        setProductCategories(c);
-        setOperators(u.filter((x) => x.role.toLowerCase() === "operator"));
-      },
-    );
+    Promise.all([
+      fetchAllWarehouses(),
+      fetchAllProductCategories(),
+      fetchAllUsers(),
+    ]).then(([w, c, u]) => {
+      setWarehouses(w);
+      setProductCategories(c);
+      setOperators(
+        u.filter(
+          (x) => x.role.trim().toLowerCase() === "operator",
+        ),
+      );
+    });
   }, []);
 
   const filterValue = useMemo(

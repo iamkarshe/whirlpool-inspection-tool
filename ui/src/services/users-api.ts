@@ -110,6 +110,30 @@ export async function fetchAllUsers(
   return rows;
 }
 
+/** Resolves one user via paginated GET /api/users (no single-user GET in API). */
+export async function fetchUserByUuid(
+  userUuid: string,
+  opts?: { signal?: AbortSignal },
+): Promise<UserResponse | null> {
+  const want = userUuid.trim().toLowerCase();
+  if (!want) return null;
+  const api = getUsers();
+  const perPage = 100;
+  let page = 1;
+  let totalPages = 1;
+  while (page <= totalPages) {
+    const res = await api.getUsersApiUsersGet(
+      { page, per_page: perPage, sort_by: "id", sort_dir: "desc" },
+      opts?.signal ? { signal: opts.signal } : undefined,
+    );
+    const hit = res.data.find((u) => u.uuid.toLowerCase() === want);
+    if (hit) return hit;
+    totalPages = Math.max(1, res.total_pages ?? 1);
+    page += 1;
+  }
+  return null;
+}
+
 export function userApiErrorMessage(err: unknown, fallback: string): string {
   if (!isAxiosError(err)) return err instanceof Error ? err.message : fallback;
   const data = err.response?.data as unknown;
