@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { PageLoader } from "@/components/layout/page-loader";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // Components
 import EmptyComponent from "@/components/empty4";
@@ -633,11 +633,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <IntegrationsOktaPage />
-              </Suspense>
-            ),
+            element: <Navigate to="okta" replace />,
           },
           {
             path: "okta",
