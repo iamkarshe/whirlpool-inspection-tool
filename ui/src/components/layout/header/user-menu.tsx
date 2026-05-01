@@ -20,12 +20,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
+import { useSessionUser } from "@/hooks/use-session-user";
 import { getAvatarImage } from "@/lib/utils";
 import { Activity, BadgeCheck, Bell, Info, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function UserMenu() {
   const navigate = useNavigate();
+  const sessionUser = useSessionUser();
+  const displayName = sessionUser?.name || "User";
+  const displayEmail = sessionUser?.email || "user@whirlpool.com";
 
   return (
     <DropdownMenu>
@@ -41,9 +45,9 @@ export default function UserMenu() {
         <DropdownMenuLabel className="p-0">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">Devesh Verma</span>
+              <span className="truncate font-semibold">{displayName}</span>
               <span className="text-muted-foreground truncate text-xs">
-                connect@whirlpool.com
+                {displayEmail}
               </span>
             </div>
           </div>

@@ -1,3 +1,5 @@
+import { DotsVerticalIcon } from "@radix-ui/react-icons";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -8,16 +10,23 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useSessionUser } from "@/hooks/use-session-user";
 import { getAvatarImage } from "@/lib/utils";
-import { DotsVerticalIcon } from "@radix-ui/react-icons";
-
-const userData = {
-  name: "Devesh Verma",
-  email: "connect@whirlpool.com",
-  avatar: getAvatarImage(),
-};
 
 export function NavUser() {
+  const sessionUser = useSessionUser();
+  const userData = {
+    name: sessionUser?.name,
+    email: sessionUser?.email,
+    avatar: getAvatarImage(),
+  };
+  const initials = (userData.name ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -29,7 +38,9 @@ export function NavUser() {
             >
               <Avatar className="rounded-full">
                 <AvatarImage src={userData.avatar} alt={userData.name} />
-                <AvatarFallback className="rounded-lg">JS</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{userData.name}</span>
