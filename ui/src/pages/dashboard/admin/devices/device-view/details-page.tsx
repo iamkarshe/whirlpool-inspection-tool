@@ -1,5 +1,5 @@
 import { Lock, MoreHorizontal, Smartphone, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,51 @@ import DialogLockDevice from "@/pages/dashboard/admin/devices/dialog-lock-device
 
 type DeviceViewContext = { device: Device };
 
+type DeviceInfoRow = { key: string; value: string };
+
+function stringifyDeviceInfoValue(value: unknown): string {
+  if (value === null || value === undefined) return "null";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function flattenDeviceInfo(value: unknown, prefix = ""): DeviceInfoRow[] {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [{ key: prefix || "value", value: "[]" }];
+    return value.flatMap((entry, index) =>
+      flattenDeviceInfo(entry, `${prefix}[${index}]`),
+    );
+  }
+  if (typeof value === "object" && value !== null) {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (entries.length === 0) return [{ key: prefix || "value", value: "{}" }];
+    return entries.flatMap(([entryKey, entryValue]) =>
+      flattenDeviceInfo(
+        entryValue,
+        prefix ? `${prefix}.${entryKey}` : entryKey,
+      ),
+    );
+  }
+  return [{ key: prefix || "value", value: stringifyDeviceInfoValue(value) }];
+}
+
+function parseDeviceInfoRows(raw: string): DeviceInfoRow[] | null {
+  const text = raw.trim();
+  if (!text) return null;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    return flattenDeviceInfo(parsed);
+  } catch {
+    return null;
+  }
+}
+
 function DeviceDetailCard({
   device,
   onLockClick,
@@ -34,6 +79,17 @@ function DeviceDetailCard({
   onLockClick: () => void;
   onDeleteClick: () => void;
 }) {
+  const deviceInfoRows = parseDeviceInfoRows(device.device_info);
+  const [showAllDeviceInfo, setShowAllDeviceInfo] = useState(false);
+  const visibleDeviceInfoRows = useMemo(
+    () =>
+      showAllDeviceInfo || !deviceInfoRows
+        ? deviceInfoRows
+        : deviceInfoRows.slice(0, 5),
+    [deviceInfoRows, showAllDeviceInfo],
+  );
+  const canExpandDeviceInfo = (deviceInfoRows?.length ?? 0) > 5;
+
   return (
     <Card>
       <CardHeader>
@@ -82,7 +138,7 @@ function DeviceDetailCard({
       <CardContent className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">User</p>
-          <DeviceUserBadge userName={device.user_name} />
+          <DeviceUserBadge userName={device.user_name} userId={device.user_id} asLink />
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">IMEI</p>
@@ -98,7 +154,48 @@ function DeviceDetailCard({
         </div>
         <div className="space-y-1 sm:col-span-2">
           <p className="text-muted-foreground text-sm">Device info</p>
-          <p className="text-sm">{device.device_info || "—"}</p>
+          {deviceInfoRows ? (
+            <div className="space-y-2">
+              <div className="relative overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="w-[35%] px-3 py-2 text-left font-medium">
+                        Key
+                      </th>
+                      <th className="px-3 py-2 text-left font-medium">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleDeviceInfoRows?.map((row, index) => (
+                      <tr key={`${row.key}-${index}`} className="border-t">
+                        <td className="px-3 py-2 font-mono text-xs">
+                          {row.key}
+                        </td>
+                        <td className="px-3 py-2 break-all">{row.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {canExpandDeviceInfo && !showAllDeviceInfo ? (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/95 to-transparent" />
+                ) : null}
+              </div>
+              {canExpandDeviceInfo ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setShowAllDeviceInfo((prev) => !prev)}
+                >
+                  {showAllDeviceInfo ? "View less" : "View more"}
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm">{device.device_info || "—"}</p>
+          )}
         </div>
       </CardContent>
     </Card>

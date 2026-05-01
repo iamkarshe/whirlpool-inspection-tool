@@ -38,13 +38,11 @@ export default function DialogLockDevice({
         <AlertDialogHeader>
           <AlertDialogTitle>Lock device?</AlertDialogTitle>
           <AlertDialogDescription>
-            You are about to lock the device
+            You are about to lock the device for user
             {device && (
               <>
                 {" "}
-                <span className="font-medium">
-                  ({device.user_name} – {device.device_fingerprint})
-                </span>
+                <span className="font-medium">{device.user_name}</span>
               </>
             )}
             .

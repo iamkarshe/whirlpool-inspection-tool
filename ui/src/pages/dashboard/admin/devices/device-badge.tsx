@@ -1,6 +1,3 @@
-import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
-import type { Device, DeviceType } from "@/pages/dashboard/admin/devices/device-service";
-import { PAGES } from "@/endpoints";
 import {
   CheckCircle,
   Fingerprint,
@@ -12,6 +9,13 @@ import {
   XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+
+import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
+import { PAGES } from "@/endpoints";
+import type {
+  Device,
+  DeviceType,
+} from "@/pages/dashboard/admin/devices/device-service";
 
 type BadgeVariant =
   | "default"
@@ -69,7 +73,10 @@ export function DeviceTypeBadge({ deviceType }: { deviceType: DeviceType }) {
 export function DeviceStatusBadge({ isActive }: { isActive: boolean }) {
   const Icon = isActive ? CheckCircle : XCircle;
   return (
-    <Badge variant={isActive ? "success" : "destructive"} className={BADGE_ICON_CLASS}>
+    <Badge
+      variant={isActive ? "success" : "destructive"}
+      className={BADGE_ICON_CLASS}
+    >
       <Icon />
       {isActive ? "ACTIVE" : "INACTIVE"}
     </Badge>
@@ -79,25 +86,55 @@ export function DeviceStatusBadge({ isActive }: { isActive: boolean }) {
 export function DeviceLockedBadge({ isLocked }: { isLocked: boolean }) {
   const Icon = isLocked ? Lock : Unlock;
   return (
-    <Badge variant={isLocked ? "destructive" : "secondary"} className={BADGE_ICON_CLASS}>
+    <Badge
+      variant={isLocked ? "destructive" : "secondary"}
+      className={BADGE_ICON_CLASS}
+    >
       <Icon />
       {isLocked ? "LOCKED" : "UNLOCKED"}
     </Badge>
   );
 }
 
-export function DeviceUserBadge({ userName }: { userName: string }) {
-  return (
+export function DeviceUserBadge({
+  userName,
+  userId,
+  asLink = false,
+}: {
+  userName: string;
+  userId?: number;
+  asLink?: boolean;
+}) {
+  const content = (
     <Badge variant="secondary" className={BADGE_ICON_CLASS}>
       <UserIcon />
       <span className="uppercase">{userName}</span>
     </Badge>
   );
+  if (asLink && typeof userId === "number") {
+    return (
+      <Link
+        to={PAGES.userViewPath(userId)}
+        title={`Open user ${userName}`}
+        className="inline-block cursor-pointer transition-colors hover:text-primary"
+      >
+        {content}
+      </Link>
+    );
+  }
+  return content;
 }
 
-export function DeviceFingerprintBadge({ fingerprint }: { fingerprint: string }) {
+export function DeviceFingerprintBadge({
+  fingerprint,
+}: {
+  fingerprint: string;
+}) {
   return (
-    <Badge variant="outline" className={`${BADGE_ICON_CLASS} max-w-[200px] truncate`}>
+    <Badge
+      variant="outline"
+      className={`${BADGE_ICON_CLASS} max-w-[200px] truncate`}
+    >
       <Fingerprint />
       <span className="uppercase">{fingerprint}</span>
     </Badge>
@@ -107,8 +144,7 @@ export function DeviceFingerprintBadge({ fingerprint }: { fingerprint: string })
 export function DeviceHeaderBadges({ device }: { device: Device }) {
   return (
     <>
-      <DeviceUserBadge userName={device.user_name} />
-      <DeviceFingerprintBadge fingerprint={device.device_fingerprint} />
+      <DeviceUserBadge userName={device.user_name} userId={device.user_id} asLink />
     </>
   );
 }

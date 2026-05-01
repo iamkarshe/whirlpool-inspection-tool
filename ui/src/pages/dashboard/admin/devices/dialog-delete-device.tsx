@@ -22,7 +22,7 @@ export default function DialogDeleteDevice({
       title="Delete device?"
       description={
         device
-          ? `You are about to permanently delete the device (${device.user_name} – ${device.device_fingerprint}). This action cannot be undone.`
+          ? `You are about to permanently delete the device for user ${device.user_name}. This action cannot be undone.`
           : undefined
       }
       confirmLabel="Delete device"
