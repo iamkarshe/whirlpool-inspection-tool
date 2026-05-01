@@ -43,11 +43,8 @@ export const navItems: NavGroup[] = [
             href: PAGES.DASHBOARD_MASTERS_PRODUCT_CATEGORIES,
           },
           { title: "Products", href: PAGES.DASHBOARD_MASTERS_PRODUCTS },
+          { title: "Plants", href: PAGES.DASHBOARD_MASTERS_PLANTS },
           { title: "Warehouses", href: PAGES.DASHBOARD_MASTERS_WAREHOUSES },
-          {
-            title: "Checklists",
-            href: PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS,
-          },
         ],
       },
       {

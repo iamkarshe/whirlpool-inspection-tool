@@ -1,30 +1,16 @@
-import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 
 import CsvUploadDialog from "@/components/csv-upload-dialog";
 import ConfirmDeleteDialog from "@/components/dialog-confirm-delete";
-import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
 import {
   getProductCategories,
   type ProductCategory,
 } from "@/pages/dashboard/admin/product-categories/product-category-service";
 
-type ProductCategoryFormValues = {
-  name: string;
-};
-
 export default function ProductCategoriesPage() {
-  const [formValues, setFormValues] = useState<ProductCategoryFormValues>({
-    name: "",
-  });
-
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categoryToDelete, setCategoryToDelete] =
@@ -49,17 +35,6 @@ export default function ProductCategoriesPage() {
     console.log("Mock CSV upload", file);
   };
 
-  const handleCreateCategory = (event: SubmitEvent) => {
-    event.preventDefault();
-    // TODO: wire real create call; for now this is mocked.
-    console.log("Mock create product category", formValues);
-  };
-
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setFormValues((previous) => ({ ...previous, [name]: value }));
-  };
-
   const categoryCsvTemplate = "name\n" + "Front Load Washing Machines\n";
 
   return (
@@ -69,34 +44,12 @@ export default function ProductCategoriesPage() {
         description="Manage master data for all product categories."
       >
         <CsvUploadDialog
-          title="Upload Product Categories"
-          description="Select a CSV file containing product categories to import."
+          title="Upload Products"
+          description="Select a CSV file containing products to import."
           templateFilename="product-categories-template.csv"
           templateContent={categoryCsvTemplate}
           onSubmit={handleCsvSubmit}
         />
-
-        <CreateEntryDialog
-          triggerLabel="Add Product Category"
-          title="Add product category"
-          description="Create a new product category for use across the system."
-        >
-          <form className="space-y-4" onSubmit={handleCreateCategory}>
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formValues.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit">Save category</Button>
-            </DialogFooter>
-          </form>
-        </CreateEntryDialog>
       </PageActionBar>
 
       {isLoading ? (

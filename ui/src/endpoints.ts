@@ -9,6 +9,7 @@ export const PAGES = {
   DASHBOARD: "/dashboard",
   DASHBOARD_MASTERS_PRODUCT_CATEGORIES: "/dashboard/masters/product-categories",
   DASHBOARD_MASTERS_PRODUCTS: "/dashboard/masters/products",
+  DASHBOARD_MASTERS_PLANTS: "/dashboard/masters/plants",
   DASHBOARD_MASTERS_WAREHOUSES: "/dashboard/masters/warehouses",
 
   DASHBOARD_SETTINGS: "/dashboard/settings",
@@ -73,6 +74,11 @@ export const PAGES = {
     `/dashboard/masters/warehouses/${id}/devices`,
   warehouseInspectionsPath: (id: string) =>
     `/dashboard/masters/warehouses/${id}/inspections`,
+  plantViewPath: (id: string) => `/dashboard/masters/plants/${id}`,
+  plantUsersPath: (id: string) => `/dashboard/masters/plants/${id}/users`,
+  plantDevicesPath: (id: string) => `/dashboard/masters/plants/${id}/devices`,
+  plantInspectionsPath: (id: string) =>
+    `/dashboard/masters/plants/${id}/inspections`,
 
   productCategoryChecklistsPath: (categoryId: number) =>
     `${PAGES.DASHBOARD_TRANSACTIONS_CHECKLISTS}?product_category_id=${categoryId}`,

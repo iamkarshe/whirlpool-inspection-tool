@@ -21,9 +21,7 @@ const ResetPasswordConfirmationPage = lazy(
 // Auth Pages ENDS
 
 // Root splash / connection check
-const CheckAppPage = lazy(
-  () => import("@/pages/check-app/page"),
-);
+const CheckAppPage = lazy(() => import("@/pages/check-app/page"));
 
 // Dashboard Pages
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
@@ -58,16 +56,11 @@ const DeviceViewLoginsPage = lazy(
   () => import("@/pages/dashboard/admin/devices/device-view/logins-page"),
 );
 const DeviceViewLockHistoryPage = lazy(
-  () =>
-    import(
-      "@/pages/dashboard/admin/devices/device-view/lock-history-page"
-    ),
+  () => import("@/pages/dashboard/admin/devices/device-view/lock-history-page"),
 );
 const DeviceViewNotificationsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/devices/device-view/device-notifications-page"
-    ),
+    import("@/pages/dashboard/admin/devices/device-view/device-notifications-page"),
 );
 const DeviceViewUsersPage = lazy(
   () => import("@/pages/dashboard/admin/devices/device-view/users-page"),
@@ -79,37 +72,32 @@ const ProductCategoryViewLayout = lazy(
   () => import("@/pages/dashboard/admin/product-categories/category-view/page"),
 );
 const ProductCategoryOverviewPage = lazy(
-  () => import("@/pages/dashboard/admin/product-categories/category-view/overview-page"),
+  () =>
+    import("@/pages/dashboard/admin/product-categories/category-view/overview-page"),
 );
 const ProductCategoryProductsPage = lazy(
-  () => import("@/pages/dashboard/admin/product-categories/category-view/products-page"),
+  () =>
+    import("@/pages/dashboard/admin/product-categories/category-view/products-page"),
 );
 const ProductCategoryInspectionsPage = lazy(
-  () => import("@/pages/dashboard/admin/product-categories/category-view/inspections-page"),
+  () =>
+    import("@/pages/dashboard/admin/product-categories/category-view/inspections-page"),
 );
 const ProductCategoryInboundInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/product-categories/category-view/inbound-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/product-categories/category-view/inbound-inspections-page"),
 );
 const ProductCategoryOutboundInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/product-categories/category-view/outbound-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/product-categories/category-view/outbound-inspections-page"),
 );
 const ProductCategoryInboundFailedInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/product-categories/category-view/inbound-failed-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/product-categories/category-view/inbound-failed-inspections-page"),
 );
 const ProductCategoryOutboundFailedInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/product-categories/category-view/outbound-failed-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/product-categories/category-view/outbound-failed-inspections-page"),
 );
 const ProductsPage = lazy(
   () => import("@/pages/dashboard/admin/products/page"),
@@ -121,34 +109,43 @@ const ProductOverviewPage = lazy(
   () => import("@/pages/dashboard/admin/products/product-view/overview-page"),
 );
 const ProductInspectionsPage = lazy(
-  () => import("@/pages/dashboard/admin/products/product-view/inspections-page"),
+  () =>
+    import("@/pages/dashboard/admin/products/product-view/inspections-page"),
 );
 const ProductInboundInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/products/product-view/inbound-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/products/product-view/inbound-inspections-page"),
 );
 const ProductOutboundInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/products/product-view/outbound-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/products/product-view/outbound-inspections-page"),
 );
 const ProductInboundFailedInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/products/product-view/inbound-failed-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/products/product-view/inbound-failed-inspections-page"),
 );
 const ProductOutboundFailedInspectionsPage = lazy(
   () =>
-    import(
-      "@/pages/dashboard/admin/products/product-view/outbound-failed-inspections-page"
-    ),
+    import("@/pages/dashboard/admin/products/product-view/outbound-failed-inspections-page"),
 );
 const WarehousesPage = lazy(
   () => import("@/pages/dashboard/admin/warehouses/page"),
+);
+const PlantsPage = lazy(() => import("@/pages/dashboard/admin/plants/page"));
+const PlantViewLayout = lazy(
+  () => import("@/pages/dashboard/admin/plants/plant-view/plant-view-layout"),
+);
+const PlantViewDetailsPage = lazy(
+  () => import("@/pages/dashboard/admin/plants/plant-view/details-page"),
+);
+const PlantViewUsersPage = lazy(
+  () => import("@/pages/dashboard/admin/plants/plant-view/users-page"),
+);
+const PlantViewDevicesPage = lazy(
+  () => import("@/pages/dashboard/admin/plants/plant-view/devices-page"),
+);
+const PlantViewInspectionsPage = lazy(
+  () => import("@/pages/dashboard/admin/plants/plant-view/inspections-page"),
 );
 const WarehouseViewLayout = lazy(
   () =>
@@ -185,12 +182,10 @@ const ReleaseNotesPage = lazy(
   () => import("@/pages/dashboard/release-notes/page"),
 );
 const OperationsAnalyticsPage = lazy(
-  () =>
-    import("@/pages/dashboard/reports/operations-analytics/page"),
+  () => import("@/pages/dashboard/reports/operations-analytics/page"),
 );
 const ExecutiveAnalyticsPage = lazy(
-  () =>
-    import("@/pages/dashboard/reports/executive-analytics/page"),
+  () => import("@/pages/dashboard/reports/executive-analytics/page"),
 );
 const InspectionsPage = lazy(
   () => import("@/pages/dashboard/inspections/page"),
@@ -865,6 +860,61 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ProductOutboundFailedInspectionsPage />
+              </Suspense>
+            ),
+          },
+        ],
+      },
+      {
+        path: "masters/plants",
+        handle: { title: "Plants" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <PlantsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "masters/plants/:id",
+        handle: { title: "Plant details" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <PlantViewLayout />
+          </Suspense>
+        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PlantViewDetailsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "users",
+            handle: { title: "Plant users" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PlantViewUsersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "devices",
+            handle: { title: "Plant devices" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PlantViewDevicesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspections",
+            handle: { title: "Plant inspections" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PlantViewInspectionsPage />
               </Suspense>
             ),
           },

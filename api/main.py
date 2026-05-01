@@ -1,6 +1,4 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -37,7 +35,7 @@ app = FastAPI(
         "name": "Proprietary - Internal Use Only",
         "url": "https://scoptanalytics.com/terms",
     },
-    docs_url=None,
+    docs_url="/docs",
     redoc_url=None,
     openapi_url="/openapi.json",
     openapi_tags=tags_metadata,
@@ -78,6 +76,7 @@ def health():
 @app.get("/version")
 def version():
     return {"message": app_name, "version": app_version}
+
 
 # ReactJS build
 app.mount("/", StaticFiles(directory="build/", html=True), name="build")
