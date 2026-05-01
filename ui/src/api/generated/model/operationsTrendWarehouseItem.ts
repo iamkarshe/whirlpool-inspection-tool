@@ -6,12 +6,10 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface WarehouseUserResponse {
-  id: number;
-  uuid: string;
-  name: string;
-  email: string;
-  mobile_number: string;
-  designation: string;
-  is_active: boolean;
+export interface OperationsTrendWarehouseItem {
+  warehouse_code: string;
+  warehouse_name: string;
+  inspections: number;
+  logins: number;
+  success_ratio: number;
 }

@@ -1062,6 +1062,109 @@
         }
       }
     },
+    "/api/integrations": {
+      "get": {
+        "tags": [
+          "App Integration"
+        ],
+        "summary": "Get Integrations",
+        "operationId": "get_integrations_api_integrations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationCredentialsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/okta-sso": {
+      "put": {
+        "tags": [
+          "App Integration"
+        ],
+        "summary": "Put Okta Sso Integration",
+        "operationId": "put_okta_sso_integration_api_integrations_okta_sso_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OktaSsoUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationCredentialsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/aws-s3": {
+      "put": {
+        "tags": [
+          "App Integration"
+        ],
+        "summary": "Put Aws S3 Integration",
+        "operationId": "put_aws_s3_integration_api_integrations_aws_s3_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AwsS3UpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationCredentialsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/warehouses": {
       "get": {
         "tags": [
@@ -1276,7 +1379,7 @@
           "Warehouses"
         ],
         "summary": "Get Warehouse Info",
-        "description": "Get warehouse with users, devices and inspections",
+        "description": "Get warehouse details",
         "operationId": "get_warehouse_info_api_warehouses__warehouse_uuid__get",
         "parameters": [
           {
@@ -1296,7 +1399,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WarehouseInfoResponse"
+                  "$ref": "#/components/schemas/WarehouseResponse"
                 }
               }
             }
@@ -1873,6 +1976,27 @@
         }
       }
     },
+    "/api/inspections/metadata": {
+      "get": {
+        "tags": [
+          "Inspections"
+        ],
+        "summary": "Get Inspection Metadata",
+        "operationId": "get_inspection_metadata_api_inspections_metadata_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionMetadataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/inspections/inbound": {
       "post": {
         "tags": [
@@ -2306,7 +2430,7 @@
           "Plants"
         ],
         "summary": "Get Plant Info",
-        "description": "Get plant with users, devices and inspections",
+        "description": "Get plant details",
         "operationId": "get_plant_info_api_plants__plant_uuid__get",
         "parameters": [
           {
@@ -2326,7 +2450,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlantInfoResponse"
+                  "$ref": "#/components/schemas/PlantResponse"
                 }
               }
             }
@@ -3142,6 +3266,222 @@
         }
       }
     },
+    "/api/reports/operations-analytics": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Operations Analytics",
+        "operationId": "get_operations_analytics_api_reports_operations_analytics_get",
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Range start date (UTC)",
+              "title": "Date From"
+            },
+            "description": "Range start date (UTC)"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Range end date (UTC, inclusive)",
+              "title": "Date To"
+            },
+            "description": "Range end date (UTC, inclusive)"
+          },
+          {
+            "name": "warehouse_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Uuid"
+            }
+          },
+          {
+            "name": "plant_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Plant Uuid"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/operations-trend": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Operations Trend",
+        "operationId": "get_operations_trend_api_reports_operations_trend_get",
+        "parameters": [
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Range start date (UTC)",
+              "title": "Date From"
+            },
+            "description": "Range start date (UTC)"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Range end date (UTC, inclusive)",
+              "title": "Date To"
+            },
+            "description": "Range end date (UTC, inclusive)"
+          },
+          {
+            "name": "warehouse_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Uuid"
+            }
+          },
+          {
+            "name": "plant_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Plant Uuid"
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsTrendResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/skus": {
       "get": {
         "tags": [
@@ -3459,6 +3799,70 @@
         ],
         "title": "ActiveChecklistGroupedResponse"
       },
+      "AwsS3CredentialsResponse": {
+        "properties": {
+          "bucket_name": {
+            "type": "string",
+            "title": "Bucket Name"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "access_key_id": {
+            "type": "string",
+            "title": "Access Key Id"
+          },
+          "secret_access_key": {
+            "type": "string",
+            "title": "Secret Access Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bucket_name",
+          "region",
+          "access_key_id",
+          "secret_access_key"
+        ],
+        "title": "AwsS3CredentialsResponse"
+      },
+      "AwsS3UpdateRequest": {
+        "properties": {
+          "bucket_name": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Bucket Name"
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Region"
+          },
+          "access_key_id": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Access Key Id"
+          },
+          "secret_access_key": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Secret Access Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bucket_name",
+          "region",
+          "access_key_id",
+          "secret_access_key"
+        ],
+        "title": "AwsS3UpdateRequest"
+      },
       "BarcodeParseResponse": {
         "properties": {
           "segments": {
@@ -3762,6 +4166,42 @@
         },
         "type": "object",
         "title": "ChecklistLayerPassFail"
+      },
+      "DamageGrading": {
+        "type": "string",
+        "enum": [
+          "DGR",
+          "LDGR",
+          "SCRAP"
+        ],
+        "title": "DamageGrading"
+      },
+      "DamageLikelyCause": {
+        "type": "string",
+        "enum": [
+          "transit",
+          "handling",
+          "packaging",
+          "manufacturing"
+        ],
+        "title": "DamageLikelyCause"
+      },
+      "DamageSeverity": {
+        "type": "string",
+        "enum": [
+          "minor",
+          "major"
+        ],
+        "title": "DamageSeverity"
+      },
+      "DamageType": {
+        "type": "string",
+        "enum": [
+          "packaging",
+          "cosmetic",
+          "accessories"
+        ],
+        "title": "DamageType"
       },
       "DeviceInspectionListResponse": {
         "properties": {
@@ -4083,6 +4523,69 @@
         ],
         "title": "DeviceResponse"
       },
+      "FacilityStatsResponse": {
+        "properties": {
+          "total_inspections": {
+            "type": "integer",
+            "title": "Total Inspections"
+          },
+          "devices_count": {
+            "type": "integer",
+            "title": "Devices Count"
+          },
+          "users_count": {
+            "type": "integer",
+            "title": "Users Count"
+          },
+          "inbound_total": {
+            "type": "integer",
+            "title": "Inbound Total"
+          },
+          "inbound_in_review": {
+            "type": "integer",
+            "title": "Inbound In Review"
+          },
+          "inbound_approved": {
+            "type": "integer",
+            "title": "Inbound Approved"
+          },
+          "inbound_rejected": {
+            "type": "integer",
+            "title": "Inbound Rejected"
+          },
+          "outbound_total": {
+            "type": "integer",
+            "title": "Outbound Total"
+          },
+          "outbound_in_review": {
+            "type": "integer",
+            "title": "Outbound In Review"
+          },
+          "outbound_approved": {
+            "type": "integer",
+            "title": "Outbound Approved"
+          },
+          "outbound_rejected": {
+            "type": "integer",
+            "title": "Outbound Rejected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_inspections",
+          "devices_count",
+          "users_count",
+          "inbound_total",
+          "inbound_in_review",
+          "inbound_approved",
+          "inbound_rejected",
+          "outbound_total",
+          "outbound_in_review",
+          "outbound_approved",
+          "outbound_rejected"
+        ],
+        "title": "FacilityStatsResponse"
+      },
       "ForgotPasswordRequest": {
         "properties": {
           "email": {
@@ -4122,6 +4625,24 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InspectionDropdownOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "InspectionDropdownOption"
       },
       "InspectionFullResponse": {
         "properties": {
@@ -4448,45 +4969,29 @@
             "type": "integer",
             "title": "Total Inspections"
           },
-          "inbound_passed": {
-            "type": "integer",
-            "title": "Inbound Passed"
-          },
-          "inbound_failed": {
-            "type": "integer",
-            "title": "Inbound Failed"
-          },
-          "outbound_passed": {
-            "type": "integer",
-            "title": "Outbound Passed"
-          },
-          "outbound_failed": {
-            "type": "integer",
-            "title": "Outbound Failed"
-          },
           "inbound_in_review": {
             "type": "integer",
             "title": "Inbound In Review"
-          },
-          "inbound_rejected": {
-            "type": "integer",
-            "title": "Inbound Rejected"
           },
           "inbound_approved": {
             "type": "integer",
             "title": "Inbound Approved"
           },
+          "inbound_rejected": {
+            "type": "integer",
+            "title": "Inbound Rejected"
+          },
           "outbound_in_review": {
             "type": "integer",
             "title": "Outbound In Review"
           },
-          "outbound_rejected": {
-            "type": "integer",
-            "title": "Outbound Rejected"
-          },
           "outbound_approved": {
             "type": "integer",
             "title": "Outbound Approved"
+          },
+          "outbound_rejected": {
+            "type": "integer",
+            "title": "Outbound Rejected"
           }
         },
         "type": "object",
@@ -4494,10 +4999,12 @@
           "date_from",
           "date_to",
           "total_inspections",
-          "inbound_passed",
-          "inbound_failed",
-          "outbound_passed",
-          "outbound_failed"
+          "inbound_in_review",
+          "inbound_approved",
+          "inbound_rejected",
+          "outbound_in_review",
+          "outbound_approved",
+          "outbound_rejected"
         ],
         "title": "InspectionKpisResponse"
       },
@@ -4681,6 +5188,78 @@
         ],
         "title": "InspectionListResponse"
       },
+      "InspectionMetadataResponse": {
+        "properties": {
+          "inspection_types": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Inspection Types"
+          },
+          "warehouses": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Warehouses"
+          },
+          "plants": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Plants"
+          },
+          "damage_types": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Damage Types"
+          },
+          "damage_severities": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Damage Severities"
+          },
+          "damage_causes": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Damage Causes"
+          },
+          "damage_grades": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Damage Grades"
+          },
+          "review_statuses": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionDropdownOption"
+            },
+            "type": "array",
+            "title": "Review Statuses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inspection_types",
+          "warehouses",
+          "plants",
+          "damage_types",
+          "damage_severities",
+          "damage_causes",
+          "damage_grades",
+          "review_statuses"
+        ],
+        "title": "InspectionMetadataResponse"
+      },
       "InspectionPassFailCounts": {
         "properties": {
           "pass_count": {
@@ -4839,6 +5418,61 @@
             ],
             "title": "Plant Code"
           },
+          "dock_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dock Number"
+          },
+          "damage_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage Type"
+          },
+          "damage_severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage Severity"
+          },
+          "damage_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage Cause"
+          },
+          "damage_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Damage Grade"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -4906,6 +5540,11 @@
           "product_unit_id",
           "warehouse_code",
           "plant_code",
+          "dock_number",
+          "damage_type",
+          "damage_severity",
+          "damage_cause",
+          "damage_grade",
           "created_at",
           "updated_at",
           "inputs",
@@ -4919,6 +5558,22 @@
           "checklist_fail_total"
         ],
         "title": "InspectionWithChecklistPayload"
+      },
+      "IntegrationCredentialsResponse": {
+        "properties": {
+          "okta_sso": {
+            "$ref": "#/components/schemas/OktaSsoCredentialsResponse"
+          },
+          "aws_s3": {
+            "$ref": "#/components/schemas/AwsS3CredentialsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "okta_sso",
+          "aws_s3"
+        ],
+        "title": "IntegrationCredentialsResponse"
       },
       "LoginDetailResponse": {
         "properties": {
@@ -5341,6 +5996,308 @@
         ],
         "title": "LoginResponse"
       },
+      "OktaSsoCredentialsResponse": {
+        "properties": {
+          "okta_domain": {
+            "type": "string",
+            "title": "Okta Domain"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "title": "Redirect Uri"
+          },
+          "client_secret": {
+            "type": "string",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "okta_domain",
+          "client_id",
+          "redirect_uri",
+          "client_secret"
+        ],
+        "title": "OktaSsoCredentialsResponse"
+      },
+      "OktaSsoUpdateRequest": {
+        "properties": {
+          "okta_domain": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Okta Domain"
+          },
+          "client_id": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Client Id"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Redirect Uri"
+          },
+          "client_secret": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "okta_domain",
+          "client_id",
+          "redirect_uri",
+          "client_secret"
+        ],
+        "title": "OktaSsoUpdateRequest"
+      },
+      "OperationsAnalyticsResponse": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "total_inbound": {
+            "type": "integer",
+            "title": "Total Inbound"
+          },
+          "total_outbound": {
+            "type": "integer",
+            "title": "Total Outbound"
+          },
+          "total_approved": {
+            "type": "integer",
+            "title": "Total Approved"
+          },
+          "total_failed": {
+            "type": "integer",
+            "title": "Total Failed"
+          },
+          "total_pending": {
+            "type": "integer",
+            "title": "Total Pending"
+          },
+          "inbound_approved": {
+            "type": "integer",
+            "title": "Inbound Approved"
+          },
+          "inbound_failed": {
+            "type": "integer",
+            "title": "Inbound Failed"
+          },
+          "inbound_pending": {
+            "type": "integer",
+            "title": "Inbound Pending"
+          },
+          "outbound_approved": {
+            "type": "integer",
+            "title": "Outbound Approved"
+          },
+          "outbound_failed": {
+            "type": "integer",
+            "title": "Outbound Failed"
+          },
+          "outbound_pending": {
+            "type": "integer",
+            "title": "Outbound Pending"
+          },
+          "success_ratio": {
+            "type": "number",
+            "title": "Success Ratio"
+          },
+          "failure_ratio": {
+            "type": "number",
+            "title": "Failure Ratio"
+          },
+          "passed": {
+            "type": "integer",
+            "title": "Passed"
+          },
+          "in_review": {
+            "type": "integer",
+            "title": "In Review"
+          },
+          "flagged": {
+            "type": "integer",
+            "title": "Flagged"
+          },
+          "logins": {
+            "type": "integer",
+            "title": "Logins"
+          },
+          "unique_login_users": {
+            "type": "integer",
+            "title": "Unique Login Users"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_from",
+          "date_to",
+          "total",
+          "total_inbound",
+          "total_outbound",
+          "total_approved",
+          "total_failed",
+          "total_pending",
+          "inbound_approved",
+          "inbound_failed",
+          "inbound_pending",
+          "outbound_approved",
+          "outbound_failed",
+          "outbound_pending",
+          "success_ratio",
+          "failure_ratio",
+          "passed",
+          "in_review",
+          "flagged",
+          "logins",
+          "unique_login_users"
+        ],
+        "title": "OperationsAnalyticsResponse"
+      },
+      "OperationsTrendBucketItem": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "inspections": {
+            "type": "integer",
+            "title": "Inspections"
+          },
+          "logins": {
+            "type": "integer",
+            "title": "Logins"
+          },
+          "success_ratio": {
+            "type": "number",
+            "title": "Success Ratio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "date_from",
+          "date_to",
+          "inspections",
+          "logins",
+          "success_ratio"
+        ],
+        "title": "OperationsTrendBucketItem"
+      },
+      "OperationsTrendResponse": {
+        "properties": {
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "by_warehouse": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsTrendWarehouseItem"
+            },
+            "type": "array",
+            "title": "By Warehouse"
+          },
+          "weekly_trend": {
+            "items": {
+              "$ref": "#/components/schemas/OperationsTrendBucketItem"
+            },
+            "type": "array",
+            "title": "Weekly Trend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_from",
+          "date_to",
+          "by_warehouse",
+          "weekly_trend"
+        ],
+        "title": "OperationsTrendResponse"
+      },
+      "OperationsTrendWarehouseItem": {
+        "properties": {
+          "warehouse_code": {
+            "type": "string",
+            "title": "Warehouse Code"
+          },
+          "warehouse_name": {
+            "type": "string",
+            "title": "Warehouse Name"
+          },
+          "inspections": {
+            "type": "integer",
+            "title": "Inspections"
+          },
+          "logins": {
+            "type": "integer",
+            "title": "Logins"
+          },
+          "success_ratio": {
+            "type": "number",
+            "title": "Success Ratio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "warehouse_code",
+          "warehouse_name",
+          "inspections",
+          "logins",
+          "success_ratio"
+        ],
+        "title": "OperationsTrendWarehouseItem"
+      },
       "PlantCreateRequest": {
         "properties": {
           "plant_code": {
@@ -5392,153 +6349,6 @@
           "postal_code"
         ],
         "title": "PlantCreateRequest"
-      },
-      "PlantDeviceResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Uuid"
-          },
-          "user_id": {
-            "type": "integer",
-            "title": "User Id"
-          },
-          "user_name": {
-            "type": "string",
-            "title": "User Name"
-          },
-          "imei": {
-            "type": "string",
-            "title": "Imei"
-          },
-          "device_type": {
-            "type": "string",
-            "title": "Device Type"
-          },
-          "is_locked": {
-            "type": "boolean",
-            "title": "Is Locked"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "uuid",
-          "user_id",
-          "user_name",
-          "imei",
-          "device_type",
-          "is_locked",
-          "is_active"
-        ],
-        "title": "PlantDeviceResponse"
-      },
-      "PlantInfoResponse": {
-        "properties": {
-          "plant": {
-            "$ref": "#/components/schemas/PlantResponse"
-          },
-          "users": {
-            "items": {
-              "$ref": "#/components/schemas/PlantUserResponse"
-            },
-            "type": "array",
-            "title": "Users"
-          },
-          "devices": {
-            "items": {
-              "$ref": "#/components/schemas/PlantDeviceResponse"
-            },
-            "type": "array",
-            "title": "Devices"
-          },
-          "inspections": {
-            "items": {
-              "$ref": "#/components/schemas/PlantInspectionResponse"
-            },
-            "type": "array",
-            "title": "Inspections"
-          }
-        },
-        "type": "object",
-        "required": [
-          "plant",
-          "users",
-          "devices",
-          "inspections"
-        ],
-        "title": "PlantInfoResponse"
-      },
-      "PlantInspectionResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Uuid"
-          },
-          "inspector_id": {
-            "type": "integer",
-            "title": "Inspector Id"
-          },
-          "inspector_name": {
-            "type": "string",
-            "title": "Inspector Name"
-          },
-          "device_id": {
-            "type": "integer",
-            "title": "Device Id"
-          },
-          "inspection_type": {
-            "type": "string",
-            "title": "Inspection Type"
-          },
-          "product_id": {
-            "type": "integer",
-            "title": "Product Id"
-          },
-          "plant_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Plant Code"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "uuid",
-          "inspector_id",
-          "inspector_name",
-          "device_id",
-          "inspection_type",
-          "product_id",
-          "plant_code",
-          "created_at"
-        ],
-        "title": "PlantInspectionResponse"
       },
       "PlantListResponse": {
         "properties": {
@@ -5642,6 +6452,9 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/FacilityStatsResponse"
           }
         },
         "type": "object",
@@ -5657,7 +6470,8 @@
           "postal_code",
           "is_active",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "stats"
         ],
         "title": "PlantResponse"
       },
@@ -5728,51 +6542,6 @@
           "postal_code"
         ],
         "title": "PlantUpdateRequest"
-      },
-      "PlantUserResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Uuid"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "mobile_number": {
-            "type": "string",
-            "title": "Mobile Number"
-          },
-          "designation": {
-            "type": "string",
-            "title": "Designation"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "uuid",
-          "name",
-          "email",
-          "mobile_number",
-          "designation",
-          "is_active"
-        ],
-        "title": "PlantUserResponse"
       },
       "ProductCategoryInspectionListResponse": {
         "properties": {
@@ -6433,6 +7202,46 @@
             ],
             "title": "Dock Number"
           },
+          "damage_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damage_severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damage_cause": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageLikelyCause"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damage_grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageGrading"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "truck_docking_time": {
             "type": "string",
             "format": "date-time",
@@ -6514,6 +7323,46 @@
               }
             ],
             "title": "Dock Number"
+          },
+          "damage_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damage_severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageSeverity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damage_cause": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageLikelyCause"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "damage_grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageGrading"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "truck_docking_time": {
             "type": "string",
@@ -6768,153 +7617,6 @@
         ],
         "title": "WarehouseCreateRequest"
       },
-      "WarehouseDeviceResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Uuid"
-          },
-          "user_id": {
-            "type": "integer",
-            "title": "User Id"
-          },
-          "user_name": {
-            "type": "string",
-            "title": "User Name"
-          },
-          "imei": {
-            "type": "string",
-            "title": "Imei"
-          },
-          "device_type": {
-            "type": "string",
-            "title": "Device Type"
-          },
-          "is_locked": {
-            "type": "boolean",
-            "title": "Is Locked"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "uuid",
-          "user_id",
-          "user_name",
-          "imei",
-          "device_type",
-          "is_locked",
-          "is_active"
-        ],
-        "title": "WarehouseDeviceResponse"
-      },
-      "WarehouseInfoResponse": {
-        "properties": {
-          "warehouse": {
-            "$ref": "#/components/schemas/WarehouseResponse"
-          },
-          "users": {
-            "items": {
-              "$ref": "#/components/schemas/WarehouseUserResponse"
-            },
-            "type": "array",
-            "title": "Users"
-          },
-          "devices": {
-            "items": {
-              "$ref": "#/components/schemas/WarehouseDeviceResponse"
-            },
-            "type": "array",
-            "title": "Devices"
-          },
-          "inspections": {
-            "items": {
-              "$ref": "#/components/schemas/WarehouseInspectionResponse"
-            },
-            "type": "array",
-            "title": "Inspections"
-          }
-        },
-        "type": "object",
-        "required": [
-          "warehouse",
-          "users",
-          "devices",
-          "inspections"
-        ],
-        "title": "WarehouseInfoResponse"
-      },
-      "WarehouseInspectionResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Uuid"
-          },
-          "inspector_id": {
-            "type": "integer",
-            "title": "Inspector Id"
-          },
-          "inspector_name": {
-            "type": "string",
-            "title": "Inspector Name"
-          },
-          "device_id": {
-            "type": "integer",
-            "title": "Device Id"
-          },
-          "inspection_type": {
-            "type": "string",
-            "title": "Inspection Type"
-          },
-          "product_id": {
-            "type": "integer",
-            "title": "Product Id"
-          },
-          "warehouse_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Warehouse Code"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "uuid",
-          "inspector_id",
-          "inspector_name",
-          "device_id",
-          "inspection_type",
-          "product_id",
-          "warehouse_code",
-          "created_at"
-        ],
-        "title": "WarehouseInspectionResponse"
-      },
       "WarehouseListResponse": {
         "properties": {
           "data": {
@@ -7017,6 +7719,9 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/FacilityStatsResponse"
           }
         },
         "type": "object",
@@ -7032,7 +7737,8 @@
           "postal_code",
           "is_active",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "stats"
         ],
         "title": "WarehouseResponse"
       },
@@ -7103,51 +7809,6 @@
           "postal_code"
         ],
         "title": "WarehouseUpdateRequest"
-      },
-      "WarehouseUserResponse": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Uuid"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "mobile_number": {
-            "type": "string",
-            "title": "Mobile Number"
-          },
-          "designation": {
-            "type": "string",
-            "title": "Designation"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "uuid",
-          "name",
-          "email",
-          "mobile_number",
-          "designation",
-          "is_active"
-        ],
-        "title": "WarehouseUserResponse"
       }
     }
   },

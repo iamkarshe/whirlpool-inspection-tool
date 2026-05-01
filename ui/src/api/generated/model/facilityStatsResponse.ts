@@ -6,13 +6,15 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface InspectionKpisResponse {
-  date_from: string;
-  date_to: string;
+export interface FacilityStatsResponse {
   total_inspections: number;
+  devices_count: number;
+  users_count: number;
+  inbound_total: number;
   inbound_in_review: number;
   inbound_approved: number;
   inbound_rejected: number;
+  outbound_total: number;
   outbound_in_review: number;
   outbound_approved: number;
   outbound_rejected: number;

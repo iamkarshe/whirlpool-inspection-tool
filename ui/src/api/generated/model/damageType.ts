@@ -6,13 +6,11 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface WarehouseDeviceResponse {
-  id: number;
-  uuid: string;
-  user_id: number;
-  user_name: string;
-  imei: string;
-  device_type: string;
-  is_locked: boolean;
-  is_active: boolean;
-}
+export type DamageType = typeof DamageType[keyof typeof DamageType];
+
+
+export const DamageType = {
+  packaging: 'packaging',
+  cosmetic: 'cosmetic',
+  accessories: 'accessories',
+} as const;

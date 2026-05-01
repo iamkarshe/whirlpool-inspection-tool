@@ -6,14 +6,11 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface InspectionKpisResponse {
+export interface OperationsTrendBucketItem {
+  label: string;
   date_from: string;
   date_to: string;
-  total_inspections: number;
-  inbound_in_review: number;
-  inbound_approved: number;
-  inbound_rejected: number;
-  outbound_in_review: number;
-  outbound_approved: number;
-  outbound_rejected: number;
+  inspections: number;
+  logins: number;
+  success_ratio: number;
 }

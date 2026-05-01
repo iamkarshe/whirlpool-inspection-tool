@@ -9,7 +9,6 @@ import type {
   BodyUploadPlantsCsvApiPlantsCsvUploadPost,
   GetPlantsApiPlantsGetParams,
   PlantCreateRequest,
-  PlantInfoResponse,
   PlantListResponse,
   PlantResponse,
   PlantUpdateRequest
@@ -50,13 +49,13 @@ const createPlantApiPlantsPost = (
       options);
     }
   /**
- * Get plant with users, devices and inspections
+ * Get plant details
  * @summary Get Plant Info
  */
 const getPlantInfoApiPlantsPlantUuidGet = (
     plantUuid: string,
- options?: SecondParameter<typeof customInstance<PlantInfoResponse>>,) => {
-      return customInstance<PlantInfoResponse>(
+ options?: SecondParameter<typeof customInstance<PlantResponse>>,) => {
+      return customInstance<PlantResponse>(
       {url: `/api/plants/${plantUuid}`, method: 'GET'
     },
       options);

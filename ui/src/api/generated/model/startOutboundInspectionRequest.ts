@@ -6,6 +6,10 @@
  * OpenAPI spec version: 1.0.3
  */
 import type { ChecklistAnswerEntry } from './checklistAnswerEntry';
+import type { DamageGrading } from './damageGrading';
+import type { DamageLikelyCause } from './damageLikelyCause';
+import type { DamageSeverity } from './damageSeverity';
+import type { DamageType } from './damageType';
 
 export interface StartOutboundInspectionRequest {
   /** @minLength 1 */
@@ -27,6 +31,10 @@ export interface StartOutboundInspectionRequest {
   /** @minLength 1 */
   truck_number: string;
   dock_number?: string | null;
+  damage_type?: DamageType | null;
+  damage_severity?: DamageSeverity | null;
+  damage_cause?: DamageLikelyCause | null;
+  damage_grade?: DamageGrading | null;
   truck_docking_time: string;
   checklist_answers?: ChecklistAnswerEntry[];
 }

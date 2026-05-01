@@ -6,14 +6,7 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface PlantInspectionResponse {
-  id: number;
-  uuid: string;
-  inspector_id: number;
-  inspector_name: string;
-  device_id: number;
-  inspection_type: string;
-  product_id: number;
-  plant_code: string | null;
-  created_at: string;
+export interface InspectionDropdownOption {
+  value: string;
+  label: string;
 }

@@ -6,13 +6,11 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface PlantDeviceResponse {
-  id: number;
-  uuid: string;
-  user_id: number;
-  user_name: string;
-  imei: string;
-  device_type: string;
-  is_locked: boolean;
-  is_active: boolean;
-}
+export type DamageGrading = typeof DamageGrading[keyof typeof DamageGrading];
+
+
+export const DamageGrading = {
+  DGR: 'DGR',
+  LDGR: 'LDGR',
+  SCRAP: 'SCRAP',
+} as const;

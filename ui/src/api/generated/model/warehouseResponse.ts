@@ -5,6 +5,7 @@
  * APIs for Whirlpool Inspection Tool API developed by Scopt Analytics for Whirlpool Inspection Tool API platform.
  * OpenAPI spec version: 1.0.3
  */
+import type { FacilityStatsResponse } from './facilityStatsResponse';
 
 export interface WarehouseResponse {
   id: number;
@@ -19,4 +20,5 @@ export interface WarehouseResponse {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  stats: FacilityStatsResponse;
 }

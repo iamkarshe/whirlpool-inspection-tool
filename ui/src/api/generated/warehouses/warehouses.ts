@@ -9,7 +9,6 @@ import type {
   BodyUploadWarehousesCsvApiWarehousesCsvUploadPost,
   GetWarehousesApiWarehousesGetParams,
   WarehouseCreateRequest,
-  WarehouseInfoResponse,
   WarehouseListResponse,
   WarehouseResponse,
   WarehouseUpdateRequest
@@ -50,13 +49,13 @@ const createWarehouseApiWarehousesPost = (
       options);
     }
   /**
- * Get warehouse with users, devices and inspections
+ * Get warehouse details
  * @summary Get Warehouse Info
  */
 const getWarehouseInfoApiWarehousesWarehouseUuidGet = (
     warehouseUuid: string,
- options?: SecondParameter<typeof customInstance<WarehouseInfoResponse>>,) => {
-      return customInstance<WarehouseInfoResponse>(
+ options?: SecondParameter<typeof customInstance<WarehouseResponse>>,) => {
+      return customInstance<WarehouseResponse>(
       {url: `/api/warehouses/${warehouseUuid}`, method: 'GET'
     },
       options);

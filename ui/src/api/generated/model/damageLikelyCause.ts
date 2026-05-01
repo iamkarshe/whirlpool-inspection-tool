@@ -6,12 +6,12 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface PlantUserResponse {
-  id: number;
-  uuid: string;
-  name: string;
-  email: string;
-  mobile_number: string;
-  designation: string;
-  is_active: boolean;
-}
+export type DamageLikelyCause = typeof DamageLikelyCause[keyof typeof DamageLikelyCause];
+
+
+export const DamageLikelyCause = {
+  transit: 'transit',
+  handling: 'handling',
+  packaging: 'packaging',
+  manufacturing: 'manufacturing',
+} as const;
