@@ -293,6 +293,60 @@
         }
       }
     },
+    "/api/users/{user_uuid}": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update User",
+        "description": "Update user",
+        "operationId": "update_user_api_users__user_uuid__put",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/devices": {
       "get": {
         "tags": [
@@ -7428,6 +7482,22 @@
             "minLength": 2,
             "title": "Designation",
             "default": "Operator"
+          },
+          "allowed_warehouse": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Warehouse",
+            "description": "Warehouse codes this user may access"
+          },
+          "allowed_plants": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Plants",
+            "description": "Plant codes this user may access"
           }
         },
         "type": "object",
@@ -7510,6 +7580,20 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active"
+          },
+          "allowed_warehouse": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Warehouse"
+          },
+          "allowed_plants": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Plants"
           }
         },
         "type": "object",
@@ -7521,9 +7605,135 @@
           "mobile_number",
           "role",
           "designation",
-          "is_active"
+          "is_active",
+          "allowed_warehouse",
+          "allowed_plants"
         ],
         "title": "UserResponse"
+      },
+      "UserUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "mobile_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile Number"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "operator",
+                  "manager"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "designation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Designation"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "allowed_warehouse": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Warehouse",
+            "description": "Replace warehouse codes; omit to leave unchanged"
+          },
+          "allowed_plants": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Plants",
+            "description": "Replace plant codes; omit to leave unchanged"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdateRequest"
       },
       "ValidationError": {
         "properties": {

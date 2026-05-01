@@ -97,6 +97,7 @@ export * from './userCreateRequest';
 export * from './userCreateRequestRole';
 export * from './userListResponse';
 export * from './userResponse';
+export * from './userUpdateRequest';
 export * from './validationError';
 export * from './validationErrorCtx';
 export * from './warehouseCreateRequest';

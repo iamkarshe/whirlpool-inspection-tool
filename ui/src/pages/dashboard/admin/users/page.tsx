@@ -1,5 +1,5 @@
 import type { ChangeEvent, SubmitEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -7,6 +7,7 @@ import type {
   UserCreateRequestRole,
 } from "@/api/generated/model";
 import type { UserResponse } from "@/api/generated/model/userResponse";
+import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,11 +25,16 @@ import {
 } from "@/components/ui/select";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
+import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
   createUser,
   fetchUsersPage,
   userApiErrorMessage,
 } from "@/services/users-api";
+import {
+  fetchAllWarehouses,
+  warehouseApiErrorMessage,
+} from "@/services/warehouses-api";
 import { AlertCircle } from "lucide-react";
 
 type UserFormValues = {
@@ -38,6 +44,7 @@ type UserFormValues = {
   password: string;
   role: UserCreateRequestRole | "";
   designation: string;
+  allowed_warehouse_code: string;
 };
 
 const USER_LIST_SORT = {
@@ -57,9 +64,29 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
     password: "",
     role: "",
     designation: "",
+    allowed_warehouse_code: "",
   });
+  const [warehouses, setWarehouses] = useState<WarehouseResponse[]>([]);
+  const [warehousesError, setWarehousesError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAllWarehouses()
+      .then((rows) => {
+        if (!cancelled) setWarehouses(rows);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled)
+          setWarehousesError(
+            warehouseApiErrorMessage(e, "Could not load warehouses."),
+          );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -82,6 +109,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       );
       return;
     }
+    const wh = formValues.allowed_warehouse_code.trim();
     const payload: UserCreateRequest = {
       name: formValues.name.trim(),
       email: formValues.email.trim(),
@@ -89,6 +117,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       password: formValues.password,
       role: formValues.role || undefined,
       designation: formValues.designation.trim() || undefined,
+      ...(wh ? { allowed_warehouse: [wh] } : {}),
     };
     setIsCreating(true);
     try {
@@ -101,6 +130,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         password: "",
         role: "",
         designation: "",
+        allowed_warehouse_code: "",
       });
       onCreated();
     } catch (e: unknown) {
@@ -158,37 +188,56 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
           required
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="role">Role</Label>
-        <Select
-          value={formValues.role}
-          onValueChange={(value) => {
-            if (createError) setCreateError(null);
-            setFormValues((previous) => ({
-              ...previous,
-              role: value as UserCreateRequestRole,
-            }));
-          }}
-        >
-          <SelectTrigger id="role" className="w-full">
-            <SelectValue placeholder="Select role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="operator">Operator</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="role">Role</Label>
+          <Select
+            value={formValues.role}
+            onValueChange={(value) => {
+              if (createError) setCreateError(null);
+              setFormValues((previous) => ({
+                ...previous,
+                role: value as UserCreateRequestRole,
+              }));
+            }}
+          >
+            <SelectTrigger id="role" className="w-full">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="operator">Operator</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="designation">Designation</Label>
+          <Input
+            id="designation"
+            name="designation"
+            value={formValues.designation}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="designation">Designation</Label>
-        <Input
-          id="designation"
-          name="designation"
-          value={formValues.designation}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
+      {warehousesError ? (
+        <p className="text-destructive text-sm">{warehousesError}</p>
+      ) : null}
+      <UserWarehouseSelect
+        id="create-warehouse"
+        label="Allowed Warehouse"
+        value={formValues.allowed_warehouse_code}
+        onValueChange={(allowed_warehouse_code) => {
+          if (createError) setCreateError(null);
+          setFormValues((previous) => ({
+            ...previous,
+            allowed_warehouse_code,
+          }));
+        }}
+        warehouses={warehouses}
+        disabled={Boolean(warehousesError)}
+      />
       {createError ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />

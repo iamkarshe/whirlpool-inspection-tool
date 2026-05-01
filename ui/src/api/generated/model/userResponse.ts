@@ -15,4 +15,6 @@ export interface UserResponse {
   role: string;
   designation: string;
   is_active: boolean;
+  allowed_warehouse: string[];
+  allowed_plants: string[];
 }

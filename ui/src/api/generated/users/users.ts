@@ -9,7 +9,8 @@ import type {
   GetUsersApiUsersGetParams,
   UserCreateRequest,
   UserListResponse,
-  UserResponse
+  UserResponse,
+  UserUpdateRequest
 } from '../model';
 
 import { customInstance } from '../../axios-instance';
@@ -46,6 +47,22 @@ const createUserApiUsersPost = (
     },
       options);
     }
-  return {getUsersApiUsersGet,createUserApiUsersPost}};
+  /**
+ * Update user
+ * @summary Update User
+ */
+const updateUserApiUsersUserUuidPut = (
+    userUuid: string,
+    userUpdateRequest: UserUpdateRequest,
+ options?: SecondParameter<typeof customInstance<UserResponse>>,) => {
+      return customInstance<UserResponse>(
+      {url: `/api/users/${userUuid}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: userUpdateRequest
+    },
+      options);
+    }
+  return {getUsersApiUsersGet,createUserApiUsersPost,updateUserApiUsersUserUuidPut}};
 export type GetUsersApiUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['getUsersApiUsersGet']>>>
 export type CreateUserApiUsersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['createUserApiUsersPost']>>>
+export type UpdateUserApiUsersUserUuidPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['updateUserApiUsersUserUuidPut']>>>

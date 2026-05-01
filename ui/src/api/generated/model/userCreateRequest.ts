@@ -27,4 +27,8 @@ export interface UserCreateRequest {
      * @maxLength 120
      */
   designation?: string;
+  /** Warehouse codes this user may access */
+  allowed_warehouse?: string[];
+  /** Plant codes this user may access */
+  allowed_plants?: string[];
 }

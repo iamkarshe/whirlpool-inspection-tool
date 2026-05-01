@@ -25,7 +25,10 @@ import {
 import { PAGES } from "@/endpoints";
 import { isSuperadminRoleName } from "@/services/users-api";
 import { getAvatarImage } from "@/lib/utils";
-import { UserStatusBadge } from "@/pages/dashboard/admin/users/user-badge";
+import {
+  UserRoleBadge,
+  UserStatusBadge,
+} from "@/pages/dashboard/admin/users/user-badge";
 import type { UserResponse } from "@/api/generated/model/userResponse";
 
 const userColumns: ColumnDef<UserResponse>[] = [
@@ -53,7 +56,7 @@ const userColumns: ColumnDef<UserResponse>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("role"),
+    cell: ({ row }) => <UserRoleBadge role={row.original.role} />,
   },
   {
     accessorKey: "email",

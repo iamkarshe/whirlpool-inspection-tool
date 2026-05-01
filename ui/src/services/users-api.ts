@@ -2,6 +2,7 @@ import { isAxiosError } from "axios";
 import type { GetUsersApiUsersGetParams } from "@/api/generated/model/getUsersApiUsersGetParams";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { UserCreateRequest } from "@/api/generated/model/userCreateRequest";
+import type { UserUpdateRequest } from "@/api/generated/model/userUpdateRequest";
 import {
   UserCreateRequestRole,
   type UserCreateRequestRole,
@@ -60,6 +61,30 @@ export async function createUser(
   }
   const api = getUsers();
   return api.createUserApiUsersPost(
+    payload,
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
+const UPDATABLE_ROLES = new Set<NonNullable<UserUpdateRequest["role"]>>([
+  "manager",
+  "operator",
+]);
+
+export async function updateUser(
+  userUuid: string,
+  payload: UserUpdateRequest,
+  request?: { signal?: AbortSignal },
+): Promise<UserResponse> {
+  if (
+    payload.role != null &&
+    !UPDATABLE_ROLES.has(payload.role)
+  ) {
+    throw new Error("Only manager and operator roles can be assigned here.");
+  }
+  const api = getUsers();
+  return api.updateUserApiUsersUserUuidPut(
+    userUuid,
     payload,
     request?.signal ? { signal: request.signal } : undefined,
   );
