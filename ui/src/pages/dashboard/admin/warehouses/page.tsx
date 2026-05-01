@@ -1,5 +1,5 @@
 import type { ChangeEvent, SubmitEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import type { WarehouseCreateRequest } from "@/api/generated/model/warehouseCreateRequest";
@@ -8,22 +8,17 @@ import CsvUploadDialog from "@/components/csv-upload-dialog";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
-import {
-  DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
-  DEFAULT_SERVER_DATA_TABLE_SEARCH_DEBOUNCE_MS,
-  sortingStateToApiSortQuery,
-} from "@/components/ui/data-table-server";
+import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useServerTableData } from "@/hooks/use-server-table-data";
+import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import {
   createWarehouse,
   fetchWarehousesPage,
   uploadWarehousesCsv,
   warehouseApiErrorMessage,
 } from "@/services/warehouses-api";
-import type { PaginationState, SortingState } from "@tanstack/react-table";
 import WarehousesDataTable from "./data-table";
 
 type WarehouseFormValues = {
@@ -60,51 +55,17 @@ export default function WarehousesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
-  });
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "id", desc: true },
-  ]);
-  const [searchDraft, setSearchDraft] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const committedSearchRef = useRef<string | null>(null);
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const committed = searchDraft.trim();
-      const previousCommitted = committedSearchRef.current;
-      if (previousCommitted !== null && previousCommitted !== committed) {
-        setPagination((p) => ({ ...p, pageIndex: 0 }));
-      }
-      committedSearchRef.current = committed;
-      setSearchQuery(committed);
-    }, DEFAULT_SERVER_DATA_TABLE_SEARCH_DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [searchDraft]);
-
-  const handleSortingChange = useCallback((next: SortingState) => {
-    setSorting(next);
-    setPagination((p) => ({ ...p, pageIndex: 0 }));
-  }, []);
-
   const {
     rows: warehouses,
-    total,
     isLoading,
     error,
-  } = useServerTableData<WarehouseResponse>({
-    pagination,
-    searchQuery,
-    sorting,
+    serverSide,
+  } = useControlledServerTable<WarehouseResponse>({
+    initialSorting: [{ id: "id", desc: true }],
     refreshKey: reloadKey,
     errorMessage: "Failed to load warehouses.",
     load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
-      const { sort_by, sort_dir } = sortingStateToApiSortQuery(
-        s,
-        WAREHOUSE_LIST_SORT,
-      );
+      const { sort_by, sort_dir } = sortingStateToApiSortQuery(s, WAREHOUSE_LIST_SORT);
       const res = await fetchWarehousesPage(
         {
           page: p.pageIndex + 1,
@@ -167,19 +128,6 @@ export default function WarehousesPage() {
       throw e;
     }
   };
-
-  const serverSide = useMemo(
-    () => ({
-      totalRowCount: total,
-      pagination,
-      onPaginationChange: setPagination,
-      sorting,
-      onSortingChange: handleSortingChange,
-      search: searchDraft,
-      onSearchChange: setSearchDraft,
-    }),
-    [total, pagination, sorting, handleSortingChange, searchDraft],
-  );
 
   return (
     <div className="space-y-6">

@@ -19,6 +19,8 @@ export type UseServerTableDataOptions<T> = {
   searchQuery: string;
   sorting: SortingState;
   refreshKey?: string | number;
+  /** When the active filter scope changes (e.g. warehouse UUID), include it so loads re-run with the latest `load` closure. */
+  dataScopeKey?: string | number;
   load: (ctx: ServerTableDataLoadContext) => Promise<ServerTableDataPage<T>>;
   errorMessage: string;
   toastOnError?: boolean;
@@ -36,6 +38,7 @@ export function useServerTableData<T>({
   searchQuery,
   sorting,
   refreshKey,
+  dataScopeKey,
   load,
   errorMessage,
   toastOnError = true,
@@ -88,7 +91,14 @@ export function useServerTableData<T>({
       cancelled = true;
       ac.abort();
     };
-  }, [pagination.pageIndex, pagination.pageSize, searchQuery, sorting, refreshKey]);
+  }, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    searchQuery,
+    sorting,
+    refreshKey,
+    dataScopeKey,
+  ]);
 
   return { rows, total, isLoading, error };
 }

@@ -5,6 +5,7 @@ import {
   Building2,
   ClipboardCheck,
   MapPin,
+  MapPinned,
   Smartphone,
   Users,
 } from "lucide-react";
@@ -17,6 +18,26 @@ export function WarehouseCodeBadge({ code }: { code: string }) {
     <Badge variant="secondary" className={BADGE_ICON_CLASS}>
       <Building2 />
       {code.toUpperCase()}
+    </Badge>
+  );
+}
+
+export function WarehouseCityBadge({
+  city,
+  maxWidth = true,
+}: {
+  city: string;
+  maxWidth?: boolean;
+}) {
+  const trimmed = city.trim();
+  if (!trimmed) return null;
+  return (
+    <Badge
+      variant="outline"
+      className={`${BADGE_ICON_CLASS} ${maxWidth ? "max-w-[200px] truncate" : ""}`}
+    >
+      <MapPinned />
+      <span className="uppercase">{trimmed}</span>
     </Badge>
   );
 }
@@ -112,6 +133,7 @@ export function WarehouseHeaderBadges({
   return (
     <>
       <WarehouseCodeBadge code={warehouse.warehouse_code} />
+      <WarehouseCityBadge city={warehouse.city} />
       <WarehouseAddressBadge address={warehouse.address} />
     </>
   );
