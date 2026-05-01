@@ -1,19 +1,22 @@
-import { Button } from "@/components/ui/button";
-import { PAGES } from "@/endpoints";
-import { WarehouseHeaderBadges } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
-import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
-import { loadWarehouseView } from "@/pages/dashboard/admin/warehouses/warehouse-view/controller";
-import { TabbedContent } from "@/components/tabbed-content";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
+import { TabbedContent } from "@/components/tabbed-content";
+import { Button } from "@/components/ui/button";
+import { PAGES } from "@/endpoints";
+import { WarehouseHeaderBadges } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
+import type { WarehouseViewContext } from "@/pages/dashboard/admin/warehouses/warehouse-view/context";
+import {
+  fetchWarehouseInfo,
+  warehouseApiErrorMessage,
+} from "@/services/warehouses-api";
 
 export default function WarehouseViewLayout() {
   const params = useParams<{ id: string }>();
-  const id = params.id ?? "";
-  const [warehouse, setWarehouse] = useState<Warehouse | null | undefined>(
-    undefined,
-  );
+  const warehouseUuid = params.id ?? "";
+  const [viewData, setViewData] = useState<WarehouseViewContext | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,10 +24,20 @@ export default function WarehouseViewLayout() {
     queueMicrotask(() => {
       if (!cancelled) setLoading(true);
     });
-
-    loadWarehouseView(id)
+    fetchWarehouseInfo(warehouseUuid)
       .then((d) => {
-        if (!cancelled) setWarehouse(d);
+        if (cancelled) return;
+        setViewData({
+          warehouse: d.warehouse,
+          users: d.users,
+          devices: d.devices,
+          inspections: d.inspections,
+        });
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        toast.error(warehouseApiErrorMessage(e, "Failed to load warehouse."));
+        setViewData(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -33,7 +46,7 @@ export default function WarehouseViewLayout() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [warehouseUuid]);
 
   if (loading) {
     return (
@@ -43,7 +56,7 @@ export default function WarehouseViewLayout() {
     );
   }
 
-  if (warehouse === null || warehouse === undefined) {
+  if (viewData === null) {
     return (
       <div className="space-y-4">
         <p className="text-muted-foreground">Warehouse not found.</p>
@@ -57,10 +70,12 @@ export default function WarehouseViewLayout() {
     );
   }
 
-  const basePath = PAGES.warehouseViewPath(warehouse.id);
-  const usersPath = PAGES.warehouseUsersPath(warehouse.id);
-  const devicesPath = PAGES.warehouseDevicesPath(warehouse.id);
-  const inspectionsPath = PAGES.warehouseInspectionsPath(warehouse.id);
+  const basePath = PAGES.warehouseViewPath(viewData.warehouse.uuid);
+  const usersPath = PAGES.warehouseUsersPath(viewData.warehouse.uuid);
+  const devicesPath = PAGES.warehouseDevicesPath(viewData.warehouse.uuid);
+  const inspectionsPath = PAGES.warehouseInspectionsPath(
+    viewData.warehouse.uuid,
+  );
   const tabs = [
     { label: "Details", to: basePath, end: true },
     { label: "Users", to: usersPath },
@@ -81,16 +96,16 @@ export default function WarehouseViewLayout() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            {warehouse.name}
+            {viewData.warehouse.name}
           </h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <WarehouseHeaderBadges warehouse={warehouse} />
+            <WarehouseHeaderBadges warehouse={viewData.warehouse} />
           </div>
         </div>
       </div>
 
       <TabbedContent tabs={tabs} className="my-0">
-        <Outlet context={{ warehouse }} />
+        <Outlet context={viewData} />
       </TabbedContent>
     </div>
   );

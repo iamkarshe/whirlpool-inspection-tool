@@ -1,40 +1,36 @@
-import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
-import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
-import { getUsersByWarehouseId } from "@/pages/dashboard/admin/warehouses/warehouse-view/warehouse-view-service";
-import type { User } from "@/pages/dashboard/admin/users/user-service";
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import type { WarehouseUserResponse } from "@/api/generated/model/warehouseUserResponse";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import type { WarehouseViewContext } from "./context";
 
-type WarehouseViewContext = { warehouse: Warehouse };
+const columns: ColumnDef<WarehouseUserResponse>[] = [
+  {
+    accessorKey: "name",
+    header: ({ column }) => (
+      <Button
+        className="-ml-3"
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Name
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </Button>
+    ),
+  },
+  { accessorKey: "email", header: "Email" },
+  { accessorKey: "mobile_number", header: "Mobile" },
+  { accessorKey: "designation", header: "Designation" },
+  {
+    accessorKey: "is_active",
+    header: "Status",
+    cell: ({ row }) => (row.original.is_active ? "Active" : "Inactive"),
+  },
+];
 
 export default function WarehouseViewUsersPage() {
-  const { warehouse } = useOutletContext<WarehouseViewContext>();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getUsersByWarehouseId(warehouse.id)
-      .then((data) => {
-        if (!cancelled) setUsers(data);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [warehouse.id]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return <UsersDataTable data={users} />;
+  const { users } = useOutletContext<WarehouseViewContext>();
+  return <DataTable columns={columns} data={users} searchKey="name" rangeLabel="users" />;
 }

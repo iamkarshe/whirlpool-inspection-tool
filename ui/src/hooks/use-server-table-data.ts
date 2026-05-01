@@ -18,6 +18,7 @@ export type UseServerTableDataOptions<T> = {
   pagination: PaginationState;
   searchQuery: string;
   sorting: SortingState;
+  refreshKey?: string | number;
   load: (ctx: ServerTableDataLoadContext) => Promise<ServerTableDataPage<T>>;
   errorMessage: string;
   toastOnError?: boolean;
@@ -34,6 +35,7 @@ export function useServerTableData<T>({
   pagination,
   searchQuery,
   sorting,
+  refreshKey,
   load,
   errorMessage,
   toastOnError = true,
@@ -86,7 +88,7 @@ export function useServerTableData<T>({
       cancelled = true;
       ac.abort();
     };
-  }, [pagination.pageIndex, pagination.pageSize, searchQuery, sorting]);
+  }, [pagination.pageIndex, pagination.pageSize, searchQuery, sorting, refreshKey]);
 
   return { rows, total, isLoading, error };
 }

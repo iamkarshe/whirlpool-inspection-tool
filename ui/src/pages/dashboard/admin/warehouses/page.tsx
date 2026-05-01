@@ -1,20 +1,29 @@
+import type { ChangeEvent, SubmitEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import type { WarehouseCreateRequest } from "@/api/generated/model/warehouseCreateRequest";
+import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import CsvUploadDialog from "@/components/csv-upload-dialog";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
-import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
 import {
-  DialogFooter,
-} from "@/components/ui/dialog";
+  DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
+  DEFAULT_SERVER_DATA_TABLE_SEARCH_DEBOUNCE_MS,
+  sortingStateToApiSortQuery,
+} from "@/components/ui/data-table-server";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useServerTableData } from "@/hooks/use-server-table-data";
 import {
-  getWarehouses,
-  type Warehouse,
-} from "@/pages/dashboard/admin/warehouses/warehouse-service";
-import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+  createWarehouse,
+  fetchWarehousesPage,
+  uploadWarehousesCsv,
+  warehouseApiErrorMessage,
+} from "@/services/warehouses-api";
+import type { PaginationState, SortingState } from "@tanstack/react-table";
 import WarehousesDataTable from "./data-table";
 
 type WarehouseFormValues = {
@@ -23,6 +32,19 @@ type WarehouseFormValues = {
   address: string;
   lat: string;
   lng: string;
+  city: string;
+  postal_code: string;
+};
+
+const WAREHOUSE_LIST_SORT = {
+  allowedColumns: [
+    "id",
+    "name",
+    "warehouse_code",
+    "created_at",
+    "updated_at",
+  ] as const,
+  defaultSort: { sort_by: "id", sort_dir: "desc" as const },
 };
 
 export default function WarehousesPage() {
@@ -32,43 +54,132 @@ export default function WarehousesPage() {
     address: "",
     lat: "",
     lng: "",
+    city: "",
+    postal_code: "",
   });
+  const [isCreating, setIsCreating] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
+  });
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "id", desc: true },
+  ]);
+  const [searchDraft, setSearchDraft] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
+  const committedSearchRef = useRef<string | null>(null);
   useEffect(() => {
-    const fetchWarehouses = async () => {
-      try {
-        const data = await getWarehouses();
-        setWarehouses(data);
-      } finally {
-        setIsLoading(false);
+    const timer = window.setTimeout(() => {
+      const committed = searchDraft.trim();
+      const previousCommitted = committedSearchRef.current;
+      if (previousCommitted !== null && previousCommitted !== committed) {
+        setPagination((p) => ({ ...p, pageIndex: 0 }));
       }
-    };
-    fetchWarehouses();
+      committedSearchRef.current = committed;
+      setSearchQuery(committed);
+    }, DEFAULT_SERVER_DATA_TABLE_SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [searchDraft]);
+
+  const handleSortingChange = useCallback((next: SortingState) => {
+    setSorting(next);
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
   }, []);
+
+  const {
+    rows: warehouses,
+    total,
+    isLoading,
+    error,
+  } = useServerTableData<WarehouseResponse>({
+    pagination,
+    searchQuery,
+    sorting,
+    refreshKey: reloadKey,
+    errorMessage: "Failed to load warehouses.",
+    load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
+      const { sort_by, sort_dir } = sortingStateToApiSortQuery(
+        s,
+        WAREHOUSE_LIST_SORT,
+      );
+      const res = await fetchWarehousesPage(
+        {
+          page: p.pageIndex + 1,
+          per_page: p.pageSize,
+          search: q.length > 0 ? q : null,
+          sort_by,
+          sort_dir,
+        },
+        { signal },
+      );
+      return { data: res.data, total: res.total };
+    },
+  });
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormValues((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = (event: SubmitEvent) => {
+  const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
-    // TODO: wire real create warehouse; mocked for now.
-    console.log("Mock create warehouse", formValues);
+    const payload: WarehouseCreateRequest = {
+      name: formValues.name.trim(),
+      warehouse_code: formValues.warehouse_code.trim(),
+      address: formValues.address.trim(),
+      city: formValues.city.trim(),
+      lat: Number(formValues.lat),
+      lng: Number(formValues.lng),
+      postal_code: Number(formValues.postal_code),
+    };
+    setIsCreating(true);
+    try {
+      await createWarehouse(payload);
+      toast.success("Warehouse created.");
+      setFormValues({
+        name: "",
+        warehouse_code: "",
+        address: "",
+        lat: "",
+        lng: "",
+        city: "",
+        postal_code: "",
+      });
+      setReloadKey((v) => v + 1);
+    } catch (e: unknown) {
+      toast.error(warehouseApiErrorMessage(e, "Could not create warehouse."));
+      throw e;
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const handleCsvSubmit = (file: File) => {
-    // TODO: wire real CSV upload; for now this is mocked.
-    console.log("Mock warehouses CSV upload", file);
-    toast.success("CSV uploaded successfully.");
+  const handleCsvSubmit = async (file: File) => {
+    try {
+      await uploadWarehousesCsv(file);
+      toast.success("Warehouses CSV uploaded.");
+      setReloadKey((v) => v + 1);
+    } catch (e: unknown) {
+      toast.error(warehouseApiErrorMessage(e, "Could not upload the CSV."));
+      throw e;
+    }
   };
 
-  const warehouseCsvTemplate =
-    "name,warehouse_code,address,lat,lng\n" +
-    "Pune North Hub,WH-PUN-01,Hinjawadi Pune Maharashtra,18.5204,73.8567\n";
+  const serverSide = useMemo(
+    () => ({
+      totalRowCount: total,
+      pagination,
+      onPaginationChange: setPagination,
+      sorting,
+      onSortingChange: handleSortingChange,
+      search: searchDraft,
+      onSearchChange: setSearchDraft,
+    }),
+    [total, pagination, sorting, handleSortingChange, searchDraft],
+  );
 
   return (
     <div className="space-y-6">
@@ -80,7 +191,7 @@ export default function WarehousesPage() {
           title="Upload Warehouses"
           description="Select a CSV file containing warehouses to import."
           templateFilename="warehouses-template.csv"
-          templateContent={warehouseCsvTemplate}
+          templateDownloadUrl="/api/warehouses/csv/template"
           onSubmit={handleCsvSubmit}
         />
 
@@ -146,18 +257,48 @@ export default function WarehousesPage() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={formValues.city}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="postal_code">Postal code</Label>
+                <Input
+                  id="postal_code"
+                  name="postal_code"
+                  type="number"
+                  min={0}
+                  value={formValues.postal_code}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
             <DialogFooter>
-              <Button type="submit">Save warehouse</Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? "Saving..." : "Save warehouse"}
+              </Button>
             </DialogFooter>
           </form>
         </CreateEntryDialog>
       </PageActionBar>
 
-      {isLoading ? (
-        <SkeletonTable />
-      ) : (
-        <WarehousesDataTable data={warehouses} />
-      )}
+      {error && !isLoading ? (
+        <p className="text-destructive text-sm">{error}</p>
+      ) : null}
+
+      <WarehousesDataTable
+        data={warehouses}
+        serverSide={serverSide}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

@@ -37,14 +37,11 @@ import {
 } from "@/components/ui/chart";
 import { PAGES } from "@/endpoints";
 import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
+import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import {
   getUsers,
   type User,
 } from "@/pages/dashboard/admin/users/user-service";
-import {
-  getWarehouses,
-  type Warehouse,
-} from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import {
   getOperationsAnalyticsKpis,
   getOperationsSummaryByCategory,
@@ -57,6 +54,7 @@ import {
 import { WeeklyTrendDetailsDialog } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-details-dialog";
 import { WeeklyTrendTooltipContent } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-tooltip-content";
 import { fetchAllProductCategories } from "@/services/product-categories-api";
+import { fetchAllWarehouses } from "@/services/warehouses-api";
 
 const trendChartConfig = {
   inspections: { label: "Inspections", color: "var(--chart-1)" },
@@ -199,7 +197,7 @@ export default function OperationsAnalyticsPage() {
   >([]);
   const [loading, setLoading] = useState(true);
 
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseResponse[]>([]);
   const [productCategories, setProductCategories] = useState<
     ProductCategoryListItemResponse[]
   >(
@@ -255,7 +253,7 @@ export default function OperationsAnalyticsPage() {
   }, [filters]);
 
   useEffect(() => {
-    Promise.all([getWarehouses(), fetchAllProductCategories(), getUsers()]).then(
+    Promise.all([fetchAllWarehouses(), fetchAllProductCategories(), getUsers()]).then(
       ([w, c, u]) => {
         setWarehouses(w);
         setProductCategories(c);
@@ -281,7 +279,7 @@ export default function OperationsAnalyticsPage() {
         actionHref: PAGES.DASHBOARD_MASTERS_WAREHOUSES,
         actionLabel: "Open warehouses",
         options: warehouses.map((w) => ({
-          id: w.id,
+          id: w.uuid,
           label: `${w.warehouse_code} — ${w.name}`,
         })),
       },

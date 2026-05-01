@@ -1,6 +1,6 @@
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
+import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import { PAGES } from "@/endpoints";
-import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
 import {
   Building2,
   ClipboardCheck,
@@ -92,7 +92,10 @@ export function WarehouseInspectionsCountBadge({
   count: number;
 }) {
   return (
-    <Link to={PAGES.warehouseInspectionsPath(warehouseId)} className="inline-block">
+    <Link
+      to={PAGES.warehouseInspectionsPath(warehouseId)}
+      className="inline-block"
+    >
       <Badge variant="secondary" className={linkBadgeClass}>
         <ClipboardCheck />
         {count}
@@ -101,7 +104,11 @@ export function WarehouseInspectionsCountBadge({
   );
 }
 
-export function WarehouseHeaderBadges({ warehouse }: { warehouse: Warehouse }) {
+export function WarehouseHeaderBadges({
+  warehouse,
+}: {
+  warehouse: WarehouseResponse;
+}) {
   return (
     <>
       <WarehouseCodeBadge code={warehouse.warehouse_code} />

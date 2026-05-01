@@ -1,40 +1,42 @@
-import DevicesDataTable from "@/pages/dashboard/admin/devices/data-table";
-import type { Device } from "@/pages/dashboard/admin/devices/device-service";
-import type { Warehouse } from "@/pages/dashboard/admin/warehouses/warehouse-service";
-import { getDevicesByWarehouseId } from "@/pages/dashboard/admin/warehouses/warehouse-view/warehouse-view-service";
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import type { WarehouseDeviceResponse } from "@/api/generated/model/warehouseDeviceResponse";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import type { WarehouseViewContext } from "./context";
 
-type WarehouseViewContext = { warehouse: Warehouse };
+const columns: ColumnDef<WarehouseDeviceResponse>[] = [
+  {
+    accessorKey: "uuid",
+    header: ({ column }) => (
+      <Button
+        className="-ml-3"
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Device UUID
+        <ArrowUpDown className="ml-1 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <span className="font-mono text-xs">{row.original.uuid}</span>,
+  },
+  { accessorKey: "user_name", header: "User" },
+  { accessorKey: "imei", header: "IMEI" },
+  { accessorKey: "device_type", header: "Type" },
+  {
+    accessorKey: "is_locked",
+    header: "Locked",
+    cell: ({ row }) => (row.original.is_locked ? "Yes" : "No"),
+  },
+  {
+    accessorKey: "is_active",
+    header: "Status",
+    cell: ({ row }) => (row.original.is_active ? "Active" : "Inactive"),
+  },
+];
 
 export default function WarehouseViewDevicesPage() {
-  const { warehouse } = useOutletContext<WarehouseViewContext>();
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getDevicesByWarehouseId(warehouse.id)
-      .then((data) => {
-        if (!cancelled) setDevices(data);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [warehouse.id]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return <DevicesDataTable data={devices} />;
+  const { devices } = useOutletContext<WarehouseViewContext>();
+  return <DataTable columns={columns} data={devices} searchKey="imei" rangeLabel="devices" />;
 }

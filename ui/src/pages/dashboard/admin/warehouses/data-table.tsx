@@ -1,5 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableServerSideConfig,
+} from "@/components/ui/data-table";
+import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,9 +31,8 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { Warehouse } from "./warehouse-service";
 
-const warehouseColumns: ColumnDef<Warehouse>[] = [
+const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
   {
     accessorKey: "id",
     header: ({ column }) => (
@@ -42,7 +45,7 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <WarehouseIdLinkBadge id={row.original.id} />,
+    cell: ({ row }) => <WarehouseIdLinkBadge id={row.original.uuid} />,
   },
   {
     accessorKey: "name",
@@ -99,47 +102,25 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
   {
     id: "users",
     header: "Users",
-    cell: ({ row }) => {
-      const w = row.original;
-      return (
-        <WarehouseUsersCountBadge
-          warehouseId={w.id}
-          count={w.users_count ?? 0}
-        />
-      );
-    },
+    cell: ({ row }) => <WarehouseUsersCountBadge warehouseId={row.original.uuid} count={0} />,
   },
   {
     id: "devices",
     header: "Devices",
-    cell: ({ row }) => {
-      const w = row.original;
-      return (
-        <WarehouseDevicesCountBadge
-          warehouseId={w.id}
-          count={w.devices_count ?? 0}
-        />
-      );
-    },
+    cell: ({ row }) => <WarehouseDevicesCountBadge warehouseId={row.original.uuid} count={0} />,
   },
   {
     id: "inspections",
     header: "Inspections",
-    cell: ({ row }) => {
-      const w = row.original;
-      return (
-        <WarehouseInspectionsCountBadge
-          warehouseId={w.id}
-          count={w.inspections_count ?? 0}
-        />
-      );
-    },
+    cell: ({ row }) => (
+      <WarehouseInspectionsCountBadge warehouseId={row.original.uuid} count={0} />
+    ),
   },
   {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const id = row.original.id;
+      const id = row.original.uuid;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -203,18 +184,23 @@ const warehouseColumns: ColumnDef<Warehouse>[] = [
 ];
 
 interface WarehousesDataTableProps {
-  data: Warehouse[];
+  data: WarehouseResponse[];
+  serverSide: DataTableServerSideConfig;
+  isLoading?: boolean;
 }
 
 export default function WarehousesDataTable({
   data,
+  serverSide,
+  isLoading,
 }: WarehousesDataTableProps) {
   return (
-    <DataTable<Warehouse>
+    <DataTable<WarehouseResponse>
       columns={warehouseColumns}
       data={data}
-      searchKey="name"
       rangeLabel="warehouses"
+      serverSide={serverSide}
+      isLoading={isLoading}
     />
   );
 }
