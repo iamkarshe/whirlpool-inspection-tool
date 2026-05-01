@@ -67,6 +67,9 @@ export async function computeInspectionStatusMap(
 ): Promise<InspectionStatusMap> {
   const entries = await Promise.all(
     inspections.map(async (i) => {
+      if (i.checklist_quality) {
+        return [i.id, i.checklist_quality] as const;
+      }
       const [outer, inner, product] = await Promise.all([
         getInspectionQuestionResults(i.id, "outer-packaging"),
         getInspectionQuestionResults(i.id, "inner-packaging"),

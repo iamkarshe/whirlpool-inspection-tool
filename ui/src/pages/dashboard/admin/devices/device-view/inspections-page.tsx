@@ -1,6 +1,6 @@
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import {
-  getInspectionsByDeviceId,
+  getInspectionsByDeviceFingerprint,
   type Inspection,
 } from "@/pages/dashboard/inspections/inspection-service";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
@@ -16,10 +16,10 @@ export default function DeviceViewInspectionsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getInspectionsByDeviceId(device.id)
+    getInspectionsByDeviceFingerprint(device.device_fingerprint)
       .then(setInspections)
       .finally(() => setIsLoading(false));
-  }, [device.id]);
+  }, [device.device_fingerprint]);
 
   if (isLoading) {
     return <SkeletonTable />;

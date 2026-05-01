@@ -35,8 +35,7 @@ export const inspectionScopePresets = {
   },
   inboundInReview: {
     title: "In-review inbound",
-    description:
-      "Inbound inspections pending quality review.",
+    description: "Inbound inspections pending quality review.",
     inspectionType: "inbound",
     reviewLane: "in_review" as const,
   },
@@ -54,8 +53,7 @@ export const inspectionScopePresets = {
   },
   outboundInReview: {
     title: "In-review outbound",
-    description:
-      "Outbound inspections pending quality review.",
+    description: "Outbound inspections pending quality review.",
     inspectionType: "outbound",
     reviewLane: "in_review" as const,
   },
