@@ -5,7 +5,6 @@ import { PAGES } from "@/endpoints";
 import type { ProductCategoryResponse } from "@/api/generated/model/productCategoryResponse";
 import type { ProductCategoryViewContext } from "@/pages/dashboard/admin/product-categories/category-view/context";
 import { fetchProductCategoryDetail } from "@/services/product-category-view-api";
-import { fetchAllProductCategories } from "@/services/product-categories-api";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useParams } from "react-router-dom";
@@ -14,9 +13,8 @@ import { toast } from "sonner";
 
 export default function ProductCategoryViewLayout() {
   const params = useParams();
-  const categoryRef = params.id ?? "";
+  const categoryUuid = params.id ?? "";
 
-  const [resolvedCategoryUuid, setResolvedCategoryUuid] = useState(categoryRef);
   const [category, setCategory] = useState<ProductCategoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -27,16 +25,8 @@ export default function ProductCategoryViewLayout() {
     const run = async () => {
       setLoading(true);
       try {
-        let nextUuid = categoryRef;
-        if (/^\d+$/.test(categoryRef)) {
-          const categories = await fetchAllProductCategories({ signal: ac.signal });
-          const match = categories.find((c) => String(c.id) === categoryRef);
-          if (!match) throw new Error("Product category not found.");
-          nextUuid = match.uuid;
-        }
-        const data = await fetchProductCategoryDetail(nextUuid, ac.signal);
+        const data = await fetchProductCategoryDetail(categoryUuid, ac.signal);
         if (cancelled) return;
-        setResolvedCategoryUuid(nextUuid);
         setCategory(data);
       } catch (e: unknown) {
         if (cancelled || ac.signal.aborted) return;
@@ -53,7 +43,7 @@ export default function ProductCategoryViewLayout() {
       cancelled = true;
       ac.abort();
     };
-  }, [categoryRef]);
+  }, [categoryUuid]);
 
   useEffect(() => {
     const name = category?.name?.trim();
@@ -61,8 +51,8 @@ export default function ProductCategoryViewLayout() {
   }, [category?.name]);
 
   const basePath = useMemo(
-    () => PAGES.productCategoryViewPath(resolvedCategoryUuid),
-    [resolvedCategoryUuid],
+    () => PAGES.productCategoryViewPath(categoryUuid),
+    [categoryUuid],
   );
   const tabs = useMemo(
     () => [
@@ -110,7 +100,7 @@ export default function ProductCategoryViewLayout() {
           <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
           <Button variant="outline" asChild>
             <Link
-              to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category?.uuid ?? resolvedCategoryUuid}`}
+              to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category?.uuid ?? categoryUuid}`}
             >
               Open Executive Analytics
             </Link>
@@ -122,7 +112,7 @@ export default function ProductCategoryViewLayout() {
         <Outlet
           context={
             {
-              categoryUuid: resolvedCategoryUuid,
+              categoryUuid,
               category,
               dateRange,
               setDateRange,

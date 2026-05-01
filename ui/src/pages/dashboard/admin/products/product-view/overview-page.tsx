@@ -1,27 +1,24 @@
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
-import type { Product } from "@/pages/dashboard/admin/products/product-service";
+import type { ProductViewContext } from "@/pages/dashboard/admin/products/product-view/context";
 import { useOutletContext } from "react-router-dom";
-import type { DateRange } from "react-day-picker";
-import { useInspectionCounts } from "@/components/inspections/inspection-count-badges";
+import { useProductInspectionsApi } from "@/pages/dashboard/admin/products/product-view/use-product-inspections-api";
 import { PAGES } from "@/endpoints";
 import { CheckCircle, ClipboardCheck, Package, XCircle } from "lucide-react";
 import { useMemo } from "react";
 
-type Ctx = {
-  productId: number;
-  product: Product | null;
-  dateRange?: DateRange | undefined;
-};
-
 export default function ProductOverviewPage() {
-  const { productId, product, dateRange } = useOutletContext<Ctx>();
-  const serial = product?.serial_number ?? "";
-  const { total, counts, loading } = useInspectionCounts(
-    { productSerial: serial },
-    { dateRange },
+  const { productUuid, product, categoryUuid, dateRange } =
+    useOutletContext<ProductViewContext>();
+  const { metrics, loading } = useProductInspectionsApi(
+    product,
+    categoryUuid,
+    dateRange,
   );
 
-  const basePath = useMemo(() => PAGES.productViewPath(productId), [productId]);
+  const basePath = useMemo(
+    () => PAGES.productViewPath(productUuid),
+    [productUuid],
+  );
 
   return (
     <KpiCardGrid
@@ -29,21 +26,21 @@ export default function ProductOverviewPage() {
         [
           {
             label: "Category",
-            value: product?.category_name ?? "—",
+            value: product?.product_category_name ?? "—",
             icon: Package,
             className: "border-border bg-muted/10 hover:bg-muted/20",
-            href: product ? PAGES.productCategoryViewPath(product.product_category_id) : undefined,
+            href: categoryUuid ? PAGES.productCategoryViewPath(categoryUuid) : undefined,
           },
           {
             label: "Total inspections",
-            value: loading ? "…" : total,
+            value: loading ? "…" : metrics.total,
             icon: ClipboardCheck,
             className: "border-border bg-muted/10 hover:bg-muted/20",
             href: `${basePath}/inspections`,
           },
           {
             label: "Inbound passed",
-            value: loading ? "…" : (counts?.inboundPassed ?? 0),
+            value: loading ? "…" : metrics.inboundPassed,
             icon: CheckCircle,
             className:
               "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/40 dark:bg-emerald-900/10",
@@ -51,7 +48,7 @@ export default function ProductOverviewPage() {
           },
           {
             label: "Inbound failed",
-            value: loading ? "…" : (counts?.inboundFailed ?? 0),
+            value: loading ? "…" : metrics.inboundFailed,
             icon: XCircle,
             className:
               "border-red-200 bg-red-50/20 hover:bg-red-50/30 dark:bg-red-900/10",
@@ -59,7 +56,7 @@ export default function ProductOverviewPage() {
           },
           {
             label: "Outbound passed",
-            value: loading ? "…" : (counts?.outboundPassed ?? 0),
+            value: loading ? "…" : metrics.outboundPassed,
             icon: CheckCircle,
             className:
               "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/40 dark:bg-emerald-900/10",
@@ -67,7 +64,7 @@ export default function ProductOverviewPage() {
           },
           {
             label: "Outbound failed",
-            value: loading ? "…" : (counts?.outboundFailed ?? 0),
+            value: loading ? "…" : metrics.outboundFailed,
             icon: XCircle,
             className:
               "border-red-200 bg-red-50/20 hover:bg-red-50/30 dark:bg-red-900/10",

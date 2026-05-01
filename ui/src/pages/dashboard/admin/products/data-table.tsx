@@ -1,3 +1,5 @@
+import type { ProductListItemResponse } from "@/api/generated/model/productListItemResponse";
+import type { DataTableServerSideConfig } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
@@ -9,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/data-table";
 import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
 import {
   DropdownMenu,
@@ -18,19 +20,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
-import type { Product } from "@/pages/dashboard/admin/products/product-service";
 import { Link } from "react-router-dom";
 
-const productColumns: ColumnDef<Product>[] = [
+function buildProductColumns(): ColumnDef<ProductListItemResponse>[] {
+  return [
   {
-    accessorKey: "serial_number",
+    accessorKey: "material_code",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Serial number
+        Material code
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
@@ -38,44 +40,44 @@ const productColumns: ColumnDef<Product>[] = [
       const p = row.original;
       return (
         <Link
-          to={PAGES.productViewPath(p.id)}
+          to={PAGES.productViewPath(p.uuid)}
           className="font-mono text-sm text-primary hover:underline"
         >
-          {row.getValue("serial_number")}
+          {row.getValue("material_code")}
         </Link>
       );
     },
   },
   {
-    accessorKey: "manufacturing_date",
+    accessorKey: "material_description",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Manufacturing date
+        Material description
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("manufacturing_date"),
+    cell: ({ row }) => row.getValue("material_description"),
   },
   {
-    accessorKey: "batch_number",
+    accessorKey: "created_at",
     header: ({ column }) => (
       <Button
         className="-ml-3"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Batch number
+        Created at
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => row.getValue("batch_number"),
+    cell: ({ row }) => row.getValue("created_at"),
   },
   {
-    accessorKey: "category_name",
+    accessorKey: "product_category_name",
     header: ({ column }) => (
       <Button
         className="-ml-3"
@@ -87,15 +89,7 @@ const productColumns: ColumnDef<Product>[] = [
       </Button>
     ),
     cell: ({ row }) => {
-      const p = row.original;
-      return (
-        <Link
-          to={PAGES.productCategoryViewPath(p.product_category_id)}
-          className="text-primary hover:underline"
-        >
-          {row.getValue("category_name")}
-        </Link>
-      );
+      return <span>{row.getValue("product_category_name")}</span>;
     },
   },
   {
@@ -103,7 +97,7 @@ const productColumns: ColumnDef<Product>[] = [
     header: "Total inspections",
     cell: ({ row }) => (
       <InspectionCountBadge
-        scope={{ productSerial: row.original.serial_number }}
+        scope={{ productSerial: row.original.material_code }}
         kind="total"
       />
     ),
@@ -113,7 +107,7 @@ const productColumns: ColumnDef<Product>[] = [
     header: "Inbound passed",
     cell: ({ row }) => (
       <InspectionCountBadge
-        scope={{ productSerial: row.original.serial_number }}
+        scope={{ productSerial: row.original.material_code }}
         kind="inboundPassed"
       />
     ),
@@ -123,7 +117,7 @@ const productColumns: ColumnDef<Product>[] = [
     header: "Inbound failed",
     cell: ({ row }) => (
       <InspectionCountBadge
-        scope={{ productSerial: row.original.serial_number }}
+        scope={{ productSerial: row.original.material_code }}
         kind="inboundFailed"
       />
     ),
@@ -133,7 +127,7 @@ const productColumns: ColumnDef<Product>[] = [
     header: "Outbound passed",
     cell: ({ row }) => (
       <InspectionCountBadge
-        scope={{ productSerial: row.original.serial_number }}
+        scope={{ productSerial: row.original.material_code }}
         kind="outboundPassed"
       />
     ),
@@ -143,7 +137,7 @@ const productColumns: ColumnDef<Product>[] = [
     header: "Outbound failed",
     cell: ({ row }) => (
       <InspectionCountBadge
-        scope={{ productSerial: row.original.serial_number }}
+        scope={{ productSerial: row.original.material_code }}
         kind="outboundFailed"
       />
     ),
@@ -164,7 +158,7 @@ const productColumns: ColumnDef<Product>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
               <Link
-                to={PAGES.productViewPath(p.id)}
+                to={PAGES.productViewPath(p.uuid)}
                 className="flex items-center"
               >
                 <Eye className="mr-2 h-4 w-4" />
@@ -174,7 +168,7 @@ const productColumns: ColumnDef<Product>[] = [
             <DropdownMenuItem asChild>
               <Link
                 to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product=${encodeURIComponent(
-                  p.serial_number,
+                  p.material_code,
                 )}`}
                 className="flex items-center"
               >
@@ -185,7 +179,7 @@ const productColumns: ColumnDef<Product>[] = [
             <DropdownMenuItem asChild>
               <Link
                 to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product=${encodeURIComponent(
-                  p.serial_number,
+                  p.material_code,
                 )}`}
                 className="flex items-center"
               >
@@ -202,56 +196,29 @@ const productColumns: ColumnDef<Product>[] = [
       );
     },
   },
-];
-
-const productFilters: DataTableFilter<Product>[] = [
-  {
-    id: "category_name",
-    title: "Category",
-    options: [
-      {
-        value: "Front Load Washing Machines",
-        label: "Front Load Washing Machines",
-      },
-      {
-        value: "Top Load Washing Machines",
-        label: "Top Load Washing Machines",
-      },
-      {
-        value: "Double Door Refrigerators",
-        label: "Double Door Refrigerators",
-      },
-      {
-        value: "Single Door Refrigerators",
-        label: "Single Door Refrigerators",
-      },
-    ],
-  },
-];
+  ];
+}
 
 interface ProductsDataTableProps {
-  data: Product[];
-  downloadCsvFileName?: string;
-  downloadCsv?: (rows: Product[]) => {
-    headers: string[];
-    rows: Record<string, unknown>[];
-  };
+  data: ProductListItemResponse[];
+  serverSide: DataTableServerSideConfig;
+  isLoading?: boolean;
 }
 
 export default function ProductsDataTable({
   data,
-  downloadCsvFileName,
-  downloadCsv,
+  serverSide,
+  isLoading,
 }: ProductsDataTableProps) {
+  const productColumns = buildProductColumns();
+
   return (
-    <DataTable<Product>
+    <DataTable<ProductListItemResponse>
       columns={productColumns}
       data={data}
-      searchKey="serial_number"
-      filters={productFilters}
       rangeLabel="products"
-      downloadCsvFileName={downloadCsvFileName}
-      downloadCsv={downloadCsv}
+      serverSide={serverSide}
+      isLoading={isLoading}
     />
   );
 }

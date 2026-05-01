@@ -1,34 +1,66 @@
 import { TabbedContent } from "@/components/tabbed-content";
 import { Button } from "@/components/ui/button";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import type { ProductResponse } from "@/api/generated/model/productResponse";
 import { PAGES } from "@/endpoints";
-import { getProductById, type Product } from "@/pages/dashboard/admin/products/product-service";
+import type { ProductViewContext } from "@/pages/dashboard/admin/products/product-view/context";
+import { fetchAllProductCategories } from "@/services/product-categories-api";
+import { fetchProductDetail } from "@/services/products-api";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { Link, Outlet, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function ProductViewLayout() {
   const params = useParams();
-  const productId = Number(params.id);
+  const productUuid = params.id ?? "";
 
-  const [product, setProduct] = useState<Product | null>(null);
+  const [categoryUuidById, setCategoryUuidById] = useState<Map<number, string>>(
+    new Map(),
+  );
+  const [product, setProduct] = useState<ProductResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
-    queueMicrotask(() => setLoading(true));
-    getProductById(productId)
-      .then((p) => setProduct(p))
-      .finally(() => setLoading(false));
-  }, [productId]);
+    const ac = new AbortController();
+    let cancelled = false;
+    const run = async () => {
+      setLoading(true);
+      try {
+        const [detail, categories] = await Promise.all([
+          fetchProductDetail(productUuid, { signal: ac.signal }),
+          fetchAllProductCategories({ signal: ac.signal }),
+        ]);
+        if (cancelled) return;
+        setProduct(detail);
+        setCategoryUuidById(new Map(categories.map((c) => [c.id, c.uuid] as const)));
+      } catch (e: unknown) {
+        if (cancelled || ac.signal.aborted) return;
+        const message = e instanceof Error ? e.message : "Failed to load product.";
+        toast.error(message);
+        setProduct(null);
+      } finally {
+        if (!cancelled && !ac.signal.aborted) setLoading(false);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [productUuid]);
 
   useEffect(() => {
-    const title = product?.serial_number?.trim();
+    const title = product?.material_code?.trim();
     document.title = title ? title : "Product";
-  }, [product?.serial_number]);
+  }, [product?.material_code]);
 
-  const basePath = useMemo(() => PAGES.productViewPath(productId), [productId]);
+  const basePath = useMemo(
+    () => PAGES.productViewPath(productUuid),
+    [productUuid],
+  );
   const tabs = useMemo(
     () => [
       { label: "Overview", to: basePath, end: true },
@@ -56,10 +88,10 @@ export default function ProductViewLayout() {
           </Button>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              {loading ? "Product" : product?.serial_number ?? "-"}
+              {loading ? "Product" : product?.material_code ?? "-"}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {loading ? "Loading..." : `Product [${productId}]`}
+              {loading ? "Loading..." : `Product [${product?.id ?? "-"}]`}
             </p>
           </div>
         </div>
@@ -69,7 +101,7 @@ export default function ProductViewLayout() {
           <Button variant="outline" asChild>
             <Link
               to={`${PAGES.DASHBOARD_INSPECTIONS}?product=${encodeURIComponent(
-                product?.serial_number ?? "",
+                product?.material_code ?? "",
               )}`}
             >
               Open in Inspections
@@ -79,7 +111,20 @@ export default function ProductViewLayout() {
       </div>
 
       <TabbedContent tabs={tabs}>
-        <Outlet context={{ productId, product, dateRange, setDateRange }} />
+        <Outlet
+          context={
+            {
+              productUuid,
+              product,
+              categoryUuid:
+                product && categoryUuidById.has(product.product_category_id)
+                  ? categoryUuidById.get(product.product_category_id) ?? null
+                  : null,
+              dateRange,
+              setDateRange,
+            } satisfies ProductViewContext
+          }
+        />
       </TabbedContent>
     </div>
   );
