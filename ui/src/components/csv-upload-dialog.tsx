@@ -27,8 +27,8 @@ export type CsvUploadDialogProps = {
   templateContent?: string;
   /** When set, "Template CSV" downloads via GET (e.g. `/api/skus/csv/template`) using the app axios client (auth). */
   templateDownloadUrl?: string;
-  /** Called when the user submits the form with a file selected */
-  onSubmit: (file: File) => void;
+  /** Called when the user submits the form with a file selected. Close/wait follows the returned promise when async. */
+  onSubmit: (file: File) => void | Promise<void>;
   /** Optional custom trigger (button). Defaults to outline "Upload CSV" button with icon. */
   trigger?: ReactNode;
   /** File input accept attribute (default ".csv") */
@@ -108,13 +108,12 @@ export default function CsvUploadDialog({
     event.preventDefault();
     if (!file || isUploading) return;
     setIsUploading(true);
-    onSubmit(file);
-    // Brief delay so "Uploading..." is visible, then close dialog
-    setTimeout(() => {
-      setOpen(false);
-      setFile(null);
-      setIsUploading(false);
-    }, 400);
+    void Promise.resolve(onSubmit(file))
+      .then(() => {
+        setOpen(false);
+        setFile(null);
+      })
+      .finally(() => setIsUploading(false));
   };
 
   return (

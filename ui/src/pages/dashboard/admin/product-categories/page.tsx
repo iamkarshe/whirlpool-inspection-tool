@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/data-table-server";
 import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
 import { fetchProductCategoriesPage } from "@/services/product-categories-api";
+import { uploadSkusCsv, uploadSkusCsvErrorMessage } from "@/services/skus-api";
 
 const PRODUCT_CATEGORY_LIST_SORT = {
   allowedColumns: ["id", "name", "created_at", "updated_at"] as const,
@@ -83,9 +84,14 @@ export default function ProductCategoriesPage() {
     },
   });
 
-  const handleCsvSubmit = (file: File) => {
-    console.log("Mock CSV upload", file);
-    toast.success("CSV upload is not wired to the API yet.");
+  const handleCsvSubmit = async (file: File) => {
+    try {
+      await uploadSkusCsv(file);
+      toast.success("SKU CSV uploaded.");
+    } catch (e: unknown) {
+      toast.error(uploadSkusCsvErrorMessage(e));
+      throw e;
+    }
   };
 
   const serverSide = useMemo(
