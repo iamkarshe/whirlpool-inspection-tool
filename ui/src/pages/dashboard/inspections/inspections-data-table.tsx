@@ -8,7 +8,8 @@ import {
   ImageGalleryDialog,
   type GalleryImage,
 } from "@/components/image-gallery-dialog";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type badgeVariants } from "@/components/ui/badge";
+import type { VariantProps } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import {
@@ -27,9 +28,31 @@ import {
 import {
   getInspectionQuestionResults,
   type Inspection,
+  type InspectionChecklistLayerCounts,
   type InspectionQuestionResult,
   type InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-service";
+
+type ReviewStatusBadgeVariant = NonNullable<
+  VariantProps<typeof badgeVariants>["variant"]
+>;
+
+function normalizeReviewStatusKey(raw: string): string {
+  return raw.trim().toUpperCase().replace(/\s+/g, "_");
+}
+
+/** Display: uppercase with spaces (e.g. IN_REVIEW → IN REVIEW). */
+function formatReviewStatusLabelUppercase(raw: string): string {
+  return normalizeReviewStatusKey(raw).replace(/_/g, " ");
+}
+
+function reviewStatusBadgeVariant(raw: string): ReviewStatusBadgeVariant {
+  const key = normalizeReviewStatusKey(raw);
+  if (key === "IN_REVIEW") return "warning";
+  if (key === "APPROVED") return "success";
+  if (key === "REJECTED") return "destructive";
+  return "secondary";
+}
 
 export type InspectionsDataTableProps = {
   data: Inspection[];
@@ -54,6 +77,80 @@ function getSectionCounts(rows: InspectionQuestionResult[] | null) {
   const passed = rows ? rows.filter((r) => r.status === "pass").length : 0;
   const failed = rows ? rows.filter((r) => r.status === "fail").length : 0;
   return { total, passed, failed };
+}
+
+function checklistLayerForSection(
+  inspection: Inspection,
+  section: InspectionSectionKey,
+): InspectionChecklistLayerCounts | undefined {
+  const layers = inspection.checklist_layers;
+  if (!layers) return undefined;
+  switch (section) {
+    case "outer-packaging":
+      return layers.outer;
+    case "inner-packaging":
+      return layers.inner;
+    case "product":
+      return layers.product;
+    default:
+      return undefined;
+  }
+}
+
+function ListPayloadLayerCell({
+  inspection,
+  section,
+  onOpenDialog,
+}: {
+  inspection: Inspection;
+  section: InspectionSectionKey;
+  onOpenDialog: (inspectionId: string) => void;
+}) {
+  const counts = checklistLayerForSection(inspection, section);
+  const label =
+    section === "outer-packaging"
+      ? "Outer"
+      : section === "inner-packaging"
+        ? "Inner"
+        : "Product";
+
+  if (!counts) {
+    return (
+      <SectionStatusCell
+        inspectionId={inspection.id}
+        section={section}
+        onOpenDialog={onOpenDialog}
+      />
+    );
+  }
+
+  const passed = counts.pass_count;
+  const failed = counts.fail_count;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenDialog(inspection.id)}
+      className="inline-flex items-center no-underline"
+      title={`View ${label} checks`}
+    >
+      <span className="sr-only">{label} check status</span>
+      <>
+        <Badge
+          variant="success"
+          className="rounded-r-none border-r-0 text-[10px]"
+        >
+          Pass {passed}
+        </Badge>
+        <Badge
+          variant="destructive"
+          className="rounded-l-none border border-destructive/30 bg-destructive/10 text-[10px] text-destructive"
+        >
+          Fail {failed}
+        </Badge>
+      </>
+    </button>
+  );
 }
 
 function SectionStatusCell({
@@ -267,9 +364,9 @@ export default function InspectionsDataTable({
       id: "outer_packaging",
       header: "Outer",
       cell: ({ row }) => (
-        <SectionStatusCell
+        <ListPayloadLayerCell
           key={`${row.original.id}-outer-packaging`}
-          inspectionId={row.original.id}
+          inspection={row.original}
           section="outer-packaging"
           onOpenDialog={openChecksDialog}
         />
@@ -279,9 +376,9 @@ export default function InspectionsDataTable({
       id: "inner_packaging",
       header: "Inner",
       cell: ({ row }) => (
-        <SectionStatusCell
+        <ListPayloadLayerCell
           key={`${row.original.id}-inner-packaging`}
-          inspectionId={row.original.id}
+          inspection={row.original}
           section="inner-packaging"
           onOpenDialog={openChecksDialog}
         />
@@ -291,9 +388,9 @@ export default function InspectionsDataTable({
       id: "product_checks",
       header: "Product",
       cell: ({ row }) => (
-        <SectionStatusCell
+        <ListPayloadLayerCell
           key={`${row.original.id}-product`}
-          inspectionId={row.original.id}
+          inspection={row.original}
           section="product"
           onOpenDialog={openChecksDialog}
         />
@@ -320,6 +417,75 @@ export default function InspectionsDataTable({
         if (filterValue === "outbound") return v === "outbound";
         return true;
       },
+    },
+    {
+      accessorKey: "review_status",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Review
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const s = row.original.review_status;
+        if (!s?.trim()) {
+          return <span className="text-muted-foreground text-sm">—</span>;
+        }
+        return (
+          <Badge
+            variant={reviewStatusBadgeVariant(s)}
+            className="text-xs font-semibold uppercase tracking-wide"
+          >
+            {formatReviewStatusLabelUppercase(s)}
+          </Badge>
+        );
+      },
+      filterFn: (row, _columnId, filterValue) =>
+        row.getValue("review_status") === filterValue,
+    },
+    {
+      accessorKey: "warehouse_code",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Warehouse
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">
+          {row.original.warehouse_code ?? "—"}
+        </span>
+      ),
+      filterFn: (row, _columnId, filterValue) =>
+        row.getValue("warehouse_code") === filterValue,
+    },
+    {
+      accessorKey: "plant_code",
+      header: ({ column }) => (
+        <Button
+          className="-ml-3"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Plant
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">
+          {row.original.plant_code ?? "—"}
+        </span>
+      ),
+      filterFn: (row, _columnId, filterValue) =>
+        row.getValue("plant_code") === filterValue,
     },
     {
       accessorKey: "created_at",

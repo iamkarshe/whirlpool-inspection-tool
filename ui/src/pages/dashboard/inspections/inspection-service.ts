@@ -1,5 +1,6 @@
 export type {
   Inspection,
+  InspectionChecklistLayerCounts,
   InspectionImage,
   InspectionKpis,
   InspectionQuestionResult,

@@ -86,6 +86,11 @@ export function mapInspectionListItemToInspection(
     checklist_quality: checklistQualityFromListItem(row),
     warehouse_code: row.warehouse_code ?? undefined,
     plant_code: row.plant_code ?? undefined,
+    checklist_layers: {
+      outer: row.outer,
+      inner: row.inner,
+      product: row.product_checklist,
+    },
   };
 }
 

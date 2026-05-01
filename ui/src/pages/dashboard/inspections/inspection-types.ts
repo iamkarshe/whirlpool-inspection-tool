@@ -2,6 +2,12 @@ export type InspectionType = "inbound" | "outbound";
 
 export type InspectionQuestionStatus = "pass" | "fail";
 
+/** Outer / Inner / Product counts from inspection list API (`InspectionListItemResponse`). */
+export type InspectionChecklistLayerCounts = {
+  pass_count: number;
+  fail_count: number;
+};
+
 export interface Inspection {
   id: string;
   inspector_id: number;
@@ -21,6 +27,12 @@ export interface Inspection {
   checklist_quality?: InspectionQuestionStatus;
   warehouse_code?: string;
   plant_code?: string;
+  /** Present when sourced from GET /api/inspections list payload. */
+  checklist_layers?: {
+    outer: InspectionChecklistLayerCounts;
+    inner: InspectionChecklistLayerCounts;
+    product: InspectionChecklistLayerCounts;
+  };
 }
 
 export type InspectionSectionKey =
