@@ -4,8 +4,10 @@ export const OPS_INSPECTION_DRAFT_VERSION = 1 as const;
 
 export type NoAnswerImageSlot = {
   name: string;
-  /** Data URL (image/*) for persistence and submit */
-  url: string;
+  /** Relative path from POST `/api/inspections/upload-image` (used in submit payload). */
+  path?: string;
+  /** Legacy draft: data URL before upload-based flow. */
+  url?: string;
 };
 
 /** Serializable draft saved to localStorage between sessions. */

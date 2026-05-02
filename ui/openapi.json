@@ -2133,6 +2133,48 @@
         }
       }
     },
+    "/api/inspections/upload-image": {
+      "post": {
+        "tags": [
+          "Inspections"
+        ],
+        "summary": "Upload Inspection Image",
+        "description": "Upload a compressed image before an inspection exists; barcode is always 16 alphanumeric characters (product unit barcode). Returns a CDN-relative path under uploads/inspections/<barcode>/...",
+        "operationId": "upload_inspection_image_api_inspections_upload_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_inspection_image_api_inspections_upload_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionImageUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/inspections/{inspection_uuid}/review-status": {
       "patch": {
         "tags": [
@@ -4024,6 +4066,38 @@
         ],
         "title": "BarcodeParseUnitResponse"
       },
+      "Body_upload_inspection_image_api_inspections_upload_image_post": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "maxLength": 16,
+            "minLength": 16,
+            "title": "Barcode",
+            "description": "16-character alphanumeric product unit barcode (A-Z, a-z, 0-9)"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "title": "Direction",
+            "description": "Workflow folder (inbound or outbound)"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode",
+          "direction",
+          "file"
+        ],
+        "title": "Body_upload_inspection_image_api_inspections_upload_image_post"
+      },
       "Body_upload_plants_csv_api_plants_csv_upload_post": {
         "properties": {
           "file": {
@@ -4950,6 +5024,20 @@
         ],
         "title": "InspectionFullResponse",
         "description": "Detail row plus checklist inputs, images, and pass/fail counts (parse-barcode parity)."
+      },
+      "InspectionImageUploadResponse": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "InspectionImageUploadResponse",
+        "description": "Relative storage path (prefix with CDN base URL on the client)."
       },
       "InspectionInputItemResponse": {
         "properties": {
@@ -6035,6 +6123,18 @@
             "type": "string",
             "title": "Token Type",
             "default": "bearer"
+          },
+          "device_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Uuid"
           }
         },
         "type": "object",

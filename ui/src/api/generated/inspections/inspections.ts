@@ -8,9 +8,11 @@
 import type {
   ActiveChecklistGroupedResponse,
   BarcodeParseResponse,
+  BodyUploadInspectionImageApiInspectionsUploadImagePost,
   GetInspectionKpisApiInspectionsKpisGetParams,
   GetInspectionsApiInspectionsGetParams,
   InspectionFullResponse,
+  InspectionImageUploadResponse,
   InspectionKpisResponse,
   InspectionListResponse,
   InspectionMetadataResponse,
@@ -113,6 +115,24 @@ const startOutboundInspectionApiInspectionsOutboundPost = (
       options);
     }
   /**
+ * Upload a compressed image before an inspection exists; barcode is always 16 alphanumeric characters (product unit barcode). Returns a CDN-relative path under uploads/inspections/<barcode>/...
+ * @summary Upload Inspection Image
+ */
+const uploadInspectionImageApiInspectionsUploadImagePost = (
+    bodyUploadInspectionImageApiInspectionsUploadImagePost: BodyUploadInspectionImageApiInspectionsUploadImagePost,
+ options?: SecondParameter<typeof customInstance<InspectionImageUploadResponse>>,) => {const formData = new FormData();
+formData.append(`barcode`, bodyUploadInspectionImageApiInspectionsUploadImagePost.barcode);
+formData.append(`direction`, bodyUploadInspectionImageApiInspectionsUploadImagePost.direction);
+formData.append(`file`, bodyUploadInspectionImageApiInspectionsUploadImagePost.file);
+
+      return customInstance<InspectionImageUploadResponse>(
+      {url: `/api/inspections/upload-image`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
+  /**
  * @summary Patch Inspection Review Status
  */
 const patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch = (
@@ -148,7 +168,7 @@ const getInspectionDetailApiInspectionsInspectionUuidGet = (
     },
       options);
     }
-  return {getInspectionKpisApiInspectionsKpisGet,getInspectionsApiInspectionsGet,parseInspectionBarcodeApiInspectionsParseBarcodeGet,getActiveInspectionChecklistApiInspectionsChecklistGet,getInspectionMetadataApiInspectionsMetadataGet,startInboundInspectionApiInspectionsInboundPost,startOutboundInspectionApiInspectionsOutboundPost,patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch,deleteInspectionApiInspectionsInspectionUuidDelete,getInspectionDetailApiInspectionsInspectionUuidGet}};
+  return {getInspectionKpisApiInspectionsKpisGet,getInspectionsApiInspectionsGet,parseInspectionBarcodeApiInspectionsParseBarcodeGet,getActiveInspectionChecklistApiInspectionsChecklistGet,getInspectionMetadataApiInspectionsMetadataGet,startInboundInspectionApiInspectionsInboundPost,startOutboundInspectionApiInspectionsOutboundPost,uploadInspectionImageApiInspectionsUploadImagePost,patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch,deleteInspectionApiInspectionsInspectionUuidDelete,getInspectionDetailApiInspectionsInspectionUuidGet}};
 export type GetInspectionKpisApiInspectionsKpisGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionKpisApiInspectionsKpisGet']>>>
 export type GetInspectionsApiInspectionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionsApiInspectionsGet']>>>
 export type ParseInspectionBarcodeApiInspectionsParseBarcodeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['parseInspectionBarcodeApiInspectionsParseBarcodeGet']>>>
@@ -156,6 +176,7 @@ export type GetActiveInspectionChecklistApiInspectionsChecklistGetResult = NonNu
 export type GetInspectionMetadataApiInspectionsMetadataGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionMetadataApiInspectionsMetadataGet']>>>
 export type StartInboundInspectionApiInspectionsInboundPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['startInboundInspectionApiInspectionsInboundPost']>>>
 export type StartOutboundInspectionApiInspectionsOutboundPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['startOutboundInspectionApiInspectionsOutboundPost']>>>
+export type UploadInspectionImageApiInspectionsUploadImagePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['uploadInspectionImageApiInspectionsUploadImagePost']>>>
 export type PatchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch']>>>
 export type DeleteInspectionApiInspectionsInspectionUuidDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['deleteInspectionApiInspectionsInspectionUuidDelete']>>>
 export type GetInspectionDetailApiInspectionsInspectionUuidGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionDetailApiInspectionsInspectionUuidGet']>>>

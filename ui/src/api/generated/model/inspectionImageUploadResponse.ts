@@ -6,15 +6,9 @@
  * OpenAPI spec version: 1.0.3
  */
 
-export interface LoginResponse {
-  id: number;
-  uuid: string;
-  name: string;
-  email: string;
-  role: string;
-  designation: string;
-  is_active: boolean;
-  access_token: string;
-  token_type?: string;
-  device_uuid?: string | null;
+/**
+ * Relative storage path (prefix with CDN base URL on the client).
+ */
+export interface InspectionImageUploadResponse {
+  path: string;
 }

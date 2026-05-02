@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, RotateCcw, X } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type BlockerFunction,
@@ -50,6 +50,11 @@ import {
   saveInspectionDraft,
 } from "@/pages/ops/new-inspection/inspection-draft-storage";
 import {
+  noAnswerImageDisplaySrc,
+  noAnswerImageHasServerPath,
+  noAnswerImageSubmitPaths,
+} from "@/pages/ops/new-inspection/no-answer-image";
+import {
   type InspectionStartMode,
   toDatetimeLocalValue,
 } from "@/pages/ops/new-inspection/inspection-start-shared";
@@ -61,6 +66,7 @@ import {
   opsInspectionApiError,
   startOpsInboundInspection,
   startOpsOutboundInspection,
+  uploadOpsInspectionImage,
 } from "@/services/ops-inspections-api";
 
 const MAX_IMAGE_BYTES = 600_000;
@@ -87,15 +93,6 @@ function formatElapsed(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(new Error("Could not read file"));
-    r.readAsDataURL(file);
-  });
 }
 
 /** Owns the 1s tick so the large form does not re-render every second (keeps inputs responsive). */
@@ -203,6 +200,9 @@ export function OpsInspectionStartForm({
   const [remarksMap, setRemarksMap] = useState<Record<number, string>>({});
   const [noAnswerImages, setNoAnswerImages] = useState<
     Record<number, NoAnswerImageSlot[]>
+  >({});
+  const [photoUploadCountByItem, setPhotoUploadCountByItem] = useState<
+    Record<number, number>
   >({});
 
   const [submitting, setSubmitting] = useState(false);
@@ -394,10 +394,24 @@ export function OpsInspectionStartForm({
     setRemarksMap((prev) => ({ ...prev, [id]: value }));
   }, []);
 
+  const adjustPhotoUploadCount = useCallback((itemId: number, delta: number) => {
+    setPhotoUploadCountByItem((prev) => {
+      const next = { ...prev };
+      const n = (next[itemId] ?? 0) + delta;
+      if (n <= 0) delete next[itemId];
+      else next[itemId] = n;
+      return next;
+    });
+  }, []);
+
   const addNoAnswerImages = useCallback(
     async (itemId: number, files: FileList | null) => {
       if (!files?.length) return;
-      const additions: NoAnswerImageSlot[] = [];
+      if (barcode.length !== OPS_BARCODE_LEN) {
+        toast.error("Barcode must be set before uploading photos.");
+        return;
+      }
+      const accepted: File[] = [];
       for (const f of Array.from(files)) {
         if (f.size > MAX_IMAGE_BYTES) {
           toast.error(
@@ -409,20 +423,40 @@ export function OpsInspectionStartForm({
           toast.error(`${f.name} is not an image.`);
           continue;
         }
-        try {
-          const url = await fileToDataUrl(f);
-          additions.push({ name: f.name, url });
-        } catch {
-          toast.error(`Could not read ${f.name}.`);
-        }
+        accepted.push(f);
       }
+      if (!accepted.length) return;
+
+      const results = await Promise.all(
+        accepted.map(async (f) => {
+          adjustPhotoUploadCount(itemId, 1);
+          try {
+            const { path } = await uploadOpsInspectionImage({
+              barcode,
+              mode,
+              file: f,
+            });
+            return { name: f.name, path } satisfies NoAnswerImageSlot;
+          } catch (e: unknown) {
+            toast.error(
+              opsInspectionApiError(e, `Could not upload ${f.name}. Try again.`),
+            );
+            return null;
+          } finally {
+            adjustPhotoUploadCount(itemId, -1);
+          }
+        }),
+      );
+      const additions = results.filter(
+        (r): r is NoAnswerImageSlot => r !== null && !!r.path,
+      );
       if (!additions.length) return;
       setNoAnswerImages((prev) => ({
         ...prev,
         [itemId]: [...(prev[itemId] ?? []), ...additions],
       }));
     },
-    [],
+    [adjustPhotoUploadCount, barcode, mode],
   );
 
   const removeNoAnswerImage = useCallback((itemId: number, index: number) => {
@@ -487,8 +521,9 @@ export function OpsInspectionStartForm({
         if (item.field_type === "yes_no" && v === "no") {
           const imgs = noAnswerImages[item.id] ?? [];
           const min = item.min_upload_files ?? 0;
-          if (min > 0 && imgs.length < min) {
-            return `You answered No — add at least ${min} photo(s) for that question (required when the minimum is set).`;
+          const uploaded = imgs.filter(noAnswerImageHasServerPath).length;
+          if (min > 0 && uploaded < min) {
+            return `You answered No — upload at least ${min} photo(s) for that question (each file is sent to the server when you pick it).`;
           }
         }
       }
@@ -542,7 +577,8 @@ export function OpsInspectionStartForm({
       const value = answers[item.id]!.trim();
       const remarks = remarksMap[item.id]?.trim() || undefined;
       const imgs = noAnswerImages[item.id] ?? [];
-      const image_path = imgs.length ? imgs.map((x) => x.url) : undefined;
+      const paths = noAnswerImageSubmitPaths(imgs);
+      const image_path = paths.length ? paths : undefined;
       out.push({
         id: item.id,
         value,
@@ -718,6 +754,7 @@ export function OpsInspectionStartForm({
     setAnswers({});
     setRemarksMap({});
     setNoAnswerImages({});
+    setPhotoUploadCountByItem({});
     setStepIndex(0);
     setRestartDialogOpen(false);
     setValidationDialog(null);
@@ -1024,6 +1061,7 @@ export function OpsInspectionStartForm({
                 images={noAnswerImages[item.id] ?? NO_ANSWER_IMAGES_EMPTY}
                 onPickFiles={pickNoAnswerFilesForItem}
                 onRemoveImage={removeNoAnswerImageForItem}
+                uploadingPhotoCount={photoUploadCountByItem[item.id] ?? 0}
               />
             ))}
           </div>
@@ -1127,6 +1165,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   images,
   onPickFiles,
   onRemoveImage,
+  uploadingPhotoCount = 0,
 }: {
   item: ChecklistItemResponse;
   answer: string;
@@ -1136,6 +1175,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   images: NoAnswerImageSlot[];
   onPickFiles: (itemId: number, files: FileList | null) => void;
   onRemoveImage: (itemId: number, index: number) => void;
+  uploadingPhotoCount?: number;
 }) {
   const isNo = answer === "no";
   const isYes = answer === "yes";
@@ -1228,15 +1268,31 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                 className="min-h-[4.5rem] resize-none text-sm"
               />
               <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" variant="secondary" size="sm" asChild>
-                  <label className="cursor-pointer">
-                    <Camera className="mr-1.5 h-3.5 w-3.5" />
-                    Add photos
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  asChild
+                  disabled={uploadingPhotoCount > 0}
+                >
+                  <label
+                    className={cn(
+                      "cursor-pointer",
+                      uploadingPhotoCount > 0 && "pointer-events-none opacity-60",
+                    )}
+                  >
+                    {uploadingPhotoCount > 0 ?
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    : (
+                      <Camera className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    {uploadingPhotoCount > 0 ? "Uploading…" : "Add photos"}
                     <input
                       type="file"
                       accept="image/*"
                       multiple
                       className="sr-only"
+                      disabled={uploadingPhotoCount > 0}
                       onChange={(e) => {
                         onPickFiles(item.id, e.target.files);
                         e.target.value = "";
@@ -1251,24 +1307,24 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                 : null}
               </div>
               {images.length > 0 ?
-                <ul className="flex flex-wrap gap-2">
+                <ul className="flex flex-wrap gap-1.5">
                   {images.map((img, i) => (
                     <li
-                      key={`${img.name}-${i}`}
-                      className="relative h-14 w-14 overflow-hidden rounded-md border border-border bg-muted"
+                      key={`${img.path ?? img.url ?? "img"}-${i}`}
+                      className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md border border-border/80 bg-muted shadow-sm"
                     >
                       <img
-                        src={img.url}
+                        src={noAnswerImageDisplaySrc(img)}
                         alt=""
                         className="size-full object-cover"
                       />
                       <button
                         type="button"
-                        className="absolute inset-0 flex items-start justify-end bg-black/40 p-0.5 text-xs text-white opacity-0 transition-opacity hover:opacity-100"
+                        className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white shadow-sm ring-1 ring-black/20 backdrop-blur-[2px] transition-colors hover:bg-black/70"
                         onClick={() => onRemoveImage(item.id, i)}
                         aria-label="Remove photo"
                       >
-                        ×
+                        <X className="h-3 w-3" strokeWidth={2.5} />
                       </button>
                     </li>
                   ))}
