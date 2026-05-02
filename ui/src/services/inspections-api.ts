@@ -160,6 +160,47 @@ export function inspectionKpisParamsFromDateRange(range: {
   };
 }
 
+function inspectionsApiValidationDetailMessages(err: unknown): string[] {
+  if (!isAxiosError(err)) return [];
+  const data = err.response?.data as unknown;
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    !("detail" in data) ||
+    !Array.isArray((data as HTTPValidationError).detail)
+  ) {
+    return [];
+  }
+  const detail = (data as HTTPValidationError).detail!;
+  return detail
+    .map((d) => {
+      const raw = typeof d?.msg === "string" ? d.msg : "";
+      return raw.replace(/^Value error,\s*/i, "").trim();
+    })
+    .filter((m) => m.length > 0);
+}
+
+/**
+ * Prefer FastAPI `detail[]` messages for dialogs; otherwise fall back to a single line.
+ */
+export function inspectionsApiValidationDialogContent(
+  err: unknown,
+  fallbackTitle: string,
+  fallbackMessage: string,
+): { title: string; message: string } {
+  const msgs = inspectionsApiValidationDetailMessages(err);
+  if (msgs.length > 0) {
+    return {
+      title: "Could not start inspection",
+      message: msgs.join("\n\n"),
+    };
+  }
+  return {
+    title: fallbackTitle,
+    message: inspectionsApiErrorMessage(err, fallbackMessage),
+  };
+}
+
 export function inspectionsApiErrorMessage(
   err: unknown,
   fallback: string,

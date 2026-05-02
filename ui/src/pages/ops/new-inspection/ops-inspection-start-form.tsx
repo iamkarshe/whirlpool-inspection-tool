@@ -65,6 +65,11 @@ import {
 } from "@/lib/compress-inspection-image";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
 import {
+  isValidIndianVehicleRegistration,
+  normalizeIndianVehicleRegistration,
+} from "@/lib/indian-vehicle-registration";
+import { inspectionsApiValidationDialogContent } from "@/services/inspections-api";
+import {
   loadOpsInspectionFormConfig,
   opsInspectionApiError,
   startOpsInboundInspection,
@@ -503,7 +508,11 @@ export function OpsInspectionStartForm({
     if (mode === "inbound" && !plantCode.trim()) {
       return "Choose a supplier plant.";
     }
-    if (!truckNumber.trim()) return "Enter the truck number.";
+    const truck = truckNumber.trim();
+    if (!truck) return "Enter the truck number.";
+    if (!isValidIndianVehicleRegistration(truck)) {
+      return "Truck number must be a valid Indian registration: state plate (e.g. CG01AC23334) or Bharat series (e.g. 21BH1234AA). Spaces and dashes are ignored.";
+    }
     return null;
   }, [warehouseCode, plantCode, truckNumber, mode]);
 
@@ -657,6 +666,7 @@ export function OpsInspectionStartForm({
 
     const dockingIso = new Date(truckDockingLocal).toISOString();
     const deviceUuid = getOrCreatePersistentDeviceId();
+    const truckNumberNormalized = normalizeIndianVehicleRegistration(truckNumber);
 
     const damageFilled =
       damageType.trim().length > 0 &&
@@ -683,7 +693,7 @@ export function OpsInspectionStartForm({
           supplier_plant_code: plantCode.trim(),
           lat: coords.lat,
           lng: coords.lng,
-          truck_number: truckNumber.trim(),
+          truck_number: truckNumberNormalized,
           dock_number: dockNumber.trim() || null,
           truck_docking_time: dockingIso,
           checklist_answers,
@@ -700,7 +710,7 @@ export function OpsInspectionStartForm({
           supplier_plant_code: plantCode.trim() || null,
           lat: coords.lat,
           lng: coords.lng,
-          truck_number: truckNumber.trim(),
+          truck_number: truckNumberNormalized,
           dock_number: dockNumber.trim() || null,
           truck_docking_time: dockingIso,
           checklist_answers,
@@ -711,14 +721,14 @@ export function OpsInspectionStartForm({
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
       }
     } catch (e: unknown) {
-      toast.error(
-        opsInspectionApiError(
-          e,
-          mode === "inbound"
-            ? "Could not start inbound inspection."
-            : "Could not start outbound inspection.",
-        ),
+      const { title, message } = inspectionsApiValidationDialogContent(
+        e,
+        "Could not start inspection",
+        mode === "inbound"
+          ? "Could not start inbound inspection."
+          : "Could not start outbound inspection.",
       );
+      setValidationDialog({ title, message });
     } finally {
       setSubmitting(false);
     }
@@ -845,7 +855,7 @@ export function OpsInspectionStartForm({
             <AlertDialogTitle>
               {validationDialog?.title ?? "Check your input"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-left">
+            <AlertDialogDescription className="whitespace-pre-wrap text-left">
               {validationDialog?.message}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -991,8 +1001,13 @@ export function OpsInspectionStartForm({
                 id={`tr-${mode}`}
                 value={truckNumber}
                 onChange={(e) => setTruckNumber(e.target.value)}
+                placeholder="e.g. CG01AC23334"
                 className="h-9"
               />
+              <p className="text-[10px] leading-snug text-muted-foreground">
+                Indian plate: state format (CG01AC23334) or Bharat (21BH1234AA).
+                Spaces and dashes are OK.
+              </p>
             </div>
             <div className="space-y-1">
               <Label htmlFor={`dk-${mode}`} className="text-xs">
