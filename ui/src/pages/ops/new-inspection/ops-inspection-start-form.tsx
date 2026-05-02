@@ -1,6 +1,10 @@
-import { Camera, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Camera, Loader2, RotateCcw } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type BlockerFunction,
+  useBlocker,
+  useNavigate,
+} from "react-router-dom";
 import { toast } from "sonner";
 
 import type { ChecklistAnswerEntry } from "@/api/generated/model/checklistAnswerEntry";
@@ -11,6 +15,17 @@ import type { DamageLikelyCause } from "@/api/generated/model/damageLikelyCause"
 import type { DamageSeverity } from "@/api/generated/model/damageSeverity";
 import type { DamageType } from "@/api/generated/model/damageType";
 import type { InspectionMetadataResponse } from "@/api/generated/model/inspectionMetadataResponse";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +43,13 @@ import { PAGES } from "@/endpoints";
 import { cn } from "@/lib/utils";
 import { OPS_BARCODE_LEN } from "@/pages/ops/new-inspection/constants";
 import {
+  clearInspectionDraft,
+  loadInspectionDraft,
+  type NoAnswerImageSlot,
+  type OpsInspectionDraftV1,
+  saveInspectionDraft,
+} from "@/pages/ops/new-inspection/inspection-draft-storage";
+import {
   type InspectionStartMode,
   toDatetimeLocalValue,
 } from "@/pages/ops/new-inspection/inspection-start-shared";
@@ -42,11 +64,17 @@ import {
 } from "@/services/ops-inspections-api";
 
 const MAX_IMAGE_BYTES = 600_000;
+/** How often we flush the draft ref to localStorage (ref is updated every render). */
+const DRAFT_SAVE_INTERVAL_MS = 2500;
+
+/** Stable empty list so memoized checklist rows do not re-render when a sibling updates images. */
+const NO_ANSWER_IMAGES_EMPTY: NoAnswerImageSlot[] = [];
 
 export type OpsInspectionStartFormProps = {
   mode: InspectionStartMode;
   barcode: string;
-  onNavigateBack?: () => void;
+  /** Navigate target after user confirms leaving the inspection page. */
+  unitBackTo: string;
 };
 
 type WizardStep = {
@@ -70,6 +98,41 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+/** Owns the 1s tick so the large form does not re-render every second (keeps inputs responsive). */
+function InspectionElapsedTimer({
+  startedAt,
+  theme,
+}: {
+  startedAt: number;
+  theme: "sky" | "amber";
+}) {
+  const [elapsedSec, setElapsedSec] = useState(0);
+  useEffect(() => {
+    const tick = () => {
+      setElapsedSec(
+        Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
+      );
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [startedAt]);
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 font-mono text-sm tabular-nums",
+        theme === "sky" &&
+          "border-sky-500/30 bg-sky-500/10 text-sky-950 dark:text-sky-50",
+        theme === "amber" &&
+          "border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-50",
+      )}
+    >
+      <span className="text-muted-foreground text-xs">Time</span>
+      {formatElapsed(elapsedSec)}
+    </div>
+  );
+}
+
 function denseSectionClass(theme: "neutral" | "sky" | "amber") {
   return cn(
     "rounded-2xl border px-3 py-2.5 shadow-sm",
@@ -82,10 +145,34 @@ function denseSectionClass(theme: "neutral" | "sky" | "amber") {
   );
 }
 
+function numMapFromStringRecord(
+  r: Record<string, string> | undefined,
+): Record<number, string> {
+  const out: Record<number, string> = {};
+  if (!r) return out;
+  for (const [k, v] of Object.entries(r)) {
+    const id = Number(k);
+    if (!Number.isNaN(id)) out[id] = v;
+  }
+  return out;
+}
+
+function imagesFromDraft(
+  r: Record<string, NoAnswerImageSlot[]> | undefined,
+): Record<number, NoAnswerImageSlot[]> {
+  const out: Record<number, NoAnswerImageSlot[]> = {};
+  if (!r) return out;
+  for (const [k, v] of Object.entries(r)) {
+    const id = Number(k);
+    if (!Number.isNaN(id) && Array.isArray(v)) out[id] = v;
+  }
+  return out;
+}
+
 export function OpsInspectionStartForm({
   mode,
   barcode,
-  onNavigateBack,
+  unitBackTo,
 }: OpsInspectionStartFormProps) {
   const navigate = useNavigate();
   const { acquireLocation } = useGeolocation();
@@ -97,6 +184,46 @@ export function OpsInspectionStartForm({
     [],
   );
   const [loadingLocal, setLoadingLocal] = useState(true);
+
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [warehouseCode, setWarehouseCode] = useState("");
+  const [plantCode, setPlantCode] = useState("");
+  const [truckNumber, setTruckNumber] = useState("");
+  const [dockNumber, setDockNumber] = useState("");
+  const [truckDockingLocal, setTruckDockingLocal] = useState(() =>
+    toDatetimeLocalValue(),
+  );
+
+  const [damageType, setDamageType] = useState("");
+  const [damageSeverity, setDamageSeverity] = useState("");
+  const [damageCause, setDamageCause] = useState("");
+  const [damageGrade, setDamageGrade] = useState("");
+
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [remarksMap, setRemarksMap] = useState<Record<number, string>>({});
+  const [noAnswerImages, setNoAnswerImages] = useState<
+    Record<number, NoAnswerImageSlot[]>
+  >({});
+
+  const [submitting, setSubmitting] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const [restartDialogOpen, setRestartDialogOpen] = useState(false);
+  const [validationDialog, setValidationDialog] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+  const [noDamageAckOpen, setNoDamageAckOpen] = useState(false);
+  const [draftSaveReady, setDraftSaveReady] = useState(false);
+  const leaveIntentRef = useRef<"barcode" | "blocker" | null>(null);
+  const draftHydratedRef = useRef(false);
+  const draftPayloadRef = useRef<OpsInspectionDraftV1 | null>(null);
+
+  useEffect(() => {
+    draftHydratedRef.current = false;
+    setDraftSaveReady(false);
+  }, [mode, barcode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,38 +252,6 @@ export function OpsInspectionStartForm({
     };
   }, []);
 
-  const [warehouseCode, setWarehouseCode] = useState("");
-  const [plantCode, setPlantCode] = useState("");
-  const [truckNumber, setTruckNumber] = useState("");
-  const [dockNumber, setDockNumber] = useState("");
-  const [truckDockingLocal, setTruckDockingLocal] = useState(() =>
-    toDatetimeLocalValue(),
-  );
-
-  const [damageType, setDamageType] = useState("");
-  const [damageSeverity, setDamageSeverity] = useState("");
-  const [damageCause, setDamageCause] = useState("");
-  const [damageGrade, setDamageGrade] = useState("");
-
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [remarksMap, setRemarksMap] = useState<Record<number, string>>({});
-  const [noAnswerFiles, setNoAnswerFiles] = useState<Record<number, File[]>>({});
-
-  const [submitting, setSubmitting] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [startedAt] = useState(() => Date.now());
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = window.setInterval(() => setTick((t) => t + 1), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const elapsedSec =
-    tick >= 0 ?
-      Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
-    : 0;
-
   const orderedItems = useMemo(
     () =>
       checklistGroups
@@ -168,8 +263,8 @@ export function OpsInspectionStartForm({
 
   const steps: WizardStep[] = useMemo(() => {
     const base: WizardStep[] = [
-      { key: "site", title: "Shipment & site" },
-      { key: "damage", title: "Damage (optional)" },
+      { key: "site", title: "Shipment and site" },
+      { key: "damage", title: "Damage" },
     ];
     for (const g of checklistGroups) {
       base.push({
@@ -185,6 +280,111 @@ export function OpsInspectionStartForm({
   const totalSteps = Math.max(1, steps.length);
   const progressPct = ((stepIndex + 1) / totalSteps) * 100;
   const isLastStep = stepIndex >= steps.length - 1;
+  const previousStepTitle = stepIndex > 0 ? steps[stepIndex - 1]?.title ?? "" : "";
+
+  useEffect(() => {
+    if (loadingLocal || draftHydratedRef.current) return;
+    const t = window.setTimeout(() => {
+      if (draftHydratedRef.current) return;
+      const draft = loadInspectionDraft(mode, barcode);
+      if (!draft) {
+        draftHydratedRef.current = true;
+        setDraftSaveReady(true);
+        return;
+      }
+      setStartedAt(draft.startedAt);
+      setWarehouseCode(draft.warehouseCode);
+      setPlantCode(draft.plantCode);
+      setTruckNumber(draft.truckNumber);
+      setDockNumber(draft.dockNumber);
+      setTruckDockingLocal(draft.truckDockingLocal);
+      setDamageType(draft.damageType);
+      setDamageSeverity(draft.damageSeverity);
+      setDamageCause(draft.damageCause);
+      setDamageGrade(draft.damageGrade);
+      setAnswers(numMapFromStringRecord(draft.answers));
+      setRemarksMap(numMapFromStringRecord(draft.remarksMap));
+      setNoAnswerImages(imagesFromDraft(draft.noAnswerImages));
+      const stepCount = Math.max(1, 2 + checklistGroups.length);
+      setStepIndex(Math.min(Math.max(0, draft.stepIndex), stepCount - 1));
+      draftHydratedRef.current = true;
+      setDraftSaveReady(true);
+    }, 320);
+    return () => window.clearTimeout(t);
+  }, [loadingLocal, mode, barcode, checklistGroups]);
+
+  const dirty = useMemo(() => {
+    if (stepIndex > 0) return true;
+    if (warehouseCode.trim()) return true;
+    if (plantCode.trim()) return true;
+    if (truckNumber.trim()) return true;
+    if (dockNumber.trim()) return true;
+    if (damageType || damageSeverity || damageCause || damageGrade) return true;
+    if (Object.keys(answers).length > 0) return true;
+    if (Object.values(remarksMap).some((r) => r.trim())) return true;
+    if (Object.values(noAnswerImages).some((arr) => arr.length > 0)) return true;
+    return false;
+  }, [
+    stepIndex,
+    warehouseCode,
+    plantCode,
+    truckNumber,
+    dockNumber,
+    damageType,
+    damageSeverity,
+    damageCause,
+    damageGrade,
+    answers,
+    remarksMap,
+    noAnswerImages,
+  ]);
+
+  const dirtyRef = useRef(false);
+  dirtyRef.current = dirty;
+
+  const shouldBlockNavigation = useCallback<BlockerFunction>(
+    ({ currentLocation, nextLocation }) => {
+      if (!dirtyRef.current) return false;
+      return (
+        currentLocation.pathname !== nextLocation.pathname ||
+        currentLocation.search !== nextLocation.search
+      );
+    },
+    [],
+  );
+
+  const blocker = useBlocker(shouldBlockNavigation);
+
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      leaveIntentRef.current = "blocker";
+      setLeaveDialogOpen(true);
+    }
+  }, [blocker.state]);
+
+  useEffect(() => {
+    if (!dirty || loadingLocal) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty, loadingLocal]);
+
+  useEffect(() => {
+    if (!draftSaveReady || loadingLocal) return;
+    const id = window.setInterval(() => {
+      const p = draftPayloadRef.current;
+      if (p) saveInspectionDraft(mode, barcode, p);
+    }, DRAFT_SAVE_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [mode, barcode, loadingLocal, draftSaveReady]);
+
+  useEffect(() => {
+    if (!draftSaveReady || loadingLocal) return;
+    const p = draftPayloadRef.current;
+    if (p) saveInspectionDraft(mode, barcode, p);
+  }, [stepIndex, mode, barcode, loadingLocal, draftSaveReady]);
 
   const setAnswer = useCallback((id: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [id]: value }));
@@ -194,48 +394,72 @@ export function OpsInspectionStartForm({
     setRemarksMap((prev) => ({ ...prev, [id]: value }));
   }, []);
 
-  const appendNoFiles = useCallback((itemId: number, files: FileList | null) => {
-    if (!files?.length) return;
-    const next: File[] = [...(noAnswerFiles[itemId] ?? [])];
-    for (const f of Array.from(files)) {
-      if (f.size > MAX_IMAGE_BYTES) {
-        toast.error(`${f.name} is too large (max ${Math.round(MAX_IMAGE_BYTES / 1000)} KB).`);
-        continue;
+  const addNoAnswerImages = useCallback(
+    async (itemId: number, files: FileList | null) => {
+      if (!files?.length) return;
+      const additions: NoAnswerImageSlot[] = [];
+      for (const f of Array.from(files)) {
+        if (f.size > MAX_IMAGE_BYTES) {
+          toast.error(
+            `${f.name} is too large (max ${Math.round(MAX_IMAGE_BYTES / 1000)} KB).`,
+          );
+          continue;
+        }
+        if (!f.type.startsWith("image/")) {
+          toast.error(`${f.name} is not an image.`);
+          continue;
+        }
+        try {
+          const url = await fileToDataUrl(f);
+          additions.push({ name: f.name, url });
+        } catch {
+          toast.error(`Could not read ${f.name}.`);
+        }
       }
-      if (!f.type.startsWith("image/")) {
-        toast.error(`${f.name} is not an image.`);
-        continue;
-      }
-      next.push(f);
-    }
-    setNoAnswerFiles((prev) => ({ ...prev, [itemId]: next }));
-  }, [noAnswerFiles]);
+      if (!additions.length) return;
+      setNoAnswerImages((prev) => ({
+        ...prev,
+        [itemId]: [...(prev[itemId] ?? []), ...additions],
+      }));
+    },
+    [],
+  );
 
-  const removeNoFile = useCallback((itemId: number, index: number) => {
-    setNoAnswerFiles((prev) => {
+  const removeNoAnswerImage = useCallback((itemId: number, index: number) => {
+    setNoAnswerImages((prev) => {
       const list = [...(prev[itemId] ?? [])];
       list.splice(index, 1);
-      return { ...prev, [itemId]: list };
+      const next = { ...prev };
+      if (list.length) next[itemId] = list;
+      else delete next[itemId];
+      return next;
     });
   }, []);
 
-  const validateSite = useCallback((): boolean => {
-    if (!warehouseCode.trim()) {
-      toast.error("Choose a warehouse.");
-      return false;
-    }
+  const pickNoAnswerFilesForItem = useCallback(
+    (itemId: number, files: FileList | null) => {
+      void addNoAnswerImages(itemId, files);
+    },
+    [addNoAnswerImages],
+  );
+
+  const removeNoAnswerImageForItem = useCallback(
+    (itemId: number, index: number) => {
+      removeNoAnswerImage(itemId, index);
+    },
+    [removeNoAnswerImage],
+  );
+
+  const siteStepError = useCallback((): string | null => {
+    if (!warehouseCode.trim()) return "Choose a warehouse from the list.";
     if (mode === "inbound" && !plantCode.trim()) {
-      toast.error("Choose a supplier plant.");
-      return false;
+      return "Choose a supplier plant.";
     }
-    if (!truckNumber.trim()) {
-      toast.error("Truck number is required.");
-      return false;
-    }
-    return true;
+    if (!truckNumber.trim()) return "Enter the truck number.";
+    return null;
   }, [warehouseCode, plantCode, truckNumber, mode]);
 
-  const validateDamage = useCallback((): boolean => {
+  const damageStepError = useCallback((): string | null => {
     const parts = [
       damageType.trim(),
       damageSeverity.trim(),
@@ -245,58 +469,80 @@ export function OpsInspectionStartForm({
     const any = parts.some((p) => p.length > 0);
     const all = parts.every((p) => p.length > 0);
     if (any && !all) {
-      toast.error("Damage: fill all four fields, or clear all.");
-      return false;
+      return "If you use any damage field you must fill all four (type, severity, cause, grade), or set them all back to NA.";
     }
-    return true;
+    return null;
   }, [damageType, damageSeverity, damageCause, damageGrade]);
 
-  const validateGroup = useCallback(
-    (group: ChecklistGroupBlock): boolean => {
+  const groupStepError = useCallback(
+    (group: ChecklistGroupBlock): string | null => {
       for (const item of group.items) {
         const v = (answers[item.id] ?? "").trim();
         if (!v) {
-          toast.error(`Answer: ${item.item_text.slice(0, 48)}…`);
-          return false;
+          const label = item.item_text.trim();
+          const short =
+            label.length > 100 ? `${label.slice(0, 100)}…` : label;
+          return `Answer every question in this section. Still missing: “${short}”.`;
         }
         if (item.field_type === "yes_no" && v === "no") {
-          const files = noAnswerFiles[item.id] ?? [];
+          const imgs = noAnswerImages[item.id] ?? [];
           const min = item.min_upload_files ?? 0;
-          if (min > 0 && files.length < min) {
-            toast.error(`“No” needs at least ${min} photo(s) for this question.`);
-            return false;
+          if (min > 0 && imgs.length < min) {
+            return `You answered No — add at least ${min} photo(s) for that question (required when the minimum is set).`;
           }
         }
       }
-      return true;
+      return null;
     },
-    [answers, noAnswerFiles],
+    [answers, noAnswerImages],
   );
 
   const goNext = () => {
-    if (step.key === "site" && !validateSite()) return;
-    if (step.key === "damage" && !validateDamage()) return;
-    if (step.group && !validateGroup(step.group)) return;
+    if (step.key === "site") {
+      const err = siteStepError();
+      if (err) {
+        setValidationDialog({
+          title: "Complete shipment and site",
+          message: err,
+        });
+        return;
+      }
+    }
+    if (step.key === "damage") {
+      const err = damageStepError();
+      if (err) {
+        setValidationDialog({ title: "Fix damage details", message: err });
+        return;
+      }
+      const damageAllNa =
+        !damageType.trim() &&
+        !damageSeverity.trim() &&
+        !damageCause.trim() &&
+        !damageGrade.trim();
+      if (damageAllNa) {
+        setNoDamageAckOpen(true);
+        return;
+      }
+    }
+    if (step.group) {
+      const err = groupStepError(step.group);
+      if (err) {
+        setValidationDialog({ title: "Complete this step", message: err });
+        return;
+      }
+    }
     setStepIndex((i) => Math.min(steps.length - 1, i + 1));
   };
 
   const goPrev = () => setStepIndex((i) => Math.max(0, i - 1));
 
-  const buildChecklistAnswers = async (): Promise<ChecklistAnswerEntry[] | null> => {
+  const buildChecklistAnswers = (): ChecklistAnswerEntry[] => {
     const out: ChecklistAnswerEntry[] = [];
     for (const item of orderedItems) {
       const value = answers[item.id]!.trim();
       const remarks = remarksMap[item.id]?.trim() || undefined;
-      const files = noAnswerFiles[item.id] ?? [];
-      let image_path: string[] | undefined;
-      if (files.length > 0) {
-        try {
-          image_path = await Promise.all(files.map((f) => fileToDataUrl(f)));
-        } catch {
-          toast.error("Could not read one of the photos. Try again.");
-          return null;
-        }
-      }
+      const imgs = noAnswerImages[item.id] ?? [];
+      const image_path = imgs.length ? imgs.map((x) => x.url) : undefined;
       out.push({
         id: item.id,
         value,
@@ -308,22 +554,55 @@ export function OpsInspectionStartForm({
   };
 
   const handleSubmit = async () => {
-    if (barcode.length !== OPS_BARCODE_LEN) return;
-    if (!validateSite() || !validateDamage()) return;
+    if (barcode.length !== OPS_BARCODE_LEN) {
+      setValidationDialog({
+        title: "Invalid barcode",
+        message:
+          "The product barcode on this page looks incomplete. Go back to the unit screen and scan again.",
+      });
+      return;
+    }
+    const siteErr = siteStepError();
+    if (siteErr) {
+      setValidationDialog({
+        title: "Complete shipment and site",
+        message: siteErr,
+      });
+      return;
+    }
+    const damageErr = damageStepError();
+    if (damageErr) {
+      setValidationDialog({ title: "Fix damage details", message: damageErr });
+      return;
+    }
     for (const g of checklistGroups) {
-      if (!validateGroup(g)) return;
+      const gErr = groupStepError(g);
+      if (gErr) {
+        setValidationDialog({
+          title: "Checklist incomplete",
+          message: gErr,
+        });
+        return;
+      }
     }
     if (orderedItems.length === 0) {
-      toast.error("No checklist is published yet.");
+      setValidationDialog({
+        title: "Nothing to submit",
+        message:
+          "No checklist is published yet. You cannot start an inspection until a checklist is available.",
+      });
       return;
     }
 
-    const checklist_answers = await buildChecklistAnswers();
-    if (!checklist_answers) return;
+    const checklist_answers = buildChecklistAnswers();
 
     const coords = await acquireLocation();
     if (!coords) {
-      toast.error("Allow location access to start an inspection.");
+      setValidationDialog({
+        title: "Location required",
+        message:
+          "Allow location access in your browser when prompted, or turn it on in site settings for this page, so we can record where the inspection starts.",
+      });
       return;
     }
 
@@ -362,6 +641,7 @@ export function OpsInspectionStartForm({
           checklist_answers,
           ...damageBlock,
         });
+        clearInspectionDraft(mode, barcode);
         toast.success("Inbound inspection started.");
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
       } else {
@@ -378,6 +658,7 @@ export function OpsInspectionStartForm({
           checklist_answers,
           ...damageBlock,
         });
+        clearInspectionDraft(mode, barcode);
         toast.success("Outbound inspection started.");
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
       }
@@ -395,6 +676,56 @@ export function OpsInspectionStartForm({
     }
   };
 
+  const confirmLeave = () => {
+    setLeaveDialogOpen(false);
+    if (leaveIntentRef.current === "blocker") {
+      blocker.proceed?.();
+    } else {
+      navigate(unitBackTo);
+    }
+    leaveIntentRef.current = null;
+  };
+
+  const cancelLeave = () => {
+    setLeaveDialogOpen(false);
+    if (leaveIntentRef.current === "blocker") {
+      blocker.reset?.();
+    }
+    leaveIntentRef.current = null;
+  };
+
+  const requestLeaveViaBarcode = () => {
+    if (!dirty) {
+      navigate(unitBackTo);
+      return;
+    }
+    leaveIntentRef.current = "barcode";
+    setLeaveDialogOpen(true);
+  };
+
+  const performRestart = useCallback(() => {
+    clearInspectionDraft(mode, barcode);
+    setStartedAt(Date.now());
+    setWarehouseCode("");
+    setPlantCode("");
+    setTruckNumber("");
+    setDockNumber("");
+    setTruckDockingLocal(toDatetimeLocalValue());
+    setDamageType("");
+    setDamageSeverity("");
+    setDamageCause("");
+    setDamageGrade("");
+    setAnswers({});
+    setRemarksMap({});
+    setNoAnswerImages({});
+    setStepIndex(0);
+    setRestartDialogOpen(false);
+    setValidationDialog(null);
+    draftHydratedRef.current = true;
+    setDraftSaveReady(true);
+    toast.success("Inspection reset — timer at 0:00 and saved draft removed.");
+  }, [mode, barcode]);
+
   if (loadingLocal) {
     return (
       <div className="flex min-h-[32vh] flex-col items-center justify-center gap-3">
@@ -404,6 +735,32 @@ export function OpsInspectionStartForm({
     );
   }
 
+  const answersStr: Record<string, string> = {};
+  for (const [k, v] of Object.entries(answers)) answersStr[String(k)] = v;
+  const remarksStr: Record<string, string> = {};
+  for (const [k, v] of Object.entries(remarksMap)) remarksStr[String(k)] = v;
+  const imagesStr: Record<string, NoAnswerImageSlot[]> = {};
+  for (const [k, v] of Object.entries(noAnswerImages)) {
+    if (v?.length) imagesStr[String(k)] = v;
+  }
+  draftPayloadRef.current = {
+    v: 1,
+    startedAt,
+    stepIndex,
+    warehouseCode,
+    plantCode,
+    truckNumber,
+    dockNumber,
+    truckDockingLocal,
+    damageType,
+    damageSeverity,
+    damageCause,
+    damageGrade,
+    answers: answersStr,
+    remarksMap: remarksStr,
+    noAnswerImages: imagesStr,
+  };
+
   const titleLabel =
     mode === "inbound" ? "Inbound inspection" : "Outbound inspection";
   const plantSelectValue =
@@ -412,28 +769,111 @@ export function OpsInspectionStartForm({
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
+      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this inspection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Progress is saved on this device so a refresh will not lose answers.
+              Leave this page anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelLeave}>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeave}>Leave</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={validationDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) setValidationDialog(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {validationDialog?.title ?? "Check your input"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left">
+              {validationDialog?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setValidationDialog(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={noDamageAckOpen} onOpenChange={setNoDamageAckOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>No damage recorded</AlertDialogTitle>
+            <AlertDialogDescription className="text-left">
+              All damage fields are NA — there is no damage to inspect for this
+              shipment. Continue to the checklist when that is correct.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay on this step</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setNoDamageAckOpen(false);
+                setStepIndex((i) => Math.min(steps.length - 1, i + 1));
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={restartDialogOpen} onOpenChange={setRestartDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restart this inspection?</AlertDialogTitle>
+            <AlertDialogDescription className="text-left">
+              This clears every answer, shipment fields, damage, photos, and the
+              timer. The draft saved on this device for this barcode will be
+              removed. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={performRestart}
+            >
+              Restart
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-3">
-        <div className="min-w-0 space-y-0.5">
+        <div className="min-w-0 space-y-1.5">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             {mode === "inbound" ? "Inbound" : "Outbound"}
           </p>
           <h1 className="text-lg font-semibold tracking-tight">{titleLabel}</h1>
-          <p className="truncate font-mono text-xs text-muted-foreground">
-            {barcode}
-          </p>
+          <button
+            type="button"
+            onClick={requestLeaveViaBarcode}
+            className={cn(
+              "inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-xs transition-colors",
+              "border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50",
+              "focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none",
+            )}
+            title="Back to product — tap to leave this page"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 shrink-0 opacity-70" />
+            <span className="truncate">{barcode}</span>
+          </button>
         </div>
-        <div
-          className={cn(
-            "flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 font-mono text-sm tabular-nums",
-            theme === "sky" &&
-              "border-sky-500/30 bg-sky-500/10 text-sky-950 dark:text-sky-50",
-            theme === "amber" &&
-              "border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-50",
-          )}
-        >
-          <span className="text-muted-foreground text-xs">Time</span>
-          {formatElapsed(elapsedSec)}
-        </div>
+        <InspectionElapsedTimer startedAt={startedAt} theme={theme} />
       </header>
 
       <div className="space-y-1.5">
@@ -448,9 +888,6 @@ export function OpsInspectionStartForm({
 
       {step.key === "site" ?
         <section className={denseSectionClass(theme)}>
-          <p className="mb-2 text-xs font-semibold text-foreground">
-            Shipment &amp; site
-          </p>
           <div className="space-y-2">
             <Label htmlFor={`w-${mode}`} className="text-xs">
               Warehouse
@@ -541,9 +978,6 @@ export function OpsInspectionStartForm({
 
       {step.key === "damage" ?
         <section className={denseSectionClass(theme)}>
-          <p className="mb-2 text-xs font-semibold text-foreground">
-            Damage (optional)
-          </p>
           <p className="mb-2 text-[11px] text-muted-foreground">
             Fill all four or leave all empty.
           </p>
@@ -578,59 +1012,67 @@ export function OpsInspectionStartForm({
 
       {step.group ?
         <section className={denseSectionClass(theme)}>
-          <p className="mb-2 text-xs font-semibold text-foreground">
-            {step.group.group_name}
-          </p>
           <div className="space-y-2">
             {step.group.items.map((item) => (
               <ChecklistItemCard
                 key={item.uuid}
                 item={item}
-                mode={mode}
                 answer={answers[item.id] ?? ""}
                 onAnswerChange={setAnswer}
                 remark={remarksMap[item.id] ?? ""}
                 onRemarkChange={setRemark}
-                files={noAnswerFiles[item.id] ?? []}
-                onPickFiles={(fl) => appendNoFiles(item.id, fl)}
-                onRemoveFile={(ix) => removeNoFile(item.id, ix)}
+                images={noAnswerImages[item.id] ?? NO_ANSWER_IMAGES_EMPTY}
+                onPickFiles={pickNoAnswerFilesForItem}
+                onRemoveImage={removeNoAnswerImageForItem}
               />
             ))}
           </div>
         </section>
       : null}
 
-      <footer className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
-          {onNavigateBack ?
-            <Button type="button" variant="ghost" size="sm" onClick={onNavigateBack}>
-              Back
-            </Button>
-          : null}
+      <footer className="flex flex-col gap-2 pt-1">
+        {stepIndex > 0 ?
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            disabled={stepIndex === 0}
+            className="h-auto min-h-11 w-full justify-start gap-2 px-3 py-2"
             onClick={goPrev}
           >
-            Previous
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 text-left">
+              <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Back
+              </span>
+              <span className="block truncate text-sm font-medium leading-tight">
+                {previousStepTitle}
+              </span>
+            </span>
           </Button>
-        </div>
+        : null}
         {!isLastStep ?
-          <Button type="button" size="sm" onClick={goNext}>
+          <Button type="button" className="w-full" onClick={goNext}>
             Next
           </Button>
         : (
           <Button
             type="button"
-            size="sm"
+            className="w-full"
             disabled={submitting || orderedItems.length === 0}
             onClick={() => void handleSubmit()}
           >
             {submitting ? "Starting…" : "Submit inspection"}
           </Button>
         )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-full gap-2 text-rose-800/80 hover:bg-rose-500/[0.08] hover:text-rose-900 dark:text-rose-300/75 dark:hover:bg-rose-500/10 dark:hover:text-rose-200"
+          onClick={() => setRestartDialogOpen(true)}
+        >
+          <RotateCcw className="h-4 w-4 shrink-0" />
+          Restart the Inspection
+        </Button>
       </footer>
 
       {orderedItems.length === 0 ?
@@ -676,74 +1118,108 @@ function DamageSelect({
   );
 }
 
-function ChecklistItemCard({
+const ChecklistItemCard = memo(function ChecklistItemCard({
   item,
-  mode,
   answer,
   onAnswerChange,
   remark,
   onRemarkChange,
-  files,
+  images,
   onPickFiles,
-  onRemoveFile,
+  onRemoveImage,
 }: {
   item: ChecklistItemResponse;
-  mode: InspectionStartMode;
   answer: string;
   onAnswerChange: (id: number, v: string) => void;
   remark: string;
   onRemarkChange: (id: number, v: string) => void;
-  files: File[];
-  onPickFiles: (fl: FileList | null) => void;
-  onRemoveFile: (index: number) => void;
+  images: NoAnswerImageSlot[];
+  onPickFiles: (itemId: number, files: FileList | null) => void;
+  onRemoveImage: (itemId: number, index: number) => void;
 }) {
   const isNo = answer === "no";
   const isYes = answer === "yes";
 
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 p-2.5 shadow-sm">
-      <p className="text-[11px] font-medium text-muted-foreground">
-        {item.section}
-      </p>
-      <p className="mt-0.5 text-sm font-medium leading-snug">{item.item_text}</p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-medium text-muted-foreground">
+            {item.section}
+          </p>
+          <p className="mt-0.5 text-sm font-medium leading-snug">{item.item_text}</p>
+        </div>
+        {item.field_type === "yes_no" && (isYes || isNo) ?
+          <Badge
+            variant="outline"
+            className={cn(
+              "shrink-0 text-[10px] font-semibold uppercase",
+              isYes &&
+                "border-emerald-500/50 bg-emerald-500/15 text-emerald-900 dark:text-emerald-100",
+              isNo &&
+                "border-rose-500/50 bg-rose-500/15 text-rose-900 dark:text-rose-100",
+            )}
+          >
+            {isYes ? "Yes" : "No"}
+          </Badge>
+        : null}
+      </div>
 
       {item.field_type === "yes_no" ?
         <div className="mt-2 space-y-2">
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/15 px-2.5 py-2">
-            <span
+          <div
+            className={cn(
+              "flex items-center justify-between gap-3 rounded-xl border-2 px-2.5 py-2.5 transition-colors",
+              isYes &&
+                "border-emerald-500/70 bg-emerald-500/12 shadow-[0_0_0_1px_rgba(16,185,129,0.12)]",
+              isNo &&
+                "border-rose-500/70 bg-rose-500/12 shadow-[0_0_0_1px_rgba(244,63,94,0.12)]",
+              !isYes &&
+                !isNo &&
+                "border-border/60 bg-muted/15",
+            )}
+          >
+            <button
+              type="button"
+              aria-pressed={isNo}
+              onClick={() => onAnswerChange(item.id, "no")}
               className={cn(
-                "text-sm font-semibold",
-                isNo ? "text-foreground" : "text-muted-foreground",
+                "shrink-0 rounded-md border border-transparent px-2 py-1 text-sm font-bold tracking-tight transition-colors",
+                "focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none",
+                isNo ? "text-rose-700 dark:text-rose-200" : "text-muted-foreground hover:text-foreground",
               )}
             >
               No
-            </span>
+            </button>
             <Switch
               checked={isYes}
               onCheckedChange={(c) =>
                 onAnswerChange(item.id, c ? "yes" : "no")
               }
               className={cn(
-                "h-9 w-14 shrink-0",
-                mode === "inbound"
-                  ? "data-[state=checked]:bg-sky-600 data-[state=unchecked]:bg-muted"
-                  : "data-[state=checked]:bg-amber-600 data-[state=unchecked]:bg-muted",
+                "h-9 w-14 shrink-0 data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-rose-600",
               )}
             />
-            <span
+            <button
+              type="button"
+              aria-pressed={isYes}
+              onClick={() => onAnswerChange(item.id, "yes")}
               className={cn(
-                "text-sm font-semibold",
-                isYes ? "text-foreground" : "text-muted-foreground",
+                "shrink-0 rounded-md border border-transparent px-2 py-1 text-sm font-bold tracking-tight transition-colors",
+                "focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none",
+                isYes ?
+                  "text-emerald-700 dark:text-emerald-200"
+                : "text-muted-foreground hover:text-foreground",
               )}
             >
               Yes
-            </span>
+            </button>
           </div>
 
           {isNo ?
-            <div className="space-y-2 rounded-lg border border-dashed border-border/80 bg-muted/10 p-2">
-              <p className="text-[11px] font-medium text-muted-foreground">
-                Because you answered No — add context (photos help)
+            <div className="space-y-2 rounded-lg border border-dashed border-rose-500/25 bg-rose-500/[0.04] p-2">
+              <p className="text-[11px] font-medium text-rose-900/80 dark:text-rose-100/90">
+                You chose No — add remarks and photos if useful
               </p>
               <Textarea
                 value={remark}
@@ -762,7 +1238,7 @@ function ChecklistItemCard({
                       multiple
                       className="sr-only"
                       onChange={(e) => {
-                        onPickFiles(e.target.files);
+                        onPickFiles(item.id, e.target.files);
                         e.target.value = "";
                       }}
                     />
@@ -774,18 +1250,23 @@ function ChecklistItemCard({
                   </span>
                 : null}
               </div>
-              {files.length > 0 ?
-                <ul className="flex flex-wrap gap-1.5 text-[11px]">
-                  {files.map((f, i) => (
+              {images.length > 0 ?
+                <ul className="flex flex-wrap gap-2">
+                  {images.map((img, i) => (
                     <li
-                      key={`${f.name}-${i}`}
-                      className="flex items-center gap-1 rounded-md border bg-background px-1.5 py-0.5"
+                      key={`${img.name}-${i}`}
+                      className="relative h-14 w-14 overflow-hidden rounded-md border border-border bg-muted"
                     >
-                      <span className="max-w-[140px] truncate">{f.name}</span>
+                      <img
+                        src={img.url}
+                        alt=""
+                        className="size-full object-cover"
+                      />
                       <button
                         type="button"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={() => onRemoveFile(i)}
+                        className="absolute inset-0 flex items-start justify-end bg-black/40 p-0.5 text-xs text-white opacity-0 transition-opacity hover:opacity-100"
+                        onClick={() => onRemoveImage(item.id, i)}
+                        aria-label="Remove photo"
                       >
                         ×
                       </button>
@@ -816,4 +1297,4 @@ function ChecklistItemCard({
       )}
     </div>
   );
-}
+});

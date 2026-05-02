@@ -31,9 +31,7 @@ export function OpsInspectionStartPage({ mode }: OpsInspectionStartPageProps) {
     <OpsInspectionStartForm
       mode={mode}
       barcode={barcode}
-      onNavigateBack={() =>
-        navigate(PAGES.opsNewInspectionUnitPath(barcode), { replace: false })
-      }
+      unitBackTo={PAGES.opsNewInspectionUnitPath(barcode)}
     />
   );
 }

@@ -124,7 +124,7 @@ export default function OpsDataPage() {
             <p className="text-xs text-muted-foreground">Inwards</p>
             <p className="text-base font-semibold">64</p>
             <p className="text-[11px] text-muted-foreground">
-              products received &amp; inspected
+              products received and inspected
             </p>
           </button>
           <button

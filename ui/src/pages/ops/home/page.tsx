@@ -42,7 +42,7 @@ export default function OpsHomePage() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">New Inspection</p>
             <p className="text-[11px] text-muted-foreground">
-              Scan &amp; log a fresh product inspection.
+              Scan and log a fresh product inspection.
             </p>
           </div>
         </button>
