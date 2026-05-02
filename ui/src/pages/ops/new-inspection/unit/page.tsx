@@ -9,20 +9,15 @@ import type { InspectionWithChecklistPayload } from "@/api/generated/model/inspe
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { PAGES } from "@/endpoints";
-import { OPS_BARCODE_LEN } from "@/pages/ops/new-inspection/constants";
-import type { OpsInspectionSharedFormData } from "@/pages/ops/new-inspection/inspection-start-shared";
-import { OpsInspectionStartForm } from "@/pages/ops/new-inspection/ops-inspection-start-form";
 import {
-  fetchActiveInspectionChecklist,
-  fetchInspectionMetadataForOps,
+  formatReviewStatusLabel,
+  readInspectionReviewStatus,
+  reviewStatusBadgeClass,
+} from "@/pages/ops/new-inspection/inspection-status-display";
+import { OPS_BARCODE_LEN } from "@/pages/ops/new-inspection/constants";
+import {
   opsInspectionApiError,
   parseInspectionBarcode,
 } from "@/services/ops-inspections-api";
@@ -74,14 +69,6 @@ function UnitDetails({ barcode }: { barcode: string }) {
   const [parsed, setParsed] = useState<BarcodeParseResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [sharedFormData, setSharedFormData] = useState<OpsInspectionSharedFormData>(
-    {
-      metadata: null,
-      checklistGroups: [],
-      loading: true,
-    },
-  );
-  const [tab, setTab] = useState<"inbound" | "outbound">("inbound");
 
   useEffect(() => {
     let cancelled = false;
@@ -103,34 +90,6 @@ function UnitDetails({ barcode }: { barcode: string }) {
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [barcode]);
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      fetchInspectionMetadataForOps(),
-      fetchActiveInspectionChecklist(),
-    ])
-      .then(([meta, chk]) => {
-        if (!cancelled) {
-          setSharedFormData({
-            metadata: meta,
-            checklistGroups: chk.groups ?? [],
-            loading: false,
-          });
-        }
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) {
-          setSharedFormData((prev) => ({ ...prev, loading: false }));
-          toast.error(
-            opsInspectionApiError(e, "Could not load inspection form data."),
-          );
-        }
       });
     return () => {
       cancelled = true;
@@ -188,7 +147,7 @@ function UnitDetails({ barcode }: { barcode: string }) {
         </Button>
       </div>
 
-      <Card className="border bg-card/80 py-0 shadow-sm">
+      <Card className="border bg-card/80 py-0 shadow-sm ring-1 ring-border/40">
         <div className="space-y-1 px-3 py-2">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             Product
@@ -197,7 +156,7 @@ function UnitDetails({ barcode }: { barcode: string }) {
             {parsed.product.material_description}
           </p>
         </div>
-        <div className="space-y-0.5 border-t px-3 py-2 text-xs text-muted-foreground">
+        <div className="space-y-0.5 border-t border-border/50 px-3 py-2 text-xs text-muted-foreground">
           <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
             <span className="shrink-0 font-medium text-foreground">
               Category
@@ -226,7 +185,6 @@ function UnitDetails({ barcode }: { barcode: string }) {
           icon={Import}
           inspection={inbound}
           startHref={startInboundTo}
-          onStart={() => setTab("inbound")}
           accent="border-sky-500/25 bg-sky-500/[0.06] ring-1 ring-sky-500/15"
         />
         <FlowColumnCard
@@ -235,117 +193,16 @@ function UnitDetails({ barcode }: { barcode: string }) {
           icon={Truck}
           inspection={outbound}
           startHref={startOutboundTo}
-          onStart={() => setTab("outbound")}
           accent="border-amber-500/25 bg-amber-500/[0.06] ring-1 ring-amber-500/15"
         />
       </div>
 
       {inbound && outbound ?
         <p className="text-center text-sm text-muted-foreground">
-          Inbound and outbound are both on file for this unit. Open a record
-          above or use Search to find others.
+          Inbound and outbound inspections already exist for this unit. Open one
+          above or use Search.
         </p>
       : null}
-
-      <section className="space-y-3">
-        <p className="text-sm font-semibold text-foreground">
-          Inspection input
-        </p>
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as "inbound" | "outbound")}
-          className="w-full"
-        >
-          <TabsList
-            variant="default"
-            className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:max-w-md"
-          >
-            <TabsTrigger value="inbound" className="">
-              Inbound
-            </TabsTrigger>
-            <TabsTrigger value="outbound">Outbound</TabsTrigger>
-          </TabsList>
-          <TabsContent value="inbound" className="mt-4 outline-none">
-            <Card
-              className={cn(
-                "border bg-card shadow-sm py-0",
-                "border-sky-500/30 bg-sky-500/[0.06] ring-1 ring-sky-500/15",
-              )}
-            >
-              <div className="p-4 sm:p-5">
-                {inbound ?
-                  <InspectionAlreadyRecorded
-                    title="Inbound"
-                    inspection={inbound}
-                  />
-                : (
-                  <OpsInspectionStartForm
-                    mode="inbound"
-                    barcode={barcode}
-                    embedded
-                    sharedData={sharedFormData}
-                  />
-                )}
-              </div>
-            </Card>
-          </TabsContent>
-          <TabsContent value="outbound" className="mt-4 outline-none">
-            <Card
-              className={cn(
-                "border bg-card shadow-sm py-0",
-                "border-amber-500/30 bg-amber-500/[0.06] ring-1 ring-amber-500/15",
-              )}
-            >
-              <div className="p-4 sm:p-5">
-                {outbound ?
-                  <InspectionAlreadyRecorded
-                    title="Outbound"
-                    inspection={outbound}
-                  />
-                : (
-                  <OpsInspectionStartForm
-                    mode="outbound"
-                    barcode={barcode}
-                    embedded
-                    sharedData={sharedFormData}
-                  />
-                )}
-              </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </section>
-    </div>
-  );
-}
-
-function InspectionAlreadyRecorded({
-  title,
-  inspection,
-}: {
-  title: string;
-  inspection: InspectionWithChecklistPayload;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Badge variant="secondary">{title}: on file</Badge>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        {formatWhen(inspection.created_at)} ·{" "}
-        {summarizeInspection(inspection)}
-      </p>
-      {inspection.warehouse_code ?
-        <p className="text-xs text-muted-foreground">
-          Warehouse {inspection.warehouse_code}
-          {inspection.plant_code ? ` · Plant ${inspection.plant_code}` : ""}
-        </p>
-      : null}
-      <Button asChild className="w-full sm:w-auto">
-        <Link to={PAGES.opsInspectionDetailPath(inspection.uuid)}>
-          View inspection
-        </Link>
-      </Button>
     </div>
   );
 }
@@ -355,10 +212,7 @@ type FlowColumnCardProps = {
   description: string;
   icon: LucideIcon;
   inspection: InspectionWithChecklistPayload | null;
-  /** Fallback deep link when not using embedded tabs. */
   startHref: string;
-  /** Jump to inspection input tab on this page. */
-  onStart: () => void;
   accent: string;
 };
 
@@ -368,14 +222,14 @@ function FlowColumnCard({
   icon: Icon,
   inspection,
   startHref,
-  onStart,
   accent,
 }: FlowColumnCardProps) {
   const recorded = inspection !== null;
+  const reviewStatus = inspection ? readInspectionReviewStatus(inspection) : null;
 
   return (
     <Card className={cn("flex flex-col ring-1", accent)}>
-      <div className="space-y-3 p-6">
+      <div className="space-y-3 p-5">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="flex size-10 items-center justify-center rounded-xl bg-background/80 ring-1 ring-border">
@@ -386,9 +240,22 @@ function FlowColumnCard({
               <p className="text-xs text-muted-foreground">{description}</p>
             </div>
           </div>
-          <Badge variant={recorded ? "secondary" : "outline"}>
-            {recorded ? "On file" : "Not started"}
-          </Badge>
+          {recorded && reviewStatus ?
+            <Badge
+              variant="outline"
+              className={cn("shrink-0 border font-medium", reviewStatusBadgeClass(reviewStatus))}
+            >
+              {formatReviewStatusLabel(reviewStatus)}
+            </Badge>
+          : recorded ?
+            <Badge variant="outline" className="shrink-0 text-muted-foreground">
+              Submitted
+            </Badge>
+          : (
+            <Badge variant="outline" className="shrink-0">
+              Not started
+            </Badge>
+          )}
         </div>
         <div className="flex-1 space-y-2 text-sm">
           {recorded && inspection ?
@@ -408,30 +275,21 @@ function FlowColumnCard({
             </>
           : (
             <p className="text-muted-foreground">
-              No {title.toLowerCase()} inspection exists for this unit yet.
+              No {title.toLowerCase()} inspection for this unit yet.
             </p>
           )}
         </div>
-        <div className="flex flex-col gap-2 pt-0 sm:flex-row sm:justify-end">
+        <div className="pt-0">
           {recorded && inspection ?
             <Button asChild className="w-full sm:w-auto">
               <Link to={PAGES.opsInspectionDetailPath(inspection.uuid)}>
-                View details
+                Open inspection
               </Link>
             </Button>
           : (
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-              <Button
-                type="button"
-                className="w-full sm:w-auto"
-                onClick={onStart}
-              >
-                Fill below
-              </Button>
-              <Button variant="secondary" size="sm" asChild className="w-full sm:w-auto">
-                <Link to={startHref}>Open full-page form</Link>
-              </Button>
-            </div>
+            <Button asChild className="w-full sm:w-auto">
+              <Link to={startHref}>Start {title.toLowerCase()}</Link>
+            </Button>
           )}
         </div>
       </div>

@@ -31,7 +31,6 @@ export function OpsInspectionStartPage({ mode }: OpsInspectionStartPageProps) {
     <OpsInspectionStartForm
       mode={mode}
       barcode={barcode}
-      embedded={false}
       onNavigateBack={() =>
         navigate(PAGES.opsNewInspectionUnitPath(barcode), { replace: false })
       }
