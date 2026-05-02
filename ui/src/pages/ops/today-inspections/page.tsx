@@ -2,6 +2,9 @@ import { ChevronRight, ClipboardList } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { OpsListEmptyState } from "@/components/ops/ops-list-empty-state";
+import { opsListEmptySectionClassName } from "@/components/ops/ops-list-section-classes";
+import { OpsListHint } from "@/components/ops/ops-list-hint";
 import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
 import {
   getInspectionQuestionResults,
@@ -24,13 +27,17 @@ function toTodayTime(createdAt: string) {
   });
 }
 
-async function toTodayInspection(inspection: Inspection): Promise<TodayInspection> {
+async function toTodayInspection(
+  inspection: Inspection,
+): Promise<TodayInspection> {
   const [outer, inner, product] = await Promise.all([
     getInspectionQuestionResults(inspection.id, "outer-packaging"),
     getInspectionQuestionResults(inspection.id, "inner-packaging"),
     getInspectionQuestionResults(inspection.id, "product"),
   ]);
-  const failed = [...outer, ...inner, ...product].some((r) => r.status === "fail");
+  const failed = [...outer, ...inner, ...product].some(
+    (r) => r.status === "fail",
+  );
   return {
     id: inspection.id,
     product: inspection.product_category_name ?? inspection.checklist_name,
@@ -86,16 +93,22 @@ export default function OpsTodayInspectionsPage() {
     };
   }, []);
 
+  const empty = !loading && rows.length === 0;
+
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <p className="text-sm text-muted-foreground">
-          Tap an inspection to see full details and status.
-        </p>
-      </header>
+      <OpsListHint show={!loading && rows.length > 0}>
+        Tap an inspection to see full details and status.
+      </OpsListHint>
 
-      <section className="space-y-2">
+      <section className={opsListEmptySectionClassName(loading, empty)}>
         {loading ? <OpsInspectionSkeleton variant="list" count={4} /> : null}
+        {empty ? (
+          <OpsListEmptyState
+            title="No inspections yet"
+            description="Completed checks will appear here so you can open details in one tap."
+          />
+        ) : null}
         {rows.map((inspection) => (
           <button
             key={inspection.id}
@@ -127,4 +140,3 @@ export default function OpsTodayInspectionsPage() {
     </div>
   );
 }
-

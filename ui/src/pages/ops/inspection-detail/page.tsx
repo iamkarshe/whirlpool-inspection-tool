@@ -3,8 +3,10 @@ import {
   Camera,
   CheckCircle2,
   Image as ImageIcon,
+  ImageOff,
   Flag,
   Link2,
+  ListChecks,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +23,7 @@ import {
   ImageGalleryDialog,
   type GalleryImage,
 } from "@/components/image-gallery-dialog";
+import { OpsListEmptyState } from "@/components/ops/ops-list-empty-state";
 import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -529,35 +532,43 @@ export default function OpsInspectionDetailPage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  {rows.map((row) => (
-                    <div key={row.id} className="rounded-2xl border bg-muted/20 p-2.5">
-                      <div className="mb-1 flex items-start justify-between gap-2">
-                        <p className="text-xs leading-snug">{row.question}</p>
-                        <StatusPill status={row.status} />
-                      </div>
-                      {row.notes ? (
-                        <p className="text-[11px] text-muted-foreground">{row.notes}</p>
-                      ) : null}
-                      {row.images.length > 0 ? (
-                        <div className="mt-2 flex gap-2 overflow-x-auto">
-                          {row.images.map((img) => (
-                            <button
-                              key={`${row.id}-${img.url}`}
-                              type="button"
-                              className="shrink-0"
-                              onClick={() => openRowImages(row)}
-                            >
-                              <img
-                                src={img.url}
-                                alt={img.filename ?? row.question}
-                                className="h-14 w-14 rounded-lg border object-cover"
-                              />
-                            </button>
-                          ))}
+                  {rows.length === 0 ?
+                    <OpsListEmptyState
+                      variant="compact"
+                      icon={ListChecks}
+                      title="No results in this section"
+                      description="Answers for this part of the checklist will show here once recorded."
+                    />
+                  : rows.map((row) => (
+                      <div key={row.id} className="rounded-2xl border bg-muted/20 p-2.5">
+                        <div className="mb-1 flex items-start justify-between gap-2">
+                          <p className="text-xs leading-snug">{row.question}</p>
+                          <StatusPill status={row.status} />
                         </div>
-                      ) : null}
-                    </div>
-                  ))}
+                        {row.notes ?
+                          <p className="text-[11px] text-muted-foreground">{row.notes}</p>
+                        : null}
+                        {row.images.length > 0 ?
+                          <div className="mt-2 flex gap-2 overflow-x-auto">
+                            {row.images.map((img) => (
+                              <button
+                                key={`${row.id}-${img.url}`}
+                                type="button"
+                                className="shrink-0"
+                                onClick={() => openRowImages(row)}
+                              >
+                                <img
+                                  src={img.url}
+                                  alt={img.filename ?? row.question}
+                                  className="h-14 w-14 rounded-lg border object-cover"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        : null}
+                      </div>
+                    ))
+                  }
                 </div>
               </section>
             );
@@ -574,34 +585,50 @@ export default function OpsInspectionDetailPage() {
                 {allImages.length}
               </Badge>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {allImages.map((img) => {
-                const imageIssueCount = issueRows.filter((i) => i.imageUrl === img.url).length;
-                return (
-                  <button
-                    key={img.key}
-                    type="button"
-                    className="relative overflow-hidden rounded-xl border bg-muted/20"
-                    onClick={() => {
-                      setGalleryImages(allImages.map((i) => ({ url: i.url, filename: i.filename })));
-                      setActiveGalleryUrl(img.url);
-                      setGalleryOpen(true);
-                    }}
-                  >
-                    <img
-                      src={img.url}
-                      alt={img.filename ?? img.question}
-                      className="h-24 w-full object-cover"
-                    />
-                    {imageIssueCount > 0 ? (
-                      <span className="absolute top-1 right-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground">
-                        {imageIssueCount}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
+            {allImages.length === 0 ?
+              <OpsListEmptyState
+                variant="compact"
+                icon={ImageOff}
+                title="No images captured"
+                description="Photos attached to checklist answers will appear in this gallery."
+              />
+            : (
+              <div className="grid grid-cols-3 gap-2">
+                {allImages.map((img) => {
+                  const imageIssueCount = issueRows.filter(
+                    (i) => i.imageUrl === img.url,
+                  ).length;
+                  return (
+                    <button
+                      key={img.key}
+                      type="button"
+                      className="relative overflow-hidden rounded-xl border bg-muted/20"
+                      onClick={() => {
+                        setGalleryImages(
+                          allImages.map((i) => ({
+                            url: i.url,
+                            filename: i.filename,
+                          })),
+                        );
+                        setActiveGalleryUrl(img.url);
+                        setGalleryOpen(true);
+                      }}
+                    >
+                      <img
+                        src={img.url}
+                        alt={img.filename ?? img.question}
+                        className="h-24 w-full object-cover"
+                      />
+                      {imageIssueCount > 0 ?
+                        <span className="absolute top-1 right-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground">
+                          {imageIssueCount}
+                        </span>
+                      : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </section>
         </TabsContent>
 
@@ -622,9 +649,14 @@ export default function OpsInspectionDetailPage() {
                 Raise
               </Button>
             </div>
-            {issueRows.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No issues reported.</p>
-            ) : (
+            {issueRows.length === 0 ?
+              <OpsListEmptyState
+                variant="compact"
+                icon={Flag}
+                title="No issues reported"
+                description="Raise an issue from this inspection when something needs follow-up."
+              />
+            : (
               <div className="space-y-2">
                 {issueRows.map((issue) => (
                   <div key={issue.id} className="space-y-1 rounded-2xl border bg-muted/20 p-2.5">
@@ -719,7 +751,12 @@ export default function OpsInspectionDetailPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">No relationship data.</p>
+              <OpsListEmptyState
+                variant="compact"
+                icon={Link2}
+                title="No relationship data"
+                description="Linked inbound and outbound scans will appear here when the system has them."
+              />
             )}
           </section>
         </TabsContent>
