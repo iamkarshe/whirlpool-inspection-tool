@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import date, datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session, joinedload
@@ -22,6 +23,7 @@ from mod.api.inspection.response import (
     ChecklistGroupBlock,
     InspectionDetailResponse,
     InspectionFullResponse,
+    InspectionImageUploadResponse,
     InspectionMetadataResponse,
     InspectionDropdownOption,
     InspectionListItemResponse,
@@ -35,6 +37,7 @@ from mod.api.plant.helper import get_plant_by_uuid_or_404
 from mod.api.product.helper import map_product
 from mod.api.product_category.helper import map_product_category
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
+from mod.api.inspection.media import compress_image, upload_media
 from mod.model import (
     Checklist,
     ChecklistFieldType,
@@ -376,6 +379,92 @@ def get_inspection_entity_by_uuid(
         .filter(Inspection.uuid == inspection_uuid)
         .first()
     )
+
+
+MAX_INSPECTION_IMAGE_BYTES = 12 * 1024 * 1024
+ALLOWED_INSPECTION_IMAGE_MEDIA = frozenset({"image/jpeg", "image/png", "image/webp"})
+
+
+INSPECTION_UPLOAD_BARCODE_LEN = 16
+INSPECTION_UPLOAD_BARCODE_PATTERN = re.compile(
+    rf"^[A-Za-z0-9]{{{INSPECTION_UPLOAD_BARCODE_LEN}}}$"
+)
+
+
+def sanitize_barcode_for_upload_path(barcode: str) -> str:
+    s = barcode.strip()
+    if not INSPECTION_UPLOAD_BARCODE_PATTERN.fullmatch(s):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"barcode must be exactly {INSPECTION_UPLOAD_BARCODE_LEN} "
+                "alphanumeric characters (A-Z, a-z, 0-9)"
+            ),
+        )
+    return s
+
+
+def inspection_upload_relative_path(
+    barcode: str,
+    direction: str,
+    *,
+    file_uuid: uuid.UUID | None = None,
+) -> str:
+    fid = file_uuid or uuid.uuid4()
+    return f"uploads/inspections/{barcode}/{direction}/{fid}.jpg"
+
+
+def save_inspection_image_upload(
+    db: Session,
+    barcode: str,
+    direction: Literal["inbound", "outbound"],
+    raw_bytes: bytes,
+    content_type: str,
+) -> InspectionImageUploadResponse:
+    safe_barcode = sanitize_barcode_for_upload_path(barcode)
+    if (
+        db.query(ProductUnit)
+        .filter(
+            ProductUnit.barcode == safe_barcode,
+            ProductUnit.is_active.is_(True),
+        )
+        .first()
+    ) is None:
+        raise HTTPException(status_code=404, detail="Unknown barcode")
+
+    ct = content_type.split(";")[0].strip().lower()
+    if ct not in ALLOWED_INSPECTION_IMAGE_MEDIA:
+        raise HTTPException(
+            status_code=400,
+            detail="File must be image/jpeg, image/png, or image/webp",
+        )
+
+    if len(raw_bytes) > MAX_INSPECTION_IMAGE_BYTES:
+        mb = MAX_INSPECTION_IMAGE_BYTES // (1024 * 1024)
+        raise HTTPException(
+            status_code=413,
+            detail=f"Image too large (max {mb} MB)",
+        )
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    try:
+        jpeg_bytes = compress_image(raw_bytes)
+    except Exception:
+        raise HTTPException(
+            status_code=422,
+            detail="Could not read or compress image",
+        ) from None
+
+    rel = inspection_upload_relative_path(
+        safe_barcode, direction, file_uuid=uuid.uuid4()
+    )
+    try:
+        path = upload_media(rel, jpeg_bytes)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return InspectionImageUploadResponse(path=path)
 
 
 def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:

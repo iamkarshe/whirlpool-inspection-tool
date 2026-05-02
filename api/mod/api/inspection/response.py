@@ -139,6 +139,12 @@ class InspectionReviewStatusUpdateRequest(BaseModel):
         return s if s else None
 
 
+class InspectionImageUploadResponse(BaseModel):
+    """Relative storage path (prefix with CDN base URL on the client)."""
+
+    path: str
+
+
 class InspectionDetailResponse(BaseModel):
     id: int
     uuid: uuid.UUID

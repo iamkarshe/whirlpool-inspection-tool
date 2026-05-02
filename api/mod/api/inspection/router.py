@@ -1,7 +1,17 @@
 import uuid
 from datetime import date
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
@@ -19,12 +29,14 @@ from mod.api.inspection.helper import (
     map_inspection_list_item,
     present_inspection_full,
     resolve_inspection_scope_filters,
+    save_inspection_image_upload,
     update_inspection_review_status,
 )
 from mod.api.inspection.response import (
     ActiveChecklistGroupedResponse,
     BarcodeParseResponse,
     InspectionFullResponse,
+    InspectionImageUploadResponse,
     InspectionKpisResponse,
     InspectionListResponse,
     InspectionMetadataResponse,
@@ -306,6 +318,37 @@ def start_outbound_inspection(
     db: Session = Depends(get_db),
 ):
     return create_outbound_inspection(db, request, body)
+
+
+@router.post(
+    "/inspections/upload-image",
+    name="upload_inspection_image",
+    description=(
+        "Upload a compressed image before an inspection exists; "
+        "barcode is always 16 alphanumeric characters (product unit barcode). "
+        "Returns a CDN-relative path under uploads/inspections/<barcode>/..."
+    ),
+    response_model=InspectionImageUploadResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager", "operator"])
+async def upload_inspection_image(
+    request: Request,
+    barcode: str = Form(
+        ...,
+        description="16-character alphanumeric product unit barcode (A-Z, a-z, 0-9)",
+        min_length=16,
+        max_length=16,
+    ),
+    direction: Literal["inbound", "outbound"] = Form(
+        description="Workflow folder (inbound or outbound)",
+    ),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    raw = await file.read()
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    return save_inspection_image_upload(db, barcode, direction, raw, content_type)
 
 
 @router.patch(
