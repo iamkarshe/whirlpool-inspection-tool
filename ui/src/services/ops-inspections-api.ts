@@ -2,13 +2,52 @@ import { getInspections } from "@/api/generated/inspections/inspections";
 import { BodyUploadInspectionImageApiInspectionsUploadImagePostDirection } from "@/api/generated/model/bodyUploadInspectionImageApiInspectionsUploadImagePostDirection";
 import type { ActiveChecklistGroupedResponse } from "@/api/generated/model/activeChecklistGroupedResponse";
 import type { BarcodeParseResponse } from "@/api/generated/model/barcodeParseResponse";
+import type { ChecklistGroupBlock } from "@/api/generated/model/checklistGroupBlock";
 import type { InspectionMetadataResponse } from "@/api/generated/model/inspectionMetadataResponse";
 import type { InspectionWithChecklistPayload } from "@/api/generated/model/inspectionWithChecklistPayload";
 import type { StartInboundInspectionRequest } from "@/api/generated/model/startInboundInspectionRequest";
 import type { StartOutboundInspectionRequest } from "@/api/generated/model/startOutboundInspectionRequest";
 
 import type { InspectionStartMode } from "@/pages/ops/new-inspection/inspection-start-shared";
+import { WHIRLPOOL_SESSION_CHANGED_EVENT } from "@/lib/session-events";
 import { inspectionsApiErrorMessage } from "@/services/inspections-api";
+
+const OPS_FORM_CONFIG_TTL_MS = 12 * 60 * 60 * 1000;
+
+export type OpsInspectionFormConfigBundle = {
+  metadata: InspectionMetadataResponse;
+  checklistGroups: ChecklistGroupBlock[];
+};
+
+let formConfigCache: OpsInspectionFormConfigBundle | null = null;
+let formConfigCachedAt = 0;
+/** Token snapshot when `formConfigCache` was written; must match current session to reuse. */
+let formConfigCacheToken: string | null = null;
+let formConfigInFlight: Promise<OpsInspectionFormConfigBundle> | null = null;
+
+function opsAuthTokenSnapshot(): string {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem("whirlpool.access_token")?.trim() ?? "";
+}
+
+/** Drop cached metadata + checklist (login, logout, or manual refresh). */
+export function invalidateOpsInspectionFormConfigCache(): void {
+  formConfigCache = null;
+  formConfigCachedAt = 0;
+  formConfigCacheToken = null;
+  formConfigInFlight = null;
+}
+
+let sessionListenerAttached = false;
+function attachOpsInspectionFormConfigSessionListener() {
+  if (typeof window === "undefined" || sessionListenerAttached) return;
+  sessionListenerAttached = true;
+  window.addEventListener(WHIRLPOOL_SESSION_CHANGED_EVENT, () => {
+    invalidateOpsInspectionFormConfigCache();
+  });
+}
+
+attachOpsInspectionFormConfigSessionListener();
 
 export async function parseInspectionBarcode(
   barcode: string,
@@ -37,6 +76,59 @@ export async function fetchInspectionMetadataForOps(
   return api.getInspectionMetadataApiInspectionsMetadataGet(
     opts?.signal ? { signal: opts.signal } : undefined,
   );
+}
+
+/**
+ * Loads inspection metadata + active checklist together, with:
+ * - **Single-flight**: concurrent callers share one network round-trip (e.g. React Strict Mode).
+ * - **Session + TTL cache**: reused until `WHIRLPOOL_SESSION_CHANGED_EVENT` (login/logout) or **12h** elapsed.
+ */
+export async function loadOpsInspectionFormConfig(
+  opts?: { signal?: AbortSignal },
+): Promise<OpsInspectionFormConfigBundle> {
+  const token = opsAuthTokenSnapshot();
+  const now = Date.now();
+
+  if (!token) {
+    const [metadata, chk] = await Promise.all([
+      fetchInspectionMetadataForOps(opts),
+      fetchActiveInspectionChecklist(opts),
+    ]);
+    return { metadata, checklistGroups: chk.groups ?? [] };
+  }
+
+  if (
+    formConfigCache &&
+    formConfigCacheToken === token &&
+    now - formConfigCachedAt < OPS_FORM_CONFIG_TTL_MS
+  ) {
+    return formConfigCache;
+  }
+
+  if (!formConfigInFlight) {
+    formConfigInFlight = Promise.all([
+      fetchInspectionMetadataForOps(opts),
+      fetchActiveInspectionChecklist(opts),
+    ])
+      .then(([metadata, chk]) => {
+        const bundle: OpsInspectionFormConfigBundle = {
+          metadata,
+          checklistGroups: chk.groups ?? [],
+        };
+        const t = opsAuthTokenSnapshot();
+        if (t === token) {
+          formConfigCache = bundle;
+          formConfigCachedAt = Date.now();
+          formConfigCacheToken = token;
+        }
+        return bundle;
+      })
+      .finally(() => {
+        formConfigInFlight = null;
+      });
+  }
+
+  return formConfigInFlight;
 }
 
 export async function startOpsInboundInspection(

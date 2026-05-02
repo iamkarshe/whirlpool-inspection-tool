@@ -59,17 +59,21 @@ import {
   toDatetimeLocalValue,
 } from "@/pages/ops/new-inspection/inspection-start-shared";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import {
+  compressInspectionImageFile,
+  INSPECTION_IMAGE_MAX_UPLOAD_BYTES,
+} from "@/lib/compress-inspection-image";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
 import {
-  fetchActiveInspectionChecklist,
-  fetchInspectionMetadataForOps,
+  loadOpsInspectionFormConfig,
   opsInspectionApiError,
   startOpsInboundInspection,
   startOpsOutboundInspection,
   uploadOpsInspectionImage,
 } from "@/services/ops-inspections-api";
 
-const MAX_IMAGE_BYTES = 600_000;
+/** Reject originals larger than this before compression (memory / UX guard). */
+const MAX_RAW_IMAGE_BYTES = 25 * 1024 * 1024;
 /** How often we flush the draft ref to localStorage (ref is updated every render). */
 const DRAFT_SAVE_INTERVAL_MS = 2500;
 
@@ -227,14 +231,11 @@ export function OpsInspectionStartForm({
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      fetchInspectionMetadataForOps(),
-      fetchActiveInspectionChecklist(),
-    ])
-      .then(([meta, chk]) => {
+    loadOpsInspectionFormConfig()
+      .then(({ metadata: meta, checklistGroups }) => {
         if (!cancelled) {
           setMetadata(meta);
-          setChecklistGroups(chk.groups ?? []);
+          setChecklistGroups(checklistGroups);
         }
       })
       .catch((e: unknown) => {
@@ -413,14 +414,14 @@ export function OpsInspectionStartForm({
       }
       const accepted: File[] = [];
       for (const f of Array.from(files)) {
-        if (f.size > MAX_IMAGE_BYTES) {
-          toast.error(
-            `${f.name} is too large (max ${Math.round(MAX_IMAGE_BYTES / 1000)} KB).`,
-          );
-          continue;
-        }
         if (!f.type.startsWith("image/")) {
           toast.error(`${f.name} is not an image.`);
+          continue;
+        }
+        if (f.size > MAX_RAW_IMAGE_BYTES) {
+          toast.error(
+            `${f.name} is too large before compression (max ${Math.round(MAX_RAW_IMAGE_BYTES / (1024 * 1024))} MB).`,
+          );
           continue;
         }
         accepted.push(f);
@@ -431,10 +432,17 @@ export function OpsInspectionStartForm({
         accepted.map(async (f) => {
           adjustPhotoUploadCount(itemId, 1);
           try {
+            const compressed = await compressInspectionImageFile(f);
+            if (compressed.size > INSPECTION_IMAGE_MAX_UPLOAD_BYTES) {
+              toast.error(
+                `${f.name} is still over ${Math.round(INSPECTION_IMAGE_MAX_UPLOAD_BYTES / 1000)} KB after compression. Try another photo.`,
+              );
+              return null;
+            }
             const { path } = await uploadOpsInspectionImage({
               barcode,
               mode,
-              file: f,
+              file: compressed,
             });
             return { name: f.name, path } satisfies NoAnswerImageSlot;
           } catch (e: unknown) {
