@@ -110,9 +110,7 @@ function InspectionElapsedTimer({
   const [elapsedSec, setElapsedSec] = useState(0);
   useEffect(() => {
     const tick = () => {
-      setElapsedSec(
-        Math.max(0, Math.floor((Date.now() - startedAt) / 1000)),
-      );
+      setElapsedSec(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
     };
     tick();
     const id = window.setInterval(tick, 1000);
@@ -137,8 +135,7 @@ function InspectionElapsedTimer({
 function denseSectionClass(theme: "neutral" | "sky" | "amber") {
   return cn(
     "rounded-2xl border px-3 py-2.5 shadow-sm",
-    theme === "neutral" &&
-      "border-border/70 bg-muted/25 ring-1 ring-border/40",
+    theme === "neutral" && "border-border/70 bg-muted/25 ring-1 ring-border/40",
     theme === "sky" &&
       "border-sky-500/25 bg-sky-500/[0.06] ring-1 ring-sky-500/15",
     theme === "amber" &&
@@ -281,7 +278,8 @@ export function OpsInspectionStartForm({
   const totalSteps = Math.max(1, steps.length);
   const progressPct = ((stepIndex + 1) / totalSteps) * 100;
   const isLastStep = stepIndex >= steps.length - 1;
-  const previousStepTitle = stepIndex > 0 ? steps[stepIndex - 1]?.title ?? "" : "";
+  const previousStepTitle =
+    stepIndex > 0 ? (steps[stepIndex - 1]?.title ?? "") : "";
 
   useEffect(() => {
     if (loadingLocal || draftHydratedRef.current) return;
@@ -323,7 +321,8 @@ export function OpsInspectionStartForm({
     if (damageType || damageSeverity || damageCause || damageGrade) return true;
     if (Object.keys(answers).length > 0) return true;
     if (Object.values(remarksMap).some((r) => r.trim())) return true;
-    if (Object.values(noAnswerImages).some((arr) => arr.length > 0)) return true;
+    if (Object.values(noAnswerImages).some((arr) => arr.length > 0))
+      return true;
     return false;
   }, [
     stepIndex,
@@ -395,15 +394,18 @@ export function OpsInspectionStartForm({
     setRemarksMap((prev) => ({ ...prev, [id]: value }));
   }, []);
 
-  const adjustPhotoUploadCount = useCallback((itemId: number, delta: number) => {
-    setPhotoUploadCountByItem((prev) => {
-      const next = { ...prev };
-      const n = (next[itemId] ?? 0) + delta;
-      if (n <= 0) delete next[itemId];
-      else next[itemId] = n;
-      return next;
-    });
-  }, []);
+  const adjustPhotoUploadCount = useCallback(
+    (itemId: number, delta: number) => {
+      setPhotoUploadCountByItem((prev) => {
+        const next = { ...prev };
+        const n = (next[itemId] ?? 0) + delta;
+        if (n <= 0) delete next[itemId];
+        else next[itemId] = n;
+        return next;
+      });
+    },
+    [],
+  );
 
   const addNoAnswerImages = useCallback(
     async (itemId: number, files: FileList | null) => {
@@ -447,7 +449,10 @@ export function OpsInspectionStartForm({
             return { name: f.name, path } satisfies NoAnswerImageSlot;
           } catch (e: unknown) {
             toast.error(
-              opsInspectionApiError(e, `Could not upload ${f.name}. Try again.`),
+              opsInspectionApiError(
+                e,
+                `Could not upload ${f.name}. Try again.`,
+              ),
             );
             return null;
           } finally {
@@ -455,9 +460,10 @@ export function OpsInspectionStartForm({
           }
         }),
       );
-      const additions = results.filter(
-        (r): r is NoAnswerImageSlot => r !== null && !!r.path,
-      );
+      const additions: NoAnswerImageSlot[] = [];
+      for (const r of results) {
+        if (r?.path) additions.push({ name: r.name, path: r.path });
+      }
       if (!additions.length) return;
       setNoAnswerImages((prev) => ({
         ...prev,
@@ -522,8 +528,7 @@ export function OpsInspectionStartForm({
         const v = (answers[item.id] ?? "").trim();
         if (!v) {
           const label = item.item_text.trim();
-          const short =
-            label.length > 100 ? `${label.slice(0, 100)}…` : label;
+          const short = label.length > 100 ? `${label.slice(0, 100)}…` : label;
           return `Answer every question in this section. Still missing: “${short}”.`;
         }
         if (item.field_type === "yes_no" && v === "no") {
@@ -659,14 +664,13 @@ export function OpsInspectionStartForm({
       damageCause.trim().length > 0 &&
       damageGrade.trim().length > 0;
 
-    const damageBlock =
-      damageFilled ?
-        ({
+    const damageBlock = damageFilled
+      ? {
           damage_type: damageType.trim() as DamageType,
           damage_severity: damageSeverity.trim() as DamageSeverity,
           damage_cause: damageCause.trim() as DamageLikelyCause,
           damage_grade: damageGrade.trim() as DamageGrading,
-        })
+        }
       : {};
 
     setSubmitting(true);
@@ -819,8 +823,8 @@ export function OpsInspectionStartForm({
           <AlertDialogHeader>
             <AlertDialogTitle>Leave this inspection?</AlertDialogTitle>
             <AlertDialogDescription>
-              Progress is saved on this device so a refresh will not lose answers.
-              Leave this page anyway?
+              Progress is saved on this device so a refresh will not lose
+              answers. Leave this page anyway?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -931,7 +935,7 @@ export function OpsInspectionStartForm({
         <Progress value={progressPct} className="h-1.5 bg-muted" />
       </div>
 
-      {step.key === "site" ?
+      {step.key === "site" ? (
         <section className={denseSectionClass(theme)}>
           <div className="space-y-2">
             <Label htmlFor={`w-${mode}`} className="text-xs">
@@ -960,18 +964,16 @@ export function OpsInspectionStartForm({
             </Label>
             <Select
               value={plantSelectValue}
-              onValueChange={(v) =>
-                setPlantCode(v === "__none_out__" ? "" : v)
-              }
+              onValueChange={(v) => setPlantCode(v === "__none_out__" ? "" : v)}
               disabled={!metadata?.plants?.length}
             >
               <SelectTrigger id={`p-${mode}`} className="h-9 w-full">
                 <SelectValue placeholder="Select plant" />
               </SelectTrigger>
               <SelectContent>
-                {mode === "outbound" ?
+                {mode === "outbound" ? (
                   <SelectItem value="__none_out__">NA</SelectItem>
-                : null}
+                ) : null}
                 {(metadata?.plants ?? []).map((p) => (
                   <SelectItem key={p.value} value={p.value}>
                     {p.label}
@@ -1019,9 +1021,9 @@ export function OpsInspectionStartForm({
             />
           </div>
         </section>
-      : null}
+      ) : null}
 
-      {step.key === "damage" ?
+      {step.key === "damage" ? (
         <section className={denseSectionClass(theme)}>
           <p className="mb-2 text-[11px] text-muted-foreground">
             Fill all four or leave all empty.
@@ -1053,9 +1055,9 @@ export function OpsInspectionStartForm({
             />
           </div>
         </section>
-      : null}
+      ) : null}
 
-      {step.group ?
+      {step.group ? (
         <section className={denseSectionClass(theme)}>
           <div className="space-y-2">
             {step.group.items.map((item) => (
@@ -1074,10 +1076,24 @@ export function OpsInspectionStartForm({
             ))}
           </div>
         </section>
-      : null}
+      ) : null}
 
       <footer className="flex flex-col gap-2 pt-1">
-        {stepIndex > 0 ?
+        {!isLastStep ? (
+          <Button type="button" className="w-full" onClick={goNext}>
+            Next
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            className="w-full"
+            disabled={submitting || orderedItems.length === 0}
+            onClick={() => void handleSubmit()}
+          >
+            {submitting ? "Starting…" : "Submit inspection"}
+          </Button>
+        )}
+        {stepIndex > 0 ? (
           <Button
             type="button"
             variant="outline"
@@ -1094,21 +1110,7 @@ export function OpsInspectionStartForm({
               </span>
             </span>
           </Button>
-        : null}
-        {!isLastStep ?
-          <Button type="button" className="w-full" onClick={goNext}>
-            Next
-          </Button>
-        : (
-          <Button
-            type="button"
-            className="w-full"
-            disabled={submitting || orderedItems.length === 0}
-            onClick={() => void handleSubmit()}
-          >
-            {submitting ? "Starting…" : "Submit inspection"}
-          </Button>
-        )}
+        ) : null}
         <Button
           type="button"
           variant="ghost"
@@ -1121,11 +1123,11 @@ export function OpsInspectionStartForm({
         </Button>
       </footer>
 
-      {orderedItems.length === 0 ?
+      {orderedItems.length === 0 ? (
         <p className="text-center text-xs text-muted-foreground">
           No checklist published — you cannot submit yet.
         </p>
-      : null}
+      ) : null}
     </div>
   );
 }
@@ -1195,9 +1197,11 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
           <p className="text-[11px] font-medium text-muted-foreground">
             {item.section}
           </p>
-          <p className="mt-0.5 text-sm font-medium leading-snug">{item.item_text}</p>
+          <p className="mt-0.5 text-sm font-medium leading-snug">
+            {item.item_text}
+          </p>
         </div>
-        {item.field_type === "yes_no" && (isYes || isNo) ?
+        {item.field_type === "yes_no" && (isYes || isNo) ? (
           <Badge
             variant="outline"
             className={cn(
@@ -1210,10 +1214,10 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
           >
             {isYes ? "Yes" : "No"}
           </Badge>
-        : null}
+        ) : null}
       </div>
 
-      {item.field_type === "yes_no" ?
+      {item.field_type === "yes_no" ? (
         <div className="mt-2 space-y-2">
           <div
             className={cn(
@@ -1222,9 +1226,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                 "border-emerald-500/70 bg-emerald-500/12 shadow-[0_0_0_1px_rgba(16,185,129,0.12)]",
               isNo &&
                 "border-rose-500/70 bg-rose-500/12 shadow-[0_0_0_1px_rgba(244,63,94,0.12)]",
-              !isYes &&
-                !isNo &&
-                "border-border/60 bg-muted/15",
+              !isYes && !isNo && "border-border/60 bg-muted/15",
             )}
           >
             <button
@@ -1234,16 +1236,16 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
               className={cn(
                 "shrink-0 rounded-md border border-transparent px-2 py-1 text-sm font-bold tracking-tight transition-colors",
                 "focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none",
-                isNo ? "text-rose-700 dark:text-rose-200" : "text-muted-foreground hover:text-foreground",
+                isNo
+                  ? "text-rose-700 dark:text-rose-200"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               No
             </button>
             <Switch
               checked={isYes}
-              onCheckedChange={(c) =>
-                onAnswerChange(item.id, c ? "yes" : "no")
-              }
+              onCheckedChange={(c) => onAnswerChange(item.id, c ? "yes" : "no")}
               className={cn(
                 "h-9 w-14 shrink-0 data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-rose-600",
               )}
@@ -1255,16 +1257,16 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
               className={cn(
                 "shrink-0 rounded-md border border-transparent px-2 py-1 text-sm font-bold tracking-tight transition-colors",
                 "focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none",
-                isYes ?
-                  "text-emerald-700 dark:text-emerald-200"
-                : "text-muted-foreground hover:text-foreground",
+                isYes
+                  ? "text-emerald-700 dark:text-emerald-200"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               Yes
             </button>
           </div>
 
-          {isNo ?
+          {isNo ? (
             <div className="space-y-2 rounded-lg border border-dashed border-rose-500/25 bg-rose-500/[0.04] p-2">
               <p className="text-[11px] font-medium text-rose-900/80 dark:text-rose-100/90">
                 You chose No — add remarks and photos if useful
@@ -1286,12 +1288,13 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                   <label
                     className={cn(
                       "cursor-pointer",
-                      uploadingPhotoCount > 0 && "pointer-events-none opacity-60",
+                      uploadingPhotoCount > 0 &&
+                        "pointer-events-none opacity-60",
                     )}
                   >
-                    {uploadingPhotoCount > 0 ?
+                    {uploadingPhotoCount > 0 ? (
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    : (
+                    ) : (
                       <Camera className="mr-1.5 h-3.5 w-3.5" />
                     )}
                     {uploadingPhotoCount > 0 ? "Uploading…" : "Add photos"}
@@ -1308,13 +1311,13 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                     />
                   </label>
                 </Button>
-                {item.min_upload_files > 0 ?
+                {item.min_upload_files > 0 ? (
                   <span className="text-[11px] text-muted-foreground">
                     Min {item.min_upload_files} image(s)
                   </span>
-                : null}
+                ) : null}
               </div>
-              {images.length > 0 ?
+              {images.length > 0 ? (
                 <ul className="flex flex-wrap gap-1.5">
                   {images.map((img, i) => (
                     <li
@@ -1337,11 +1340,11 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                     </li>
                   ))}
                 </ul>
-              : null}
+              ) : null}
             </div>
-          : null}
+          ) : null}
         </div>
-      : (
+      ) : (
         <div className="mt-2 space-y-2">
           <Input
             value={answer}
@@ -1349,14 +1352,14 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
             placeholder="Your answer"
             className="h-9 text-sm"
           />
-          {item.allows_remarks ?
+          {item.allows_remarks ? (
             <Input
               value={remark}
               onChange={(e) => onRemarkChange(item.id, e.target.value)}
               placeholder="Remarks (optional)"
               className="h-9 text-sm"
             />
-          : null}
+          ) : null}
         </div>
       )}
     </div>
