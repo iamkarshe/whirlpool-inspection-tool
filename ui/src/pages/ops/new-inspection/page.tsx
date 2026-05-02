@@ -1,6 +1,6 @@
 import { Barcode, ScanLine } from "lucide-react";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -41,11 +41,20 @@ export default function OpsNewInspectionPage() {
 
   const isCodeValid = inspectionCode.trim().length === OPS_BARCODE_LEN;
 
-  const goToUnit = (barcode: string) => {
-    const normalized = barcode.replace(/\s+/g, "").slice(0, OPS_BARCODE_LEN);
+  const goToUnit = useCallback(
+    (barcode: string) => {
+      const normalized = barcode.replace(/\s+/g, "").slice(0, OPS_BARCODE_LEN);
+      if (normalized.length !== OPS_BARCODE_LEN) return;
+      navigate(PAGES.opsNewInspectionUnitPath(normalized));
+    },
+    [navigate],
+  );
+
+  useEffect(() => {
+    const normalized = inspectionCode.replace(/\s+/g, "").trim();
     if (normalized.length !== OPS_BARCODE_LEN) return;
-    navigate(PAGES.opsNewInspectionUnitPath(normalized));
-  };
+    goToUnit(normalized);
+  }, [inspectionCode, goToUnit]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

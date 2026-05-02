@@ -169,126 +169,179 @@ function UnitDetails({ barcode }: { barcode: string }) {
             </span>
             <span>{parsed.product.material_code}</span>
           </div>
-          {parsed.product_unit?.barcode ?
+          {parsed.product_unit?.barcode ? (
             <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
               <span className="shrink-0 font-medium text-foreground">Unit</span>
               <span className="font-mono">{parsed.product_unit.barcode}</span>
             </div>
-          : null}
+          ) : null}
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
         <FlowColumnCard
+          variant="inbound"
           title="Inbound"
-          description="Receiving / inward quality check."
+          description="Receiving · inward QC"
           icon={Import}
           inspection={inbound}
           startHref={startInboundTo}
-          accent="border-sky-500/25 bg-sky-500/[0.06] ring-1 ring-sky-500/15"
         />
         <FlowColumnCard
+          variant="outbound"
           title="Outbound"
-          description="Dispatch / outward quality check."
+          description="Dispatch · outward QC"
           icon={Truck}
           inspection={outbound}
           startHref={startOutboundTo}
-          accent="border-amber-500/25 bg-amber-500/[0.06] ring-1 ring-amber-500/15"
         />
       </div>
 
-      {inbound && outbound ?
+      {inbound && outbound ? (
         <p className="text-center text-sm text-muted-foreground">
           Inbound and outbound inspections already exist for this unit. Open one
           above or use Search.
         </p>
-      : null}
+      ) : null}
     </div>
   );
 }
 
 type FlowColumnCardProps = {
+  variant: "inbound" | "outbound";
   title: string;
   description: string;
   icon: LucideIcon;
   inspection: InspectionWithChecklistPayload | null;
   startHref: string;
-  accent: string;
 };
 
 function FlowColumnCard({
+  variant,
   title,
   description,
   icon: Icon,
   inspection,
   startHref,
-  accent,
 }: FlowColumnCardProps) {
   const recorded = inspection !== null;
-  const reviewStatus = inspection ? readInspectionReviewStatus(inspection) : null;
+  const reviewStatus = inspection
+    ? readInspectionReviewStatus(inspection)
+    : null;
+
+  const accent =
+    variant === "inbound" ?
+      "border-l-[3px] border-l-sky-500/65 bg-sky-500/[0.04] dark:border-l-sky-400/45 dark:bg-sky-950/25"
+    : "border-l-[3px] border-l-amber-500/65 bg-amber-500/[0.04] dark:border-l-amber-400/45 dark:bg-amber-950/20";
+
+  const iconTint =
+    variant === "inbound" ?
+      "text-sky-700/80 dark:text-sky-300/90"
+    : "text-amber-800/80 dark:text-amber-300/90";
+
+  const openButtonClass =
+    variant === "inbound" ?
+      cn(
+        "border-sky-500/40 bg-sky-500/15 text-sky-950 shadow-none hover:bg-sky-500/25 hover:text-sky-950",
+        "dark:border-sky-500/30 dark:bg-sky-950/45 dark:text-sky-50 dark:hover:bg-sky-900/55 dark:hover:text-sky-50",
+      )
+    : cn(
+        "border-amber-500/40 bg-amber-500/15 text-amber-950 shadow-none hover:bg-amber-500/25 hover:text-amber-950",
+        "dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-50 dark:hover:bg-amber-900/50 dark:hover:text-amber-50",
+      );
 
   return (
-    <Card className={cn("flex flex-col ring-1", accent)}>
-      <div className="space-y-3 p-5">
+    <Card
+      className={cn(
+        "flex flex-col overflow-hidden rounded-xl border border-border/50 bg-muted/5 pl-2.5 shadow-none",
+        accent,
+      )}
+    >
+      <div className="flex flex-1 flex-col gap-2 px-2.5 py-2.5">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-background/80 ring-1 ring-border">
-              <Icon className="h-5 w-5 text-muted-foreground" />
-            </span>
-            <div>
-              <p className="text-base font-semibold">{title}</p>
-              <p className="text-xs text-muted-foreground">{description}</p>
+          <div className="min-w-0 flex items-start gap-1.5">
+            <Icon
+              className={cn(
+                "mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80",
+                iconTint,
+              )}
+              aria-hidden
+            />
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {title}
+              </p>
+              <p className="text-[11px] leading-snug text-muted-foreground/90">
+                {description}
+              </p>
             </div>
           </div>
-          {recorded && reviewStatus ?
+          {recorded && reviewStatus ? (
             <Badge
               variant="outline"
-              className={cn("shrink-0 border font-medium", reviewStatusBadgeClass(reviewStatus))}
+              className={cn(
+                "h-5 shrink-0 border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide",
+                reviewStatusBadgeClass(reviewStatus),
+              )}
             >
               {formatReviewStatusLabel(reviewStatus)}
             </Badge>
-          : recorded ?
-            <Badge variant="outline" className="shrink-0 text-muted-foreground">
+          ) : recorded ? (
+            <Badge
+              variant="outline"
+              className="h-5 shrink-0 px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+            >
               Submitted
             </Badge>
-          : (
-            <Badge variant="outline" className="shrink-0">
+          ) : (
+            <Badge
+              variant="outline"
+              className="h-5 shrink-0 border-dashed px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+            >
               Not started
             </Badge>
           )}
         </div>
-        <div className="flex-1 space-y-2 text-sm">
-          {recorded && inspection ?
-            <>
-              <p className="text-muted-foreground">
-                {formatWhen(inspection.created_at)} ·{" "}
-                {summarizeInspection(inspection)}
-              </p>
-              {inspection.warehouse_code ?
-                <p className="text-xs text-muted-foreground">
-                  Warehouse {inspection.warehouse_code}
-                  {inspection.plant_code
-                    ? ` · Plant ${inspection.plant_code}`
-                    : ""}
-                </p>
-              : null}
-            </>
-          : (
-            <p className="text-muted-foreground">
-              No {title.toLowerCase()} inspection for this unit yet.
+
+        {recorded && inspection ?
+          <div className="space-y-1 border-t border-border/40 pt-2">
+            <p className="tabular-nums text-[11px] leading-tight text-foreground/90">
+              {summarizeInspection(inspection)}
             </p>
-          )}
-        </div>
-        <div className="pt-0">
+            <p className="text-[10px] leading-tight text-muted-foreground">
+              {formatWhen(inspection.created_at)}
+            </p>
+            {inspection.warehouse_code ?
+              <p className="font-mono text-[10px] leading-tight text-muted-foreground/90">
+                {inspection.warehouse_code}
+                {inspection.plant_code ? ` · ${inspection.plant_code}` : ""}
+              </p>
+            : null}
+          </div>
+        : (
+          <p className="border-t border-border/40 pt-2 text-[11px] leading-snug text-muted-foreground">
+            No {title.toLowerCase()} record for this unit.
+          </p>
+        )}
+
+        <div className="pt-0.5">
           {recorded && inspection ?
-            <Button asChild className="w-full sm:w-auto">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className={cn(
+                "h-8 w-full text-xs font-medium",
+                openButtonClass,
+              )}
+            >
               <Link to={PAGES.opsInspectionDetailPath(inspection.uuid)}>
-                Open inspection
+                Open Details
               </Link>
             </Button>
           : (
-            <Button asChild className="w-full sm:w-auto">
-              <Link to={startHref}>Start {title.toLowerCase()}</Link>
+            <Button asChild size="sm" className="h-8 w-full text-xs font-medium">
+              <Link to={startHref}>Start Inspection</Link>
             </Button>
           )}
         </div>
