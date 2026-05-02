@@ -111,6 +111,7 @@ async def custom_404_handler(request: Request, exc):
                 "success": False,
                 "error": "Resource not found",
                 "custom_404": True,
+                "exception": str(exc),
             },
         )
 

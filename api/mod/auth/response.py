@@ -13,6 +13,7 @@ class LoginResponse(BaseModel):
     is_active: bool
     access_token: str
     token_type: str = "bearer"
+    device_uuid: uuid.UUID | None = None
 
 
 class ForgotPasswordResponse(BaseModel):

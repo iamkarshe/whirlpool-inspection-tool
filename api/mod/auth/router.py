@@ -107,6 +107,7 @@ def login(
         designation=user.designation,
         is_active=user.is_active,
         access_token=access_token,
+        device_uuid=device.uuid if device is not None else None,
     )
 
 
