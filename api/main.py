@@ -97,9 +97,15 @@ def version():
 async def api_docs(
     request: Request,
 ):
+    api_title = "Whirlpool PDI Tool"
     api_spec_url = "/openapi.json"
     return templates.TemplateResponse(
-        "api-docs/index.html", {"request": request, "api_spec_url": api_spec_url}
+        "api-docs/index.html",
+        {
+            "request": request,
+            "api_spec_url": api_spec_url,
+            "api_title": api_title,
+        },
     )
 
 
