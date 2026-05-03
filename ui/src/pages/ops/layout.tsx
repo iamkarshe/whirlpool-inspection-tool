@@ -189,24 +189,11 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   return (
     <div className={cn("flex min-h-screen flex-col bg-background", className)}>
       <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur_">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                {import.meta.env.VITE_APP_TITLE}
-              </p>
-              {sessionUser?.role?.trim() ? (
-                <span
-                  className={cn(
-                    "inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] tabular-nums",
-                    roleBadgeClass,
-                  )}
-                >
-                  {formatOpsRoleBadgeLabel(sessionUser.role)}
-                </span>
-              ) : null}
-            </div>
-
+        <div className="mx-auto flex max-w-md items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              {import.meta.env.VITE_APP_TITLE}
+            </p>
             {shouldRenderLogo && <BrandLogo />}
             {!shouldRenderLogo && (
               <p
@@ -217,16 +204,28 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => navigate("/ops/account")}
-            title={
-              sessionUser?.name?.trim()?.length ? sessionUser.name : "Account"
-            }
-            className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full border bg-primary/10 px-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/15"
-          >
-            {headerInitials}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {sessionUser?.role?.trim() ? (
+              <span
+                className={cn(
+                  "inline-flex max-w-[10.5rem] items-center truncate rounded-md border px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] tabular-nums sm:max-w-[14rem]",
+                  roleBadgeClass,
+                )}
+              >
+                {formatOpsRoleBadgeLabel(sessionUser.role)}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => navigate("/ops/account")}
+              title={
+                sessionUser?.name?.trim()?.length ? sessionUser.name : "Account"
+              }
+              className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full border bg-primary/10 px-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/15"
+            >
+              {headerInitials}
+            </button>
+          </div>
         </div>
       </header>
       <main className="flex-1 px-4 pb-20 pt-3">
