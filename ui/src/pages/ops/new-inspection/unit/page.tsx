@@ -230,25 +230,41 @@ function FlowColumnCard({
     : null;
 
   const accent =
-    variant === "inbound" ?
-      "border-l-[3px] border-l-sky-500/65 bg-sky-500/[0.04] dark:border-l-sky-400/45 dark:bg-sky-950/25"
-    : "border-l-[3px] border-l-amber-500/65 bg-amber-500/[0.04] dark:border-l-amber-400/45 dark:bg-amber-950/20";
+    variant === "inbound"
+      ? "border-l-[3px] border-l-sky-500/65 bg-sky-500/[0.04] dark:border-l-sky-400/45 dark:bg-sky-950/25"
+      : "border-l-[3px] border-l-amber-500/65 bg-amber-500/[0.04] dark:border-l-amber-400/45 dark:bg-amber-950/20";
 
   const iconTint =
-    variant === "inbound" ?
-      "text-sky-700/80 dark:text-sky-300/90"
-    : "text-amber-800/80 dark:text-amber-300/90";
+    variant === "inbound"
+      ? "text-sky-700/80 dark:text-sky-300/90"
+      : "text-amber-800/80 dark:text-amber-300/90";
 
   const openButtonClass =
-    variant === "inbound" ?
-      cn(
-        "border-sky-500/40 bg-sky-500/15 text-sky-950 shadow-none hover:bg-sky-500/25 hover:text-sky-950",
-        "dark:border-sky-500/30 dark:bg-sky-950/45 dark:text-sky-50 dark:hover:bg-sky-900/55 dark:hover:text-sky-50",
-      )
-    : cn(
-        "border-amber-500/40 bg-amber-500/15 text-amber-950 shadow-none hover:bg-amber-500/25 hover:text-amber-950",
-        "dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-50 dark:hover:bg-amber-900/50 dark:hover:text-amber-50",
-      );
+    variant === "inbound"
+      ? cn(
+          "border-sky-500/40 bg-sky-500/15 text-sky-950 shadow-none hover:bg-sky-500/25 hover:text-sky-950",
+          "dark:border-sky-500/30 dark:bg-sky-950/45 dark:text-sky-50 dark:hover:bg-sky-900/55 dark:hover:text-sky-50",
+        )
+      : cn(
+          "border-amber-500/40 bg-amber-500/15 text-amber-950 shadow-none hover:bg-amber-500/25 hover:text-amber-950",
+          "dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-50 dark:hover:bg-amber-900/50 dark:hover:text-amber-50",
+        );
+
+  const titleColor =
+    variant === "inbound"
+      ? "text-sky-950 dark:text-sky-50"
+      : "text-amber-950 dark:text-amber-50";
+
+  const notStartedBadgeClass =
+    variant === "inbound"
+      ? cn(
+          "border-sky-400/45 bg-sky-500/[0.12] text-sky-950 shadow-sm ring-1 ring-sky-500/15",
+          "dark:border-sky-500/35 dark:bg-sky-950/55 dark:text-sky-100 dark:ring-sky-400/10",
+        )
+      : cn(
+          "border-amber-400/45 bg-amber-500/[0.12] text-amber-950 shadow-sm ring-1 ring-amber-500/15",
+          "dark:border-amber-500/35 dark:bg-amber-950/50 dark:text-amber-50 dark:ring-amber-400/10",
+        );
 
   return (
     <Card
@@ -257,21 +273,30 @@ function FlowColumnCard({
         accent,
       )}
     >
-      <div className="flex flex-1 flex-col gap-2 px-2.5 py-2.5">
+      <div className="flex flex-1 flex-col gap-1.5 px-2.5 py-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex items-start gap-1.5">
-            <Icon
+          <div className="min-w-0 flex items-start gap-2">
+            <div
               className={cn(
-                "mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80",
-                iconTint,
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-sm",
+                variant === "inbound"
+                  ? "border-sky-500/25 bg-sky-500/15 dark:border-sky-500/20 dark:bg-sky-950/40"
+                  : "border-amber-500/25 bg-amber-500/15 dark:border-amber-500/20 dark:bg-amber-950/35",
               )}
               aria-hidden
-            />
+            >
+              <Icon className={cn("h-5 w-5", iconTint)} strokeWidth={2.25} />
+            </div>
             <div className="min-w-0 space-y-0.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <p
+                className={cn(
+                  "text-lg font-bold leading-none tracking-tight sm:text-xl",
+                  titleColor,
+                )}
+              >
                 {title}
               </p>
-              <p className="text-[11px] leading-snug text-muted-foreground/90">
+              <p className="text-xs font-medium leading-snug text-muted-foreground">
                 {description}
               </p>
             </div>
@@ -294,53 +319,65 @@ function FlowColumnCard({
               Submitted
             </Badge>
           ) : (
-            <Badge
-              variant="outline"
-              className="h-5 shrink-0 border-dashed px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+            <span
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums",
+                notStartedBadgeClass,
+              )}
             >
+              <span
+                className={cn(
+                  "h-2 w-2 shrink-0 rounded-full ring-2 ring-background/80",
+                  variant === "inbound"
+                    ? "bg-sky-500 shadow-[0_0_0_1px_rgba(14,165,233,0.35)] dark:bg-sky-400"
+                    : "bg-amber-500 shadow-[0_0_0_1px_rgba(245,158,11,0.35)] dark:bg-amber-400",
+                )}
+                aria-hidden
+              />
               Not started
-            </Badge>
+            </span>
           )}
         </div>
 
-        {recorded && inspection ?
-          <div className="space-y-1 border-t border-border/40 pt-2">
+        {recorded && inspection ? (
+          <div className="space-y-0.5 border-t border-border/40 pt-1.5">
             <p className="tabular-nums text-[11px] leading-tight text-foreground/90">
               {summarizeInspection(inspection)}
             </p>
             <p className="text-[10px] leading-tight text-muted-foreground">
               {formatWhen(inspection.created_at)}
             </p>
-            {inspection.warehouse_code ?
+            {inspection.warehouse_code ? (
               <p className="font-mono text-[10px] leading-tight text-muted-foreground/90">
                 {inspection.warehouse_code}
                 {inspection.plant_code ? ` · ${inspection.plant_code}` : ""}
               </p>
-            : null}
+            ) : null}
           </div>
-        : (
-          <p className="border-t border-border/40 pt-2 text-[11px] leading-snug text-muted-foreground">
+        ) : (
+          <p className="hidden border-t border-border/40 pt-1.5 text-[11px] leading-snug text-muted-foreground">
             No {title.toLowerCase()} record for this unit.
           </p>
         )}
 
-        <div className="pt-0.5">
-          {recorded && inspection ?
+        <div className="pt-0">
+          {recorded && inspection ? (
             <Button
               asChild
               size="sm"
               variant="outline"
-              className={cn(
-                "h-8 w-full text-xs font-medium",
-                openButtonClass,
-              )}
+              className={cn("h-8 w-full text-xs font-medium", openButtonClass)}
             >
               <Link to={PAGES.opsInspectionDetailPath(inspection.uuid)}>
                 Open Details
               </Link>
             </Button>
-          : (
-            <Button asChild size="sm" className="h-8 w-full text-xs font-medium">
+          ) : (
+            <Button
+              asChild
+              size="sm"
+              className="h-8 w-full text-xs font-medium"
+            >
               <Link to={startHref}>Start Inspection</Link>
             </Button>
           )}

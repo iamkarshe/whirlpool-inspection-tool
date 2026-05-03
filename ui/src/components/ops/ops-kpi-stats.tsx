@@ -5,9 +5,10 @@ import { formatKpiDateRange } from "@/lib/format-kpi-period";
 import { cn } from "@/lib/utils";
 
 const KPI_LABEL =
-  "text-[10px] font-medium uppercase leading-tight tracking-wide text-muted-foreground";
+  "font-sans text-[10px] font-bold uppercase leading-tight tracking-wide text-muted-foreground";
 
-const KPI_VALUE = "mt-1 text-lg font-semibold tabular-nums text-foreground";
+const KPI_VALUE =
+  "mt-1 font-mono text-lg font-semibold tabular-nums tracking-tight text-foreground";
 
 export type OpsKpiStatTone = "neutral" | "review" | "approved" | "rejected";
 
@@ -103,7 +104,7 @@ export function OpsKpiMetricGroup({
         className,
       )}
     >
-      <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="mb-2.5 font-mono text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       {children}

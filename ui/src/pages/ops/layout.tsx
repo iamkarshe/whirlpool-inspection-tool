@@ -15,7 +15,10 @@ import {
   opsInspectionListTitle,
   parseOpsInspectionListQuery,
 } from "@/lib/ops-inspection-list-query";
-import { isOpsManagerRole } from "@/lib/ops-role";
+import {
+  canOpsRoleStartNewInspection,
+  isOpsManagerRole,
+} from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
 import { CircleUser, Home, LineChart, ScanLine, Users } from "lucide-react";
 import React, { useEffect } from "react";
@@ -77,8 +80,11 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   };
 
   const navTabs = React.useMemo(() => {
-    if (!isOpsManagerRole(sessionUser?.role)) return DEFAULT_TABS;
-    const [home, ...rest] = DEFAULT_TABS;
+    const base = canOpsRoleStartNewInspection(sessionUser?.role)
+      ? DEFAULT_TABS
+      : DEFAULT_TABS.filter((t) => t.path !== "/ops/new-inspection");
+    if (!isOpsManagerRole(sessionUser?.role)) return base;
+    const [home, ...rest] = base;
     return [home!, { label: "Team", path: "/ops/team", icon: Users }, ...rest];
   }, [sessionUser?.role]);
 

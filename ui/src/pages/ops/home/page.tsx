@@ -14,7 +14,10 @@ import { useNavigate } from "react-router-dom";
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { firstNameFromDisplayName } from "@/lib/ops-user-display";
-import { isOpsManagerRole } from "@/lib/ops-role";
+import {
+  canOpsRoleStartNewInspection,
+  isOpsManagerRole,
+} from "@/lib/ops-role";
 import { getInspectionsPendingManagerReview } from "@/pages/dashboard/inspections/inspection-service";
 
 export default function OpsHomePage() {
@@ -30,6 +33,7 @@ export default function OpsHomePage() {
   }, [sessionUser?.name]);
 
   const isManager = isOpsManagerRole(sessionUser?.role);
+  const canNewInspection = canOpsRoleStartNewInspection(sessionUser?.role);
 
   useEffect(() => {
     if (!isManager) return;
@@ -78,10 +82,10 @@ export default function OpsHomePage() {
               <ClipboardCheck className="h-6 w-6" />
             </div>
             <div className="min-w-0 space-y-0.5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-violet-900 dark:text-violet-100">
+              <p className="font-mono text-xs font-semibold uppercase tracking-wide text-violet-900 dark:text-violet-100">
                 Review queue
               </p>
-              <p className="text-2xl font-bold tabular-nums leading-none">
+              <p className="font-mono text-2xl font-bold tabular-nums tracking-tight leading-none">
                 {reviewCountFailed
                   ? "—"
                   : pendingReviewCount === null
@@ -196,24 +200,26 @@ export default function OpsHomePage() {
       </header>
 
       <section className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(PAGES.OPS_NEW_INSPECTION)}
-          className="group flex h-32 flex-col justify-between rounded-3xl border bg-emerald-500/5 p-3 text-left shadow-sm ring-1 ring-emerald-500/10 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/10 hover:shadow-md active:translate-y-0"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="inline-flex rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-              New Scan
-            </span>
-            <ScanLine className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">New Inspection</p>
-            <p className="text-[11px] text-muted-foreground">
-              Scan and log a fresh product inspection.
-            </p>
-          </div>
-        </button>
+        {canNewInspection ? (
+          <button
+            type="button"
+            onClick={() => navigate(PAGES.OPS_NEW_INSPECTION)}
+            className="group flex h-32 flex-col justify-between rounded-3xl border bg-emerald-500/5 p-3 text-left shadow-sm ring-1 ring-emerald-500/10 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/10 hover:shadow-md active:translate-y-0"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                New Scan
+              </span>
+              <ScanLine className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">New Inspection</p>
+              <p className="text-[11px] text-muted-foreground">
+                Scan and log a fresh product inspection.
+              </p>
+            </div>
+          </button>
+        ) : null}
 
         <button
           type="button"

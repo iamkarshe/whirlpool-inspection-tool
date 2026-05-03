@@ -172,18 +172,21 @@ export default function OpsTeamPage() {
         </div>
       ) : null}
 
-      <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <ClipboardCheck className="h-5 w-5 text-primary" />
-          <h2 className="text-sm font-semibold">Inspection review</h2>
+      <section className="space-y-2 rounded-3xl border bg-card/80 p-4 text-center shadow-sm">
+        <div className="flex items-center justify-center gap-2">
+          <ClipboardCheck className="h-5 w-5 shrink-0 text-primary" />
+          <h2 className="text-sm font-semibold">Inspection Review</h2>
         </div>
         <p className="text-xs text-muted-foreground">
           Open the queue, tap an inspection, then approve or reject after
           checking checklist results and photos.
         </p>
-        <Button className="w-full" asChild>
-          <Link to={PAGES.OPS_TEAM_REVIEW}>
-            <ListChecks className="mr-2 h-4 w-4" />
+        <Button asChild>
+          <Link
+            to={PAGES.OPS_TEAM_REVIEW}
+            className="inline-flex w-full items-center justify-center gap-2"
+          >
+            <ListChecks className="h-4 w-4 shrink-0" />
             Open review queue
           </Link>
         </Button>

@@ -15,7 +15,10 @@ import { toast } from "sonner";
 
 import { InspectionReviewStatus } from "@/api/generated/model/inspectionReviewStatus";
 import { useSessionUser } from "@/hooks/use-session-user";
-import { isOpsManagerRole } from "@/lib/ops-role";
+import {
+  canOpsRoleStartNewInspection,
+  isOpsManagerRole,
+} from "@/lib/ops-role";
 
 import type {
   IssueSeverity,
@@ -888,12 +891,14 @@ export default function OpsInspectionDetailPage() {
         </TabsContent>
       </Tabs>
 
-      <Button className="w-full" variant="outline" asChild>
-        <Link to={PAGES.OPS_NEW_INSPECTION}>
-          <Camera className="mr-2 h-4 w-4" />
-          Start new inspection
-        </Link>
-      </Button>
+      {canOpsRoleStartNewInspection(sessionUser?.role) ? (
+        <Button className="w-full" variant="outline" asChild>
+          <Link to={PAGES.OPS_NEW_INSPECTION}>
+            <Camera className="mr-2 h-4 w-4" />
+            Start new inspection
+          </Link>
+        </Button>
+      ) : null}
     </div>
   );
 }

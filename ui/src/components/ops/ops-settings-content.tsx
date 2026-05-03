@@ -43,7 +43,7 @@ export function OpsSettingsContent() {
           <DialogHeader>
             <DialogTitle>Choose theme</DialogTitle>
             <DialogDescription>
-              Pick how the Ops app should look on this device.
+              Pick how this app should look on this device.
             </DialogDescription>
           </DialogHeader>
           <div className="mt-2 space-y-2">

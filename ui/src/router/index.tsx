@@ -8,6 +8,7 @@ import EmptyComponent from "@/components/empty4";
 // Routers
 import PrivateRouter from "@/router/PrivateRouter";
 import { OpsRouter } from "@/router/OpsRouter";
+import { OpsNewInspectionRoleGate } from "@/pages/ops/new-inspection/ops-new-inspection-role-gate";
 const PublicRouter = lazy(() =>
   import("@/router/PublicRouter").then((m) => ({ default: m.PublicRouter })),
 );
@@ -321,47 +322,52 @@ export const router = createBrowserRouter([
           },
           {
             path: "new-inspection",
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <OpsNewInspectionLayout />
-              </Suspense>
-            ),
+            element: <OpsNewInspectionRoleGate />,
             children: [
               {
-                index: true,
-                handle: { title: "New Inspection" },
                 element: (
                   <Suspense fallback={<PageLoader />}>
-                    <OpsNewInspectionPage />
+                    <OpsNewInspectionLayout />
                   </Suspense>
                 ),
-              },
-              {
-                path: "unit/:barcode",
-                handle: { title: "Inspection" },
-                element: (
-                  <Suspense fallback={<PageLoader />}>
-                    <OpsNewInspectionUnitPage />
-                  </Suspense>
-                ),
-              },
-              {
-                path: "inbound",
-                handle: { title: "New Inbound Inspection" },
-                element: (
-                  <Suspense fallback={<PageLoader />}>
-                    <OpsNewInspectionInboundPage />
-                  </Suspense>
-                ),
-              },
-              {
-                path: "outbound",
-                handle: { title: "New Outbound Inspection" },
-                element: (
-                  <Suspense fallback={<PageLoader />}>
-                    <OpsNewInspectionOutboundPage />
-                  </Suspense>
-                ),
+                children: [
+                  {
+                    index: true,
+                    handle: { title: "New Inspection" },
+                    element: (
+                      <Suspense fallback={<PageLoader />}>
+                        <OpsNewInspectionPage />
+                      </Suspense>
+                    ),
+                  },
+                  {
+                    path: "unit/:barcode",
+                    handle: { title: "Inspection" },
+                    element: (
+                      <Suspense fallback={<PageLoader />}>
+                        <OpsNewInspectionUnitPage />
+                      </Suspense>
+                    ),
+                  },
+                  {
+                    path: "inbound",
+                    handle: { title: "New Inbound Inspection" },
+                    element: (
+                      <Suspense fallback={<PageLoader />}>
+                        <OpsNewInspectionInboundPage />
+                      </Suspense>
+                    ),
+                  },
+                  {
+                    path: "outbound",
+                    handle: { title: "New Outbound Inspection" },
+                    element: (
+                      <Suspense fallback={<PageLoader />}>
+                        <OpsNewInspectionOutboundPage />
+                      </Suspense>
+                    ),
+                  },
+                ],
               },
             ],
           },
