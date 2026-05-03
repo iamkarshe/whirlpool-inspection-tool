@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import List, Literal
 
-from pydantic import AnyUrl, BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from mod.api.inspection.checklist_inspection import (
     ChecklistItemResponse,

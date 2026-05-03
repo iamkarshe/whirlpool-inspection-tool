@@ -4,9 +4,11 @@ import math
 import re
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, UploadFile
-from zoneinfo import ZoneInfo
+
+from utils.env import get_env_optional
 
 YES_NO_PASS_VALUES: frozenset[str] = frozenset({"yes", "y", "pass", "true", "1", "ok"})
 YES_NO_FAIL_VALUES: frozenset[str] = frozenset({"no", "n", "fail", "false", "0"})
@@ -172,7 +174,10 @@ INDIA_LAT_MIN = 6.0
 INDIA_LAT_MAX = 37.6
 INDIA_LNG_MIN = 68.0
 INDIA_LNG_MAX = 97.8
-MAX_INSPECTION_DISTANCE_KM_FROM_WAREHOUSE = 9995.0
+
+MAX_INSPECTION_DISTANCE_KM_FROM_WAREHOUSE = get_env_optional(
+    "MAX_INSPECTION_DISTANCE_KM_FROM_WAREHOUSE", 5
+)
 
 
 def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
