@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.checklist_inspection import (
     ChecklistItemResponse,
+    ChecklistLayerPassFail,
+    InspectionInputItemResponse,
     InspectionWithChecklistPayload,
     map_checklist_item,
     map_inspection_with_checklist_inputs,
@@ -29,6 +31,7 @@ from mod.api.inspection.response import (
     InspectionDropdownOption,
     InspectionListItemResponse,
     InspectionPassFailCounts,
+    InspectionProductForPrint,
     InspectionReviewHistoryItem,
     InspectionReviewStatusUpdateRequest,
     StartInboundInspectionRequest,
@@ -38,7 +41,7 @@ from mod.api.plant.helper import get_plant_by_uuid_or_404
 from mod.api.product.helper import map_product
 from mod.api.product_category.helper import map_product_category
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
-from mod.api.inspection.media import compress_image, upload_media
+from mod.api.inspection.media import build_url, compress_image, upload_media
 from mod.model import (
     Checklist,
     ChecklistFieldType,
@@ -71,7 +74,6 @@ from utils.common import (
     parse_yes_no_outcome,
     utc_end_exclusive_day_range,
 )
-from utils.decorator import request_is_operator_only
 
 
 def enforced_checklist_image_count(ch: Checklist, answer_value: str) -> int:
@@ -112,7 +114,7 @@ def resolve_inspection_scope_filters(
     return warehouse_code, plant_code
 
 
-def _roles_from_request(request: Request) -> list[str]:
+def roles_from_request(request: Request) -> list[str]:
     role_raw = getattr(request.state, "role", None) or ""
     return [r.strip() for r in str(role_raw).split(",") if r.strip()]
 
@@ -128,7 +130,7 @@ def resolve_inspection_kpi_warehouse_codes(
     ``warehouse_uuid``). Returns a non-empty list to restrict to those codes, or
     an empty list when the user has no assigned warehouses (all KPI counts zero).
     """
-    roles = _roles_from_request(request)
+    roles = roles_from_request(request)
     if "superadmin" in roles:
         if warehouse_uuid is None:
             return None
@@ -579,7 +581,7 @@ def apply_inspection_api_loads(query):
         joinedload(Inspection.inspector),
         joinedload(Inspection.reviewer),
         joinedload(Inspection.device),
-        joinedload(Inspection.product),
+        joinedload(Inspection.product).joinedload(Product.product_category),
         joinedload(Inspection.product_unit),
         joinedload(Inspection.review_events).joinedload(InspectionReviewEvent.actor),
         joinedload(Inspection.inputs).joinedload(InspectionInput.checklist),
@@ -683,20 +685,66 @@ def save_inspection_image_upload(
     return InspectionImageUploadResponse(path=path)
 
 
+def map_inspection_product_for_print(inspection: Inspection) -> InspectionProductForPrint:
+    unit = inspection.product_unit
+    product = inspection.product
+    category = product.product_category if product else None
+    serial = inspection.serial_number
+    serial_s = (str(serial).strip() if serial is not None else "") or None
+    return InspectionProductForPrint(
+        barcode=(unit.barcode if unit else "") or "",
+        product_unit_uuid=unit.uuid if unit else None,
+        material_code=(product.material_code if product else "") or "",
+        material_description=(product.material_description if product else "") or "",
+        product_category_name=(category.name if category else "") or "",
+        inspection_serial_number=serial_s,
+    )
+
+
+def embed_inspection_media_urls(
+    body: InspectionWithChecklistPayload,
+) -> tuple[list[InspectionInputItemResponse], list[str], list[str], list[str]]:
+    """Apply ``build_url`` to packaging/product image lists and checklist image URLs."""
+    outer_layer_urls = [build_url(p) for p in body.outer_packaging_images]
+    inner_layer_urls = [build_url(p) for p in body.inner_packaging_images]
+    product_layer_urls = [build_url(p) for p in body.product_images]
+    inputs_out = [
+        inp.model_copy(
+            update={"image_urls": [build_url(u) for u in inp.image_urls]}
+        )
+        for inp in body.inputs
+    ]
+    return inputs_out, outer_layer_urls, inner_layer_urls, product_layer_urls
+
+
 def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:
     """Single place to build the full inspection row (detail + checklist parity)."""
     detail = map_inspection_detail(inspection)
     body = map_inspection_with_checklist_inputs(inspection)
+    inputs_out, outer_imgs, inner_imgs, product_imgs = embed_inspection_media_urls(body)
     return InspectionFullResponse(
         **detail.model_dump(),
+        product=map_inspection_product_for_print(inspection),
         product_unit_id=body.product_unit_id,
-        inputs=body.inputs,
-        outer_packaging_images=body.outer_packaging_images,
-        inner_packaging_images=body.inner_packaging_images,
-        product_images=body.product_images,
-        outer_packaging_checks=body.outer_packaging_checks,
-        inner_packaging_checks=body.inner_packaging_checks,
-        product_checks=body.product_checks,
+        inputs=inputs_out,
+        outer_packaging_images=outer_imgs,
+        inner_packaging_images=inner_imgs,
+        product_images=product_imgs,
+        outer_packaging_checks=ChecklistLayerPassFail(
+            pass_count=body.outer_packaging_checks.pass_count,
+            fail_count=body.outer_packaging_checks.fail_count,
+            image_urls=outer_imgs,
+        ),
+        inner_packaging_checks=ChecklistLayerPassFail(
+            pass_count=body.inner_packaging_checks.pass_count,
+            fail_count=body.inner_packaging_checks.fail_count,
+            image_urls=inner_imgs,
+        ),
+        product_checks=ChecklistLayerPassFail(
+            pass_count=body.product_checks.pass_count,
+            fail_count=body.product_checks.fail_count,
+            image_urls=product_imgs,
+        ),
         checklist_pass_total=body.checklist_pass_total,
         checklist_fail_total=body.checklist_fail_total,
     )

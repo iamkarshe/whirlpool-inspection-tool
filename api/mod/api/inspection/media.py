@@ -4,10 +4,34 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
+from urllib.parse import urljoin
 
 from PIL import Image, ImageOps
 
+from utils.env import get_media_base_url
+
 API_ROOT = Path(__file__).resolve().parents[3]
+
+
+def build_url(relative_path: str | None) -> str:
+    """Turn a stored media path (e.g. ``uploads/inspections/...``) into an embeddable URL.
+
+    Uses :func:`utils.env.get_media_base_url` (``MEDIA_BASE_URL``, then ``CDN_BASE_URL``).
+    If neither is set, returns a root-relative path (``/...``) so the same API host can
+    serve files mounted under ``/uploads``.
+    """
+    if relative_path is None:
+        return ""
+    p = str(relative_path).strip()
+    if not p:
+        return ""
+    if p.startswith(("http://", "https://", "//")):
+        return p
+    base = (get_media_base_url() or "").strip()
+    rel = p if p.startswith("/") else f"/{p.lstrip('/')}"
+    if not base:
+        return rel
+    return urljoin(base.rstrip("/") + "/", rel.lstrip("/"))
 
 
 def compress_image(

@@ -180,6 +180,23 @@ class InspectionImageUploadResponse(BaseModel):
     path: str
 
 
+class InspectionProductForPrint(BaseModel):
+    """Product unit + product fields commonly needed on printed inspection slips."""
+
+    barcode: str = Field(
+        default="",
+        description="Product unit barcode (16-char scan id when registered).",
+    )
+    product_unit_uuid: uuid.UUID | None = None
+    material_code: str = ""
+    material_description: str = ""
+    product_category_name: str = ""
+    inspection_serial_number: str | None = Field(
+        None,
+        description="Serial captured on the inspection (may differ from barcode payload).",
+    )
+
+
 class InspectionDetailResponse(BaseModel):
     id: int
     uuid: uuid.UUID
@@ -209,6 +226,7 @@ class InspectionDetailResponse(BaseModel):
 class InspectionFullResponse(InspectionDetailResponse):
     """Detail row plus checklist inputs, images, and pass/fail counts (parse-barcode parity)."""
 
+    product: InspectionProductForPrint
     product_unit_id: int
     inputs: list[InspectionInputItemResponse]
     outer_packaging_images: list[str]

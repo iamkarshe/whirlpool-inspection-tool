@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session, joinedload
 
 from mod.model import (
@@ -58,6 +58,13 @@ class InspectionInputItemResponse(BaseModel):
 class ChecklistLayerPassFail(BaseModel):
     pass_count: int = 0
     fail_count: int = 0
+    image_urls: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Layer inspection photos as fully qualified URLs; set on full inspection "
+            "responses, empty on parse-barcode and other lightweight payloads."
+        ),
+    )
 
 
 class InspectionWithChecklistPayload(BaseModel):
