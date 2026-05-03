@@ -74,7 +74,11 @@ def login(
         )
 
     role: Role | None = db.query(Role).filter(Role.id == user.role_id).first()
-    role_name = role.role
+    role_name = role.role if role is not None else ""
+    is_superadmin = (role_name or "").lower() == "superadmin"
+    allowed_warehouses: list[str] | None = (
+        None if is_superadmin else list(user.allowed_warehouse)
+    )
 
     access_token = create_access_token(user_id=user.id)
 
@@ -108,6 +112,7 @@ def login(
         is_active=user.is_active,
         access_token=access_token,
         device_uuid=device.uuid if device is not None else None,
+        allowed_warehouses=allowed_warehouses,
     )
 
 
