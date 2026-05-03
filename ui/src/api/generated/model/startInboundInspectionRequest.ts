@@ -17,8 +17,7 @@ export interface StartInboundInspectionRequest {
   device_uuid: string;
   /** @minLength 1 */
   warehouse_code: string;
-  /** @minLength 1 */
-  supplier_plant_code: string;
+  supplier_plant_code?: string | null;
   /**
      * @minimum 6
      * @maximum 37.6

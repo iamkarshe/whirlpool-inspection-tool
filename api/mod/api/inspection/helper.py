@@ -1046,7 +1046,7 @@ def create_inspection(
             raise HTTPException(
                 status_code=400,
                 detail={
-                    "message": "Inspection location must be within 5 km of the selected warehouse",
+                    "message": "Inspection location must be within 5 km of the selected warehouse.",
                     "distance_km": round(dist_km, 3),
                     "max_km": MAX_INSPECTION_DISTANCE_KM_FROM_WAREHOUSE,
                 },

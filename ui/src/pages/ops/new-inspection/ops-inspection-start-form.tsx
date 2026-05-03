@@ -224,6 +224,8 @@ export function OpsInspectionStartForm({
   const [noDamageAckOpen, setNoDamageAckOpen] = useState(false);
   const [draftSaveReady, setDraftSaveReady] = useState(false);
   const leaveIntentRef = useRef<"barcode" | "blocker" | null>(null);
+  /** When true, skip leave prompts for the next in-app navigation (successful inspection POST). */
+  const allowNavigationWithoutLeavePromptRef = useRef(false);
   const draftHydratedRef = useRef(false);
   const draftPayloadRef = useRef<OpsInspectionDraftV1 | null>(null);
 
@@ -299,7 +301,7 @@ export function OpsInspectionStartForm({
       }
       setStartedAt(draft.startedAt);
       setWarehouseCode(draft.warehouseCode);
-      setPlantCode(draft.plantCode);
+      setPlantCode(mode === "outbound" ? draft.plantCode : "");
       setTruckNumber(draft.truckNumber);
       setDockNumber(draft.dockNumber);
       setTruckDockingLocal(draft.truckDockingLocal);
@@ -321,7 +323,7 @@ export function OpsInspectionStartForm({
   const dirty = useMemo(() => {
     if (stepIndex > 0) return true;
     if (warehouseCode.trim()) return true;
-    if (plantCode.trim()) return true;
+    if (mode === "outbound" && plantCode.trim()) return true;
     if (truckNumber.trim()) return true;
     if (dockNumber.trim()) return true;
     if (damageType || damageSeverity || damageCause || damageGrade) return true;
@@ -333,6 +335,7 @@ export function OpsInspectionStartForm({
   }, [
     stepIndex,
     warehouseCode,
+    mode,
     plantCode,
     truckNumber,
     dockNumber,
@@ -350,6 +353,7 @@ export function OpsInspectionStartForm({
 
   const shouldBlockNavigation = useCallback<BlockerFunction>(
     ({ currentLocation, nextLocation }) => {
+      if (allowNavigationWithoutLeavePromptRef.current) return false;
       if (!dirtyRef.current) return false;
       return (
         currentLocation.pathname !== nextLocation.pathname ||
@@ -371,6 +375,7 @@ export function OpsInspectionStartForm({
   useEffect(() => {
     if (!dirty || loadingLocal) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (allowNavigationWithoutLeavePromptRef.current) return;
       e.preventDefault();
     };
     window.addEventListener("beforeunload", onBeforeUnload);
@@ -506,7 +511,7 @@ export function OpsInspectionStartForm({
 
   const siteStepError = useCallback((): string | null => {
     if (!warehouseCode.trim()) return "Choose a warehouse from the list.";
-    if (mode === "inbound" && !plantCode.trim()) {
+    if (mode === "outbound" && !plantCode.trim()) {
       return "Choose a supplier plant.";
     }
     const truck = truckNumber.trim();
@@ -693,7 +698,6 @@ export function OpsInspectionStartForm({
           barcode,
           device_uuid: deviceUuid,
           warehouse_code: warehouseCode.trim(),
-          supplier_plant_code: plantCode.trim(),
           lat: coords.lat,
           lng: coords.lng,
           truck_number: truckNumberNormalized,
@@ -704,13 +708,14 @@ export function OpsInspectionStartForm({
         });
         clearInspectionDraft(mode, barcode);
         toast.success("Inbound inspection started.");
+        allowNavigationWithoutLeavePromptRef.current = true;
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
       } else {
         const res = await startOpsOutboundInspection({
           barcode,
           device_uuid: deviceUuid,
           warehouse_code: warehouseCode.trim(),
-          supplier_plant_code: plantCode.trim() || null,
+          supplier_plant_code: plantCode.trim(),
           lat: coords.lat,
           lng: coords.lng,
           truck_number: truckNumberNormalized,
@@ -721,15 +726,16 @@ export function OpsInspectionStartForm({
         });
         clearInspectionDraft(mode, barcode);
         toast.success("Outbound inspection started.");
+        allowNavigationWithoutLeavePromptRef.current = true;
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
       }
     } catch (e: unknown) {
       const { title, message } = inspectionsApiValidationDialogContent(
         e,
-        "Could not start inspection",
+        mode,
         mode === "inbound"
-          ? "Could not start inbound inspection."
-          : "Could not start outbound inspection.",
+          ? "Could not upload Inbound Inspection."
+          : "Could not upload Outbound Inspection.",
       );
       setValidationDialog({ title, message });
     } finally {
@@ -826,7 +832,7 @@ export function OpsInspectionStartForm({
   const titleLabel =
     mode === "inbound" ? "Inbound inspection" : "Outbound inspection";
   const plantSelectValue =
-    mode === "outbound" && !plantCode.trim() ? "__none_out__" : plantCode;
+    mode === "outbound" ? plantCode.trim() || undefined : undefined;
   const theme = mode === "inbound" ? "sky" : "amber";
 
   return (
@@ -853,20 +859,52 @@ export function OpsInspectionStartForm({
           if (!open) setValidationDialog(null);
         }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+        <AlertDialogContent
+          className={cn(
+            "relative overflow-hidden border border-destructive/25 bg-card p-0 shadow-lg",
+            "shadow-destructive/15",
+          )}
+        >
+          {/* Same idea as auth layout: white card + soft tinted radials (login uses sky/violet; here danger). */}
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              "bg-[radial-gradient(ellipse_at_top,_rgba(248,113,113,0.2),transparent_45%),radial-gradient(ellipse_at_bottom,_rgba(239,68,68,0.14),transparent_50%)]",
+              "blur-2xl",
+            )}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-destructive/10 via-transparent to-transparent"
+          />
+          <div
+            className={cn(
+              "relative z-10 flex min-h-[10rem] flex-col items-center justify-center gap-5",
+              "px-6 py-8 text-center sm:py-10",
+            )}
+          >
+            <AlertDialogTitle className="max-w-prose text-balance text-center text-destructive/90">
               {validationDialog?.title ?? "Check your input"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="whitespace-pre-wrap text-left">
+            <AlertDialogDescription
+              className={cn(
+                "max-w-prose text-balance text-center text-foreground",
+                "whitespace-pre-wrap",
+              )}
+            >
               {validationDialog?.message}
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setValidationDialog(null)}>
-              OK
-            </AlertDialogAction>
-          </AlertDialogFooter>
+            <div className="flex w-full max-w-xs justify-center pt-1">
+              <AlertDialogAction
+                variant="outline"
+                className="min-w-[7rem] border-destructive/40 text-destructive/90 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setValidationDialog(null)}
+              >
+                OK
+              </AlertDialogAction>
+            </div>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -971,30 +1009,29 @@ export function OpsInspectionStartForm({
               </SelectContent>
             </Select>
           </div>
-          <div className="mt-2 space-y-2">
-            <Label htmlFor={`p-${mode}`} className="text-xs">
-              {mode === "inbound" ? "Supplier plant" : "Plant (optional)"}
-            </Label>
-            <Select
-              value={plantSelectValue}
-              onValueChange={(v) => setPlantCode(v === "__none_out__" ? "" : v)}
-              disabled={!metadata?.plants?.length}
-            >
-              <SelectTrigger id={`p-${mode}`} className="h-9 w-full">
-                <SelectValue placeholder="Select plant" />
-              </SelectTrigger>
-              <SelectContent>
-                {mode === "outbound" ? (
-                  <SelectItem value="__none_out__">NA</SelectItem>
-                ) : null}
-                {(metadata?.plants ?? []).map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {mode === "outbound" ? (
+            <div className="mt-2 space-y-2">
+              <Label htmlFor={`p-${mode}`} className="text-xs">
+                Supplier plant
+              </Label>
+              <Select
+                value={plantSelectValue}
+                onValueChange={setPlantCode}
+                disabled={!metadata?.plants?.length}
+              >
+                <SelectTrigger id={`p-${mode}`} className="h-9 w-full">
+                  <SelectValue placeholder="Select supplier plant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(metadata?.plants ?? []).map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="mt-2 grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label htmlFor={`tr-${mode}`} className="text-xs">

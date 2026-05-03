@@ -63,7 +63,9 @@ export function deriveIsUnderReviewFromReviewStatus(status: string): boolean {
   );
 }
 
-function normalizeInspectionType(raw: string | null | undefined): InspectionType {
+function normalizeInspectionType(
+  raw: string | null | undefined,
+): InspectionType {
   const t = (raw ?? "").toLowerCase().trim();
   return t.includes("outbound") ? "outbound" : "inbound";
 }
@@ -84,7 +86,9 @@ export function mapInspectionListItemToInspection(
     inspection_type: normalizeInspectionType(row.inspection_type),
     created_at: row.created_at,
     review_status: row.review_status,
-    is_under_review: deriveIsUnderReviewFromReviewStatus(row.review_status ?? ""),
+    is_under_review: deriveIsUnderReviewFromReviewStatus(
+      row.review_status ?? "",
+    ),
     checklist_quality: checklistQualityFromListItem(row),
     warehouse_code: row.warehouse_code ?? undefined,
     plant_code: row.plant_code ?? undefined,
@@ -130,10 +134,8 @@ type InspectionKpisResponseWithLegacy = InspectionKpisResponse & {
 
 export function mapKpisResponse(api: InspectionKpisResponse): InspectionKpis {
   const ext = api as InspectionKpisResponseWithLegacy;
-  const inboundApproved =
-    api.inbound_approved ?? ext.inbound_passed ?? 0;
-  const outboundApproved =
-    api.outbound_approved ?? ext.outbound_passed ?? 0;
+  const inboundApproved = api.inbound_approved ?? ext.inbound_passed ?? 0;
+  const outboundApproved = api.outbound_approved ?? ext.outbound_passed ?? 0;
 
   return {
     totalInspections: api.total_inspections,
@@ -179,6 +181,33 @@ export function inspectionKpisParamsFromDateRange(range: {
   };
 }
 
+function inspectionsApiObjectDetailMessage(data: unknown): string | null {
+  if (typeof data !== "object" || data === null || !("detail" in data)) {
+    return null;
+  }
+  const detail = (data as { detail?: unknown }).detail;
+  if (typeof detail === "string") {
+    const s = detail.trim();
+    return s.length > 0 ? s : null;
+  }
+  if (Array.isArray(detail)) return null;
+  if (typeof detail !== "object" || detail === null) return null;
+  const o = detail as Record<string, unknown>;
+  const msg = o.message;
+  if (typeof msg !== "string" || !msg.trim()) return null;
+  const lines = [msg.trim()];
+  if (typeof o.distance_km === "number" && typeof o.max_km === "number") {
+    const dist =
+      Math.abs(o.distance_km) >= 100
+        ? Math.round(o.distance_km)
+        : Math.round(o.distance_km * 10) / 10;
+    lines.push(
+      `Reported distance from the warehouse: about ${dist} km (maximum allowed: ${o.max_km} km).`,
+    );
+  }
+  return lines.join("\n\n");
+}
+
 function inspectionsApiValidationDetailMessages(err: unknown): string[] {
   if (!isAxiosError(err)) return [];
   const data = err.response?.data as unknown;
@@ -204,18 +233,29 @@ function inspectionsApiValidationDetailMessages(err: unknown): string[] {
  */
 export function inspectionsApiValidationDialogContent(
   err: unknown,
-  fallbackTitle: string,
+  mode: "inbound" | "outbound",
   fallbackMessage: string,
 ): { title: string; message: string } {
+  const directionLabel = mode === "inbound" ? "Inbound" : "Outbound";
+  const title = `Could not upload ${directionLabel} Inspection`;
+  if (isAxiosError(err)) {
+    const objectMsg = inspectionsApiObjectDetailMessage(err.response?.data);
+    if (objectMsg) {
+      return {
+        title,
+        message: objectMsg,
+      };
+    }
+  }
   const msgs = inspectionsApiValidationDetailMessages(err);
   if (msgs.length > 0) {
     return {
-      title: "Could not start inspection",
+      title,
       message: msgs.join("\n\n"),
     };
   }
   return {
-    title: fallbackTitle,
+    title,
     message: inspectionsApiErrorMessage(err, fallbackMessage),
   };
 }
@@ -224,9 +264,10 @@ export function inspectionsApiErrorMessage(
   err: unknown,
   fallback: string,
 ): string {
-  if (!isAxiosError(err))
-    return err instanceof Error ? err.message : fallback;
+  if (!isAxiosError(err)) return err instanceof Error ? err.message : fallback;
   const data = err.response?.data as unknown;
+  const objectMsg = inspectionsApiObjectDetailMessage(data);
+  if (objectMsg) return objectMsg;
   if (
     typeof data === "object" &&
     data !== null &&
@@ -240,7 +281,8 @@ export function inspectionsApiErrorMessage(
   if (typeof err.response?.status === "number") {
     return `${fallback} (HTTP ${err.response.status}).`;
   }
-  if (typeof err.message === "string" && err.message.length > 0) return err.message;
+  if (typeof err.message === "string" && err.message.length > 0)
+    return err.message;
   return fallback;
 }
 
@@ -390,9 +432,7 @@ function apiSectionMatches(
         return g.includes("inner");
       case "product":
         return (
-          g.includes("product") &&
-          !g.includes("outer") &&
-          !g.includes("inner")
+          g.includes("product") && !g.includes("outer") && !g.includes("inner")
         );
       case "device":
         return g.includes("device");
@@ -409,9 +449,7 @@ function apiSectionMatches(
       return s.includes("inner");
     case "product":
       return (
-        s.includes("product") &&
-        !s.includes("outer") &&
-        !s.includes("inner")
+        s.includes("product") && !s.includes("outer") && !s.includes("inner")
       );
     case "device":
       return s.includes("device");

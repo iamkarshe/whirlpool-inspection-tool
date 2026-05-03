@@ -7407,8 +7407,14 @@
             "title": "Warehouse Code"
           },
           "supplier_plant_code": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Supplier Plant Code"
           },
           "lat": {
@@ -7497,7 +7503,6 @@
           "barcode",
           "device_uuid",
           "warehouse_code",
-          "supplier_plant_code",
           "lat",
           "lng",
           "truck_number",

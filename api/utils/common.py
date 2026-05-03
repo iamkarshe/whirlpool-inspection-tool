@@ -172,7 +172,7 @@ INDIA_LAT_MIN = 6.0
 INDIA_LAT_MAX = 37.6
 INDIA_LNG_MIN = 68.0
 INDIA_LNG_MAX = 97.8
-MAX_INSPECTION_DISTANCE_KM_FROM_WAREHOUSE = 5.0
+MAX_INSPECTION_DISTANCE_KM_FROM_WAREHOUSE = 9995.0
 
 
 def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
