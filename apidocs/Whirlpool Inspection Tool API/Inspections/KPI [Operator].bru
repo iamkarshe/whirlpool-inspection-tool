@@ -1,0 +1,11 @@
+meta {
+  name: KPI [Operator]
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/inspections/kpis/operator?period=week
+  body: none
+  auth: inherit
+}

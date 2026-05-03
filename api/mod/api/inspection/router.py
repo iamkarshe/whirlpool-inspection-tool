@@ -23,6 +23,7 @@ from mod.api.inspection.helper import (
     compute_inspection_analytics_kpis,
     compute_inspection_kpis,
     compute_manager_inspection_team_kpis,
+    compute_operator_inspection_kpis,
     create_inbound_inspection,
     create_outbound_inspection,
     deactivate_inspection,
@@ -51,6 +52,8 @@ from mod.api.inspection.response import (
     ManagerInspectionTeamKpisResponse,
     ManagerTeamInspectionAllKpis,
     ManagerTeamInspectionDirectionKpis,
+    OperatorInspectionDirectionKpis,
+    OperatorInspectionKpisResponse,
     InspectionListResponse,
     InspectionMetadataResponse,
     InspectionReviewStatusUpdateRequest,
@@ -189,7 +192,8 @@ def get_inspection_kpis_manager(
     ),
     is_active: bool = Query(True),
     warehouse_uuid: uuid.UUID | None = Query(
-        None, description="Optional filter by warehouse UUID (superadmin or allowed scope)"
+        None,
+        description="Optional filter by warehouse UUID (superadmin or allowed scope)",
     ),
     plant_uuid: uuid.UUID | None = Query(
         None, description="Optional filter by plant UUID"
@@ -227,6 +231,75 @@ def get_inspection_kpis_manager(
         all_inspections=ManagerTeamInspectionAllKpis(**payload["all_inspections"]),
         inbound=ManagerTeamInspectionDirectionKpis(**payload["inbound"]),
         outbound=ManagerTeamInspectionDirectionKpis(**payload["outbound"]),
+    )
+
+
+@router.get(
+    "/inspections/kpis/operator",
+    name="get_inspection_kpis_operator",
+    response_model=OperatorInspectionKpisResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "operator"])
+def get_inspection_kpis_operator(
+    request: Request,
+    period: Literal["custom", "today", "yesterday", "week", "month"] = Query(
+        "custom",
+        description=(
+            "UTC date window: today, yesterday, this calendar week (Mon–today), "
+            "this calendar month, or custom. For custom, omit both dates for last 7 days."
+        ),
+    ),
+    date_from: date | None = Query(
+        None,
+        description="With period=custom: range start (UTC); omit both dates for last 7 days",
+    ),
+    date_to: date | None = Query(
+        None,
+        description="With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
+    ),
+    is_active: bool = Query(True),
+    warehouse_uuid: uuid.UUID | None = Query(
+        None,
+        description="Optional filter by warehouse UUID (must be in the operator's scope)",
+    ),
+    plant_uuid: uuid.UUID | None = Query(
+        None, description="Optional filter by plant UUID"
+    ),
+    db: Session = Depends(get_db),
+):
+    """Operator analytics KPIs: only inspections where the caller is ``inspector_id``."""
+    try:
+        date_from, date_to, period_norm = resolve_inspection_kpi_period(
+            period, date_from, date_to
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    if date_to < date_from:
+        raise HTTPException(
+            status_code=400, detail="date_to must be on or after date_from"
+        )
+    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
+        db, request, warehouse_uuid
+    )
+    _, plant_code = resolve_inspection_scope_filters(db, None, plant_uuid)
+    inspector_user_id = int(request.state.user_id)
+    payload = compute_operator_inspection_kpis(
+        db,
+        date_from,
+        date_to,
+        is_active,
+        warehouse_codes=warehouse_codes,
+        inspector_user_id=inspector_user_id,
+        plant_code=plant_code,
+    )
+    return OperatorInspectionKpisResponse(
+        period=period_norm,
+        date_from=date_from,
+        date_to=date_to,
+        review_queue=payload["review_queue"],
+        inbound=OperatorInspectionDirectionKpis(**payload["inbound"]),
+        outbound=OperatorInspectionDirectionKpis(**payload["outbound"]),
     )
 
 

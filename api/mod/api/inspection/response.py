@@ -202,6 +202,49 @@ class ManagerInspectionTeamKpisResponse(BaseModel):
     outbound: ManagerTeamInspectionDirectionKpis
 
 
+class OperatorInspectionDirectionKpis(BaseModel):
+    """Inbound or outbound slice for the operator Data Analytics view."""
+
+    in_review: int = Field(
+        ...,
+        description=(
+            "Inspections where the authenticated user is ``inspector_id``, in "
+            "PENDING or IN_REVIEW for this direction."
+        ),
+    )
+    approved: int = Field(
+        ...,
+        description=(
+            "Owner inspections with ``created_at`` in the window and review status "
+            "APPROVED."
+        ),
+    )
+    rejected: int = Field(
+        ...,
+        description=(
+            "Owner inspections with ``created_at`` in the window and review status "
+            "REJECTED."
+        ),
+    )
+
+
+class OperatorInspectionKpisResponse(BaseModel):
+    """Operator Data Analytics: status breakdown by direction for owned inspections only."""
+
+    period: Literal["custom", "today", "yesterday", "week", "month"] = "custom"
+    date_from: date
+    date_to: date
+    review_queue: int = Field(
+        ...,
+        description=(
+            "Inbound in_review plus outbound in_review for inspections where the "
+            "operator is ``inspector_id``."
+        ),
+    )
+    inbound: OperatorInspectionDirectionKpis
+    outbound: OperatorInspectionDirectionKpis
+
+
 class InspectionDropdownOption(BaseModel):
     value: str
     label: str
