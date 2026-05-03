@@ -55,6 +55,7 @@ from utils.decorator import (
     apply_operator_scope_filters,
     check_api_role,
     exception_handler_decorator,
+    request_is_operator_only,
 )
 from utils.pagination import (
     PaginationParams,
@@ -373,7 +374,7 @@ def patch_inspection_review_status(
     response_model=InspectionFullResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(["superadmin"])
 def delete_inspection(
     request: Request,
     inspection_uuid: uuid.UUID,
@@ -388,7 +389,7 @@ def delete_inspection(
     response_model=InspectionFullResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(["superadmin", "manager", "operator"])
 def get_inspection_detail(
     request: Request,
     inspection_uuid: uuid.UUID,
@@ -397,4 +398,8 @@ def get_inspection_detail(
     inspection = get_inspection_entity_by_uuid(db, inspection_uuid)
     if inspection is None:
         raise HTTPException(status_code=404, detail="Inspection not found")
+    if request_is_operator_only(request):
+        uid = getattr(request.state, "user_id", None)
+        if uid is None or inspection.inspector_id != int(uid):
+            raise HTTPException(status_code=404, detail="Inspection not found")
     return present_inspection_full(inspection)

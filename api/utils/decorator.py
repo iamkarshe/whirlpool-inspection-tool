@@ -107,6 +107,17 @@ def _request_from_args(args: tuple, kwargs: dict) -> Optional[Request]:
     return kwargs.get("request")
 
 
+def request_is_operator_only(request: Request) -> bool:
+    """True when the caller has operator role but not manager or superadmin."""
+    role_raw = getattr(request.state, "role", None) or ""
+    roles = [r.strip() for r in str(role_raw).split(",") if r.strip()]
+    return (
+        "operator" in roles
+        and "superadmin" not in roles
+        and "manager" not in roles
+    )
+
+
 def apply_operator_scope_filters(func: Callable):
     """For routes that list inspections: operators only see rows they inspected.
 
@@ -127,13 +138,7 @@ def apply_operator_scope_filters(func: Callable):
                     "pass_request_ctx": True,
                 },
             )
-        role_raw = getattr(request.state, "role", "") or ""
-        roles = [r.strip() for r in role_raw.split(",") if r.strip()]
-        if (
-            "operator" in roles
-            and "superadmin" not in roles
-            and "manager" not in roles
-        ):
+        if request_is_operator_only(request):
             uid = getattr(request.state, "user_id", None)
             if uid is None:
                 return JSONResponse(
