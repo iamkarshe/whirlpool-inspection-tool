@@ -9,4 +9,6 @@
 export interface ChecklistLayerPassFail {
   pass_count?: number;
   fail_count?: number;
+  /** Layer inspection photos as fully qualified URLs; set on full inspection responses, empty on parse-barcode and other lightweight payloads. */
+  image_urls?: string[];
 }

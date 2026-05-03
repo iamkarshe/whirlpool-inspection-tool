@@ -7,6 +7,7 @@
  */
 import type { ChecklistLayerPassFail } from './checklistLayerPassFail';
 import type { InspectionInputItemResponse } from './inspectionInputItemResponse';
+import type { InspectionProductForPrint } from './inspectionProductForPrint';
 import type { InspectionReviewHistoryItem } from './inspectionReviewHistoryItem';
 
 /**
@@ -36,6 +37,7 @@ export interface InspectionFullResponse {
   review_history: InspectionReviewHistoryItem[];
   created_at: string;
   updated_at: string;
+  product: InspectionProductForPrint;
   product_unit_id: number;
   inputs: InspectionInputItemResponse[];
   outer_packaging_images: string[];

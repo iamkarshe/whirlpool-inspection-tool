@@ -7,9 +7,14 @@
  */
 import type {
   ActiveChecklistGroupedResponse,
+  BarcodeLockAcquireRequest,
+  BarcodeLockReleaseResponse,
+  BarcodeLockResponse,
   BarcodeParseResponse,
   BodyUploadInspectionImageApiInspectionsUploadImagePost,
   GetInspectionKpisApiInspectionsKpisGetParams,
+  GetInspectionKpisManagerApiInspectionsKpisManagerGetParams,
+  GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams,
   GetInspectionsApiInspectionsGetParams,
   InspectionFullResponse,
   InspectionImageUploadResponse,
@@ -18,6 +23,8 @@ import type {
   InspectionMetadataResponse,
   InspectionReviewStatusUpdateRequest,
   InspectionWithChecklistPayload,
+  ManagerInspectionTeamKpisResponse,
+  OperatorInspectionKpisResponse,
   ParseInspectionBarcodeApiInspectionsParseBarcodeGetParams,
   StartInboundInspectionRequest,
   StartOutboundInspectionRequest
@@ -43,6 +50,32 @@ const getInspectionKpisApiInspectionsKpisGet = (
       options);
     }
   /**
+ * Manager team overview KPIs: warehouse scope matches assigned warehouses.
+ * @summary Get Inspection Kpis Manager
+ */
+const getInspectionKpisManagerApiInspectionsKpisManagerGet = (
+    params?: GetInspectionKpisManagerApiInspectionsKpisManagerGetParams,
+ options?: SecondParameter<typeof customInstance<ManagerInspectionTeamKpisResponse>>,) => {
+      return customInstance<ManagerInspectionTeamKpisResponse>(
+      {url: `/api/inspections/kpis/manager`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
+ * Operator analytics KPIs: only inspections where the caller is ``inspector_id``.
+ * @summary Get Inspection Kpis Operator
+ */
+const getInspectionKpisOperatorApiInspectionsKpisOperatorGet = (
+    params?: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams,
+ options?: SecondParameter<typeof customInstance<OperatorInspectionKpisResponse>>,) => {
+      return customInstance<OperatorInspectionKpisResponse>(
+      {url: `/api/inspections/kpis/operator`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
  * @summary Get Inspections
  */
 const getInspectionsApiInspectionsGet = (
@@ -63,6 +96,32 @@ const parseInspectionBarcodeApiInspectionsParseBarcodeGet = (
       return customInstance<BarcodeParseResponse>(
       {url: `/api/inspections/parse-barcode`, method: 'GET',
         params
+    },
+      options);
+    }
+  /**
+ * @summary Acquire Inspection Barcode Lock
+ */
+const acquireInspectionBarcodeLockApiInspectionsBarcodeLockPost = (
+    barcodeLockAcquireRequest: BarcodeLockAcquireRequest,
+ options?: SecondParameter<typeof customInstance<BarcodeLockResponse>>,) => {
+      return customInstance<BarcodeLockResponse>(
+      {url: `/api/inspections/barcode-lock`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: barcodeLockAcquireRequest
+    },
+      options);
+    }
+  /**
+ * @summary Release Inspection Barcode Lock
+ */
+const releaseInspectionBarcodeLockApiInspectionsBarcodeLockReleasePost = (
+    barcodeLockAcquireRequest: BarcodeLockAcquireRequest,
+ options?: SecondParameter<typeof customInstance<BarcodeLockReleaseResponse>>,) => {
+      return customInstance<BarcodeLockReleaseResponse>(
+      {url: `/api/inspections/barcode-lock/release`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: barcodeLockAcquireRequest
     },
       options);
     }
@@ -168,10 +227,14 @@ const getInspectionDetailApiInspectionsInspectionUuidGet = (
     },
       options);
     }
-  return {getInspectionKpisApiInspectionsKpisGet,getInspectionsApiInspectionsGet,parseInspectionBarcodeApiInspectionsParseBarcodeGet,getActiveInspectionChecklistApiInspectionsChecklistGet,getInspectionMetadataApiInspectionsMetadataGet,startInboundInspectionApiInspectionsInboundPost,startOutboundInspectionApiInspectionsOutboundPost,uploadInspectionImageApiInspectionsUploadImagePost,patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch,deleteInspectionApiInspectionsInspectionUuidDelete,getInspectionDetailApiInspectionsInspectionUuidGet}};
+  return {getInspectionKpisApiInspectionsKpisGet,getInspectionKpisManagerApiInspectionsKpisManagerGet,getInspectionKpisOperatorApiInspectionsKpisOperatorGet,getInspectionsApiInspectionsGet,parseInspectionBarcodeApiInspectionsParseBarcodeGet,acquireInspectionBarcodeLockApiInspectionsBarcodeLockPost,releaseInspectionBarcodeLockApiInspectionsBarcodeLockReleasePost,getActiveInspectionChecklistApiInspectionsChecklistGet,getInspectionMetadataApiInspectionsMetadataGet,startInboundInspectionApiInspectionsInboundPost,startOutboundInspectionApiInspectionsOutboundPost,uploadInspectionImageApiInspectionsUploadImagePost,patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch,deleteInspectionApiInspectionsInspectionUuidDelete,getInspectionDetailApiInspectionsInspectionUuidGet}};
 export type GetInspectionKpisApiInspectionsKpisGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionKpisApiInspectionsKpisGet']>>>
+export type GetInspectionKpisManagerApiInspectionsKpisManagerGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionKpisManagerApiInspectionsKpisManagerGet']>>>
+export type GetInspectionKpisOperatorApiInspectionsKpisOperatorGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionKpisOperatorApiInspectionsKpisOperatorGet']>>>
 export type GetInspectionsApiInspectionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionsApiInspectionsGet']>>>
 export type ParseInspectionBarcodeApiInspectionsParseBarcodeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['parseInspectionBarcodeApiInspectionsParseBarcodeGet']>>>
+export type AcquireInspectionBarcodeLockApiInspectionsBarcodeLockPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['acquireInspectionBarcodeLockApiInspectionsBarcodeLockPost']>>>
+export type ReleaseInspectionBarcodeLockApiInspectionsBarcodeLockReleasePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['releaseInspectionBarcodeLockApiInspectionsBarcodeLockReleasePost']>>>
 export type GetActiveInspectionChecklistApiInspectionsChecklistGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getActiveInspectionChecklistApiInspectionsChecklistGet']>>>
 export type GetInspectionMetadataApiInspectionsMetadataGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['getInspectionMetadataApiInspectionsMetadataGet']>>>
 export type StartInboundInspectionApiInspectionsInboundPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInspections>['startInboundInspectionApiInspectionsInboundPost']>>>

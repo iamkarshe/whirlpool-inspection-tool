@@ -1763,6 +1763,284 @@
         }
       }
     },
+    "/api/inspections/kpis/manager": {
+      "get": {
+        "tags": [
+          "Inspections"
+        ],
+        "summary": "Get Inspection Kpis Manager",
+        "description": "Manager team overview KPIs: warehouse scope matches assigned warehouses.",
+        "operationId": "get_inspection_kpis_manager_api_inspections_kpis_manager_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "custom",
+                "today",
+                "yesterday",
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "description": "UTC date window: today, yesterday, this calendar week (Mon–today), this calendar month, or custom. For custom, omit both dates for last 7 days.",
+              "default": "custom",
+              "title": "Period"
+            },
+            "description": "UTC date window: today, yesterday, this calendar week (Mon–today), this calendar month, or custom. For custom, omit both dates for last 7 days."
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With period=custom: range start (UTC); omit both dates for last 7 days",
+              "title": "Date From"
+            },
+            "description": "With period=custom: range start (UTC); omit both dates for last 7 days"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
+              "title": "Date To"
+            },
+            "description": "With period=custom: range end (UTC, inclusive); omit both dates for last 7 days"
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          },
+          {
+            "name": "warehouse_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional filter by warehouse UUID (superadmin or allowed scope)",
+              "title": "Warehouse Uuid"
+            },
+            "description": "Optional filter by warehouse UUID (superadmin or allowed scope)"
+          },
+          {
+            "name": "plant_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional filter by plant UUID",
+              "title": "Plant Uuid"
+            },
+            "description": "Optional filter by plant UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagerInspectionTeamKpisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inspections/kpis/operator": {
+      "get": {
+        "tags": [
+          "Inspections"
+        ],
+        "summary": "Get Inspection Kpis Operator",
+        "description": "Operator analytics KPIs: only inspections where the caller is ``inspector_id``.",
+        "operationId": "get_inspection_kpis_operator_api_inspections_kpis_operator_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "custom",
+                "today",
+                "yesterday",
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "description": "UTC date window: today, yesterday, this calendar week (Mon–today), this calendar month, or custom. For custom, omit both dates for last 7 days.",
+              "default": "custom",
+              "title": "Period"
+            },
+            "description": "UTC date window: today, yesterday, this calendar week (Mon–today), this calendar month, or custom. For custom, omit both dates for last 7 days."
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With period=custom: range start (UTC); omit both dates for last 7 days",
+              "title": "Date From"
+            },
+            "description": "With period=custom: range start (UTC); omit both dates for last 7 days"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
+              "title": "Date To"
+            },
+            "description": "With period=custom: range end (UTC, inclusive); omit both dates for last 7 days"
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          },
+          {
+            "name": "warehouse_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional filter by warehouse UUID (must be in the operator's scope)",
+              "title": "Warehouse Uuid"
+            },
+            "description": "Optional filter by warehouse UUID (must be in the operator's scope)"
+          },
+          {
+            "name": "plant_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional filter by plant UUID",
+              "title": "Plant Uuid"
+            },
+            "description": "Optional filter by plant UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorInspectionKpisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/inspections": {
       "get": {
         "tags": [
@@ -2011,6 +2289,88 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BarcodeParseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inspections/barcode-lock": {
+      "post": {
+        "tags": [
+          "Inspections"
+        ],
+        "summary": "Acquire Inspection Barcode Lock",
+        "operationId": "acquire_inspection_barcode_lock_api_inspections_barcode_lock_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BarcodeLockAcquireRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BarcodeLockResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inspections/barcode-lock/release": {
+      "post": {
+        "tags": [
+          "Inspections"
+        ],
+        "summary": "Release Inspection Barcode Lock",
+        "operationId": "release_inspection_barcode_lock_api_inspections_barcode_lock_release_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BarcodeLockAcquireRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BarcodeLockReleaseResponse"
                 }
               }
             }
@@ -3978,6 +4338,77 @@
         ],
         "title": "AwsS3UpdateRequest"
       },
+      "BarcodeLockAcquireRequest": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Barcode"
+          },
+          "inspection_type": {
+            "$ref": "#/components/schemas/InspectionType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "barcode",
+          "inspection_type"
+        ],
+        "title": "BarcodeLockAcquireRequest"
+      },
+      "BarcodeLockReleaseResponse": {
+        "properties": {
+          "released": {
+            "type": "boolean",
+            "title": "Released"
+          }
+        },
+        "type": "object",
+        "required": [
+          "released"
+        ],
+        "title": "BarcodeLockReleaseResponse"
+      },
+      "BarcodeLockResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "barcode": {
+            "type": "string",
+            "title": "Barcode"
+          },
+          "inspection_type": {
+            "type": "string",
+            "title": "Inspection Type"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "locked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Locked At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "barcode",
+          "inspection_type",
+          "user_id",
+          "locked_at",
+          "expires_at"
+        ],
+        "title": "BarcodeLockResponse"
+      },
       "BarcodeParseResponse": {
         "properties": {
           "segments": {
@@ -4172,9 +4603,7 @@
           },
           "image_path": {
             "items": {
-              "type": "string",
-              "minLength": 1,
-              "format": "uri"
+              "type": "string"
             },
             "type": "array",
             "title": "Image Path"
@@ -4309,6 +4738,14 @@
             "type": "integer",
             "title": "Fail Count",
             "default": 0
+          },
+          "image_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Image Urls",
+            "description": "Layer inspection photos as fully qualified URLs; set on full inspection responses, empty on parse-barcode and other lightweight payloads."
           }
         },
         "type": "object",
@@ -4988,6 +5425,9 @@
             "format": "date-time",
             "title": "Updated At"
           },
+          "product": {
+            "$ref": "#/components/schemas/InspectionProductForPrint"
+          },
           "product_unit_id": {
             "type": "integer",
             "title": "Product Unit Id"
@@ -5063,6 +5503,7 @@
           "review_history",
           "created_at",
           "updated_at",
+          "product",
           "product_unit_id",
           "inputs",
           "outer_packaging_images",
@@ -5488,6 +5929,58 @@
         ],
         "title": "InspectionPassFailCounts"
       },
+      "InspectionProductForPrint": {
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "title": "Barcode",
+            "description": "Product unit barcode (16-char scan id when registered).",
+            "default": ""
+          },
+          "product_unit_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Unit Uuid"
+          },
+          "material_code": {
+            "type": "string",
+            "title": "Material Code",
+            "default": ""
+          },
+          "material_description": {
+            "type": "string",
+            "title": "Material Description",
+            "default": ""
+          },
+          "product_category_name": {
+            "type": "string",
+            "title": "Product Category Name",
+            "default": ""
+          },
+          "inspection_serial_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Serial Number",
+            "description": "Serial captured on the inspection (may differ from barcode payload)."
+          }
+        },
+        "type": "object",
+        "title": "InspectionProductForPrint",
+        "description": "Product unit + product fields commonly needed on printed inspection slips."
+      },
       "InspectionReviewHistoryItem": {
         "properties": {
           "from_status": {
@@ -5574,6 +6067,14 @@
           "review_status"
         ],
         "title": "InspectionReviewStatusUpdateRequest"
+      },
+      "InspectionType": {
+        "type": "string",
+        "enum": [
+          "inbound",
+          "outbound"
+        ],
+        "title": "InspectionType"
       },
       "InspectionWithChecklistPayload": {
         "properties": {
@@ -6233,6 +6734,112 @@
         ],
         "title": "LoginResponse"
       },
+      "ManagerInspectionTeamKpisResponse": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "today",
+              "yesterday",
+              "week",
+              "month"
+            ],
+            "title": "Period",
+            "default": "custom"
+          },
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "review_queue": {
+            "type": "integer",
+            "title": "Review Queue",
+            "description": "Inbound in_review plus outbound in_review (each counts PENDING and IN_REVIEW). Same as all_inspections.in_review when inspections are only inbound or outbound."
+          },
+          "all_inspections": {
+            "$ref": "#/components/schemas/ManagerTeamInspectionAllKpis"
+          },
+          "inbound": {
+            "$ref": "#/components/schemas/ManagerTeamInspectionDirectionKpis"
+          },
+          "outbound": {
+            "$ref": "#/components/schemas/ManagerTeamInspectionDirectionKpis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_from",
+          "date_to",
+          "review_queue",
+          "all_inspections",
+          "inbound",
+          "outbound"
+        ],
+        "title": "ManagerInspectionTeamKpisResponse",
+        "description": "Manager Team tab: reporting window and queue-oriented counts."
+      },
+      "ManagerTeamInspectionAllKpis": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "in_review": {
+            "type": "integer",
+            "title": "In Review",
+            "description": "Inspections in PENDING or IN_REVIEW (any direction)."
+          },
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "in_review",
+          "approved",
+          "rejected"
+        ],
+        "title": "ManagerTeamInspectionAllKpis",
+        "description": "All inspections in the reporting window (manager warehouse scope)."
+      },
+      "ManagerTeamInspectionDirectionKpis": {
+        "properties": {
+          "in_review": {
+            "type": "integer",
+            "title": "In Review",
+            "description": "Inspections in PENDING or IN_REVIEW for this direction."
+          },
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "in_review",
+          "approved",
+          "rejected"
+        ],
+        "title": "ManagerTeamInspectionDirectionKpis",
+        "description": "Inbound or outbound slice for the manager team overview."
+      },
       "OktaSsoCredentialsResponse": {
         "properties": {
           "okta_domain": {
@@ -6534,6 +7141,80 @@
           "success_ratio"
         ],
         "title": "OperationsTrendWarehouseItem"
+      },
+      "OperatorInspectionDirectionKpis": {
+        "properties": {
+          "in_review": {
+            "type": "integer",
+            "title": "In Review",
+            "description": "Inspections where the authenticated user is ``inspector_id``, in PENDING or IN_REVIEW for this direction."
+          },
+          "approved": {
+            "type": "integer",
+            "title": "Approved",
+            "description": "Owner inspections with ``created_at`` in the window and review status APPROVED."
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected",
+            "description": "Owner inspections with ``created_at`` in the window and review status REJECTED."
+          }
+        },
+        "type": "object",
+        "required": [
+          "in_review",
+          "approved",
+          "rejected"
+        ],
+        "title": "OperatorInspectionDirectionKpis",
+        "description": "Inbound or outbound slice for the operator Data Analytics view."
+      },
+      "OperatorInspectionKpisResponse": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "today",
+              "yesterday",
+              "week",
+              "month"
+            ],
+            "title": "Period",
+            "default": "custom"
+          },
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "review_queue": {
+            "type": "integer",
+            "title": "Review Queue",
+            "description": "Inbound in_review plus outbound in_review for inspections where the operator is ``inspector_id``."
+          },
+          "inbound": {
+            "$ref": "#/components/schemas/OperatorInspectionDirectionKpis"
+          },
+          "outbound": {
+            "$ref": "#/components/schemas/OperatorInspectionDirectionKpis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_from",
+          "date_to",
+          "review_queue",
+          "inbound",
+          "outbound"
+        ],
+        "title": "OperatorInspectionKpisResponse",
+        "description": "Operator Data Analytics: status breakdown by direction for owned inspections only."
       },
       "PlantCreateRequest": {
         "properties": {
