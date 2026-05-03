@@ -271,6 +271,9 @@ const OpsHelpPage = lazy(() => import("@/pages/ops/help/page"));
 const OpsTodayInspectionsPage = lazy(
   () => import("@/pages/ops/today-inspections/page"),
 );
+const OpsManagerRoute = lazy(() => import("@/pages/ops/ops-manager-route"));
+const OpsTeamPage = lazy(() => import("@/pages/ops/team/page"));
+const OpsTeamReviewPage = lazy(() => import("@/pages/ops/team/review/page"));
 const OpsInspectionDetailPage = lazy(
   () => import("@/pages/ops/inspection-detail/page"),
 );
@@ -386,6 +389,34 @@ export const router = createBrowserRouter([
                 <OpsTodayInspectionsPage />
               </Suspense>
             ),
+          },
+          {
+            path: "team",
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsManagerRoute />
+              </Suspense>
+            ),
+            children: [
+              {
+                index: true,
+                handle: { title: "Team overview" },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <OpsTeamPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: "review",
+                handle: { title: "Review queue" },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <OpsTeamReviewPage />
+                  </Suspense>
+                ),
+              },
+            ],
           },
           {
             path: "inspections/:id",

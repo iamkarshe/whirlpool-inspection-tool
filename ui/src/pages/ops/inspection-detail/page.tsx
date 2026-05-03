@@ -9,8 +9,13 @@ import {
   ListChecks,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
+import { InspectionReviewStatus } from "@/api/generated/model/inspectionReviewStatus";
+import { useSessionUser } from "@/hooks/use-session-user";
+import { isOpsManagerRole } from "@/lib/ops-role";
 
 import type {
   IssueSeverity,
@@ -53,6 +58,11 @@ import {
   type InspectionQuestionResult,
   type InspectionRelationship,
 } from "@/pages/dashboard/inspections/inspection-service";
+import {
+  deriveIsUnderReviewFromReviewStatus,
+  inspectionsApiErrorMessage,
+  patchInspectionReviewStatus,
+} from "@/services/inspections-api";
 
 const SECTION_ITEMS = [
   { key: "outer-packaging", label: "Outer Packaging" },
@@ -111,6 +121,7 @@ function StatusPill({ status }: { status: "pass" | "fail" }) {
 
 export default function OpsInspectionDetailPage() {
   const { id = "" } = useParams();
+  const sessionUser = useSessionUser();
   const [tab, setTab] = useState<DetailTab>("overview");
   const [loading, setLoading] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(true);
@@ -136,6 +147,8 @@ export default function OpsInspectionDetailPage() {
   const [resolveOpen, setResolveOpen] = useState(false);
   const [resolvingIssueId, setResolvingIssueId] = useState<string | null>(null);
   const [resolveRemark, setResolveRemark] = useState("");
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -268,6 +281,50 @@ export default function OpsInspectionDetailPage() {
   const resolvingIssue = useMemo(
     () => issueRows.find((issue) => issue.id === resolvingIssueId) ?? null,
     [issueRows, resolvingIssueId],
+  );
+
+  const isManager = isOpsManagerRole(sessionUser?.role);
+  const canSubmitManagerReview = useMemo(
+    () =>
+      Boolean(
+        inspection &&
+          isManager &&
+          (inspection.is_under_review ||
+            deriveIsUnderReviewFromReviewStatus(
+              inspection.review_status ?? "",
+            )),
+      ),
+    [inspection, isManager],
+  );
+
+  const submitManagerReview = useCallback(
+    async (
+      status: (typeof InspectionReviewStatus)[keyof typeof InspectionReviewStatus],
+    ) => {
+      if (!inspection?.id) return;
+      setReviewSubmitting(true);
+      try {
+        await patchInspectionReviewStatus(inspection.id, {
+          review_status: status,
+          comment: reviewComment.trim() || null,
+        });
+        toast.success(
+          status === InspectionReviewStatus.APPROVED
+            ? "Inspection approved."
+            : "Inspection rejected.",
+        );
+        const next = await getInspectionById(inspection.id);
+        setInspection(next);
+        setReviewComment("");
+      } catch (err: unknown) {
+        toast.error(
+          inspectionsApiErrorMessage(err, "Could not update review status."),
+        );
+      } finally {
+        setReviewSubmitting(false);
+      }
+    },
+    [inspection, reviewComment],
   );
 
   function openRowImages(row: InspectionQuestionResult) {
@@ -455,6 +512,75 @@ export default function OpsInspectionDetailPage() {
               </p>
             </div>
           </div>
+        )}
+      </section>
+
+      <section className="space-y-3 rounded-3xl border border-violet-500/20 bg-violet-500/5 p-4 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-900 dark:text-violet-100">
+          Quality review
+        </h2>
+        {canSubmitManagerReview ? (
+          <>
+            <p className="text-[11px] text-muted-foreground">
+              Manager decision — this inspection is waiting in the review queue.
+            </p>
+            <div className="space-y-1">
+              <Label htmlFor="mgr-review-comment" className="text-xs">
+                Comment (optional)
+              </Label>
+              <Textarea
+                id="mgr-review-comment"
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                rows={2}
+                className="text-xs"
+                placeholder="Note for the record…"
+                disabled={reviewSubmitting}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                className="h-10"
+                disabled={reviewSubmitting}
+                onClick={() => void submitManagerReview(InspectionReviewStatus.APPROVED)}
+              >
+                Approve
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                className="h-10"
+                disabled={reviewSubmitting}
+                onClick={() => void submitManagerReview(InspectionReviewStatus.REJECTED)}
+              >
+                Reject
+              </Button>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {isManager ? (
+              <>
+                Review status:{" "}
+                <span className="font-medium text-foreground">
+                  {inspection.review_status?.trim() || "—"}
+                </span>
+                . No manager action is required right now.
+              </>
+            ) : (
+              <>
+                Review status:{" "}
+                <span className="font-medium text-foreground">
+                  {inspection.review_status?.trim() || "—"}
+                </span>
+                . Only managers can approve or reject inspections from the Ops
+                app.
+              </>
+            )}
+          </p>
         )}
       </section>
 

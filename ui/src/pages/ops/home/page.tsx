@@ -1,9 +1,11 @@
-import { BookOpenText, ClipboardList, ScanLine, Search } from "lucide-react";
+import { BookOpenText, ClipboardList, ScanLine, Search, Users } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { firstNameFromDisplayName } from "@/lib/ops-user-display";
+import { isOpsManagerRole } from "@/lib/ops-role";
 
 export default function OpsHomePage() {
   const navigate = useNavigate();
@@ -12,6 +14,8 @@ export default function OpsHomePage() {
   const greetingLead = useMemo(() => {
     return firstNameFromDisplayName(sessionUser?.name) ?? "there";
   }, [sessionUser?.name]);
+
+  const isManager = isOpsManagerRole(sessionUser?.role);
 
   return (
     <div className="space-y-4">
@@ -26,6 +30,46 @@ export default function OpsHomePage() {
           Four quick actions to keep your warehouse in top shape.
         </p>
       </header>
+
+      {isManager ? (
+        <section className="rounded-3xl border border-violet-500/25 bg-violet-500/5 p-4 shadow-sm ring-1 ring-violet-500/10">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-700 dark:text-violet-200">
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-800 dark:text-violet-200">
+                  Manager
+                </p>
+                <p className="text-sm font-medium leading-snug">
+                  Team KPIs and inspection review queue
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Operators cannot approve or reject inspections — only you can
+                  clear the review queue.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate(PAGES.OPS_TEAM)}
+                  className="rounded-full bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-violet-700"
+                >
+                  Open team overview
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(PAGES.OPS_TEAM_REVIEW)}
+                  className="rounded-full border border-violet-500/40 bg-background/80 px-3 py-1.5 text-xs font-semibold text-violet-800 transition-colors hover:bg-violet-500/10 dark:text-violet-100"
+                >
+                  Review queue
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid grid-cols-2 gap-3">
         <button

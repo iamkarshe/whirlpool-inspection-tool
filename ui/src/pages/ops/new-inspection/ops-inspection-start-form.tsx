@@ -64,6 +64,7 @@ import {
   INSPECTION_IMAGE_MAX_UPLOAD_BYTES,
 } from "@/lib/compress-inspection-image";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
+import { getServerAssignedDeviceUuid } from "@/lib/session-device-uuid";
 import {
   isValidIndianVehicleRegistration,
   normalizeIndianVehicleRegistration,
@@ -665,8 +666,10 @@ export function OpsInspectionStartForm({
     }
 
     const dockingIso = new Date(truckDockingLocal).toISOString();
-    const deviceUuid = getOrCreatePersistentDeviceId();
-    const truckNumberNormalized = normalizeIndianVehicleRegistration(truckNumber);
+    const deviceUuid =
+      getServerAssignedDeviceUuid() ?? getOrCreatePersistentDeviceId();
+    const truckNumberNormalized =
+      normalizeIndianVehicleRegistration(truckNumber);
 
     const damageFilled =
       damageType.trim().length > 0 &&

@@ -15,6 +15,7 @@ import {
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
+import { getServerAssignedDeviceUuid } from "@/lib/session-device-uuid";
 import {
   formatOpsRoleBadgeLabel,
   userInitialsFromName,
@@ -42,6 +43,7 @@ export default function OpsAccountPage() {
       return "";
     }
   });
+  const serverDeviceUuid = getServerAssignedDeviceUuid();
   const [online, setOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true,
   );
@@ -145,7 +147,18 @@ export default function OpsAccountPage() {
         </h2>
         <dl className="space-y-2 text-sm">
           <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted-foreground shrink-0">Fingerprint</dt>
+            <dt className="text-muted-foreground shrink-0">Device UUID</dt>
+            <dd
+              className="max-w-[min(220px,70vw)] break-all font-mono text-xs text-right"
+              title={serverDeviceUuid ?? undefined}
+            >
+              {serverDeviceUuid
+                ? shortenMiddle(serverDeviceUuid, 10, 10)
+                : "—"}
+            </dd>
+          </div>
+          <div className="flex items-start justify-between gap-4">
+            <dt className="text-muted-foreground shrink-0">Browser id</dt>
             <dd
               className="max-w-[min(220px,70vw)] break-all font-mono text-xs text-right"
               title={deviceFingerprint || undefined}

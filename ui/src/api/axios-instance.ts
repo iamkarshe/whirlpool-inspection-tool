@@ -1,5 +1,7 @@
 import axios, { type AxiosRequestConfig } from "axios";
 
+import { bootstrapServerDeviceUuidFromStorage } from "@/lib/session-device-uuid";
+
 const baseURL = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(
   /\/$/,
   "",
@@ -25,6 +27,7 @@ function bootstrapAuthHeaderFromStorage() {
 }
 
 bootstrapAuthHeaderFromStorage();
+bootstrapServerDeviceUuidFromStorage();
 
 /**
  * Orval axios mutator — returns response body (unwraps axios `data`).

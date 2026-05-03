@@ -11,8 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { setPageTitle } from "@/lib/core";
+import { isOpsManagerRole } from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
-import { Home, LineChart, ScanLine, Settings2 } from "lucide-react";
+import { Home, LineChart, ScanLine, Settings2, Users } from "lucide-react";
 import React, { useEffect } from "react";
 import {
   NavLink,
@@ -37,7 +38,7 @@ type RouteHandle = {
   renderLogo?: boolean;
 };
 
-const TABS: TabConfig[] = [
+const DEFAULT_TABS: TabConfig[] = [
   { label: "Home", path: "/ops", icon: Home },
   { label: "New", path: "/ops/new-inspection", icon: ScanLine },
   { label: "Data", path: "/ops/data", icon: LineChart },
@@ -71,14 +72,24 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
     setShowDesktopWarning(false);
   };
 
+  const navTabs = React.useMemo(() => {
+    if (!isOpsManagerRole(sessionUser?.role)) return DEFAULT_TABS;
+    const [home, ...rest] = DEFAULT_TABS;
+    return [
+      home!,
+      { label: "Team", path: "/ops/team", icon: Users },
+      ...rest,
+    ];
+  }, [sessionUser?.role]);
+
   const activeTab = React.useMemo(
     () =>
-      TABS.reduce<TabConfig | undefined>((current, tab) => {
+      navTabs.reduce<TabConfig | undefined>((current, tab) => {
         if (!location.pathname.startsWith(tab.path)) return current;
         if (!current) return tab;
         return tab.path.length > current.path.length ? tab : current;
       }, undefined),
-    [location.pathname],
+    [location.pathname, navTabs],
   );
 
   const shouldRenderLogo = React.useMemo(
@@ -168,7 +179,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       </main>
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/80 pb-safe pt-2 backdrop-blur_">
         <div className="mx-auto flex max-w-md items-center justify-between px-4">
-          {TABS.map((tab) => (
+          {navTabs.map((tab) => (
             <NavLink
               key={tab.path}
               to={tab.path}

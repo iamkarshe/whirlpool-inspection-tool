@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Whirlpool Inspection Tool API",
-    "description": "APIs for Whirlpool Inspection Tool API developed by Scopt Analytics for Whirlpool Inspection Tool API platform.",
+    "description": "Whirlpool Inspection Tool API APIs developed by Scopt Analytics.",
     "contact": {
       "name": "Scopt Analytics",
       "url": "https://scoptanalytics.com/",
@@ -1634,6 +1634,25 @@
         "operationId": "get_inspection_kpis_api_inspections_kpis_get",
         "parameters": [
           {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "custom",
+                "today",
+                "yesterday",
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "description": "UTC date window: today, yesterday, this calendar week (Mon–today), this calendar month, or custom. For custom, omit both dates for last 7 days.",
+              "default": "custom",
+              "title": "Period"
+            },
+            "description": "UTC date window: today, yesterday, this calendar week (Mon–today), this calendar month, or custom. For custom, omit both dates for last 7 days."
+          },
+          {
             "name": "date_from",
             "in": "query",
             "required": false,
@@ -1647,10 +1666,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Range start (UTC calendar date); omit with date_to for default: last 7 days including today",
+              "description": "With period=custom: range start (UTC); omit both dates for last 7 days",
               "title": "Date From"
             },
-            "description": "Range start (UTC calendar date); omit with date_to for default: last 7 days including today"
+            "description": "With period=custom: range start (UTC); omit both dates for last 7 days"
           },
           {
             "name": "date_to",
@@ -1666,10 +1685,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Range end (UTC calendar date, inclusive); omit with date_from for default: last 7 days including today",
+              "description": "With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
               "title": "Date To"
             },
-            "description": "Range end (UTC calendar date, inclusive); omit with date_from for default: last 7 days including today"
+            "description": "With period=custom: range end (UTC, inclusive); omit both dates for last 7 days"
           },
           {
             "name": "is_active",
@@ -4754,6 +4773,39 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "InspectionAnalyticsKpis": {
+        "properties": {
+          "scans_total": {
+            "type": "integer",
+            "title": "Scans Total",
+            "description": "Inspections created in the range. Operator: own scans. Manager / superadmin: all scans in warehouse scope."
+          },
+          "scans_in_review": {
+            "type": "integer",
+            "title": "Scans In Review",
+            "description": "PENDING or IN_REVIEW with created_at in range. Operator: own inspections. Manager / superadmin: any in warehouse scope."
+          },
+          "scans_approved": {
+            "type": "integer",
+            "title": "Scans Approved",
+            "description": "APPROVED with reviewed_at in range. Operator: their inspections. Manager: rows they reviewed. Superadmin: all approved decisions in scope."
+          },
+          "scans_rejected": {
+            "type": "integer",
+            "title": "Scans Rejected",
+            "description": "REJECTED with reviewed_at in range. Operator / manager same as scans_approved; superadmin: all rejections in scope."
+          }
+        },
+        "type": "object",
+        "required": [
+          "scans_total",
+          "scans_in_review",
+          "scans_approved",
+          "scans_rejected"
+        ],
+        "title": "InspectionAnalyticsKpis",
+        "description": "Role-aware analytics for the Data Analytics screen (same date window for all four)."
+      },
       "InspectionDropdownOption": {
         "properties": {
           "value": {
@@ -5097,6 +5149,18 @@
       },
       "InspectionKpisResponse": {
         "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "today",
+              "yesterday",
+              "week",
+              "month"
+            ],
+            "title": "Period",
+            "default": "custom"
+          },
           "date_from": {
             "type": "string",
             "format": "date",
@@ -5106,6 +5170,9 @@
             "type": "string",
             "format": "date",
             "title": "Date To"
+          },
+          "analytics": {
+            "$ref": "#/components/schemas/InspectionAnalyticsKpis"
           },
           "total_inspections": {
             "type": "integer",
@@ -5140,6 +5207,7 @@
         "required": [
           "date_from",
           "date_to",
+          "analytics",
           "total_inspections",
           "inbound_in_review",
           "inbound_approved",
@@ -6135,6 +6203,21 @@
               }
             ],
             "title": "Device Uuid"
+          },
+          "allowed_warehouses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Warehouses",
+            "description": "Warehouse codes the user may access; null for superadmin."
           }
         },
         "type": "object",

@@ -11,6 +11,7 @@ import type { InspectionListItemResponse } from "@/api/generated/model/inspectio
 import type { InspectionPassFailCounts } from "@/api/generated/model/inspectionPassFailCounts";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
 import type { InspectionKpisResponse } from "@/api/generated/model/inspectionKpisResponse";
+import type { InspectionReviewStatusUpdateRequest } from "@/api/generated/model/inspectionReviewStatusUpdateRequest";
 import type {
   Inspection,
   InspectionKpis,
@@ -312,6 +313,26 @@ export async function fetchInspectionDetail(
     detailFlight.set(inspectionUuid, p);
   }
   return detailFlight.get(inspectionUuid)!;
+}
+
+export function invalidateInspectionDetailCache(inspectionUuid: string): void {
+  detailFlight.delete(inspectionUuid.trim());
+}
+
+export async function patchInspectionReviewStatus(
+  inspectionUuid: string,
+  body: InspectionReviewStatusUpdateRequest,
+  opts?: { signal?: AbortSignal },
+): Promise<InspectionFullResponse> {
+  const api = getInspectionsApi();
+  const res =
+    await api.patchInspectionReviewStatusApiInspectionsInspectionUuidReviewStatusPatch(
+      inspectionUuid.trim(),
+      body,
+      opts?.signal ? { signal: opts.signal } : undefined,
+    );
+  invalidateInspectionDetailCache(inspectionUuid);
+  return res;
 }
 
 function valueToQuestionStatus(raw: string): InspectionQuestionStatus {

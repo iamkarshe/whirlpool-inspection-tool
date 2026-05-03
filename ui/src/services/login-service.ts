@@ -3,6 +3,10 @@ import { getAuth } from "@/api/generated/auth/auth";
 import type { LoginResponse } from "@/api/generated/model/loginResponse";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import { buildLoginDeviceInfo } from "@/lib/device-fingerprint";
+import {
+  clearServerDeviceUuid,
+  setServerDeviceUuidFromLogin,
+} from "@/lib/session-device-uuid";
 import { PAGES } from "@/endpoints";
 import { WHIRLPOOL_SESSION_CHANGED_EVENT } from "@/lib/session-events";
 import { isAxiosError } from "axios";
@@ -14,6 +18,11 @@ const SESSION_ROLE_LEGACY_KEY = "whirlpool.role";
 
 export const LOGIN_PASSWORD_MIN_LENGTH = 6;
 export const LOGIN_PASSWORD_MAX_LENGTH = 128;
+
+export {
+  getServerAssignedDeviceUuid,
+  serverDeviceUuidRef,
+} from "@/lib/session-device-uuid";
 
 function normalizeLoginErrorMessage(err: unknown): string {
   if (!isAxiosError(err)) {
@@ -59,6 +68,7 @@ export function clearAuthenticatedSession(): void {
   window.localStorage.removeItem(SESSION_TOKEN_TYPE_KEY);
   window.localStorage.removeItem(SESSION_USER_PAYLOAD_KEY);
   window.localStorage.removeItem(SESSION_ROLE_LEGACY_KEY);
+  clearServerDeviceUuid();
   Reflect.deleteProperty(apiClient.defaults.headers.common, "Authorization");
   notifySessionChanged();
 }
@@ -82,8 +92,10 @@ export function persistAuthenticatedSession(login: LoginResponse): void {
       role: login.role,
       designation: login.designation,
       is_active: login.is_active,
+      allowed_warehouses: login.allowed_warehouses ?? null,
     }),
   );
+  setServerDeviceUuidFromLogin(login.device_uuid);
   apiClient.defaults.headers.common.Authorization = `${tokenType} ${token}`;
 
   const target = resolvePostLoginHref(login.role);

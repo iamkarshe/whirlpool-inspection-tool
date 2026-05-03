@@ -25,6 +25,7 @@ import {
   fetchInspectionDetail,
   fetchInspectionInputsAsQuestionRows,
   fetchInspectionKpis,
+  formatCalendarDateForApi,
   inspectionKpisParamsFromDateRange,
   isoToApiDate,
   mapInspectionFullToInspection,
@@ -138,4 +139,24 @@ export async function getInspectionKpisForDateRange(
     }),
     opts,
   );
+}
+
+/** Inspections awaiting manager sign-off (last 30 days by `created_at`). */
+export async function getInspectionsPendingManagerReview(
+  opts?: { signal?: AbortSignal },
+): Promise<Inspection[]> {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 29);
+  const rows = await fetchAllInspectionRows(
+    {
+      sort_by: "created_at",
+      sort_dir: "desc",
+      date_field: "created_at",
+      date_from: formatCalendarDateForApi(start),
+      date_to: formatCalendarDateForApi(end),
+    },
+    opts,
+  );
+  return rows.filter((i) => i.is_under_review);
 }

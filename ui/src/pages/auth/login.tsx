@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { PAGES } from "@/endpoints";
 import AuthLayout from "@/pages/auth/layout";
+import type { LoginResponse } from "@/api/generated/model/loginResponse";
 import {
   LOGIN_PASSWORD_MAX_LENGTH,
   LOGIN_PASSWORD_MIN_LENGTH,
@@ -70,7 +71,7 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const session = await loginWithEmailPassword(
+      const session: LoginResponse = await loginWithEmailPassword(
         trimmedEmail,
         password,
         coords,
