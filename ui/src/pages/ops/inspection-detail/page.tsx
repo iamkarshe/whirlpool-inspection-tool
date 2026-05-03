@@ -15,10 +15,7 @@ import { toast } from "sonner";
 
 import { InspectionReviewStatus } from "@/api/generated/model/inspectionReviewStatus";
 import { useSessionUser } from "@/hooks/use-session-user";
-import {
-  canOpsRoleStartNewInspection,
-  isOpsManagerRole,
-} from "@/lib/ops-role";
+import { canOpsRoleStartNewInspection, isOpsManagerRole } from "@/lib/ops-role";
 
 import type {
   IssueSeverity,
@@ -47,12 +44,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { PAGES } from "@/endpoints";
 import { formatDate, setPageTitle } from "@/lib/core";
+import { cn } from "@/lib/utils";
 import {
   formatIssueSeverity,
   formatIssueStatus,
   issueSeverityBadgeClass,
 } from "@/pages/dashboard/inspections/components/view-tabs/inspection-issue-presenters";
-import { InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
+import type { InspectionType } from "@/pages/dashboard/inspections/inspection-types";
 import {
   getInspectionById,
   getInspectionQuestionResults,
@@ -106,6 +104,94 @@ function getCounts(rows: InspectionQuestionResult[]) {
   const passed = rows.filter((r) => r.status === "pass").length;
   const failed = total - passed;
   return { total, passed, failed };
+}
+
+function opsInspectionKindLabel(type: InspectionType): string {
+  return type === "outbound" ? "Outbound Inspection" : "Inbound Inspection";
+}
+
+function opsReviewStatusLabel(statusRaw: string | undefined): string {
+  const s = (statusRaw ?? "").trim().toUpperCase();
+  switch (s) {
+    case InspectionReviewStatus.IN_REVIEW:
+      return "In review";
+    case InspectionReviewStatus.PENDING:
+      return "Pending";
+    case InspectionReviewStatus.APPROVED:
+      return "Approved";
+    case InspectionReviewStatus.REJECTED:
+      return "Rejected";
+    default:
+      if (!s) return "";
+      return s
+        .toLowerCase()
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+  }
+}
+
+function OpsReviewStatusBadge({ status }: { status?: string }) {
+  const s = (status ?? "").trim().toUpperCase();
+  const label = opsReviewStatusLabel(status);
+  const base = "shrink-0 text-[11px] font-medium";
+  if (!label) {
+    return (
+      <Badge
+        variant="outline"
+        className={cn(base, "font-normal text-muted-foreground")}
+      >
+        —
+      </Badge>
+    );
+  }
+  if (s === InspectionReviewStatus.APPROVED) {
+    return (
+      <Badge
+        variant="outline"
+        className={cn(
+          base,
+          "border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
+        )}
+      >
+        {label}
+      </Badge>
+    );
+  }
+  if (s === InspectionReviewStatus.REJECTED) {
+    return (
+      <Badge
+        variant="outline"
+        className={cn(
+          base,
+          "border-destructive/45 bg-destructive/10 text-destructive",
+        )}
+      >
+        {label}
+      </Badge>
+    );
+  }
+  if (
+    s === InspectionReviewStatus.IN_REVIEW ||
+    s === InspectionReviewStatus.PENDING
+  ) {
+    return (
+      <Badge
+        variant="outline"
+        className={cn(
+          base,
+          "border-amber-500/45 bg-amber-500/10 text-amber-950 dark:text-amber-100",
+        )}
+      >
+        {label}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className={cn(base, "font-normal")}>
+      {label}
+    </Badge>
+  );
 }
 
 function StatusPill({ status }: { status: "pass" | "fail" }) {
@@ -171,7 +257,7 @@ export default function OpsInspectionDetailPage() {
 
   useEffect(() => {
     if (!inspection) return;
-    setPageTitle(`Inspection ${inspection.id}`);
+    setPageTitle("Inspection");
   }, [inspection]);
 
   useEffect(() => {
@@ -249,9 +335,11 @@ export default function OpsInspectionDetailPage() {
       .map((r) => ({
         id: `sys-${id}-${r.id}`,
         source: "system" as const,
-        targetType: r.images.length > 0 ? ("image" as const) : ("inspection" as const),
+        targetType:
+          r.images.length > 0 ? ("image" as const) : ("inspection" as const),
         title: r.question,
-        description: r.notes ?? `Failed check in ${r.section.replace("-", " ")}.`,
+        description:
+          r.notes ?? `Failed check in ${r.section.replace("-", " ")}.`,
         severity: "medium" as const,
         type: "other" as const,
         section: r.section as SectionKey,
@@ -291,11 +379,9 @@ export default function OpsInspectionDetailPage() {
     () =>
       Boolean(
         inspection &&
-          isManager &&
-          (inspection.is_under_review ||
-            deriveIsUnderReviewFromReviewStatus(
-              inspection.review_status ?? "",
-            )),
+        isManager &&
+        (inspection.is_under_review ||
+          deriveIsUnderReviewFromReviewStatus(inspection.review_status ?? "")),
       ),
     [inspection, isManager],
   );
@@ -331,7 +417,10 @@ export default function OpsInspectionDetailPage() {
   );
 
   function openRowImages(row: InspectionQuestionResult) {
-    const images = row.images.map((img) => ({ url: img.url, filename: img.filename }));
+    const images = row.images.map((img) => ({
+      url: img.url,
+      filename: img.filename,
+    }));
     setGalleryImages(images);
     setActiveGalleryUrl(images[0]?.url ?? null);
     setGalleryOpen(true);
@@ -392,7 +481,9 @@ export default function OpsInspectionDetailPage() {
             type: payload.type,
             createdAt: new Date().toISOString(),
             imageUrl:
-              payload.target.type === "image" ? payload.target.imageUrl : undefined,
+              payload.target.type === "image"
+                ? payload.target.imageUrl
+                : undefined,
             imageFilename:
               payload.target.type === "image"
                 ? payload.target.imageFilename
@@ -411,7 +502,9 @@ export default function OpsInspectionDetailPage() {
           <div className="space-y-2">
             <div className="rounded-lg border bg-muted/20 p-2 text-xs">
               <p className="font-medium">{resolvingIssue?.title ?? "Issue"}</p>
-              <p className="text-muted-foreground mt-1">Add a short resolution note.</p>
+              <p className="text-muted-foreground mt-1">
+                Add a short resolution note.
+              </p>
             </div>
             <div className="space-y-1">
               <Label htmlFor="resolve-remark" className="text-xs">
@@ -428,7 +521,11 @@ export default function OpsInspectionDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setResolveOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setResolveOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -452,39 +549,46 @@ export default function OpsInspectionDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" asChild>
+      <div className="flex items-start gap-2">
+        <Button variant="ghost" size="icon" className="shrink-0" asChild>
           <Link to={PAGES.OPS_TODAY_INSPECTIONS} aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Inspection detail
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Inspection
           </p>
-          <h1 className="text-base font-semibold leading-tight">
-            {inspection.id}
+          <h1 className="text-balance text-lg font-semibold leading-snug tracking-tight">
+            {opsInspectionKindLabel(inspection.inspection_type)}
           </h1>
+          <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground">
+            {inspection.id}
+          </p>
         </div>
       </div>
 
-      <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
-        <div className="flex flex-wrap gap-1.5">
-          <InspectionTypeBadge inspectionType={inspection.inspection_type} />
-          <Badge variant="outline">{formatDate(inspection.created_at)}</Badge>
+      <section className="space-y-3 rounded-3xl border bg-card/80 p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="text-[11px] font-normal">
+            {formatDate(inspection.created_at)}
+          </Badge>
+          <OpsReviewStatusBadge status={inspection.review_status} />
         </div>
-        <div className="space-y-1 text-sm">
+        <div className="space-y-2 text-sm">
           <p>
-            <span className="text-muted-foreground">Product:</span>{" "}
-            <span className="font-medium">{inspection.product_serial}</span>
+            <span className="text-muted-foreground">Product</span>
+            <span className="mx-1.5 text-muted-foreground/60">·</span>
+            <span className="font-medium text-foreground">
+              {inspection.product_serial}
+            </span>
           </p>
           <p>
-            <span className="text-muted-foreground">Checklist:</span>{" "}
-            <span className="font-medium">{inspection.checklist_name}</span>
-          </p>
-          <p>
-            <span className="text-muted-foreground">Inspector:</span>{" "}
-            <span className="font-medium">{inspection.inspector_name}</span>
+            <span className="text-muted-foreground">Inspector</span>
+            <span className="mx-1.5 text-muted-foreground/60">·</span>
+            <span className="font-medium text-foreground">
+              {inspection.inspector_name}
+            </span>
           </p>
         </div>
       </section>
@@ -524,6 +628,12 @@ export default function OpsInspectionDetailPage() {
         </h2>
         {canSubmitManagerReview ? (
           <>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-[11px] text-muted-foreground">
+                Current status
+              </span>
+              <OpsReviewStatusBadge status={inspection.review_status} />
+            </div>
             <p className="text-[11px] text-muted-foreground">
               Manager decision — this inspection is waiting in the review queue.
             </p>
@@ -547,7 +657,9 @@ export default function OpsInspectionDetailPage() {
                 size="sm"
                 className="h-10"
                 disabled={reviewSubmitting}
-                onClick={() => void submitManagerReview(InspectionReviewStatus.APPROVED)}
+                onClick={() =>
+                  void submitManagerReview(InspectionReviewStatus.APPROVED)
+                }
               >
                 Approve
               </Button>
@@ -557,33 +669,26 @@ export default function OpsInspectionDetailPage() {
                 variant="destructive"
                 className="h-10"
                 disabled={reviewSubmitting}
-                onClick={() => void submitManagerReview(InspectionReviewStatus.REJECTED)}
+                onClick={() =>
+                  void submitManagerReview(InspectionReviewStatus.REJECTED)
+                }
               >
                 Reject
               </Button>
             </div>
           </>
         ) : (
-          <p className="text-xs text-muted-foreground">
-            {isManager ? (
-              <>
-                Review status:{" "}
-                <span className="font-medium text-foreground">
-                  {inspection.review_status?.trim() || "—"}
-                </span>
-                . No manager action is required right now.
-              </>
-            ) : (
-              <>
-                Review status:{" "}
-                <span className="font-medium text-foreground">
-                  {inspection.review_status?.trim() || "—"}
-                </span>
-                . Only managers can approve or reject inspections from the Ops
-                app.
-              </>
-            )}
-          </p>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+              <span className="text-muted-foreground">Review status</span>
+              <OpsReviewStatusBadge status={inspection.review_status} />
+            </p>
+            <p>
+              {isManager
+                ? "No manager action is required right now."
+                : "Only managers can approve or reject inspections from the Ops app."}
+            </p>
+          </div>
         )}
       </section>
 
@@ -619,7 +724,12 @@ export default function OpsInspectionDetailPage() {
                 variant="outline"
                 className="h-9 text-xs"
                 onClick={() => {
-                  setGalleryImages(allImages.map((img) => ({ url: img.url, filename: img.filename })));
+                  setGalleryImages(
+                    allImages.map((img) => ({
+                      url: img.url,
+                      filename: img.filename,
+                    })),
+                  );
                   setActiveGalleryUrl(allImages[0]?.url ?? null);
                   setGalleryOpen(true);
                 }}
@@ -661,23 +771,29 @@ export default function OpsInspectionDetailPage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  {rows.length === 0 ?
+                  {rows.length === 0 ? (
                     <OpsListEmptyState
                       variant="compact"
                       icon={ListChecks}
                       title="No results in this section"
                       description="Answers for this part of the checklist will show here once recorded."
                     />
-                  : rows.map((row) => (
-                      <div key={row.id} className="rounded-2xl border bg-muted/20 p-2.5">
+                  ) : (
+                    rows.map((row) => (
+                      <div
+                        key={row.id}
+                        className="rounded-2xl border bg-muted/20 p-2.5"
+                      >
                         <div className="mb-1 flex items-start justify-between gap-2">
                           <p className="text-xs leading-snug">{row.question}</p>
                           <StatusPill status={row.status} />
                         </div>
-                        {row.notes ?
-                          <p className="text-[11px] text-muted-foreground">{row.notes}</p>
-                        : null}
-                        {row.images.length > 0 ?
+                        {row.notes ? (
+                          <p className="text-[11px] text-muted-foreground">
+                            {row.notes}
+                          </p>
+                        ) : null}
+                        {row.images.length > 0 ? (
                           <div className="mt-2 flex gap-2 overflow-x-auto">
                             {row.images.map((img) => (
                               <button
@@ -694,10 +810,10 @@ export default function OpsInspectionDetailPage() {
                               </button>
                             ))}
                           </div>
-                        : null}
+                        ) : null}
                       </div>
                     ))
-                  }
+                  )}
                 </div>
               </section>
             );
@@ -714,14 +830,14 @@ export default function OpsInspectionDetailPage() {
                 {allImages.length}
               </Badge>
             </div>
-            {allImages.length === 0 ?
+            {allImages.length === 0 ? (
               <OpsListEmptyState
                 variant="compact"
                 icon={ImageOff}
                 title="No images captured"
                 description="Photos attached to checklist answers will appear in this gallery."
               />
-            : (
+            ) : (
               <div className="grid grid-cols-3 gap-2">
                 {allImages.map((img) => {
                   const imageIssueCount = issueRows.filter(
@@ -748,11 +864,11 @@ export default function OpsInspectionDetailPage() {
                         alt={img.filename ?? img.question}
                         className="h-24 w-full object-cover"
                       />
-                      {imageIssueCount > 0 ?
+                      {imageIssueCount > 0 ? (
                         <span className="absolute top-1 right-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground">
                           {imageIssueCount}
                         </span>
-                      : null}
+                      ) : null}
                     </button>
                   );
                 })}
@@ -778,27 +894,38 @@ export default function OpsInspectionDetailPage() {
                 Raise
               </Button>
             </div>
-            {issueRows.length === 0 ?
+            {issueRows.length === 0 ? (
               <OpsListEmptyState
                 variant="compact"
                 icon={Flag}
                 title="No issues reported"
                 description="Raise an issue from this inspection when something needs follow-up."
               />
-            : (
+            ) : (
               <div className="space-y-2">
                 {issueRows.map((issue) => (
-                  <div key={issue.id} className="space-y-1 rounded-2xl border bg-muted/20 p-2.5">
+                  <div
+                    key={issue.id}
+                    className="space-y-1 rounded-2xl border bg-muted/20 p-2.5"
+                  >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-medium leading-snug">{issue.title}</p>
+                      <p className="text-xs font-medium leading-snug">
+                        {issue.title}
+                      </p>
                       <Badge
-                        variant={issue.status === "resolved" ? "success" : "destructive"}
+                        variant={
+                          issue.status === "resolved"
+                            ? "success"
+                            : "destructive"
+                        }
                         className="text-[10px]"
                       >
                         {formatIssueStatus(issue.status)}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">{issue.description}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {issue.description}
+                    </p>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Badge
                         variant="outline"
@@ -806,7 +933,10 @@ export default function OpsInspectionDetailPage() {
                       >
                         {formatIssueSeverity(issue.severity)}
                       </Badge>
-                      <Badge variant="secondary" className="text-[10px] capitalize">
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] capitalize"
+                      >
                         {issue.type.replaceAll("_", " ")}
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
@@ -821,7 +951,10 @@ export default function OpsInspectionDetailPage() {
                           className="h-7 px-2 text-[11px]"
                           onClick={() => {
                             setGalleryImages([
-                              { url: issue.imageUrl ?? "", filename: issue.imageFilename },
+                              {
+                                url: issue.imageUrl ?? "",
+                                filename: issue.imageFilename,
+                              },
                             ]);
                             setActiveGalleryUrl(issue.imageUrl ?? null);
                             setGalleryOpen(true);
@@ -833,7 +966,9 @@ export default function OpsInspectionDetailPage() {
                       ) : null}
                       <Button
                         size="sm"
-                        variant={issue.status === "resolved" ? "secondary" : "outline"}
+                        variant={
+                          issue.status === "resolved" ? "secondary" : "outline"
+                        }
                         className="h-7 px-2 text-[11px]"
                         disabled={issue.status === "resolved"}
                         onClick={() => resolveIssue(issue.id)}
@@ -858,7 +993,9 @@ export default function OpsInspectionDetailPage() {
               <div className="space-y-2 text-[11px]">
                 <div className="rounded-2xl border bg-muted/20 p-2.5">
                   <p className="font-medium">Inbound scan</p>
-                  <p className="text-muted-foreground">{relationship.inbound.personName}</p>
+                  <p className="text-muted-foreground">
+                    {relationship.inbound.personName}
+                  </p>
                   <p className="text-muted-foreground">
                     {formatDate(relationship.inbound.scannedAt)}
                   </p>
