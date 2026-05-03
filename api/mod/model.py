@@ -275,6 +275,10 @@ class User(TimestampSoftDeleteMixin, Base):
         )
     )
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
+    barcode_locks: Mapped[list["BarcodeLock"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     warehouses_scope: Mapped[list["Warehouse"]] = relationship(
         secondary=user_allowed_warehouses_tbl,
         back_populates="users_with_warehouse_access",
@@ -941,3 +945,32 @@ class Log(TimestampSoftDeleteMixin, Base):
     product: Mapped["Product"] = relationship(back_populates="logs")
     inspection: Mapped["Inspection"] = relationship(back_populates="logs")
     device: Mapped["Device"] = relationship(back_populates="logs")
+
+
+class BarcodeLock(Base):
+    __tablename__ = "barcode_locks"
+    __table_args__ = (
+        UniqueConstraint(
+            "barcode",
+            "inspection_type",
+            name="uq_barcode_locks_barcode_inspection_type",
+        ),
+        Index("ix_barcode_locks_user_id", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    barcode: Mapped[str] = mapped_column(String(64), nullable=False)
+    inspection_type: Mapped[InspectionType] = mapped_column(
+        INSPECTION_TYPE_DB, nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    locked_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="barcode_locks")

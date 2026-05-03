@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
 from mod.api.inspection.helper import (
+    acquire_inspection_barcode_lock,
     build_active_checklist_grouped_response,
     build_barcode_parse_response,
     build_inspection_metadata_response,
@@ -27,8 +28,10 @@ from mod.api.inspection.helper import (
     default_inspection_metrics,
     fetch_inspection_yes_no_metrics,
     get_inspection_entity_by_uuid,
+    map_barcode_lock_row,
     map_inspection_list_item,
     present_inspection_full,
+    release_inspection_barcode_lock,
     resolve_inspection_kpi_warehouse_codes,
     resolve_inspection_scope_filters,
     save_inspection_image_upload,
@@ -36,6 +39,9 @@ from mod.api.inspection.helper import (
 )
 from mod.api.inspection.response import (
     ActiveChecklistGroupedResponse,
+    BarcodeLockAcquireRequest,
+    BarcodeLockReleaseResponse,
+    BarcodeLockResponse,
     BarcodeParseResponse,
     InspectionAnalyticsKpis,
     InspectionFullResponse,
@@ -293,6 +299,50 @@ def parse_inspection_barcode(
     db: Session = Depends(get_db),
 ):
     return build_barcode_parse_response(db, barcode)
+
+
+@router.post(
+    "/inspections/barcode-lock",
+    name="acquire_inspection_barcode_lock",
+    response_model=BarcodeLockResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager", "operator"])
+def acquire_inspection_barcode_lock_route(
+    request: Request,
+    body: BarcodeLockAcquireRequest,
+    db: Session = Depends(get_db),
+):
+    row = acquire_inspection_barcode_lock(
+        db,
+        int(request.state.user_id),
+        body.barcode,
+        body.inspection_type,
+    )
+    db.commit()
+    return map_barcode_lock_row(row)
+
+
+@router.post(
+    "/inspections/barcode-lock/release",
+    name="release_inspection_barcode_lock",
+    response_model=BarcodeLockReleaseResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager", "operator"])
+def release_inspection_barcode_lock_route(
+    request: Request,
+    body: BarcodeLockAcquireRequest,
+    db: Session = Depends(get_db),
+):
+    released = release_inspection_barcode_lock(
+        db,
+        int(request.state.user_id),
+        body.barcode,
+        body.inspection_type,
+    )
+    db.commit()
+    return BarcodeLockReleaseResponse(released=released)
 
 
 @router.get(

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Literal
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, status
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.checklist_inspection import (
@@ -25,6 +26,7 @@ from mod.api.inspection.response import (
     BarcodeParseUnitResponse,
     ChecklistGroupBlock,
     InspectionDetailResponse,
+    BarcodeLockResponse,
     InspectionFullResponse,
     InspectionImageUploadResponse,
     InspectionMetadataResponse,
@@ -48,6 +50,7 @@ from mod.model import (
     ChecklistGroup,
     ChecklistPhotoUploadRule,
     Device,
+    BarcodeLock,
     Inspection,
     InspectionImage,
     InspectionInput,
@@ -608,6 +611,29 @@ INSPECTION_UPLOAD_BARCODE_PATTERN = re.compile(
     rf"^[A-Za-z0-9]{{{INSPECTION_UPLOAD_BARCODE_LEN}}}$"
 )
 
+BARCODE_LOCK_TTL = timedelta(minutes=60)
+MAX_BARCODE_LOCK_ACQUIRE_ATTEMPTS = 8
+
+
+def inspection_barcode_lock_expires_at(locked_at: datetime) -> datetime:
+    ts = locked_at
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    else:
+        ts = ts.astimezone(timezone.utc)
+    return ts + BARCODE_LOCK_TTL
+
+
+def inspection_barcode_lock_is_expired(locked_at: datetime | None) -> bool:
+    if locked_at is None:
+        return True
+    ts = locked_at
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    else:
+        ts = ts.astimezone(timezone.utc)
+    return ts < datetime.now(timezone.utc) - BARCODE_LOCK_TTL
+
 
 def sanitize_barcode_for_upload_path(barcode: str) -> str:
     s = barcode.strip()
@@ -977,6 +1003,164 @@ def build_inspection_metadata_response(db: Session) -> InspectionMetadataRespons
     )
 
 
+def map_barcode_lock_row(row: BarcodeLock) -> BarcodeLockResponse:
+    it = row.inspection_type
+    it_s = it.value if hasattr(it, "value") else str(it)
+    return BarcodeLockResponse(
+        id=row.id,
+        barcode=row.barcode,
+        inspection_type=it_s,
+        user_id=row.user_id,
+        locked_at=row.locked_at,
+        expires_at=inspection_barcode_lock_expires_at(row.locked_at),
+    )
+
+
+def acquire_inspection_barcode_lock(
+    db: Session,
+    user_id: int,
+    barcode: str,
+    inspection_type: InspectionType,
+) -> BarcodeLock:
+    code = sanitize_barcode_for_upload_path((barcode or "").strip())
+
+    def locked_row_for_update():
+        return (
+            db.query(BarcodeLock)
+            .filter(
+                BarcodeLock.barcode == code,
+                BarcodeLock.inspection_type == inspection_type,
+            )
+            .with_for_update()
+            .first()
+        )
+
+    attempts_remaining = MAX_BARCODE_LOCK_ACQUIRE_ATTEMPTS
+    while attempts_remaining > 0:
+        attempts_remaining -= 1
+        row = locked_row_for_update()
+        if row is not None:
+            if inspection_barcode_lock_is_expired(row.locked_at):
+                db.delete(row)
+                db.flush()
+                row = None
+        if row is not None:
+            if int(row.user_id) != int(user_id):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This barcode is locked for this inspection direction by another user.",
+                )
+            return row
+
+        candidate = BarcodeLock(
+            barcode=code,
+            inspection_type=inspection_type,
+            user_id=int(user_id),
+        )
+        db.add(candidate)
+        try:
+            with db.begin_nested():
+                db.flush()
+            return candidate
+        except IntegrityError:
+            db.expunge(candidate)
+
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Could not acquire barcode lock; try again.",
+    )
+
+
+def release_inspection_barcode_lock(
+    db: Session,
+    user_id: int,
+    barcode: str,
+    inspection_type: InspectionType,
+) -> bool:
+    """Remove lock if held by user_id, or remove an expired lock (any caller). Returns False if no row."""
+    code = sanitize_barcode_for_upload_path((barcode or "").strip())
+    row = (
+        db.query(BarcodeLock)
+        .filter(
+            BarcodeLock.barcode == code,
+            BarcodeLock.inspection_type == inspection_type,
+        )
+        .first()
+    )
+    if row is None:
+        return False
+    if inspection_barcode_lock_is_expired(row.locked_at):
+        db.delete(row)
+        return True
+    if int(row.user_id) != int(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not hold the lock for this barcode and direction.",
+        )
+    db.delete(row)
+    return True
+
+
+def ensure_inspection_barcode_lock_held(
+    db: Session,
+    user_id: int,
+    barcode: str,
+    inspection_type: InspectionType,
+) -> None:
+    row = (
+        db.query(BarcodeLock)
+        .filter(
+            BarcodeLock.barcode == barcode,
+            BarcodeLock.inspection_type == inspection_type,
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Acquire a barcode lock for this barcode and inspection direction before starting an inspection.",
+        )
+    if inspection_barcode_lock_is_expired(row.locked_at):
+        db.delete(row)
+        db.flush()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Barcode lock expired after {int(BARCODE_LOCK_TTL.total_seconds() // 60)} "
+                "minutes; acquire a new lock."
+            ),
+        )
+    if int(row.user_id) != int(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Acquire a barcode lock for this barcode and inspection direction before starting an inspection.",
+        )
+
+
+def delete_inspection_barcode_lock_if_holder(
+    db: Session,
+    user_id: int,
+    barcode: str,
+    inspection_type: InspectionType,
+) -> None:
+    row = (
+        db.query(BarcodeLock)
+        .filter(
+            BarcodeLock.barcode == barcode,
+            BarcodeLock.inspection_type == inspection_type,
+        )
+        .first()
+    )
+    if row is None:
+        return
+    if inspection_barcode_lock_is_expired(row.locked_at):
+        db.delete(row)
+        return
+    if int(row.user_id) != int(user_id):
+        return
+    db.delete(row)
+
+
 def get_or_create_product_unit_for_barcode(
     db: Session,
     barcode: str,
@@ -1028,7 +1212,10 @@ def create_inspection(
 ) -> InspectionWithChecklistPayload:
     committed = False
     try:
-        full_barcode = body.barcode.strip()
+        full_barcode = sanitize_barcode_for_upload_path((body.barcode or "").strip())
+        ensure_inspection_barcode_lock_held(
+            db, int(request.state.user_id), full_barcode, inspection_type
+        )
         unit_row = (
             db.query(ProductUnit).filter(ProductUnit.barcode == full_barcode).first()
         )
@@ -1056,7 +1243,7 @@ def create_inspection(
                     },
                 )
 
-        product, unit, fields = get_or_create_product_unit_for_barcode(db, body.barcode)
+        product, unit, fields = get_or_create_product_unit_for_barcode(db, full_barcode)
 
         device = (
             db.query(Device)
@@ -1225,6 +1412,9 @@ def create_inspection(
                     )
                 )
 
+        delete_inspection_barcode_lock_if_holder(
+            db, int(request.state.user_id), full_barcode, inspection_type
+        )
         db.commit()
         committed = True
 

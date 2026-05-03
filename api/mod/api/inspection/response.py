@@ -18,6 +18,7 @@ from mod.model import (
     DamageSeverity,
     DamageType,
     InspectionReviewStatus,
+    InspectionType,
 )
 from utils.common import (
     INDIA_LAT_MAX,
@@ -28,6 +29,29 @@ from utils.common import (
     normalize_registration,
     parse_to_utc_datetime,
 )
+
+
+class BarcodeLockAcquireRequest(BaseModel):
+    barcode: str = Field(..., min_length=1)
+    inspection_type: InspectionType
+
+    @field_validator("barcode", mode="after")
+    @classmethod
+    def strip_barcode(cls, v: str) -> str:
+        return (v or "").strip()
+
+
+class BarcodeLockResponse(BaseModel):
+    id: int
+    barcode: str
+    inspection_type: str
+    user_id: int
+    locked_at: datetime
+    expires_at: datetime
+
+
+class BarcodeLockReleaseResponse(BaseModel):
+    released: bool
 
 
 class BarcodeParseSegments(BaseModel):
