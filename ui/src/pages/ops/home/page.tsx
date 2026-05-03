@@ -1,15 +1,29 @@
-import { BookOpenText, ClipboardList, ScanLine, Search, Users } from "lucide-react";
-import { useMemo } from "react";
+import {
+  BarChart3,
+  BookOpenText,
+  ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
+  LineChart,
+  ScanLine,
+  Search,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { firstNameFromDisplayName } from "@/lib/ops-user-display";
 import { isOpsManagerRole } from "@/lib/ops-role";
+import { getInspectionsPendingManagerReview } from "@/pages/dashboard/inspections/inspection-service";
 
 export default function OpsHomePage() {
   const navigate = useNavigate();
   const sessionUser = useSessionUser();
+  const [pendingReviewCount, setPendingReviewCount] = useState<number | null>(
+    null,
+  );
+  const [reviewCountFailed, setReviewCountFailed] = useState(false);
 
   const greetingLead = useMemo(() => {
     return firstNameFromDisplayName(sessionUser?.name) ?? "there";
@@ -17,11 +31,161 @@ export default function OpsHomePage() {
 
   const isManager = isOpsManagerRole(sessionUser?.role);
 
+  useEffect(() => {
+    if (!isManager) return;
+    let cancelled = false;
+    getInspectionsPendingManagerReview()
+      .then((rows) => {
+        if (!cancelled) {
+          setPendingReviewCount(rows.length);
+          setReviewCountFailed(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPendingReviewCount(null);
+          setReviewCountFailed(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isManager]);
+
+  if (isManager) {
+    return (
+      <div className="space-y-4">
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Manager
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Hi, {greetingLead} — ready to review?
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Open the queue to approve or reject inspections your operators
+            submitted.
+          </p>
+        </header>
+
+        <button
+          type="button"
+          onClick={() => navigate(PAGES.OPS_TEAM_REVIEW)}
+          className="flex w-full items-center justify-between gap-3 rounded-3xl border border-violet-500/30 bg-violet-500/10 p-4 text-left shadow-sm ring-1 ring-violet-500/15 transition-all hover:bg-violet-500/15 active:scale-[0.99]"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-sm">
+              <ClipboardCheck className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-violet-900 dark:text-violet-100">
+                Review queue
+              </p>
+              <p className="text-2xl font-bold tabular-nums leading-none">
+                {reviewCountFailed
+                  ? "—"
+                  : pendingReviewCount === null
+                    ? "…"
+                    : pendingReviewCount}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {reviewCountFailed
+                  ? "Open the queue to see pending items"
+                  : pendingReviewCount === 1
+                    ? "inspection needs your decision"
+                    : "inspections need your decision"}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+        </button>
+
+        <section className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(PAGES.OPS_TEAM)}
+            className="group flex h-32 flex-col justify-between rounded-3xl border bg-violet-500/5 p-3 text-left shadow-sm ring-1 ring-violet-500/10 transition-all hover:-translate-y-0.5 hover:bg-violet-500/10 hover:shadow-md active:translate-y-0"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex rounded-full bg-violet-500/15 px-2 py-1 text-[11px] font-medium text-violet-800 dark:text-violet-200">
+                Team
+              </span>
+              <BarChart3 className="h-5 w-5 text-violet-600 dark:text-violet-300" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">Team overview</p>
+              <p className="text-[11px] text-muted-foreground">
+                KPIs for your operators.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate(PAGES.OPS_DATA)}
+            className="group flex h-32 flex-col justify-between rounded-3xl border bg-amber-500/5 p-3 text-left shadow-sm ring-1 ring-amber-500/10 transition-all hover:-translate-y-0.5 hover:bg-amber-500/10 hover:shadow-md active:translate-y-0"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex rounded-full bg-amber-500/15 px-2 py-1 text-[11px] font-medium text-amber-800 dark:text-amber-200">
+                Data
+              </span>
+              <LineChart className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">Inspection data</p>
+              <p className="text-[11px] text-muted-foreground">
+                Counts by date range.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate(PAGES.OPS_TODAY_INSPECTIONS)}
+            className="group flex h-32 flex-col justify-between rounded-3xl border bg-sky-500/5 p-3 text-left shadow-sm ring-1 ring-sky-500/10 transition-all hover:-translate-y-0.5 hover:bg-sky-500/10 hover:shadow-md active:translate-y-0"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex rounded-full bg-sky-500/15 px-2 py-1 text-[11px] font-medium text-sky-800 dark:text-sky-200">
+                Activity
+              </span>
+              <ClipboardList className="h-5 w-5 text-sky-600 dark:text-sky-300" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">{"Today's inspections"}</p>
+              <p className="text-[11px] text-muted-foreground">
+                Browse what was logged.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate(PAGES.OPS_HELP)}
+            className="group flex h-32 flex-col justify-between rounded-3xl border bg-emerald-500/5 p-3 text-left shadow-sm ring-1 ring-emerald-500/10 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/10 hover:shadow-md active:translate-y-0"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-200">
+                Guide
+              </span>
+              <BookOpenText className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">How to use</p>
+              <p className="text-[11px] text-muted-foreground">
+                Review workflow tips.
+              </p>
+            </div>
+          </button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <header className="space-y-1">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Today's Work
+          {"Today's Work"}
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">
           Hi, {greetingLead} — ready to inspect?
@@ -31,50 +195,10 @@ export default function OpsHomePage() {
         </p>
       </header>
 
-      {isManager ? (
-        <section className="rounded-3xl border border-violet-500/25 bg-violet-500/5 p-4 shadow-sm ring-1 ring-violet-500/10">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-700 dark:text-violet-200">
-              <Users className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-violet-800 dark:text-violet-200">
-                  Manager
-                </p>
-                <p className="text-sm font-medium leading-snug">
-                  Team KPIs and inspection review queue
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  Operators cannot approve or reject inspections — only you can
-                  clear the review queue.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate(PAGES.OPS_TEAM)}
-                  className="rounded-full bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-violet-700"
-                >
-                  Open team overview
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate(PAGES.OPS_TEAM_REVIEW)}
-                  className="rounded-full border border-violet-500/40 bg-background/80 px-3 py-1.5 text-xs font-semibold text-violet-800 transition-colors hover:bg-violet-500/10 dark:text-violet-100"
-                >
-                  Review queue
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <section className="grid grid-cols-2 gap-3">
         <button
           type="button"
-          onClick={() => navigate("/ops/new-inspection")}
+          onClick={() => navigate(PAGES.OPS_NEW_INSPECTION)}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-emerald-500/5 p-3 text-left shadow-sm ring-1 ring-emerald-500/10 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">
@@ -93,7 +217,7 @@ export default function OpsHomePage() {
 
         <button
           type="button"
-          onClick={() => navigate("/ops/today-inspections")}
+          onClick={() => navigate(PAGES.OPS_TODAY_INSPECTIONS)}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-sky-500/5 p-3 text-left shadow-sm ring-1 ring-sky-500/10 transition-all hover:-translate-y-0.5 hover:bg-sky-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">
@@ -103,7 +227,7 @@ export default function OpsHomePage() {
             <ClipboardList className="h-5 w-5 text-sky-600 dark:text-sky-300" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold">Today's Inspections</p>
+            <p className="text-sm font-semibold">{"Today's inspections"}</p>
             <p className="text-[11px] text-muted-foreground">
               Review everything logged this shift.
             </p>
@@ -112,7 +236,7 @@ export default function OpsHomePage() {
 
         <button
           type="button"
-          onClick={() => navigate("/ops/data")}
+          onClick={() => navigate(PAGES.OPS_DATA)}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-amber-500/5 p-3 text-left shadow-sm ring-1 ring-amber-500/10 transition-all hover:-translate-y-0.5 hover:bg-amber-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">
@@ -131,7 +255,7 @@ export default function OpsHomePage() {
 
         <button
           type="button"
-          onClick={() => navigate("/ops/help")}
+          onClick={() => navigate(PAGES.OPS_HELP)}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-violet-500/5 p-3 text-left shadow-sm ring-1 ring-violet-500/10 transition-all hover:-translate-y-0.5 hover:bg-violet-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">

@@ -117,6 +117,7 @@ export const PAGES = {
   OPS_ACCOUNT: "/ops/account",
   OPS_HELP: "/ops/help",
   OPS_TODAY_INSPECTIONS: "/ops/today-inspections",
+  OPS_INSPECTION_LIST: "/ops/inspection-list",
   OPS_TEAM: "/ops/team",
   OPS_TEAM_REVIEW: "/ops/team/review",
   OPS_INSPECTIONS: "/ops/inspections",

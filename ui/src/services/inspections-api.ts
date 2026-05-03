@@ -121,9 +121,19 @@ export function mapInspectionFullToInspection(
   };
 }
 
+type InspectionKpisResponseWithLegacy = InspectionKpisResponse & {
+  inbound_passed?: number;
+  inbound_failed?: number;
+  outbound_passed?: number;
+  outbound_failed?: number;
+};
+
 export function mapKpisResponse(api: InspectionKpisResponse): InspectionKpis {
-  const inboundApproved = api.inbound_approved ?? api.inbound_passed;
-  const outboundApproved = api.outbound_approved ?? api.outbound_passed;
+  const ext = api as InspectionKpisResponseWithLegacy;
+  const inboundApproved =
+    api.inbound_approved ?? ext.inbound_passed ?? 0;
+  const outboundApproved =
+    api.outbound_approved ?? ext.outbound_passed ?? 0;
 
   return {
     totalInspections: api.total_inspections,
@@ -133,12 +143,20 @@ export function mapKpisResponse(api: InspectionKpisResponse): InspectionKpis {
     outboundInReview: api.outbound_in_review ?? 0,
     outboundRejected: api.outbound_rejected ?? 0,
     outboundApproved,
-    inboundPassed: api.inbound_passed,
-    inboundFailed: api.inbound_failed,
-    outboundPassed: api.outbound_passed,
-    outboundFailed: api.outbound_failed,
+    inboundPassed: ext.inbound_passed ?? 0,
+    inboundFailed: ext.inbound_failed ?? 0,
+    outboundPassed: ext.outbound_passed ?? 0,
+    outboundFailed: ext.outbound_failed ?? 0,
     periodFrom: api.date_from,
     periodTo: api.date_to,
+    analytics: api.analytics
+      ? {
+          scansTotal: api.analytics.scans_total ?? 0,
+          scansInReview: api.analytics.scans_in_review ?? 0,
+          scansApproved: api.analytics.scans_approved ?? 0,
+          scansRejected: api.analytics.scans_rejected ?? 0,
+        }
+      : undefined,
   };
 }
 

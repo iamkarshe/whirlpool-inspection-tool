@@ -271,6 +271,9 @@ const OpsHelpPage = lazy(() => import("@/pages/ops/help/page"));
 const OpsTodayInspectionsPage = lazy(
   () => import("@/pages/ops/today-inspections/page"),
 );
+const OpsInspectionListPage = lazy(
+  () => import("@/pages/ops/inspection-list/page"),
+);
 const OpsManagerRoute = lazy(() => import("@/pages/ops/ops-manager-route"));
 const OpsTeamPage = lazy(() => import("@/pages/ops/team/page"));
 const OpsTeamReviewPage = lazy(() => import("@/pages/ops/team/review/page"));
@@ -387,6 +390,15 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsTodayInspectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inspection-list",
+            handle: { title: "Inspections" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <OpsInspectionListPage />
               </Suspense>
             ),
           },

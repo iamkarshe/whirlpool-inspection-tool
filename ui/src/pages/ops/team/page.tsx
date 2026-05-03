@@ -1,40 +1,27 @@
 import { ClipboardCheck, ListChecks } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import {
+  OpsKpiMetricGroup,
+  OpsKpiPeriodBanner,
+  OpsKpiStatCard,
+  OpsKpiStatRow,
+} from "@/components/ops/ops-kpi-stats";
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
-import { formatDate } from "@/lib/core";
+import { opsInspectionListPath } from "@/lib/ops-inspection-list-query";
 import {
   getInspectionKpis,
   type InspectionKpis,
 } from "@/pages/dashboard/inspections/inspection-service";
 
-function KpiTile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "neutral" | "amber" | "emerald" | "rose";
-}) {
-  const toneClass =
-    tone === "amber"
-      ? "bg-amber-500/10 text-amber-800 dark:text-amber-200"
-      : tone === "emerald"
-        ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
-        : tone === "rose"
-          ? "bg-rose-500/10 text-rose-800 dark:text-rose-200"
-          : "bg-muted/50 text-foreground";
-  return (
-    <div className={`rounded-2xl border p-3 text-center shadow-sm ${toneClass}`}>
-      <p className="text-[11px] font-medium uppercase tracking-wide opacity-80">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
-  );
+function aggregateFromLanes(k: InspectionKpis) {
+  return {
+    inReview: k.inboundInReview + k.outboundInReview,
+    approved: k.inboundApproved + k.outboundApproved,
+    rejected: k.inboundRejected + k.outboundRejected,
+  };
 }
 
 export default function OpsTeamPage() {
@@ -44,14 +31,13 @@ export default function OpsTeamPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     getInspectionKpis()
       .then((data) => {
         if (!cancelled) setKpis(data);
       })
       .catch(() => {
-        if (!cancelled) setError("Could not load KPIs. Pull to retry from home.");
+        if (!cancelled)
+          setError("Could not load KPIs. Pull to retry from home.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -61,49 +47,130 @@ export default function OpsTeamPage() {
     };
   }, []);
 
+  const allRow = useMemo(() => {
+    if (!kpis) return null;
+    const a = kpis.analytics;
+    if (a) {
+      return {
+        total: a.scansTotal,
+        inReview: a.scansInReview,
+        approved: a.scansApproved,
+        rejected: a.scansRejected,
+      };
+    }
+    const lanes = aggregateFromLanes(kpis);
+    return {
+      total: kpis.totalInspections,
+      inReview: lanes.inReview,
+      approved: lanes.approved,
+      rejected: lanes.rejected,
+    };
+  }, [kpis]);
+
+  const periodFrom = kpis?.periodFrom?.trim();
+  const periodTo = kpis?.periodTo?.trim();
+
+  const listHref = useMemo(() => {
+    if (!periodFrom || !periodTo) return null;
+    const q = { from: periodFrom, to: periodTo } as const;
+    return {
+      all: (metric: "total" | "in_review" | "approved" | "rejected") =>
+        opsInspectionListPath({ ...q, group: "all", metric }),
+      inbound: (metric: "in_review" | "approved" | "rejected") =>
+        opsInspectionListPath({ ...q, group: "inbound", metric }),
+      outbound: (metric: "in_review" | "approved" | "rejected") =>
+        opsInspectionListPath({ ...q, group: "outbound", metric }),
+    };
+  }, [periodFrom, periodTo]);
+
   return (
     <div className="space-y-4 pb-2">
-      <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Manager
-        </p>
-        <h1 className="text-xl font-semibold tracking-tight">Team overview</h1>
-        <p className="text-sm text-muted-foreground">
-          KPIs for your operators and shortcuts to quality review.
-        </p>
-      </header>
-
-      {kpis?.periodFrom && kpis?.periodTo ? (
-        <p className="text-[11px] text-muted-foreground">
-          Period: {formatDate(kpis.periodFrom)} — {formatDate(kpis.periodTo)}
-        </p>
-      ) : null}
-
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading KPIs…</p>
       ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      {kpis && !loading ? (
-        <section className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <KpiTile label="Total inspections" value={kpis.totalInspections} tone="neutral" />
-            <KpiTile
-              label="Inbound in review"
-              value={kpis.inboundInReview}
-              tone="amber"
-            />
-            <KpiTile
-              label="Outbound in review"
-              value={kpis.outboundInReview}
-              tone="amber"
-            />
-            <KpiTile label="Inbound approved" value={kpis.inboundApproved} tone="emerald" />
-            <KpiTile label="Inbound rejected" value={kpis.inboundRejected} tone="rose" />
-            <KpiTile label="Outbound approved" value={kpis.outboundApproved} tone="emerald" />
-            <KpiTile label="Outbound rejected" value={kpis.outboundRejected} tone="rose" />
-          </div>
-        </section>
+      {kpis && !loading && periodFrom && periodTo ? (
+        <OpsKpiPeriodBanner dateFrom={periodFrom} dateTo={periodTo} />
+      ) : null}
+
+      {kpis && !loading && allRow && listHref ? (
+        <div className="space-y-3">
+          <OpsKpiMetricGroup title="All inspections">
+            <OpsKpiStatRow>
+              <OpsKpiStatCard
+                label="Total"
+                value={allRow.total}
+                to={listHref.all("total")}
+                tone="neutral"
+              />
+              <OpsKpiStatCard
+                label="In review"
+                value={allRow.inReview}
+                to={listHref.all("in_review")}
+                tone="review"
+              />
+              <OpsKpiStatCard
+                label="Approved"
+                value={allRow.approved}
+                to={listHref.all("approved")}
+                tone="approved"
+              />
+              <OpsKpiStatCard
+                label="Rejected"
+                value={allRow.rejected}
+                to={listHref.all("rejected")}
+                tone="rejected"
+              />
+            </OpsKpiStatRow>
+          </OpsKpiMetricGroup>
+
+          <OpsKpiMetricGroup title="Inbound">
+            <OpsKpiStatRow>
+              <OpsKpiStatCard
+                label="In review"
+                value={kpis.inboundInReview}
+                to={listHref.inbound("in_review")}
+                tone="review"
+              />
+              <OpsKpiStatCard
+                label="Approved"
+                value={kpis.inboundApproved}
+                to={listHref.inbound("approved")}
+                tone="approved"
+              />
+              <OpsKpiStatCard
+                label="Rejected"
+                value={kpis.inboundRejected}
+                to={listHref.inbound("rejected")}
+                tone="rejected"
+              />
+            </OpsKpiStatRow>
+          </OpsKpiMetricGroup>
+
+          <OpsKpiMetricGroup title="Outbound">
+            <OpsKpiStatRow>
+              <OpsKpiStatCard
+                label="In review"
+                value={kpis.outboundInReview}
+                to={listHref.outbound("in_review")}
+                tone="review"
+              />
+              <OpsKpiStatCard
+                label="Approved"
+                value={kpis.outboundApproved}
+                to={listHref.outbound("approved")}
+                tone="approved"
+              />
+              <OpsKpiStatCard
+                label="Rejected"
+                value={kpis.outboundRejected}
+                to={listHref.outbound("rejected")}
+                tone="rejected"
+              />
+            </OpsKpiStatRow>
+          </OpsKpiMetricGroup>
+        </div>
       ) : null}
 
       <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
@@ -112,8 +179,8 @@ export default function OpsTeamPage() {
           <h2 className="text-sm font-semibold">Inspection review</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          Open the queue, tap an inspection, then approve or reject after checking
-          checklist results and photos.
+          Open the queue, tap an inspection, then approve or reject after
+          checking checklist results and photos.
         </p>
         <Button className="w-full" asChild>
           <Link to={PAGES.OPS_TEAM_REVIEW}>

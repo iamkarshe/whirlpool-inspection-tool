@@ -69,6 +69,14 @@ export type InspectionRelationship = {
   outbound: InspectionRelationshipScan | null;
 };
 
+/** Mirrors `InspectionAnalyticsKpis` from `/api/inspections/kpis`. */
+export type InspectionKpisAnalytics = {
+  scansTotal: number;
+  scansInReview: number;
+  scansApproved: number;
+  scansRejected: number;
+};
+
 export interface InspectionKpis {
   totalInspections: number;
   /** Quality-review lane counts from `/api/inspections/kpis`. */
@@ -85,4 +93,6 @@ export interface InspectionKpis {
   outboundFailed: number;
   periodFrom?: string;
   periodTo?: string;
+  /** Present when the API returns `analytics` on the KPI payload. */
+  analytics?: InspectionKpisAnalytics;
 }

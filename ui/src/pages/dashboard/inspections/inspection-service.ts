@@ -45,6 +45,28 @@ export async function getInspections(): Promise<Inspection[]> {
   });
 }
 
+/** Ops inspection list: filter by `created_at` and optional inbound/outbound. */
+export async function getInspectionsForOpsList(
+  query: {
+    date_from: string;
+    date_to: string;
+    inspection_type?: "inbound" | "outbound" | null;
+  },
+  opts?: { signal?: AbortSignal },
+): Promise<Inspection[]> {
+  return fetchAllInspectionRows(
+    {
+      sort_by: "created_at",
+      sort_dir: "desc",
+      date_field: "created_at",
+      date_from: query.date_from,
+      date_to: query.date_to,
+      inspection_type: query.inspection_type ?? null,
+    },
+    opts,
+  );
+}
+
 export async function getInspectionById(
   id: string,
 ): Promise<Inspection | null> {
@@ -63,15 +85,16 @@ export async function getInspectionRelationship(
   const current = await getInspectionById(uuid);
   if (!current) return null;
   const all = await fetchAllInspectionRows({});
-  const related = all.filter((i) => i.product_serial === current.product_serial);
+  const related = all.filter(
+    (i) => i.product_serial === current.product_serial,
+  );
   if (!related.length) return null;
 
   const inboundInspection =
     related.find((i) => i.inspection_type === "inbound") ?? current;
   const outboundInspection =
     related.find(
-      (i) =>
-        i.inspection_type === "outbound" && i.id !== inboundInspection.id,
+      (i) => i.inspection_type === "outbound" && i.id !== inboundInspection.id,
     ) ?? null;
 
   const scan = (i: Inspection) => ({
@@ -142,9 +165,9 @@ export async function getInspectionKpisForDateRange(
 }
 
 /** Inspections awaiting manager sign-off (last 30 days by `created_at`). */
-export async function getInspectionsPendingManagerReview(
-  opts?: { signal?: AbortSignal },
-): Promise<Inspection[]> {
+export async function getInspectionsPendingManagerReview(opts?: {
+  signal?: AbortSignal;
+}): Promise<Inspection[]> {
   const end = new Date();
   const start = new Date();
   start.setDate(start.getDate() - 29);

@@ -11,6 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { setPageTitle } from "@/lib/core";
+import {
+  opsInspectionListTitle,
+  parseOpsInspectionListQuery,
+} from "@/lib/ops-inspection-list-query";
 import { isOpsManagerRole } from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
 import { Home, LineChart, ScanLine, Settings2, Users } from "lucide-react";
@@ -110,6 +114,13 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
 
   const effectiveTitle = React.useMemo(() => {
     const base = currentTitle || activeTab?.label || "Home";
+    if (location.pathname.startsWith("/ops/inspection-list")) {
+      const q = parseOpsInspectionListQuery(
+        new URLSearchParams(location.search),
+      );
+      if (q) return opsInspectionListTitle(q);
+      return "Inspections";
+    }
     if (!location.pathname.startsWith("/ops/today-inspections")) {
       return base;
     }
@@ -135,7 +146,12 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       default:
         return "Today’s inspections";
     }
-  }, [currentTitle, activeTab?.label, location.pathname, location.search]);
+  }, [
+    currentTitle,
+    activeTab?.label,
+    location.pathname,
+    location.search,
+  ]);
 
   useEffect(() => {
     if (effectiveTitle) {

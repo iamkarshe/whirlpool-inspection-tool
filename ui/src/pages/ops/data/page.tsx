@@ -2,20 +2,110 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowUpRight, BarChart3, TriangleAlert } from "lucide-react";
-import { useState } from "react";
+import {
+  getInspectionKpis,
+  type InspectionKpis,
+} from "@/pages/dashboard/inspections/inspection-service";
+import { formatCalendarDateForApi } from "@/services/inspections-api";
+import { ArrowUpRight } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+function localYmd(d: Date): string {
+  return formatCalendarDateForApi(d);
+}
+
+function rangeToday(): { from: string; to: string } {
+  const d = new Date();
+  const s = localYmd(d);
+  return { from: s, to: s };
+}
+
+function rangeYesterday(): { from: string; to: string } {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const s = localYmd(d);
+  return { from: s, to: s };
+}
+
+function rangeThisWeek(): { from: string; to: string } {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const start = new Date(now);
+  start.setDate(now.getDate() - diffToMonday);
+  return { from: localYmd(start), to: localYmd(now) };
+}
+
+function rangeThisMonth(): { from: string; to: string } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { from: localYmd(start), to: localYmd(now) };
+}
+
+function formatKpiCount(k: InspectionKpis | null, loading: boolean): string {
+  if (loading) return "…";
+  if (!k) return "—";
+  return String(k.totalInspections);
+}
+
+type RangeKpis = {
+  today: InspectionKpis | null;
+  yesterday: InspectionKpis | null;
+  week: InspectionKpis | null;
+  month: InspectionKpis | null;
+};
 
 export default function OpsDataPage() {
   const navigate = useNavigate();
   const [customOpen, setCustomOpen] = useState(false);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [kpis, setKpis] = useState<RangeKpis>({
+    today: null,
+    yesterday: null,
+    week: null,
+    month: null,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadKpis = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    setError(null);
+    const opts = signal ? { signal } : undefined;
+    try {
+      const t = rangeToday();
+      const y = rangeYesterday();
+      const w = rangeThisWeek();
+      const m = rangeThisMonth();
+      const [today, yesterday, week, month] = await Promise.all([
+        getInspectionKpis(t.from, t.to, opts),
+        getInspectionKpis(y.from, y.to, opts),
+        getInspectionKpis(w.from, w.to, opts),
+        getInspectionKpis(m.from, m.to, opts),
+      ]);
+      setKpis({ today, yesterday, week, month });
+    } catch (e: unknown) {
+      if (signal?.aborted) return;
+      setError(
+        e instanceof Error ? e.message : "Could not load inspection KPIs.",
+      );
+      setKpis({ today: null, yesterday: null, week: null, month: null });
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    void loadKpis(ac.signal);
+    return () => ac.abort();
+  }, [loadKpis]);
 
   const goToInspections = (range: string, from?: string, to?: string) => {
     const params = new URLSearchParams();
@@ -27,6 +117,21 @@ export default function OpsDataPage() {
 
   return (
     <div className="space-y-4">
+      {error ? (
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <p>{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => void loadKpis()}
+          >
+            Retry
+          </Button>
+        </div>
+      ) : null}
+
       <section className="grid grid-cols-2 gap-3">
         <button
           type="button"
@@ -36,9 +141,8 @@ export default function OpsDataPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
             Today
           </p>
-          <p className="mt-1 text-2xl font-semibold">18</p>
-          <p className="text-[11px] text-muted-foreground">
-            scans completed this shift
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {formatKpiCount(kpis.today, loading)}
           </p>
         </button>
         <button
@@ -49,9 +153,8 @@ export default function OpsDataPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">
             Yesterday
           </p>
-          <p className="mt-1 text-2xl font-semibold">24</p>
-          <p className="text-[11px] text-muted-foreground">
-            compare with today&apos;s pace
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {formatKpiCount(kpis.yesterday, loading)}
           </p>
         </button>
         <button
@@ -62,9 +165,8 @@ export default function OpsDataPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
             This week
           </p>
-          <p className="mt-1 text-2xl font-semibold">96</p>
-          <p className="text-[11px] text-muted-foreground">
-            total inspections this week
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {formatKpiCount(kpis.week, loading)}
           </p>
         </button>
         <button
@@ -75,9 +177,8 @@ export default function OpsDataPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-violet-700 dark:text-violet-300">
             This month
           </p>
-          <p className="mt-1 text-2xl font-semibold">312</p>
-          <p className="text-[11px] text-muted-foreground">
-            inspections logged on this device
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {formatKpiCount(kpis.month, loading)}
           </p>
         </button>
       </section>
@@ -88,112 +189,19 @@ export default function OpsDataPage() {
           onClick={() => setCustomOpen(true)}
           className="flex w-full items-center justify-between rounded-3xl border bg-muted/40 px-3 py-3 text-left text-sm shadow-sm transition-colors hover:bg-muted"
         >
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Custom range
-            </p>
-            <p className="text-sm font-semibold">
-              Choose dates to see inspections
-            </p>
-          </div>
+          <p className="text-sm font-semibold">Custom range</p>
           <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
         </button>
       </section>
 
-      <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-300">
-              <BarChart3 className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Inwards vs Outwards</p>
-              <p className="text-xs text-muted-foreground">
-                Balance of products coming in vs going out.
-              </p>
-            </div>
-          </div>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
-          <button
-            type="button"
-            onClick={() => goToInspections("inwards")}
-            className="space-y-0.5 rounded-2xl bg-muted/40 p-2 text-left"
-          >
-            <p className="text-xs text-muted-foreground">Inwards</p>
-            <p className="text-base font-semibold">64</p>
-            <p className="text-[11px] text-muted-foreground">
-              products received and inspected
-            </p>
-          </button>
-          <button
-            type="button"
-            onClick={() => goToInspections("outwards")}
-            className="space-y-0.5 rounded-2xl bg-muted/40 p-2 text-left"
-          >
-            <p className="text-xs text-muted-foreground">Outwards</p>
-            <p className="text-base font-semibold">32</p>
-            <p className="text-[11px] text-muted-foreground">
-              products cleared to dispatch
-            </p>
-          </button>
-        </div>
-      </section>
-
-      <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-300">
-              <TriangleAlert className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Inspections with faults</p>
-              <p className="text-xs text-muted-foreground">
-                Items that were blocked or need attention.
-              </p>
-            </div>
-          </div>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
-          <button
-            type="button"
-            onClick={() => goToInspections("faults-today")}
-            className="space-y-0.5 rounded-2xl bg-muted/40 p-2 text-left"
-          >
-            <p className="text-xs text-muted-foreground">Today</p>
-            <p className="text-base font-semibold">2</p>
-            <p className="text-[11px] text-muted-foreground">
-              with critical or major issues
-            </p>
-          </button>
-          <button
-            type="button"
-            onClick={() => goToInspections("faults-week")}
-            className="space-y-0.5 rounded-2xl bg-muted/40 p-2 text-left"
-          >
-            <p className="text-xs text-muted-foreground">This week</p>
-            <p className="text-base font-semibold">7</p>
-            <p className="text-[11px] text-muted-foreground">
-              needing supervisor review
-            </p>
-          </button>
-        </div>
-      </section>
       <Dialog open={customOpen} onOpenChange={setCustomOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Custom date range</DialogTitle>
-            <DialogDescription>
-              Pick a start and end date to see inspections for that period.
-            </DialogDescription>
           </DialogHeader>
           <div className="mt-2 space-y-3">
             <div className="flex items-center justify-between gap-3 text-sm">
-              <label className="w-20 text-xs font-medium text-muted-foreground">
-                From
-              </label>
+              <label className="w-20 text-xs font-medium">From</label>
               <input
                 type="date"
                 value={fromDate}
@@ -202,9 +210,7 @@ export default function OpsDataPage() {
               />
             </div>
             <div className="flex items-center justify-between gap-3 text-sm">
-              <label className="w-20 text-xs font-medium text-muted-foreground">
-                To
-              </label>
+              <label className="w-20 text-xs font-medium">To</label>
               <input
                 type="date"
                 value={toDate}
@@ -239,4 +245,3 @@ export default function OpsDataPage() {
     </div>
   );
 }
-
