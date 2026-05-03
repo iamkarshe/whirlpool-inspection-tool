@@ -1003,6 +1003,26 @@ def build_inspection_metadata_response(db: Session) -> InspectionMetadataRespons
     )
 
 
+def active_inspection_for_barcode_and_inspection_type(
+    db: Session,
+    barcode: str,
+    inspection_type: InspectionType,
+) -> Inspection | None:
+    """Active inspection for this unit barcode and direction, if any (same rule as start inspection)."""
+    unit_row = db.query(ProductUnit).filter(ProductUnit.barcode == barcode).first()
+    if unit_row is None:
+        return None
+    return (
+        db.query(Inspection)
+        .filter(
+            Inspection.product_unit_id == unit_row.id,
+            Inspection.inspection_type == inspection_type,
+            Inspection.is_active.is_(True),
+        )
+        .first()
+    )
+
+
 def map_barcode_lock_row(row: BarcodeLock) -> BarcodeLockResponse:
     it = row.inspection_type
     it_s = it.value if hasattr(it, "value") else str(it)
@@ -1023,6 +1043,26 @@ def acquire_inspection_barcode_lock(
     inspection_type: InspectionType,
 ) -> BarcodeLock:
     code = sanitize_barcode_for_upload_path((barcode or "").strip())
+
+    existing_inspection = active_inspection_for_barcode_and_inspection_type(
+        db, code, inspection_type
+    )
+    if existing_inspection is not None:
+        inspection_type_text = (
+            inspection_type.value
+            if hasattr(inspection_type, "value")
+            else str(inspection_type)
+        ).capitalize()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": (
+                    f"{inspection_type_text} inspection already exists for this "
+                    "product unit; a barcode lock cannot be acquired."
+                ),
+                "inspection_uuid": str(existing_inspection.uuid),
+            },
+        )
 
     def locked_row_for_update():
         return (
@@ -1216,32 +1256,22 @@ def create_inspection(
         ensure_inspection_barcode_lock_held(
             db, int(request.state.user_id), full_barcode, inspection_type
         )
-        unit_row = (
-            db.query(ProductUnit).filter(ProductUnit.barcode == full_barcode).first()
+        existing_inspection = active_inspection_for_barcode_and_inspection_type(
+            db, full_barcode, inspection_type
         )
-        if unit_row is not None:
-            duplicate = (
-                db.query(Inspection)
-                .filter(
-                    Inspection.product_unit_id == unit_row.id,
-                    Inspection.inspection_type == inspection_type,
-                    Inspection.is_active.is_(True),
-                )
-                .first()
+        if existing_inspection is not None:
+            inspection_type_text = (
+                inspection_type.value
+                if hasattr(inspection_type, "value")
+                else str(inspection_type)
+            ).capitalize()
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": f"{inspection_type_text} already exists for this product unit",
+                    "inspection_uuid": str(existing_inspection.uuid),
+                },
             )
-            if duplicate is not None:
-                inspection_type_text = (
-                    inspection_type.value
-                    if hasattr(inspection_type, "value")
-                    else str(inspection_type)
-                ).capitalize()
-                raise HTTPException(
-                    status_code=409,
-                    detail={
-                        "message": f"{inspection_type_text} already exists for this product unit",
-                        "inspection_uuid": str(duplicate.uuid),
-                    },
-                )
 
         product, unit, fields = get_or_create_product_unit_for_barcode(db, full_barcode)
 

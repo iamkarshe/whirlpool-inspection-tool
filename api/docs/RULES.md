@@ -19,3 +19,4 @@
 
 - Do not use 1) or 1. in code comments, code comment should be direct to the point and verbose-less.
 - Variable names should do the comment work.
+- Prefer fully spelled names over abbreviations (for example `existing_inspection`, not `existing_insp` or `dup`).
