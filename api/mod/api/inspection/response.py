@@ -160,6 +160,48 @@ class InspectionKpisResponse(BaseModel):
     outbound_rejected: int
 
 
+class ManagerTeamInspectionDirectionKpis(BaseModel):
+    """Inbound or outbound slice for the manager team overview."""
+
+    in_review: int = Field(
+        ...,
+        description="Inspections in PENDING or IN_REVIEW for this direction.",
+    )
+    approved: int
+    rejected: int
+
+
+class ManagerTeamInspectionAllKpis(BaseModel):
+    """All inspections in the reporting window (manager warehouse scope)."""
+
+    total: int
+    in_review: int = Field(
+        ...,
+        description="Inspections in PENDING or IN_REVIEW (any direction).",
+    )
+    approved: int
+    rejected: int
+
+
+class ManagerInspectionTeamKpisResponse(BaseModel):
+    """Manager Team tab: reporting window and queue-oriented counts."""
+
+    period: Literal["custom", "today", "yesterday", "week", "month"] = "custom"
+    date_from: date
+    date_to: date
+    review_queue: int = Field(
+        ...,
+        description=(
+            "Inbound in_review plus outbound in_review (each counts PENDING and "
+            "IN_REVIEW). Same as all_inspections.in_review when inspections are only "
+            "inbound or outbound."
+        ),
+    )
+    all_inspections: ManagerTeamInspectionAllKpis
+    inbound: ManagerTeamInspectionDirectionKpis
+    outbound: ManagerTeamInspectionDirectionKpis
+
+
 class InspectionDropdownOption(BaseModel):
     value: str
     label: str

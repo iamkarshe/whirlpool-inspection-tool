@@ -855,6 +855,100 @@ def compute_inspection_kpis(
     }
 
 
+def compute_manager_inspection_team_kpis(
+    db: Session,
+    date_from: date,
+    date_to: date,
+    is_active: bool,
+    warehouse_codes: list[str] | None,
+    plant_code: str | None = None,
+) -> dict[str, Any]:
+    """Team overview counts for managers: warehouse scope, ``created_at`` window.
+
+    ``in_review`` buckets count ``PENDING`` and ``IN_REVIEW`` (queue items).
+    ``review_queue`` is ``inbound.in_review + outbound.in_review`` for the manager
+    warehouse scope (same sum as ``all_inspections.in_review`` when every
+    inspection is inbound or outbound).
+    """
+    start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
+    empty_direction = {"in_review": 0, "approved": 0, "rejected": 0}
+    empty_all = {"total": 0, "in_review": 0, "approved": 0, "rejected": 0}
+    if warehouse_codes is not None and len(warehouse_codes) == 0:
+        return {
+            "review_queue": 0,
+            "all_inspections": empty_all,
+            "inbound": empty_direction,
+            "outbound": empty_direction,
+        }
+    query = db.query(
+        Inspection.inspection_type,
+        Inspection.review_status,
+    ).filter(
+        Inspection.is_active.is_(is_active),
+        Inspection.created_at >= start,
+        Inspection.created_at < end_exclusive,
+    )
+    if warehouse_codes is not None:
+        query = query.filter(Inspection.warehouse_code.in_(warehouse_codes))
+    if plant_code is not None:
+        query = query.filter(Inspection.supplier_plant_code == plant_code)
+    rows = query.all()
+    inbound = InspectionType.inbound
+    outbound = InspectionType.outbound
+    rst = InspectionReviewStatus
+    pending_or_in_review = (rst.PENDING, rst.IN_REVIEW)
+
+    all_total = 0
+    all_in_review = all_approved = all_rejected = 0
+    inbound_in_review = inbound_approved = inbound_rejected = 0
+    outbound_in_review = outbound_approved = outbound_rejected = 0
+
+    for inspection_type, review_status in rows:
+        all_total += 1
+        if review_status in pending_or_in_review:
+            all_in_review += 1
+        elif review_status == rst.APPROVED:
+            all_approved += 1
+        elif review_status == rst.REJECTED:
+            all_rejected += 1
+
+        if inspection_type == inbound:
+            if review_status in pending_or_in_review:
+                inbound_in_review += 1
+            elif review_status == rst.APPROVED:
+                inbound_approved += 1
+            elif review_status == rst.REJECTED:
+                inbound_rejected += 1
+        elif inspection_type == outbound:
+            if review_status in pending_or_in_review:
+                outbound_in_review += 1
+            elif review_status == rst.APPROVED:
+                outbound_approved += 1
+            elif review_status == rst.REJECTED:
+                outbound_rejected += 1
+
+    review_queue = inbound_in_review + outbound_in_review
+    return {
+        "review_queue": review_queue,
+        "all_inspections": {
+            "total": all_total,
+            "in_review": all_in_review,
+            "approved": all_approved,
+            "rejected": all_rejected,
+        },
+        "inbound": {
+            "in_review": inbound_in_review,
+            "approved": inbound_approved,
+            "rejected": inbound_rejected,
+        },
+        "outbound": {
+            "in_review": outbound_in_review,
+            "approved": outbound_approved,
+            "rejected": outbound_rejected,
+        },
+    }
+
+
 def build_barcode_parse_response(db: Session, barcode: str) -> BarcodeParseResponse:
     full_barcode = (barcode or "").strip()
     try:
