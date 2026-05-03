@@ -28,7 +28,7 @@ app_version = "1.0.3"
 
 app = FastAPI(
     title=app_name,
-    description=f"APIs for {app_name} developed by Scopt Analytics for {app_name} platform.",
+    description=f"{app_name} APIs developed by Scopt Analytics.",
     version=app_version,
     contact={
         "name": "Scopt Analytics",
@@ -68,11 +68,11 @@ app.include_router(product_category_router)
 app.include_router(reports_router)
 app.include_router(sku_router)
 
-_uploads_dir = Path(__file__).resolve().parent / "uploads"
-_uploads_dir.mkdir(parents=True, exist_ok=True)
+uploads_dir = Path(__file__).resolve().parent / "uploads"
+uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount(
     "/uploads",
-    StaticFiles(directory=str(_uploads_dir)),
+    StaticFiles(directory=str(uploads_dir)),
     name="uploads",
 )
 
@@ -97,14 +97,13 @@ def version():
 async def api_docs(
     request: Request,
 ):
-    api_title = "Whirlpool PDI Tool"
     api_spec_url = "/openapi.json"
     return templates.TemplateResponse(
         "api-docs/index.html",
         {
             "request": request,
             "api_spec_url": api_spec_url,
-            "api_title": api_title,
+            "api_title": app_name,
         },
     )
 
@@ -135,8 +134,12 @@ async def custom_404_handler(request: Request, exc):
     if request.url.path.startswith("/public"):
         return templates.TemplateResponse("error.html", {"request": request})
 
-    # ReactJS
-    return FileResponse("build/index.html")
+    # Check if build/index.html exists
+    if Path("build/index.html").exists():
+        # ReactJS build
+        return FileResponse("build/index.html")
+    else:
+        return templates.TemplateResponse("error-no-build.html", {"request": request})
 
 
 @app.exception_handler(Exception)

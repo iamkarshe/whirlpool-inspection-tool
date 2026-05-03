@@ -4,9 +4,9 @@ meta {
   seq: 11
 }
 
-get {
-  url: {{baseUrl}}/api/inspections/metadata
-  body: none
+post {
+  url: {{baseUrl}}/api/inspections/upload-image
+  body: multipartForm
   auth: inherit
 }
 
@@ -19,6 +19,12 @@ body:json {
     "role": "operator",
     "designation": "Warehouse Operator"
   }
+}
+
+body:multipart-form {
+  barcode: 31602012552BRQZR
+  direction: inbound
+  file: @file(/home/karshe/Desktop/post/1.jpeg)
 }
 
 example {
