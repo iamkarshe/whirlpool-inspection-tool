@@ -3,8 +3,10 @@ import { BodyUploadInspectionImageApiInspectionsUploadImagePostDirection } from 
 import type { ActiveChecklistGroupedResponse } from "@/api/generated/model/activeChecklistGroupedResponse";
 import type { BarcodeParseResponse } from "@/api/generated/model/barcodeParseResponse";
 import type { ChecklistGroupBlock } from "@/api/generated/model/checklistGroupBlock";
+import type { GetInspectionKpisManagerApiInspectionsKpisManagerGetParams } from "@/api/generated/model/getInspectionKpisManagerApiInspectionsKpisManagerGetParams";
 import type { InspectionMetadataResponse } from "@/api/generated/model/inspectionMetadataResponse";
 import type { InspectionWithChecklistPayload } from "@/api/generated/model/inspectionWithChecklistPayload";
+import type { ManagerInspectionTeamKpisResponse } from "@/api/generated/model/managerInspectionTeamKpisResponse";
 import type { StartInboundInspectionRequest } from "@/api/generated/model/startInboundInspectionRequest";
 import type { StartOutboundInspectionRequest } from "@/api/generated/model/startOutboundInspectionRequest";
 
@@ -149,6 +151,21 @@ export async function startOpsOutboundInspection(
   const api = getInspections();
   return api.startOutboundInspectionApiInspectionsOutboundPost(
     body,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/**
+ * Manager team KPIs (`GET /api/inspections/kpis/manager`): one response for
+ * all-inspection totals plus inbound/outbound review and outcome splits.
+ */
+export async function fetchManagerTeamInspectionKpis(
+  params?: GetInspectionKpisManagerApiInspectionsKpisManagerGetParams,
+  opts?: { signal?: AbortSignal },
+): Promise<ManagerInspectionTeamKpisResponse> {
+  const api = getInspections();
+  return api.getInspectionKpisManagerApiInspectionsKpisManagerGet(
+    params ?? { period: "today" },
     opts?.signal ? { signal: opts.signal } : undefined,
   );
 }

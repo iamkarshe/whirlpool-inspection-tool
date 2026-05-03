@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -27,11 +28,58 @@ export function OpsKpiPeriodBanner({
   dateFrom,
   dateTo,
   className,
+  onChangePeriodClick,
+  isUpdating,
 }: {
   dateFrom: string;
   dateTo: string;
   className?: string;
+  /** When set, the banner is a tappable control (e.g. opens a period picker). */
+  onChangePeriodClick?: () => void;
+  isUpdating?: boolean;
 }) {
+  const body = (
+    <>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-800/90 dark:text-violet-200/90">
+        Reporting period
+      </p>
+      <p className="mt-1.5 text-sm font-semibold leading-snug text-foreground">
+        {formatKpiDateRange(dateFrom, dateTo)}
+      </p>
+      {onChangePeriodClick ?
+        <p className="mt-2 flex items-center justify-center gap-2 text-[11px] font-medium text-violet-800 dark:text-violet-200">
+          {isUpdating ?
+            <>
+              <Loader2
+                className="h-3.5 w-3.5 shrink-0 animate-spin opacity-80"
+                aria-hidden
+              />
+              <span>Updating…</span>
+            </>
+          : <span>Tap to change period</span>}
+        </p>
+      : null}
+    </>
+  );
+
+  if (onChangePeriodClick) {
+    return (
+      <button
+        type="button"
+        onClick={onChangePeriodClick}
+        disabled={isUpdating}
+        aria-label="Change reporting period"
+        className={cn(
+          "w-full rounded-3xl border border-violet-500/20 bg-violet-500/5 px-4 py-3.5 text-center shadow-sm ring-1 ring-violet-500/10 transition-colors",
+          "hover:bg-violet-500/10 disabled:cursor-wait disabled:opacity-90",
+          className,
+        )}
+      >
+        {body}
+      </button>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -39,12 +87,7 @@ export function OpsKpiPeriodBanner({
         className,
       )}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-800/90 dark:text-violet-200/90">
-        Reporting period
-      </p>
-      <p className="mt-1.5 text-sm font-semibold leading-snug text-foreground">
-        {formatKpiDateRange(dateFrom, dateTo)}
-      </p>
+      {body}
     </div>
   );
 }
