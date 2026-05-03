@@ -147,42 +147,54 @@ function UnitDetails({ barcode }: { barcode: string }) {
         </Button>
       </div>
 
-      <Card className="border bg-card/80 py-0 shadow-sm ring-1 ring-border/40">
-        <div className="space-y-1 px-3 py-2">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            Product
-          </p>
-          <p className="text-sm font-medium leading-tight text-foreground">
-            {parsed.product.material_description}
-          </p>
-        </div>
-        <div className="space-y-0.5 border-t border-border/50 px-3 py-2 text-xs text-muted-foreground">
-          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
-            <span className="shrink-0 font-medium text-foreground">
-              Category
-            </span>
-            <span>{parsed.product_category.name}</span>
+      <Card className="relative gap-0 overflow-hidden border bg-card/80 py-0 shadow-sm ring-1 ring-border/40">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(56,189,248,0.14),transparent_48%),radial-gradient(ellipse_at_bottom,_rgba(167,139,250,0.12),transparent_52%)] blur-xl"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-muted/30 via-transparent to-background/70 dark:from-muted/15 dark:to-background/50"
+          aria-hidden
+        />
+        <div className="relative">
+          <div className="space-y-1 px-3 py-2">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Product
+            </p>
+            <p className="text-sm font-medium leading-tight text-foreground">
+              {parsed.product.material_description}
+            </p>
           </div>
-          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
-            <span className="shrink-0 font-medium text-foreground">
-              Material
-            </span>
-            <span>{parsed.product.material_code}</span>
-          </div>
-          {parsed.product_unit?.barcode ? (
+          <div className="space-y-0.5 border-t border-border/50 px-3 py-2 text-xs text-muted-foreground">
             <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
-              <span className="shrink-0 font-medium text-foreground">Unit</span>
-              <span className="font-mono">{parsed.product_unit.barcode}</span>
+              <span className="shrink-0 font-medium text-foreground">
+                Category
+              </span>
+              <span>{parsed.product_category.name}</span>
             </div>
-          ) : null}
+            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+              <span className="shrink-0 font-medium text-foreground">
+                Material
+              </span>
+              <span>{parsed.product.material_code}</span>
+            </div>
+            {parsed.product_unit?.barcode ? (
+              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+                <span className="shrink-0 font-medium text-foreground">
+                  Unit
+                </span>
+                <span className="font-mono">{parsed.product_unit.barcode}</span>
+              </div>
+            ) : null}
+          </div>
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+      <div className="grid grid-cols-1 gap-x-3 gap-y-4 sm:grid-cols-2">
         <FlowColumnCard
           variant="inbound"
           title="Inbound"
-          description="Receiving · inward QC"
+          description="Receiving inspection"
           icon={Import}
           inspection={inbound}
           startHref={startInboundTo}
@@ -190,7 +202,7 @@ function UnitDetails({ barcode }: { barcode: string }) {
         <FlowColumnCard
           variant="outbound"
           title="Outbound"
-          description="Dispatch · outward QC"
+          description="Dispatch inspection"
           icon={Truck}
           inspection={outbound}
           startHref={startOutboundTo}
@@ -269,23 +281,23 @@ function FlowColumnCard({
   return (
     <Card
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl border border-border/50 bg-muted/5 pl-2.5 shadow-none",
+        "flex flex-col gap-0 overflow-hidden rounded-xl border border-border/50 bg-muted/5 py-0 pl-1.5 shadow-none",
         accent,
       )}
     >
-      <div className="flex flex-1 flex-col gap-1.5 px-2.5 py-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex items-start gap-2">
+      <div className="flex flex-1 flex-col gap-y-2 px-2 py-2.5">
+        <div className="flex items-start justify-between gap-1.5 py-2">
+          <div className="min-w-0 flex items-start gap-1.5">
             <div
               className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-sm",
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-sm",
                 variant === "inbound"
                   ? "border-sky-500/25 bg-sky-500/15 dark:border-sky-500/20 dark:bg-sky-950/40"
                   : "border-amber-500/25 bg-amber-500/15 dark:border-amber-500/20 dark:bg-amber-950/35",
               )}
               aria-hidden
             >
-              <Icon className={cn("h-5 w-5", iconTint)} strokeWidth={2.25} />
+              <Icon className={cn("h-4 w-4", iconTint)} strokeWidth={2.25} />
             </div>
             <div className="min-w-0 space-y-0.5">
               <p
@@ -296,7 +308,7 @@ function FlowColumnCard({
               >
                 {title}
               </p>
-              <p className="text-xs font-medium leading-snug text-muted-foreground">
+              <p className="text-[11px] font-medium leading-snug text-muted-foreground">
                 {description}
               </p>
             </div>
@@ -305,7 +317,7 @@ function FlowColumnCard({
             <Badge
               variant="outline"
               className={cn(
-                "h-5 shrink-0 border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide",
+                "h-[1.125rem] shrink-0 border px-1 py-0 font-mono text-[9px] font-medium uppercase tracking-[0.08em] tabular-nums",
                 reviewStatusBadgeClass(reviewStatus),
               )}
             >
@@ -314,14 +326,14 @@ function FlowColumnCard({
           ) : recorded ? (
             <Badge
               variant="outline"
-              className="h-5 shrink-0 px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+              className="h-[1.125rem] shrink-0 px-1 py-0 font-mono text-[9px] font-medium uppercase tracking-[0.08em] tabular-nums text-muted-foreground"
             >
               Submitted
             </Badge>
           ) : (
             <span
               className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums",
+                "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px font-mono text-[10px] font-semibold uppercase tracking-[0.08em] tabular-nums leading-tight",
                 notStartedBadgeClass,
               )}
             >
@@ -340,7 +352,7 @@ function FlowColumnCard({
         </div>
 
         {recorded && inspection ? (
-          <div className="space-y-0.5 border-t border-border/40 pt-1.5">
+          <div className="space-y-px border-t border-border/40 pt-1.5">
             <p className="tabular-nums text-[11px] leading-tight text-foreground/90">
               {summarizeInspection(inspection)}
             </p>
@@ -355,7 +367,7 @@ function FlowColumnCard({
             ) : null}
           </div>
         ) : (
-          <p className="hidden border-t border-border/40 pt-1.5 text-[11px] leading-snug text-muted-foreground">
+          <p className="hidden border-t border-border/40 pt-1 text-[11px] leading-snug text-muted-foreground">
             No {title.toLowerCase()} record for this unit.
           </p>
         )}
@@ -366,7 +378,10 @@ function FlowColumnCard({
               asChild
               size="sm"
               variant="outline"
-              className={cn("h-8 w-full text-xs font-medium", openButtonClass)}
+              className={cn(
+                "h-7 w-full text-[11px] font-medium",
+                openButtonClass,
+              )}
             >
               <Link to={PAGES.opsInspectionDetailPath(inspection.uuid)}>
                 Open Details
@@ -376,7 +391,7 @@ function FlowColumnCard({
             <Button
               asChild
               size="sm"
-              className="h-8 w-full text-xs font-medium"
+              className="h-7 w-full text-[11px] font-medium"
             >
               <Link to={startHref}>Start Inspection</Link>
             </Button>

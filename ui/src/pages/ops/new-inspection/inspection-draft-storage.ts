@@ -70,3 +70,9 @@ export function clearInspectionDraft(mode: InspectionStartMode, barcode: string)
     /* ignore */
   }
 }
+
+/** Clears saved drafts for both lanes so a new scan of the same unit starts blank. */
+export function clearAllInspectionDraftsForBarcode(barcode: string) {
+  clearInspectionDraft("inbound", barcode);
+  clearInspectionDraft("outbound", barcode);
+}

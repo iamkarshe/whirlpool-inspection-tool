@@ -267,7 +267,7 @@ export function OpsInspectionStartForm({
 
   const steps: WizardStep[] = useMemo(() => {
     const base: WizardStep[] = [
-      { key: "site", title: "Shipment and site" },
+      { key: "site", title: "Shipment" },
       { key: "damage", title: "Damage" },
     ];
     for (const g of checklistGroups) {
@@ -560,7 +560,7 @@ export function OpsInspectionStartForm({
       const err = siteStepError();
       if (err) {
         setValidationDialog({
-          title: "Complete shipment and site",
+          title: "Complete shipment info",
           message: err,
         });
         return;
@@ -624,7 +624,7 @@ export function OpsInspectionStartForm({
     const siteErr = siteStepError();
     if (siteErr) {
       setValidationDialog({
-        title: "Complete shipment and site",
+        title: "Complete shipment info",
         message: siteErr,
       });
       return;
@@ -1004,13 +1004,9 @@ export function OpsInspectionStartForm({
                 id={`tr-${mode}`}
                 value={truckNumber}
                 onChange={(e) => setTruckNumber(e.target.value)}
-                placeholder="e.g. CG01AC23334"
+                placeholder="CG01AC23334"
                 className="h-9"
               />
-              <p className="text-[10px] leading-snug text-muted-foreground">
-                Indian plate: state format (CG01AC23334) or Bharat (21BH1234AA).
-                Spaces and dashes are OK.
-              </p>
             </div>
             <div className="space-y-1">
               <Label htmlFor={`dk-${mode}`} className="text-xs">

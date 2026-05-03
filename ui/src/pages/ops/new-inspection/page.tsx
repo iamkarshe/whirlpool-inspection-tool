@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { PAGES } from "@/endpoints";
 import { OPS_BARCODE_LEN } from "@/pages/ops/new-inspection/constants";
+import { clearAllInspectionDraftsForBarcode } from "@/pages/ops/new-inspection/inspection-draft-storage";
 
 function getDefaultScannerEnabled() {
   if (typeof window === "undefined") return false;
@@ -45,6 +46,7 @@ export default function OpsNewInspectionPage() {
     (barcode: string) => {
       const normalized = barcode.replace(/\s+/g, "").slice(0, OPS_BARCODE_LEN);
       if (normalized.length !== OPS_BARCODE_LEN) return;
+      clearAllInspectionDraftsForBarcode(normalized);
       navigate(PAGES.opsNewInspectionUnitPath(normalized));
     },
     [navigate],
@@ -62,6 +64,7 @@ export default function OpsNewInspectionPage() {
       .replace(/\s+/g, "")
       .slice(0, OPS_BARCODE_LEN);
     if (fromUrl.length === OPS_BARCODE_LEN) {
+      clearAllInspectionDraftsForBarcode(fromUrl);
       navigate(PAGES.opsNewInspectionUnitPath(fromUrl), { replace: true });
     }
   }, [navigate]);
