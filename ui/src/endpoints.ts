@@ -113,7 +113,7 @@ export const PAGES = {
     `${PAGES.OPS_NEW_INSPECTION}/unit/${encodeURIComponent(barcode)}`,
   OPS_DATA: "/ops/data",
   OPS_SEARCH: "/ops/search",
-  OPS_SETTINGS: "/ops/settings",
+  OPS_SETTINGS: "/ops/account",
   OPS_ACCOUNT: "/ops/account",
   OPS_HELP: "/ops/help",
   OPS_TODAY_INSPECTIONS: "/ops/today-inspections",

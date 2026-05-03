@@ -17,7 +17,7 @@ import {
 } from "@/lib/ops-inspection-list-query";
 import { isOpsManagerRole } from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
-import { Home, LineChart, ScanLine, Settings2, Users } from "lucide-react";
+import { CircleUser, Home, LineChart, ScanLine, Users } from "lucide-react";
 import React, { useEffect } from "react";
 import {
   NavLink,
@@ -46,7 +46,7 @@ const DEFAULT_TABS: TabConfig[] = [
   { label: "Home", path: "/ops", icon: Home },
   { label: "New", path: "/ops/new-inspection", icon: ScanLine },
   { label: "Data", path: "/ops/data", icon: LineChart },
-  { label: "Settings", path: "/ops/settings", icon: Settings2 },
+  { label: "Account", path: "/ops/account", icon: CircleUser },
 ];
 
 export default function OpsLayout({ className }: OpsLayoutProps) {
@@ -79,11 +79,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   const navTabs = React.useMemo(() => {
     if (!isOpsManagerRole(sessionUser?.role)) return DEFAULT_TABS;
     const [home, ...rest] = DEFAULT_TABS;
-    return [
-      home!,
-      { label: "Team", path: "/ops/team", icon: Users },
-      ...rest,
-    ];
+    return [home!, { label: "Team", path: "/ops/team", icon: Users }, ...rest];
   }, [sessionUser?.role]);
 
   const activeTab = React.useMemo(
@@ -146,12 +142,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       default:
         return "Today’s inspections";
     }
-  }, [
-    currentTitle,
-    activeTab?.label,
-    location.pathname,
-    location.search,
-  ]);
+  }, [currentTitle, activeTab?.label, location.pathname, location.search]);
 
   useEffect(() => {
     if (effectiveTitle) {

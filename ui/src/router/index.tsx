@@ -265,7 +265,6 @@ const OpsNewInspectionOutboundPage = lazy(
 );
 const OpsDataPage = lazy(() => import("@/pages/ops/data/page"));
 const OpsSearchPage = lazy(() => import("@/pages/ops/search/page"));
-const OpsSettingsPage = lazy(() => import("@/pages/ops/settings/page"));
 const OpsAccountPage = lazy(() => import("@/pages/ops/account/page"));
 const OpsHelpPage = lazy(() => import("@/pages/ops/help/page"));
 const OpsTodayInspectionsPage = lazy(
@@ -441,12 +440,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "settings",
-            handle: { title: "Settings" },
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <OpsSettingsPage />
-              </Suspense>
-            ),
+            element: <Navigate to="/ops/account" replace />,
           },
           {
             path: "account",

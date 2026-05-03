@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { OpsSettingsContent } from "@/components/ops/ops-settings-content";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -187,6 +188,8 @@ export default function OpsAccountPage() {
           </div>
         </dl>
       </section>
+
+      <OpsSettingsContent />
 
       <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-3">

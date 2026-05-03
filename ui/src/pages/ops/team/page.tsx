@@ -8,6 +8,7 @@ import {
   OpsKpiStatCard,
   OpsKpiStatRow,
 } from "@/components/ops/ops-kpi-stats";
+import { OpsTeamKpiSkeleton } from "@/components/ops/ops-team-kpi-skeleton";
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
 import { opsInspectionListPath } from "@/lib/ops-inspection-list-query";
@@ -85,9 +86,7 @@ export default function OpsTeamPage() {
 
   return (
     <div className="space-y-4 pb-2">
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Loading KPIs…</p>
-      ) : null}
+      {loading ? <OpsTeamKpiSkeleton /> : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {kpis && !loading && periodFrom && periodTo ? (
