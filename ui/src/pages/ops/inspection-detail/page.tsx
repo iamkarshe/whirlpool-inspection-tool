@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   Camera,
   CheckCircle2,
+  FileX2,
   Image as ImageIcon,
   ImageOff,
   Flag,
@@ -69,7 +70,6 @@ const SECTION_ITEMS = [
   { key: "outer-packaging", label: "Outer Packaging" },
   { key: "inner-packaging", label: "Inner Packaging" },
   { key: "product", label: "Product" },
-  { key: "device", label: "Device" },
 ] as const;
 
 type SectionKey = (typeof SECTION_ITEMS)[number]["key"];
@@ -223,7 +223,6 @@ export default function OpsInspectionDetailPage() {
     "outer-packaging": [],
     "inner-packaging": [],
     product: [],
-    device: [],
   });
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
@@ -256,9 +255,9 @@ export default function OpsInspectionDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!inspection) return;
+    if (loading) return;
     setPageTitle("Inspection");
-  }, [inspection]);
+  }, [loading, inspection]);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,15 +276,13 @@ export default function OpsInspectionDetailPage() {
       getInspectionQuestionResults(id, "outer-packaging"),
       getInspectionQuestionResults(id, "inner-packaging"),
       getInspectionQuestionResults(id, "product"),
-      getInspectionQuestionResults(id, "device"),
     ])
-      .then(([outer, inner, product, device]) => {
+      .then(([outer, inner, product]) => {
         if (cancelled) return;
         setSectionRows({
           "outer-packaging": outer,
           "inner-packaging": inner,
           product,
-          device,
         });
       })
       .finally(() => {
@@ -301,7 +298,6 @@ export default function OpsInspectionDetailPage() {
       ...sectionRows["outer-packaging"],
       ...sectionRows["inner-packaging"],
       ...sectionRows.product,
-      ...sectionRows.device,
     ];
     return getCounts(allRows);
   }, [sectionRows]);
@@ -311,7 +307,6 @@ export default function OpsInspectionDetailPage() {
       ...sectionRows["outer-packaging"],
       ...sectionRows["inner-packaging"],
       ...sectionRows.product,
-      ...sectionRows.device,
     ];
     return source.flatMap((row, index) =>
       row.images.map((img) => ({
@@ -438,14 +433,22 @@ export default function OpsInspectionDetailPage() {
 
   if (!inspection) {
     return (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Inspection not found.</p>
-        <Button variant="outline" asChild>
-          <Link to={PAGES.OPS_TODAY_INSPECTIONS}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to today inspections
-          </Link>
-        </Button>
+      <div className="flex min-h-[min(52dvh,20rem)] flex-col justify-center py-4">
+        <section className="rounded-3xl border border-border/60 bg-card/90 p-6 shadow-sm">
+          <div className="mx-auto flex max-w-sm flex-col items-center gap-6">
+            <OpsListEmptyState
+              icon={FileX2}
+              title="Inspection not found"
+              description="This link may be incorrect, the inspection may have been removed, or you might not have permission to view it."
+            />
+            <Button className="h-11 w-full gap-2 text-sm font-medium" asChild>
+              <Link to={PAGES.OPS_TODAY_INSPECTIONS}>
+                <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                {"Today's inspections"}
+              </Link>
+            </Button>
+          </div>
+        </section>
       </div>
     );
   }

@@ -437,7 +437,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "inspections/:id",
-            handle: { title: "Inspection Detail" },
+            handle: { title: "Inspection" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsInspectionDetailPage />
@@ -856,7 +856,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "inspections/:id",
-        handle: { title: "Inspection details" },
+        handle: { title: "Inspection" },
         element: (
           <Suspense fallback={<PageLoader />}>
             <InspectionViewPage />

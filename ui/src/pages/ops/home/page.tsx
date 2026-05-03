@@ -14,10 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { firstNameFromDisplayName } from "@/lib/ops-user-display";
-import {
-  canOpsRoleStartNewInspection,
-  isOpsManagerRole,
-} from "@/lib/ops-role";
+import { canOpsRoleStartNewInspection, isOpsManagerRole } from "@/lib/ops-role";
 import { getInspectionsPendingManagerReview } from "@/pages/dashboard/inspections/inspection-service";
 
 export default function OpsHomePage() {
@@ -82,7 +79,7 @@ export default function OpsHomePage() {
               <ClipboardCheck className="h-6 w-6" />
             </div>
             <div className="min-w-0 space-y-0.5">
-              <p className="font-mono text-xs font-semibold uppercase tracking-wide text-violet-900 dark:text-violet-100">
+              <p className="text-xs font-semibold uppercase tracking-wide text-violet-900 dark:text-violet-100">
                 Review queue
               </p>
               <p className="font-mono text-2xl font-bold tabular-nums tracking-tight leading-none">
@@ -96,8 +93,8 @@ export default function OpsHomePage() {
                 {reviewCountFailed
                   ? "Open the queue to see pending items"
                   : pendingReviewCount === 1
-                    ? "inspection needs your decision"
-                    : "inspections need your decision"}
+                    ? "Inspection needs your review."
+                    : "Inspections need your review."}
               </p>
             </div>
           </div>
