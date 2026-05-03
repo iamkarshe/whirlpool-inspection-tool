@@ -19,6 +19,7 @@ from mod.api.inspection.helper import (
     build_active_checklist_grouped_response,
     build_barcode_parse_response,
     build_inspection_metadata_response,
+    compute_inspection_analytics_kpis,
     compute_inspection_kpis,
     create_inbound_inspection,
     create_outbound_inspection,
@@ -28,6 +29,7 @@ from mod.api.inspection.helper import (
     get_inspection_entity_by_uuid,
     map_inspection_list_item,
     present_inspection_full,
+    resolve_inspection_kpi_warehouse_codes,
     resolve_inspection_scope_filters,
     save_inspection_image_upload,
     update_inspection_review_status,
@@ -35,6 +37,7 @@ from mod.api.inspection.helper import (
 from mod.api.inspection.response import (
     ActiveChecklistGroupedResponse,
     BarcodeParseResponse,
+    InspectionAnalyticsKpis,
     InspectionFullResponse,
     InspectionImageUploadResponse,
     InspectionKpisResponse,
@@ -46,10 +49,7 @@ from mod.api.inspection.response import (
 )
 from mod.api.middleware import auth_dependency
 from mod.model import Device, Inspection, InspectionType, Product, User
-from utils.common import (
-    default_utc_calendar_dates_last_7_days,
-    utc_end_exclusive_day_range,
-)
+from utils.common import resolve_inspection_kpi_period, utc_end_exclusive_day_range
 from utils.db import get_db
 from utils.decorator import (
     apply_operator_scope_filters,
@@ -77,16 +77,23 @@ router = APIRouter(
     response_model=InspectionKpisResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(["superadmin", "manager", "operator"])
 def get_inspection_kpis(
     request: Request,
+    period: Literal["custom", "today", "yesterday", "week", "month"] = Query(
+        "custom",
+        description=(
+            "UTC date window: today, yesterday, this calendar week (Mon–today), "
+            "this calendar month, or custom. For custom, omit both dates for last 7 days."
+        ),
+    ),
     date_from: date | None = Query(
         None,
-        description="Range start (UTC calendar date); omit with date_to for default: last 7 days including today",
+        description="With period=custom: range start (UTC); omit both dates for last 7 days",
     ),
     date_to: date | None = Query(
         None,
-        description="Range end (UTC calendar date, inclusive); omit with date_from for default: last 7 days including today",
+        description="With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
     ),
     is_active: bool = Query(True),
     warehouse_uuid: uuid.UUID | None = Query(
@@ -97,26 +104,51 @@ def get_inspection_kpis(
     ),
     db: Session = Depends(get_db),
 ):
-    if (date_from is None) ^ (date_to is None):
-        raise HTTPException(
-            status_code=400,
-            detail="date_from and date_to must both be set or both omitted",
+    try:
+        date_from, date_to, period_norm = resolve_inspection_kpi_period(
+            period, date_from, date_to
         )
-    if date_from is None and date_to is None:
-        date_from, date_to = default_utc_calendar_dates_last_7_days()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
     if date_to < date_from:
         raise HTTPException(
             status_code=400, detail="date_to must be on or after date_from"
         )
-    warehouse_code, plant_code = resolve_inspection_scope_filters(
-        db, warehouse_uuid, plant_uuid
+    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
+        db, request, warehouse_uuid
     )
+    _, plant_code = resolve_inspection_scope_filters(db, None, plant_uuid)
+    uid = int(request.state.user_id)
+    operator_only = request_is_operator_only(request)
+    role_raw = getattr(request.state, "role", None) or ""
+    roles = [r.strip() for r in str(role_raw).split(",") if r.strip()]
+    superadmin = "superadmin" in roles
     counts = compute_inspection_kpis(
-        db, date_from, date_to, is_active, warehouse_code, plant_code
+        db,
+        date_from,
+        date_to,
+        is_active,
+        warehouse_code=None,
+        plant_code=plant_code,
+        warehouse_codes=warehouse_codes,
+        inspector_id=uid if operator_only else None,
     )
-    return InspectionKpisResponse(
+    analytics_counts = compute_inspection_analytics_kpis(
+        db,
         date_from=date_from,
         date_to=date_to,
+        is_active=is_active,
+        warehouse_codes=warehouse_codes,
+        plant_code=plant_code,
+        user_id=uid,
+        operator_mode=operator_only,
+        approvals_rejections_any_reviewer=superadmin and not operator_only,
+    )
+    return InspectionKpisResponse(
+        period=period_norm,
+        date_from=date_from,
+        date_to=date_to,
+        analytics=InspectionAnalyticsKpis(**analytics_counts),
         **counts,
     )
 

@@ -1,6 +1,6 @@
 import uuid
 from datetime import date, datetime
-from typing import List
+from typing import List, Literal
 
 from pydantic import AnyUrl, BaseModel, Field, field_validator, model_validator
 
@@ -89,9 +89,44 @@ class InspectionListResponse(BaseModel):
     total_pages: int
 
 
+class InspectionAnalyticsKpis(BaseModel):
+    """Role-aware analytics for the Data Analytics screen (same date window for all four)."""
+
+    scans_total: int = Field(
+        ...,
+        description=(
+            "Inspections created in the range. Operator: own scans. "
+            "Manager / superadmin: all scans in warehouse scope."
+        ),
+    )
+    scans_in_review: int = Field(
+        ...,
+        description=(
+            "PENDING or IN_REVIEW with created_at in range. Operator: own inspections. "
+            "Manager / superadmin: any in warehouse scope."
+        ),
+    )
+    scans_approved: int = Field(
+        ...,
+        description=(
+            "APPROVED with reviewed_at in range. Operator: their inspections. "
+            "Manager: rows they reviewed. Superadmin: all approved decisions in scope."
+        ),
+    )
+    scans_rejected: int = Field(
+        ...,
+        description=(
+            "REJECTED with reviewed_at in range. Operator / manager same as "
+            "scans_approved; superadmin: all rejections in scope."
+        ),
+    )
+
+
 class InspectionKpisResponse(BaseModel):
+    period: Literal["custom", "today", "yesterday", "week", "month"] = "custom"
     date_from: date
     date_to: date
+    analytics: InspectionAnalyticsKpis
     total_inspections: int
     inbound_in_review: int
     inbound_approved: int

@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 from typing import Any, Literal
 
 from fastapi import HTTPException, Request
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.checklist_inspection import (
@@ -57,6 +58,7 @@ from mod.model import (
     DamageLikelyCause,
     DamageSeverity,
     DamageType,
+    User,
     Warehouse,
 )
 from utils.common import (
@@ -69,6 +71,7 @@ from utils.common import (
     parse_yes_no_outcome,
     utc_end_exclusive_day_range,
 )
+from utils.decorator import request_is_operator_only
 
 
 def enforced_checklist_image_count(ch: Checklist, answer_value: str) -> int:
@@ -107,6 +110,219 @@ def resolve_inspection_scope_filters(
     if plant_uuid is not None:
         plant_code = get_plant_by_uuid_or_404(db, plant_uuid).plant_code
     return warehouse_code, plant_code
+
+
+def _roles_from_request(request: Request) -> list[str]:
+    role_raw = getattr(request.state, "role", None) or ""
+    return [r.strip() for r in str(role_raw).split(",") if r.strip()]
+
+
+def resolve_inspection_kpi_warehouse_codes(
+    db: Session,
+    request: Request,
+    warehouse_uuid: uuid.UUID | None,
+) -> list[str] | None:
+    """Resolve warehouse filter for KPI endpoints.
+
+    Returns ``None`` when the caller may see all warehouses (superadmin without
+    ``warehouse_uuid``). Returns a non-empty list to restrict to those codes, or
+    an empty list when the user has no assigned warehouses (all KPI counts zero).
+    """
+    roles = _roles_from_request(request)
+    if "superadmin" in roles:
+        if warehouse_uuid is None:
+            return None
+        return [get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code]
+
+    user_id = getattr(request.state, "user_id", None)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = (
+        db.query(User)
+        .options(joinedload(User.warehouses_scope))
+        .filter(User.id == int(user_id))
+        .first()
+    )
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    allowed = [w.warehouse_code for w in (user.warehouses_scope or [])]
+    allowed_unique = list(dict.fromkeys(allowed))
+
+    if warehouse_uuid is not None:
+        code = get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code
+        if code not in set(allowed_unique):
+            raise HTTPException(
+                status_code=403,
+                detail="Not allowed to view KPIs for this warehouse",
+            )
+        return [code]
+
+    return allowed_unique
+
+
+def compute_inspection_analytics_kpis(
+    db: Session,
+    *,
+    date_from: date,
+    date_to: date,
+    is_active: bool,
+    warehouse_codes: list[str] | None,
+    plant_code: str | None,
+    user_id: int,
+    operator_mode: bool,
+    approvals_rejections_any_reviewer: bool = False,
+) -> dict[str, int]:
+    """Four headline counts for Data Analytics (see ``InspectionAnalyticsKpis``).
+
+    When ``approvals_rejections_any_reviewer`` is true (typical superadmin), approved
+    and rejected counts include every review decision in scope for the time window,
+    not only rows where ``reviewer_id`` matches ``user_id``.
+    """
+    start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
+    rst = InspectionReviewStatus
+    pending_review = (rst.PENDING, rst.IN_REVIEW)
+
+    def _scope_filters():
+        conds = [
+            Inspection.is_active.is_(is_active),
+            Inspection.created_at >= start,
+            Inspection.created_at < end_exclusive,
+        ]
+        if warehouse_codes is not None:
+            conds.append(Inspection.warehouse_code.in_(warehouse_codes))
+        if plant_code is not None:
+            conds.append(Inspection.supplier_plant_code == plant_code)
+        return conds
+
+    def _count(*extra) -> int:
+        return int(
+            db.query(func.count(Inspection.id))
+            .filter(*_scope_filters(), *extra)
+            .scalar()
+            or 0
+        )
+
+    if warehouse_codes is not None and len(warehouse_codes) == 0:
+        return {
+            "scans_total": 0,
+            "scans_in_review": 0,
+            "scans_approved": 0,
+            "scans_rejected": 0,
+        }
+
+    if operator_mode:
+        scans_total = _count(Inspection.inspector_id == int(user_id))
+        scans_in_review = _count(
+            Inspection.inspector_id == int(user_id),
+            Inspection.review_status.in_(pending_review),
+        )
+        scans_approved = int(
+            db.query(func.count(Inspection.id))
+            .filter(
+                Inspection.is_active.is_(is_active),
+                Inspection.inspector_id == int(user_id),
+                Inspection.review_status == rst.APPROVED,
+                Inspection.reviewed_at.isnot(None),
+                Inspection.reviewed_at >= start,
+                Inspection.reviewed_at < end_exclusive,
+                *(
+                    [Inspection.warehouse_code.in_(warehouse_codes)]
+                    if warehouse_codes is not None
+                    else []
+                ),
+                *(
+                    [Inspection.supplier_plant_code == plant_code]
+                    if plant_code is not None
+                    else []
+                ),
+            )
+            .scalar()
+            or 0
+        )
+        scans_rejected = int(
+            db.query(func.count(Inspection.id))
+            .filter(
+                Inspection.is_active.is_(is_active),
+                Inspection.inspector_id == int(user_id),
+                Inspection.review_status == rst.REJECTED,
+                Inspection.reviewed_at.isnot(None),
+                Inspection.reviewed_at >= start,
+                Inspection.reviewed_at < end_exclusive,
+                *(
+                    [Inspection.warehouse_code.in_(warehouse_codes)]
+                    if warehouse_codes is not None
+                    else []
+                ),
+                *(
+                    [Inspection.supplier_plant_code == plant_code]
+                    if plant_code is not None
+                    else []
+                ),
+            )
+            .scalar()
+            or 0
+        )
+    else:
+        scans_total = _count()
+        scans_in_review = _count(Inspection.review_status.in_(pending_review))
+        reviewer_clause_approved: list = []
+        reviewer_clause_rejected: list = []
+        if not approvals_rejections_any_reviewer:
+            reviewer_clause_approved = [Inspection.reviewer_id == int(user_id)]
+            reviewer_clause_rejected = [Inspection.reviewer_id == int(user_id)]
+        scans_approved = int(
+            db.query(func.count(Inspection.id))
+            .filter(
+                Inspection.is_active.is_(is_active),
+                *reviewer_clause_approved,
+                Inspection.review_status == rst.APPROVED,
+                Inspection.reviewed_at.isnot(None),
+                Inspection.reviewed_at >= start,
+                Inspection.reviewed_at < end_exclusive,
+                *(
+                    [Inspection.warehouse_code.in_(warehouse_codes)]
+                    if warehouse_codes is not None
+                    else []
+                ),
+                *(
+                    [Inspection.supplier_plant_code == plant_code]
+                    if plant_code is not None
+                    else []
+                ),
+            )
+            .scalar()
+            or 0
+        )
+        scans_rejected = int(
+            db.query(func.count(Inspection.id))
+            .filter(
+                Inspection.is_active.is_(is_active),
+                *reviewer_clause_rejected,
+                Inspection.review_status == rst.REJECTED,
+                Inspection.reviewed_at.isnot(None),
+                Inspection.reviewed_at >= start,
+                Inspection.reviewed_at < end_exclusive,
+                *(
+                    [Inspection.warehouse_code.in_(warehouse_codes)]
+                    if warehouse_codes is not None
+                    else []
+                ),
+                *(
+                    [Inspection.supplier_plant_code == plant_code]
+                    if plant_code is not None
+                    else []
+                ),
+            )
+            .scalar()
+            or 0
+        )
+
+    return {
+        "scans_total": scans_total,
+        "scans_in_review": scans_in_review,
+        "scans_approved": scans_approved,
+        "scans_rejected": scans_rejected,
+    }
 
 
 def fetch_inspection_yes_no_metrics(
@@ -502,8 +718,20 @@ def compute_inspection_kpis(
     is_active: bool,
     warehouse_code: str | None = None,
     plant_code: str | None = None,
+    warehouse_codes: list[str] | None = None,
+    inspector_id: int | None = None,
 ) -> dict[str, int]:
     start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
+    if warehouse_codes is not None and len(warehouse_codes) == 0:
+        return {
+            "total_inspections": 0,
+            "inbound_in_review": 0,
+            "inbound_approved": 0,
+            "inbound_rejected": 0,
+            "outbound_in_review": 0,
+            "outbound_approved": 0,
+            "outbound_rejected": 0,
+        }
     query = db.query(
         Inspection.inspection_type,
         Inspection.review_status,
@@ -512,10 +740,14 @@ def compute_inspection_kpis(
         Inspection.created_at >= start,
         Inspection.created_at < end_exclusive,
     )
-    if warehouse_code is not None:
+    if warehouse_codes is not None:
+        query = query.filter(Inspection.warehouse_code.in_(warehouse_codes))
+    elif warehouse_code is not None:
         query = query.filter(Inspection.warehouse_code == warehouse_code)
     if plant_code is not None:
         query = query.filter(Inspection.supplier_plant_code == plant_code)
+    if inspector_id is not None:
+        query = query.filter(Inspection.inspector_id == inspector_id)
     inspections = query.all()
     inbound = InspectionType.inbound
     outbound = InspectionType.outbound

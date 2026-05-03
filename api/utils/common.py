@@ -80,6 +80,47 @@ def default_utc_calendar_dates_last_7_days() -> tuple[date, date]:
     return start, end
 
 
+def utc_today_calendar_date() -> date:
+    """Current UTC calendar date."""
+    return datetime.now(timezone.utc).date()
+
+
+def resolve_inspection_kpi_period(
+    period: str,
+    date_from: date | None,
+    date_to: date | None,
+) -> tuple[date, date, str]:
+    """Map a preset ``period`` to inclusive UTC ``date_from`` / ``date_to``.
+
+    For ``custom``, both dates must be provided. Returns
+    ``(date_from, date_to, normalized_period)``. Raises ``ValueError`` on invalid input.
+    """
+    p = (period or "custom").strip().lower()
+    if p not in ("custom", "today", "yesterday", "week", "month"):
+        raise ValueError("period must be one of: custom, today, yesterday, week, month")
+    today = utc_today_calendar_date()
+    if p == "custom":
+        if date_from is None and date_to is None:
+            df, dt = default_utc_calendar_dates_last_7_days()
+            return df, dt, "custom"
+        if date_from is None or date_to is None:
+            raise ValueError("date_from and date_to must both be set or both omitted")
+        return date_from, date_to, "custom"
+    if p == "today":
+        return today, today, "today"
+    if p == "yesterday":
+        d = today - timedelta(days=1)
+        return d, d, "yesterday"
+    if p == "week":
+        # Monday–Sunday in UTC (ISO weekday: Monday = 0).
+        start = today - timedelta(days=today.weekday())
+        return start, today, "week"
+    if p == "month":
+        start = date(today.year, today.month, 1)
+        return start, today, "month"
+    raise ValueError("invalid period")
+
+
 def empty_pass_fail_counts() -> dict[str, int]:
     return {"pass": 0, "fail": 0}
 
