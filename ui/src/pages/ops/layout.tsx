@@ -1,6 +1,9 @@
 import { BrandLogo } from "@/components/brand-logo";
 import { useSessionUser } from "@/hooks/use-session-user";
-import { userInitialsFromName } from "@/lib/ops-user-display";
+import {
+  formatOpsRoleBadgeLabel,
+  userInitialsFromName,
+} from "@/lib/ops-user-display";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +21,7 @@ import {
 import {
   canOpsRoleStartNewInspection,
   isOpsManagerRole,
+  normalizeOpsRole,
 } from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
 import { CircleUser, Home, LineChart, ScanLine, Users } from "lucide-react";
@@ -114,6 +118,32 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
     return ((match?.handle as RouteHandle | undefined)?.title ?? "").toString();
   }, [matches]);
 
+  const roleBadgeClass = React.useMemo(() => {
+    const r = normalizeOpsRole(sessionUser?.role);
+    if (r === "manager") {
+      return cn(
+        "border-violet-400/40 bg-gradient-to-b from-violet-500/[0.14] to-violet-600/[0.06] text-violet-950 ring-1 ring-violet-500/15",
+        "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] dark:border-violet-400/30 dark:from-violet-400/18 dark:to-violet-950/35 dark:text-violet-50 dark:ring-violet-400/20",
+      );
+    }
+    if (r === "operator") {
+      return cn(
+        "border-emerald-400/40 bg-gradient-to-b from-emerald-500/[0.14] to-emerald-600/[0.06] text-emerald-950 ring-1 ring-emerald-500/15",
+        "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] dark:border-emerald-400/30 dark:from-emerald-400/18 dark:to-emerald-950/35 dark:text-emerald-50 dark:ring-emerald-400/20",
+      );
+    }
+    if (r === "superadmin") {
+      return cn(
+        "border-amber-400/45 bg-gradient-to-b from-amber-500/[0.16] to-amber-600/[0.07] text-amber-950 ring-1 ring-amber-500/20",
+        "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] dark:border-amber-400/35 dark:from-amber-400/20 dark:to-amber-950/40 dark:text-amber-50 dark:ring-amber-400/25",
+      );
+    }
+    return cn(
+      "border-border/60 bg-gradient-to-b from-muted/80 to-muted/40 text-foreground ring-1 ring-border/40",
+      "dark:from-muted/50 dark:to-muted/25 dark:text-foreground",
+    );
+  }, [sessionUser?.role]);
+
   const effectiveTitle = React.useMemo(() => {
     const base = currentTitle || activeTab?.label || "Home";
     if (location.pathname.startsWith("/ops/inspection-list")) {
@@ -161,9 +191,21 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur_">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div className="space-y-0.5">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              {import.meta.env.VITE_APP_TITLE}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                {import.meta.env.VITE_APP_TITLE}
+              </p>
+              {sessionUser?.role?.trim() ? (
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] tabular-nums",
+                    roleBadgeClass,
+                  )}
+                >
+                  {formatOpsRoleBadgeLabel(sessionUser.role)}
+                </span>
+              ) : null}
+            </div>
 
             {shouldRenderLogo && <BrandLogo />}
             {!shouldRenderLogo && (
