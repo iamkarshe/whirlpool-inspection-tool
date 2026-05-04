@@ -40,7 +40,7 @@ function normalizePlantInfo(raw: unknown): PlantInfoViewData {
     throw new Error("Invalid plant response.");
   }
   if ("plant" in raw) {
-    const wrapped = raw as PlantInfoResponse;
+    const wrapped = raw as unknown as PlantInfoResponse;
     return {
       plant: wrapped.plant,
       users: wrapped.users ?? [],
@@ -48,7 +48,7 @@ function normalizePlantInfo(raw: unknown): PlantInfoViewData {
     };
   }
   return {
-    plant: raw as PlantResponse,
+    plant: raw as unknown as PlantResponse,
     users: [],
     devices: [],
   };

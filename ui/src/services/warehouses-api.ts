@@ -64,7 +64,7 @@ function normalizeWarehouseInfo(raw: unknown): WarehouseInfoViewData {
     throw new Error("Invalid warehouse response.");
   }
   if ("warehouse" in raw) {
-    const wrapped = raw as WarehouseInfoResponse;
+    const wrapped = raw as unknown as WarehouseInfoResponse;
     return {
       warehouse: wrapped.warehouse as WarehouseResponseWithStats,
       users: wrapped.users ?? [],
@@ -72,7 +72,7 @@ function normalizeWarehouseInfo(raw: unknown): WarehouseInfoViewData {
     };
   }
   return {
-    warehouse: raw as WarehouseResponseWithStats,
+    warehouse: raw as unknown as WarehouseResponseWithStats,
     users: [],
     devices: [],
   };

@@ -25,7 +25,6 @@ import {
   fetchInspectionDetail,
   fetchInspectionInputsAsQuestionRows,
   fetchInspectionKpis,
-  formatCalendarDateForApi,
   inspectionKpisParamsFromDateRange,
   isoToApiDate,
   mapInspectionFullToInspection,

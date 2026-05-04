@@ -3,10 +3,7 @@ import type { GetUsersApiUsersGetParams } from "@/api/generated/model/getUsersAp
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { UserCreateRequest } from "@/api/generated/model/userCreateRequest";
 import type { UserUpdateRequest } from "@/api/generated/model/userUpdateRequest";
-import {
-  UserCreateRequestRole,
-  type UserCreateRequestRole,
-} from "@/api/generated/model/userCreateRequestRole";
+import { UserCreateRequestRole } from "@/api/generated/model/userCreateRequestRole";
 import type { UserListResponse } from "@/api/generated/model/userListResponse";
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import { getUsers } from "@/api/generated/users/users";

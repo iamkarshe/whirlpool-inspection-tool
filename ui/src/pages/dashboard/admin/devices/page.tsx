@@ -26,11 +26,7 @@ import {
   type DeviceType,
 } from "@/pages/dashboard/admin/devices/device-service";
 import type { UserResponse } from "@/api/generated/model/userResponse";
-import {
-  deviceApiErrorMessage,
-  fetchDeviceKpis,
-  fetchDevicesPage,
-} from "@/services/devices-api";
+import { fetchDeviceKpis, fetchDevicesPage } from "@/services/devices-api";
 import { fetchAllUsers } from "@/services/users-api";
 import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useMemo, useState } from "react";

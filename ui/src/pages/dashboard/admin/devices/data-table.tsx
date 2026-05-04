@@ -223,7 +223,8 @@ const deviceFilters: DataTableFilter<Device>[] = [
 
 interface DevicesDataTableProps {
   data: Device[];
-  serverSide: DataTableServerSideConfig;
+  /** Omit for embedded client-only tables (e.g. user profile devices). */
+  serverSide?: DataTableServerSideConfig;
   isLoading?: boolean;
   onRefresh?: () => void;
   onActionError?: (message: string) => void;
