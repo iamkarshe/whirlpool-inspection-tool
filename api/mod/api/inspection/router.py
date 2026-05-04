@@ -62,7 +62,7 @@ from mod.api.inspection.response import (
 )
 from mod.api.middleware import auth_dependency
 from mod.model import Device, Inspection, InspectionType, Product, User
-from utils.common import resolve_inspection_kpi_period, utc_end_exclusive_day_range
+from utils.common import resolve_inspection_kpi_period
 from utils.db import get_db
 from utils.decorator import (
     apply_operator_scope_filters,
@@ -324,21 +324,28 @@ def get_inspections(
     plant_uuid: uuid.UUID | None = Query(
         None, description="Optional filter by plant UUID"
     ),
-    date_from: date | None = Query(
-        None,
-        description="created_at range start (UTC date); provide with date_to to apply date filtering",
-    ),
-    date_to: date | None = Query(
-        None,
-        description="created_at range end (UTC date, inclusive); provide with date_from to apply date filtering",
-    ),
     db: Session = Depends(get_db),
 ):
-    if (date_from is None) ^ (date_to is None):
+    if (params.date_from is None) ^ (params.date_to is None):
         raise HTTPException(
             status_code=400,
             detail="date_from and date_to must both be set or both omitted",
         )
+    if (
+        params.date_from is not None
+        and params.date_to is not None
+        and params.date_to < params.date_from
+    ):
+        raise HTTPException(
+            status_code=400, detail="date_to must be on or after date_from"
+        )
+    filter_params = params
+    if (
+        params.date_from is not None
+        and params.date_to is not None
+        and params.date_field is None
+    ):
+        filter_params = params.model_copy(update={"date_field": "created_at"})
     warehouse_code, plant_code = resolve_inspection_scope_filters(
         db, warehouse_uuid, plant_uuid
     )
@@ -363,16 +370,6 @@ def get_inspections(
         query = query.filter(Inspection.warehouse_code == warehouse_code)
     if plant_code is not None:
         query = query.filter(Inspection.supplier_plant_code == plant_code)
-    if date_from is not None and date_to is not None:
-        if date_to < date_from:
-            raise HTTPException(
-                status_code=400, detail="date_to must be on or after date_from"
-            )
-        start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
-        query = query.filter(
-            Inspection.created_at >= start,
-            Inspection.created_at < end_exclusive,
-        )
     if inspection_type:
         try:
             it = InspectionType(inspection_type.strip().lower())
@@ -385,7 +382,7 @@ def get_inspections(
 
     query = apply_standard_filters(
         query=query,
-        params=params,
+        params=filter_params,
         search_columns=[
             User.name,
             Product.material_code,

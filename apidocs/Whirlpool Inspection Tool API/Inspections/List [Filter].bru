@@ -1,0 +1,33 @@
+meta {
+  name: List [Filter]
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/api/inspections?page=1&per_page=100&search=&sort_by=created_at&sort_dir=desc&date_field=created_at&date_from=2026-05-04&date_to=2026-05-04
+  body: none
+  auth: inherit
+}
+
+params:query {
+  page: 1
+  per_page: 100
+  search: 
+  sort_by: created_at
+  sort_dir: desc
+  date_field: created_at
+  date_from: 2026-05-04
+  date_to: 2026-05-04
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}

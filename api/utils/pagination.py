@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Callable, Dict, Iterable, List, Optional, TypeVar
 
 from fastapi import Query
@@ -118,11 +118,23 @@ def apply_standard_filters(
             d0, d1 = default_utc_calendar_dates_last_7_days()
             start, end_exclusive = utc_end_exclusive_day_range(d0, d1)
             query = query.filter(field >= start, field < end_exclusive)
-        else:
-            if params.date_from:
-                query = query.filter(field >= params.date_from)
-            if params.date_to:
-                query = query.filter(field <= params.date_to)
+        elif params.date_from is not None and params.date_to is not None:
+            start, end_exclusive = utc_end_exclusive_day_range(
+                params.date_from, params.date_to
+            )
+            query = query.filter(field >= start, field < end_exclusive)
+        elif params.date_from is not None:
+            start = datetime.combine(
+                params.date_from, time.min, tzinfo=timezone.utc
+            )
+            query = query.filter(field >= start)
+        elif params.date_to is not None:
+            end_exclusive = datetime.combine(
+                params.date_to + timedelta(days=1),
+                time.min,
+                tzinfo=timezone.utc,
+            )
+            query = query.filter(field < end_exclusive)
 
     # Sorting
     if sort_fields:
