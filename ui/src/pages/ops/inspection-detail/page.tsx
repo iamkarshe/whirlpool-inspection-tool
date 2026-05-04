@@ -638,7 +638,7 @@ export default function OpsInspectionDetailPage() {
               <OpsReviewStatusBadge status={inspection.review_status} />
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Manager decision — this inspection is waiting in the review queue.
+              Manager decision — this inspection is waiting in Inspection Review.
             </p>
             <div className="space-y-1">
               <Label htmlFor="mgr-review-comment" className="text-xs">

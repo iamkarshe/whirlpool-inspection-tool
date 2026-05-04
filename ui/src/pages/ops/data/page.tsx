@@ -1,6 +1,16 @@
-import { PAGES } from "@/endpoints";
-import { useSessionUser } from "@/hooks/use-session-user";
-import { isOpsManagerRole } from "@/lib/ops-role";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Navigate } from "react-router-dom";
+
+import type { GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams } from "@/api/generated/model/getInspectionKpisOperatorApiInspectionsKpisOperatorGetParams";
+import { GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod } from "@/api/generated/model/getInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod";
+import type { OperatorInspectionKpisResponse } from "@/api/generated/model/operatorInspectionKpisResponse";
+import {
+  OpsKpiMetricGroup,
+  OpsKpiPeriodBanner,
+  OpsKpiStatCard,
+  OpsKpiStatRow,
+} from "@/components/ops/ops-kpi-stats";
+import { OpsTeamKpiSkeleton } from "@/components/ops/ops-team-kpi-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,59 +19,73 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { PAGES } from "@/endpoints";
+import { useSessionUser } from "@/hooks/use-session-user";
+import { isOpsManagerRole } from "@/lib/ops-role";
+import { opsInspectionListPath } from "@/lib/ops-inspection-list-query";
+import { cn } from "@/lib/utils";
 import {
-  getInspectionKpis,
-  type InspectionKpis,
-} from "@/pages/dashboard/inspections/inspection-service";
-import { formatCalendarDateForApi } from "@/services/inspections-api";
-import { ArrowUpRight } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+  fetchOperatorInspectionKpis,
+  opsInspectionApiError,
+} from "@/services/ops-inspections-api";
 
-function localYmd(d: Date): string {
-  return formatCalendarDateForApi(d);
+const PRESETS: {
+  period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.today,
+    label: "Today",
+    hint: "Current calendar day (UTC window)",
+  },
+  {
+    period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.yesterday,
+    label: "Yesterday",
+    hint: "Previous calendar day",
+  },
+  {
+    period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.week,
+    label: "This week",
+    hint: "Monday through today",
+  },
+  {
+    period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.month,
+    label: "This month",
+    hint: "1st of month through today",
+  },
+];
+
+function queriesEqual(
+  a: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams,
+  b: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams,
+): boolean {
+  return (
+    (a.period ?? null) === (b.period ?? null) &&
+    (a.date_from ?? null) === (b.date_from ?? null) &&
+    (a.date_to ?? null) === (b.date_to ?? null)
+  );
 }
 
-function rangeToday(): { from: string; to: string } {
-  const d = new Date();
-  const s = localYmd(d);
-  return { from: s, to: s };
+function operatorOwnedTotal(k: OperatorInspectionKpisResponse): number {
+  return (
+    k.inbound.in_review +
+    k.inbound.approved +
+    k.inbound.rejected +
+    k.outbound.in_review +
+    k.outbound.approved +
+    k.outbound.rejected
+  );
 }
 
-function rangeYesterday(): { from: string; to: string } {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const s = localYmd(d);
-  return { from: s, to: s };
+function operatorApprovedTotal(k: OperatorInspectionKpisResponse): number {
+  return k.inbound.approved + k.outbound.approved;
 }
 
-function rangeThisWeek(): { from: string; to: string } {
-  const now = new Date();
-  const day = now.getDay();
-  const diffToMonday = (day + 6) % 7;
-  const start = new Date(now);
-  start.setDate(now.getDate() - diffToMonday);
-  return { from: localYmd(start), to: localYmd(now) };
+function operatorRejectedTotal(k: OperatorInspectionKpisResponse): number {
+  return k.inbound.rejected + k.outbound.rejected;
 }
-
-function rangeThisMonth(): { from: string; to: string } {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  return { from: localYmd(start), to: localYmd(now) };
-}
-
-function formatKpiCount(k: InspectionKpis | null, loading: boolean): string {
-  if (loading) return "…";
-  if (!k) return "—";
-  return String(k.totalInspections);
-}
-
-type RangeKpis = {
-  today: InspectionKpis | null;
-  yesterday: InspectionKpis | null;
-  week: InspectionKpis | null;
-  month: InspectionKpis | null;
-};
 
 export default function OpsDataPage() {
   const sessionUser = useSessionUser();
@@ -72,187 +96,298 @@ export default function OpsDataPage() {
 }
 
 function OpsDataPageContent() {
-  const navigate = useNavigate();
-  const [customOpen, setCustomOpen] = useState(false);
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [kpis, setKpis] = useState<RangeKpis>({
-    today: null,
-    yesterday: null,
-    week: null,
-    month: null,
-  });
+  const [query, setQuery] =
+    useState<GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams>({
+      period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.today,
+    });
+  const [kpis, setKpis] = useState<OperatorInspectionKpisResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refetching, setRefetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [periodDialogOpen, setPeriodDialogOpen] = useState(false);
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const isFirstLoad = useRef(true);
 
-  const loadKpis = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    setError(null);
-    const opts = signal ? { signal } : undefined;
-    try {
-      const t = rangeToday();
-      const y = rangeYesterday();
-      const w = rangeThisWeek();
-      const m = rangeThisMonth();
-      const [today, yesterday, week, month] = await Promise.all([
-        getInspectionKpis(t.from, t.to, opts),
-        getInspectionKpis(y.from, y.to, opts),
-        getInspectionKpis(w.from, w.to, opts),
-        getInspectionKpis(m.from, m.to, opts),
-      ]);
-      setKpis({ today, yesterday, week, month });
-    } catch (e: unknown) {
-      if (signal?.aborted) return;
-      setError(
-        e instanceof Error ? e.message : "Could not load inspection KPIs.",
-      );
-      setKpis({ today: null, yesterday: null, week: null, month: null });
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (
+      params: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams,
+      signal: AbortSignal,
+    ) => {
+      if (isFirstLoad.current) setLoading(true);
+      else setRefetching(true);
+      setError(null);
+      try {
+        const data = await fetchOperatorInspectionKpis(params, { signal });
+        if (signal.aborted) return;
+        setKpis(data);
+        isFirstLoad.current = false;
+      } catch (e: unknown) {
+        if (signal.aborted) return;
+        setError(
+          opsInspectionApiError(e, "Could not load inspection KPIs. Try again."),
+        );
+      } finally {
+        if (!signal.aborted) {
+          setLoading(false);
+          setRefetching(false);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const ac = new AbortController();
-    void loadKpis(ac.signal);
+    void load(query, ac.signal);
     return () => ac.abort();
-  }, [loadKpis]);
+  }, [query, load]);
 
-  const goToInspections = (range: string, from?: string, to?: string) => {
-    const params = new URLSearchParams();
-    params.set("range", range);
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
-    navigate(`/ops/today-inspections?${params.toString()}`);
+  const periodFrom = kpis?.date_from?.trim();
+  const periodTo = kpis?.date_to?.trim();
+
+  const listHref = useMemo(() => {
+    if (!periodFrom || !periodTo) return null;
+    const q = { from: periodFrom, to: periodTo } as const;
+    return {
+      all: (metric: "total" | "in_review" | "approved" | "rejected") =>
+        opsInspectionListPath({ ...q, group: "all", metric }),
+      inbound: (metric: "in_review" | "approved" | "rejected") =>
+        opsInspectionListPath({ ...q, group: "inbound", metric }),
+      outbound: (metric: "in_review" | "approved" | "rejected") =>
+        opsInspectionListPath({ ...q, group: "outbound", metric }),
+    };
+  }, [periodFrom, periodTo]);
+
+  const openPeriodDialog = () => {
+    if (
+      query.period ===
+        GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.custom &&
+      query.date_from &&
+      query.date_to
+    ) {
+      setCustomFrom(query.date_from);
+      setCustomTo(query.date_to);
+    } else if (periodFrom && periodTo) {
+      setCustomFrom(periodFrom.slice(0, 10));
+      setCustomTo(periodTo.slice(0, 10));
+    } else {
+      setCustomFrom("");
+      setCustomTo("");
+    }
+    setPeriodDialogOpen(true);
+  };
+
+  const applyPreset = (
+    period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod,
+  ) => {
+    setQuery({ period });
+    setPeriodDialogOpen(false);
+  };
+
+  const applyCustomRange = () => {
+    const from = customFrom.trim();
+    const to = customTo.trim();
+    if (!from || !to) return;
+    if (from > to) {
+      setError("Custom range: “From” must be on or before “To”.");
+      return;
+    }
+    setError(null);
+    setQuery({
+      period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.custom,
+      date_from: from,
+      date_to: to,
+    });
+    setPeriodDialogOpen(false);
+  };
+
+  const isPresetSelected = (
+    period: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod,
+  ) => {
+    if (
+      period === GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.custom
+    ) {
+      return (
+        query.period ===
+        GetInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod.custom
+      );
+    }
+    return queriesEqual(query, { period });
   };
 
   return (
-    <div className="space-y-4">
-      {error ? (
-        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          <p>{error}</p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => void loadKpis()}
-          >
-            Retry
-          </Button>
-        </div>
+    <div className="space-y-4 pb-2">
+      {loading && !kpis ? <OpsTeamKpiSkeleton /> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      {kpis && periodFrom && periodTo ? (
+        <OpsKpiPeriodBanner
+          dateFrom={periodFrom}
+          dateTo={periodTo}
+          onChangePeriodClick={openPeriodDialog}
+          isUpdating={refetching}
+        />
       ) : null}
 
-      <section className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => goToInspections("today")}
-          className="group rounded-3xl border bg-emerald-500/5 p-3 text-left shadow-sm ring-1 ring-emerald-500/10 transition-colors hover:bg-emerald-500/10"
-        >
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-            Today
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {formatKpiCount(kpis.today, loading)}
-          </p>
-        </button>
-        <button
-          type="button"
-          onClick={() => goToInspections("yesterday")}
-          className="group rounded-3xl border bg-sky-500/5 p-3 text-left shadow-sm ring-1 ring-sky-500/10 transition-colors hover:bg-sky-500/10"
-        >
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">
-            Yesterday
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {formatKpiCount(kpis.yesterday, loading)}
-          </p>
-        </button>
-        <button
-          type="button"
-          onClick={() => goToInspections("week")}
-          className="group rounded-3xl border bg-amber-500/5 p-3 text-left shadow-sm ring-1 ring-amber-500/10 transition-colors hover:bg-amber-500/10"
-        >
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
-            This week
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {formatKpiCount(kpis.week, loading)}
-          </p>
-        </button>
-        <button
-          type="button"
-          onClick={() => goToInspections("month")}
-          className="group rounded-3xl border bg-violet-500/5 p-3 text-left shadow-sm ring-1 ring-violet-500/10 transition-colors hover:bg-violet-500/10"
-        >
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-violet-700 dark:text-violet-300">
-            This month
-          </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {formatKpiCount(kpis.month, loading)}
-          </p>
-        </button>
-      </section>
-
-      <section>
-        <button
-          type="button"
-          onClick={() => setCustomOpen(true)}
-          className="flex w-full items-center justify-between rounded-3xl border bg-muted/40 px-3 py-3 text-left text-sm shadow-sm transition-colors hover:bg-muted"
-        >
-          <p className="text-sm font-semibold">Custom range</p>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-        </button>
-      </section>
-
-      <Dialog open={customOpen} onOpenChange={setCustomOpen}>
-        <DialogContent>
+      <Dialog open={periodDialogOpen} onOpenChange={setPeriodDialogOpen}>
+        <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Custom date range</DialogTitle>
+            <DialogTitle>Reporting period</DialogTitle>
           </DialogHeader>
-          <div className="mt-2 space-y-3">
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <label className="w-20 text-xs font-medium">From</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(event) => setFromDate(event.target.value)}
-                className="h-9 flex-1 rounded-md border bg-background px-2 text-sm outline-none"
-              />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              {PRESETS.map(({ period, label, hint }) => (
+                <button
+                  key={period}
+                  type="button"
+                  title={hint}
+                  onClick={() => applyPreset(period)}
+                  className={cn(
+                    "rounded-2xl border px-3 py-3 text-left text-sm font-semibold shadow-sm transition-colors",
+                    isPresetSelected(period) ?
+                      "border-violet-500/50 bg-violet-500/15 text-violet-950 dark:text-violet-50"
+                    : "border-border/70 bg-muted/30 hover:bg-muted/50",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <label className="w-20 text-xs font-medium">To</label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(event) => setToDate(event.target.value)}
-                className="h-9 flex-1 rounded-md border bg-background px-2 text-sm outline-none"
-              />
+            <div className="space-y-2 rounded-2xl border bg-muted/20 p-3">
+              <p className="text-xs font-medium text-muted-foreground">
+                Custom range (UTC dates)
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="operator-kpi-from" className="text-xs">
+                    From
+                  </Label>
+                  <input
+                    id="operator-kpi-from"
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="operator-kpi-to" className="text-xs">
+                    To
+                  </Label>
+                  <input
+                    id="operator-kpi-to"
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm outline-none"
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <DialogFooter className="mt-2">
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setCustomOpen(false);
-              }}
+              onClick={() => setPeriodDialogOpen(false)}
             >
               Cancel
             </Button>
             <Button
               type="button"
-              disabled={!fromDate || !toDate}
-              onClick={() => {
-                setCustomOpen(false);
-                goToInspections("custom", fromDate, toDate);
-              }}
+              disabled={!customFrom.trim() || !customTo.trim()}
+              onClick={() => applyCustomRange()}
             >
-              View inspections
+              Apply custom range
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {kpis && !loading && listHref ? (
+        <div
+          className={cn(
+            "space-y-3 transition-opacity",
+            refetching && "pointer-events-none opacity-60",
+          )}
+        >
+          <OpsKpiMetricGroup title="All inspections">
+            <OpsKpiStatRow>
+              <OpsKpiStatCard
+                label="Total"
+                value={operatorOwnedTotal(kpis)}
+                to={listHref.all("total")}
+                tone="neutral"
+              />
+              <OpsKpiStatCard
+                label="In review"
+                value={kpis.review_queue}
+                to={listHref.all("in_review")}
+                tone="review"
+              />
+              <OpsKpiStatCard
+                label="Approved"
+                value={operatorApprovedTotal(kpis)}
+                to={listHref.all("approved")}
+                tone="approved"
+              />
+              <OpsKpiStatCard
+                label="Rejected"
+                value={operatorRejectedTotal(kpis)}
+                to={listHref.all("rejected")}
+                tone="rejected"
+              />
+            </OpsKpiStatRow>
+          </OpsKpiMetricGroup>
+
+          <OpsKpiMetricGroup title="Inbound">
+            <OpsKpiStatRow>
+              <OpsKpiStatCard
+                label="In review"
+                value={kpis.inbound.in_review}
+                to={listHref.inbound("in_review")}
+                tone="review"
+              />
+              <OpsKpiStatCard
+                label="Approved"
+                value={kpis.inbound.approved}
+                to={listHref.inbound("approved")}
+                tone="approved"
+              />
+              <OpsKpiStatCard
+                label="Rejected"
+                value={kpis.inbound.rejected}
+                to={listHref.inbound("rejected")}
+                tone="rejected"
+              />
+            </OpsKpiStatRow>
+          </OpsKpiMetricGroup>
+
+          <OpsKpiMetricGroup title="Outbound">
+            <OpsKpiStatRow>
+              <OpsKpiStatCard
+                label="In review"
+                value={kpis.outbound.in_review}
+                to={listHref.outbound("in_review")}
+                tone="review"
+              />
+              <OpsKpiStatCard
+                label="Approved"
+                value={kpis.outbound.approved}
+                to={listHref.outbound("approved")}
+                tone="approved"
+              />
+              <OpsKpiStatCard
+                label="Rejected"
+                value={kpis.outbound.rejected}
+                to={listHref.outbound("rejected")}
+                tone="rejected"
+              />
+            </OpsKpiStatRow>
+          </OpsKpiMetricGroup>
+        </div>
+      ) : null}
     </div>
   );
 }

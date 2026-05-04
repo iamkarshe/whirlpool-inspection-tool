@@ -19,6 +19,8 @@ export type GeolocationStatus =
 
 export type GeolocationContextValue = {
   status: GeolocationStatus;
+  /** True while the in-app location consent / error dialog is open (unmount gate UI above it). */
+  isLocationPromptOpen: boolean;
   coordinates: GeolocationCoords | null;
   /**
    * Latest coordinates for synchronous reads (e.g. before firing an API in the same tick).

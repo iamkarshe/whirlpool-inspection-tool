@@ -1,9 +1,12 @@
 import { IconBubble } from "@/components/ui/icon-bubble";
 import { useSessionUser } from "@/hooks/use-session-user";
+import {
+  OPS_INSPECTIONS_NAV_ICON,
+  OPS_INSPECTIONS_TITLE,
+} from "@/lib/ops-inspections-nav";
 import { isOpsManagerRole } from "@/lib/ops-role";
 import {
   ClipboardCheck,
-  ClipboardList,
   ScanLine,
   Search,
   Smartphone,
@@ -30,10 +33,10 @@ export default function OpsHelpPage() {
               className="bg-violet-500/10 text-violet-600 dark:text-violet-300"
             />
             <div className="space-y-1">
-              <p className="text-sm font-semibold">1. Review the queue</p>
+              <p className="text-sm font-semibold">1. Inspection Review</p>
               <p className="text-xs text-muted-foreground">
-                On <strong>Home</strong>, open <strong>Review queue</strong> to
-                approve or reject inspections your operators submitted. Work
+                On <strong>Home</strong>, open <strong>Inspection Review</strong>{" "}
+                to approve or reject inspections your operators submitted. Work
                 through the list until the count is clear.
               </p>
             </div>
@@ -41,15 +44,17 @@ export default function OpsHelpPage() {
 
           <div className="flex gap-3 rounded-3xl border bg-card/80 p-3 shadow-sm">
             <IconBubble
-              icon={ClipboardList}
+              icon={OPS_INSPECTIONS_NAV_ICON}
               className="bg-violet-500/10 text-violet-600 dark:text-violet-300"
             />
             <div className="space-y-1">
-              <p className="text-sm font-semibold">2. Inspections (KPIs)</p>
+              <p className="text-sm font-semibold">
+                2. {OPS_INSPECTIONS_TITLE} (KPIs)
+              </p>
               <p className="text-xs text-muted-foreground">
-                Use the bottom <strong>Inspections</strong> tab for team KPIs.
-                Tap the period banner to change the reporting window, then open
-                a metric to see the underlying inspection list.
+                Use the bottom <strong>{OPS_INSPECTIONS_TITLE}</strong> tab for
+                team KPIs. Tap the period banner to change the reporting window,
+                then open a metric to see the underlying inspection list.
               </p>
             </div>
           </div>
@@ -92,7 +97,7 @@ export default function OpsHelpPage() {
     <div className="space-y-4">
       <header className="space-y-1">
         <p className="text-sm text-muted-foreground">
-          Three simple steps to complete inspections like an expert.
+          Four simple steps to complete inspections like an expert.
         </p>
       </header>
 
@@ -114,11 +119,28 @@ export default function OpsHelpPage() {
 
         <div className="flex gap-3 rounded-3xl border bg-card/80 p-3 shadow-sm">
           <IconBubble
+            icon={OPS_INSPECTIONS_NAV_ICON}
+            className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+          />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">
+              2. {OPS_INSPECTIONS_TITLE} (KPIs)
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Use the bottom <strong>{OPS_INSPECTIONS_TITLE}</strong> tab for
+              your KPIs. Tap the period banner to change the reporting window,
+              then open a metric to see the underlying inspection list.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3 rounded-3xl border bg-card/80 p-3 shadow-sm">
+          <IconBubble
             icon={Search}
             className="bg-amber-500/10 text-amber-600 dark:text-amber-300"
           />
           <div className="space-y-1">
-            <p className="text-sm font-semibold">2. Search an inspection</p>
+            <p className="text-sm font-semibold">3. Search an inspection</p>
             <p className="text-xs text-muted-foreground">
               From <strong>Home</strong>, tap <strong>Search inspection</strong>{" "}
               to open barcode lookup. You will see the unit and can open
@@ -134,7 +156,7 @@ export default function OpsHelpPage() {
             className="bg-violet-500/10 text-violet-600 dark:text-violet-300"
           />
           <div className="space-y-1">
-            <p className="text-sm font-semibold">3. Keep your device in sync</p>
+            <p className="text-sm font-semibold">4. Keep your device in sync</p>
             <p className="text-xs text-muted-foreground">
               Use the <strong>Account</strong> tab to review your profile, sign
               out safely at the end of your shift, and manage how the device is

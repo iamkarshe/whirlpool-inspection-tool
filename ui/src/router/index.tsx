@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { PageLoader } from "@/components/layout/page-loader";
+import { OPS_INSPECTIONS_TITLE } from "@/lib/ops-inspections-nav";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // Components
@@ -373,7 +374,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "data",
-            handle: { title: "Data Analytics" },
+            handle: { title: OPS_INSPECTIONS_TITLE },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsDataPage />
@@ -400,7 +401,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "inspection-list",
-            handle: { title: "Inspections" },
+            handle: { title: OPS_INSPECTIONS_TITLE },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsInspectionListPage />
@@ -417,7 +418,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                handle: { title: "Inspections" },
+                handle: { title: OPS_INSPECTIONS_TITLE },
                 element: (
                   <Suspense fallback={<PageLoader />}>
                     <OpsTeamPage />
@@ -426,7 +427,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: "review",
-                handle: { title: "Review queue" },
+                handle: { title: "Inspection Review" },
                 element: (
                   <Suspense fallback={<PageLoader />}>
                     <OpsTeamReviewPage />

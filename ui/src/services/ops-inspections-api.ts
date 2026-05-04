@@ -4,9 +4,11 @@ import type { ActiveChecklistGroupedResponse } from "@/api/generated/model/activ
 import type { BarcodeParseResponse } from "@/api/generated/model/barcodeParseResponse";
 import type { ChecklistGroupBlock } from "@/api/generated/model/checklistGroupBlock";
 import type { GetInspectionKpisManagerApiInspectionsKpisManagerGetParams } from "@/api/generated/model/getInspectionKpisManagerApiInspectionsKpisManagerGetParams";
+import type { GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams } from "@/api/generated/model/getInspectionKpisOperatorApiInspectionsKpisOperatorGetParams";
 import type { InspectionMetadataResponse } from "@/api/generated/model/inspectionMetadataResponse";
 import type { InspectionWithChecklistPayload } from "@/api/generated/model/inspectionWithChecklistPayload";
 import type { ManagerInspectionTeamKpisResponse } from "@/api/generated/model/managerInspectionTeamKpisResponse";
+import type { OperatorInspectionKpisResponse } from "@/api/generated/model/operatorInspectionKpisResponse";
 import type { StartInboundInspectionRequest } from "@/api/generated/model/startInboundInspectionRequest";
 import type { StartOutboundInspectionRequest } from "@/api/generated/model/startOutboundInspectionRequest";
 
@@ -165,6 +167,21 @@ export async function fetchManagerTeamInspectionKpis(
 ): Promise<ManagerInspectionTeamKpisResponse> {
   const api = getInspections();
   return api.getInspectionKpisManagerApiInspectionsKpisManagerGet(
+    params ?? { period: "today" },
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+/**
+ * Operator inspection KPIs (`GET /api/inspections/kpis/operator`): one response for
+ * the reporting window — inbound/outbound splits plus combined `review_queue`.
+ */
+export async function fetchOperatorInspectionKpis(
+  params?: GetInspectionKpisOperatorApiInspectionsKpisOperatorGetParams,
+  opts?: { signal?: AbortSignal },
+): Promise<OperatorInspectionKpisResponse> {
+  const api = getInspections();
+  return api.getInspectionKpisOperatorApiInspectionsKpisOperatorGet(
     params ?? { period: "today" },
     opts?.signal ? { signal: opts.signal } : undefined,
   );

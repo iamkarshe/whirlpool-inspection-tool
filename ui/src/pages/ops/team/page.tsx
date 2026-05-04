@@ -369,7 +369,7 @@ export default function OpsTeamPage() {
           <h2 className="text-sm font-semibold">Inspection Review</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          Open the queue, tap an inspection, then approve or reject after
+          Open Inspection Review, tap an inspection, then approve or reject after
           checking checklist results and photos.
         </p>
         <Button asChild>
@@ -378,7 +378,7 @@ export default function OpsTeamPage() {
             className="inline-flex w-full items-center justify-center gap-2"
           >
             <ListChecks className="h-4 w-4 shrink-0" />
-            Open review queue
+            Open Inspection Review
           </Link>
         </Button>
       </section>

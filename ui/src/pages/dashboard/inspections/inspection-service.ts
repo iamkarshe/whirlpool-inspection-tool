@@ -164,20 +164,14 @@ export async function getInspectionKpisForDateRange(
   );
 }
 
-/** Inspections awaiting manager sign-off (last 30 days by `created_at`). */
+/** Inspections awaiting manager sign-off (paginated list, then `is_under_review`). */
 export async function getInspectionsPendingManagerReview(opts?: {
   signal?: AbortSignal;
 }): Promise<Inspection[]> {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 29);
   const rows = await fetchAllInspectionRows(
     {
       sort_by: "created_at",
       sort_dir: "desc",
-      date_field: "created_at",
-      date_from: formatCalendarDateForApi(start),
-      date_to: formatCalendarDateForApi(end),
     },
     opts,
   );

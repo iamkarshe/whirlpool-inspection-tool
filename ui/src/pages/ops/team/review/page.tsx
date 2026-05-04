@@ -29,14 +29,15 @@ export default function OpsTeamReviewPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     getInspectionsPendingManagerReview()
       .then((list) => {
-        if (!cancelled) setRows(list);
+        if (!cancelled) {
+          setError(null);
+          setRows(list);
+        }
       })
       .catch(() => {
-        if (!cancelled) setError("Could not load the review queue.");
+        if (!cancelled) setError("Could not load Inspection Review.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -50,15 +51,9 @@ export default function OpsTeamReviewPage() {
 
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Manager
-        </p>
-        <h1 className="text-xl font-semibold tracking-tight">Review queue</h1>
-        <p className="text-sm text-muted-foreground">
-          Inspections waiting for your decision (last 30 days).
-        </p>
-      </header>
+      <p className="text-sm text-muted-foreground">
+        All inspections currently pending for your review.
+      </p>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
@@ -79,7 +74,9 @@ export default function OpsTeamReviewPage() {
               <button
                 key={inspection.id}
                 type="button"
-                onClick={() => navigate(PAGES.opsInspectionDetailPath(inspection.id))}
+                onClick={() =>
+                  navigate(PAGES.opsInspectionDetailPath(inspection.id))
+                }
                 className="flex w-full items-center justify-between gap-3 rounded-3xl border bg-card/80 p-3 text-left shadow-sm transition-colors hover:bg-accent"
               >
                 <div className="flex items-center gap-3">
@@ -88,7 +85,9 @@ export default function OpsTeamReviewPage() {
                   </div>
                   <div className="min-w-0 space-y-0.5">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <InspectionTypeBadge inspectionType={inspection.inspection_type} />
+                      <InspectionTypeBadge
+                        inspectionType={inspection.inspection_type}
+                      />
                       <Badge variant="outline" className="text-[10px]">
                         Needs review
                       </Badge>
@@ -97,7 +96,8 @@ export default function OpsTeamReviewPage() {
                       {inspection.product_serial}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      {inspection.inspector_name} · {toTime(inspection.created_at)}
+                      {inspection.inspector_name} ·{" "}
+                      {toTime(inspection.created_at)}
                     </p>
                   </div>
                 </div>

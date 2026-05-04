@@ -1,4 +1,6 @@
 import { BrandLogo } from "@/components/brand-logo";
+import { OpsEnvironmentGateDialog } from "@/components/ops/ops-environment-gate-dialog";
+import { useOpsEnvironmentGate } from "@/hooks/use-ops-environment-gate";
 import { useSessionUser } from "@/hooks/use-session-user";
 import {
   formatOpsRoleBadgeLabel,
@@ -13,7 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { PAGES } from "@/endpoints";
 import { setPageTitle } from "@/lib/core";
+import {
+  OPS_INSPECTIONS_NAV_ICON,
+  OPS_INSPECTIONS_TITLE,
+} from "@/lib/ops-inspections-nav";
 import {
   opsInspectionListTitle,
   parseOpsInspectionListQuery,
@@ -24,7 +31,7 @@ import {
   normalizeOpsRole,
 } from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
-import { CircleUser, ClipboardList, Home, LineChart, ScanLine } from "lucide-react";
+import { CircleUser, Home, ScanLine } from "lucide-react";
 import React, { useEffect } from "react";
 import {
   NavLink,
@@ -52,7 +59,11 @@ type RouteHandle = {
 const DEFAULT_TABS: TabConfig[] = [
   { label: "Home", path: "/ops", icon: Home },
   { label: "New", path: "/ops/new-inspection", icon: ScanLine },
-  { label: "Data", path: "/ops/data", icon: LineChart },
+  {
+    label: OPS_INSPECTIONS_TITLE,
+    path: PAGES.OPS_DATA,
+    icon: OPS_INSPECTIONS_NAV_ICON,
+  },
   { label: "Account", path: "/ops/account", icon: CircleUser },
 ];
 
@@ -61,6 +72,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   const navigate = useNavigate();
   const matches = useMatches();
   const sessionUser = useSessionUser();
+  const envGate = useOpsEnvironmentGate();
   const [showDesktopWarning, setShowDesktopWarning] = React.useState(false);
 
   const headerInitials = sessionUser?.name?.trim()?.length
@@ -89,10 +101,14 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       : DEFAULT_TABS.filter((t) => t.path !== "/ops/new-inspection");
     if (!isOpsManagerRole(sessionUser?.role)) return base;
     const [home, ...rest] = base;
-    const withoutData = rest.filter((t) => t.path !== "/ops/data");
+    const withoutData = rest.filter((t) => t.path !== PAGES.OPS_DATA);
     return [
       home!,
-      { label: "Inspections", path: "/ops/team", icon: ClipboardList },
+      {
+        label: OPS_INSPECTIONS_TITLE,
+        path: PAGES.OPS_TEAM,
+        icon: OPS_INSPECTIONS_NAV_ICON,
+      },
       ...withoutData,
     ];
   }, [sessionUser?.role]);
@@ -156,7 +172,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         new URLSearchParams(location.search),
       );
       if (q) return opsInspectionListTitle(q);
-      return "Inspections";
+      return OPS_INSPECTIONS_TITLE;
     }
     const opsSearchParams = new URLSearchParams(location.search);
     if (
@@ -201,7 +217,15 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
 
   return (
     <div className={cn("flex min-h-screen flex-col bg-background", className)}>
-      <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur_">
+      <div
+        className={cn(
+          "flex min-h-screen flex-col",
+          !envGate.environmentReady &&
+            "pointer-events-none select-none opacity-[0.92]",
+        )}
+        inert={!envGate.environmentReady ? true : undefined}
+      >
+        <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur_">
         <div className="mx-auto flex max-w-md items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -265,6 +289,21 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
           ))}
         </div>
       </nav>
+      </div>
+      <OpsEnvironmentGateDialog
+        open={
+          !envGate.environmentReady && !envGate.isLocationPromptOpen
+        }
+        online={envGate.online}
+        apiBaseConfigured={envGate.apiBaseConfigured}
+        healthOk={envGate.healthOk}
+        healthChecking={envGate.healthChecking}
+        locationUnsupported={envGate.locationUnsupported}
+        isLocationReady={envGate.isLocationReady}
+        locationError={envGate.locationError}
+        onRecheck={envGate.recheckAll}
+        onRequestLocation={envGate.acquireLocation}
+      />
       <Dialog open={showDesktopWarning} onOpenChange={setShowDesktopWarning}>
         <DialogContent>
           <DialogHeader>

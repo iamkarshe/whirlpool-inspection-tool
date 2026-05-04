@@ -78,7 +78,7 @@ export default function OpsHomePage() {
             </div>
             <div className="min-w-0 space-y-0.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-violet-900 dark:text-violet-100">
-                Review queue
+                Inspection Review
               </p>
               <p className="font-mono text-2xl font-bold tabular-nums tracking-tight leading-none">
                 {reviewCountFailed
@@ -133,7 +133,7 @@ export default function OpsHomePage() {
             <div className="space-y-1">
               <p className="text-sm font-semibold">How to use?</p>
               <p className="text-[11px] text-muted-foreground">
-                Review queue, Inspections tab, and general app tips.
+                Inspection Review, Inspections tab, and general app tips.
               </p>
             </div>
           </button>
