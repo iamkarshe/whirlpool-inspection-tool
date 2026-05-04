@@ -1,7 +1,7 @@
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const HEALTH_INTERVAL_MS = 12_000;
+const HEALTH_INTERVAL_MS = 12_000 * 5;
 const HEALTH_TIMEOUT_MS = 8_000;
 
 function getApiBaseUrl(): string {
@@ -114,10 +114,7 @@ export function useOpsEnvironmentGate() {
   const locationUnsupported = locationStatus === "unsupported";
 
   const environmentReady =
-    online &&
-    healthOk === true &&
-    isLocationReady &&
-    !locationUnsupported;
+    online && healthOk === true && isLocationReady && !locationUnsupported;
 
   return {
     environmentReady,

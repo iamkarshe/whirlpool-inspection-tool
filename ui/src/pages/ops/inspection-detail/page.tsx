@@ -66,6 +66,12 @@ import {
   patchInspectionReviewStatus,
 } from "@/services/inspections-api";
 
+/** Issue Tracker actions — flip to `true` when flows are ready to ship. */
+const FLAGS = {
+  issueTrackerRaise: false,
+  issueTrackerResolve: false,
+} as const;
+
 const SECTION_ITEMS = [
   { key: "outer-packaging", label: "Outer Packaging" },
   { key: "inner-packaging", label: "Inner Packaging" },
@@ -459,7 +465,7 @@ export default function OpsInspectionDetailPage() {
         open={galleryOpen}
         onOpenChange={setGalleryOpen}
         title="Inspection images"
-        description="Tap thumbnail to preview. You can raise an issue from this view."
+        description=""
         images={galleryImages}
         activeUrl={activeGalleryUrl}
         onActiveUrlChange={(url) => setActiveGalleryUrl(url)}
@@ -578,22 +584,154 @@ export default function OpsInspectionDetailPage() {
           </Badge>
           <OpsReviewStatusBadge status={inspection.review_status} />
         </div>
-        <div className="space-y-2 text-sm">
-          <p>
-            <span className="text-muted-foreground">Product</span>
-            <span className="mx-1.5 text-muted-foreground/60">·</span>
-            <span className="font-medium text-foreground">
-              {inspection.product_serial}
-            </span>
-          </p>
-          <p>
-            <span className="text-muted-foreground">Inspector</span>
-            <span className="mx-1.5 text-muted-foreground/60">·</span>
-            <span className="font-medium text-foreground">
-              {inspection.inspector_name}
-            </span>
-          </p>
-        </div>
+        <table className="w-full text-sm">
+          <tbody>
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Material code
+              </th>
+              <td className="py-2 font-medium text-foreground">
+                {inspection.product_serial}
+              </td>
+            </tr>
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Category
+              </th>
+              <td className="whitespace-pre-wrap py-2 text-[13px] leading-snug text-foreground">
+                {inspection.product_category_name?.trim() || "—"}
+              </td>
+            </tr>
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Model
+              </th>
+              <td className="whitespace-pre-wrap py-2 text-[13px] leading-snug text-foreground">
+                {inspection.product_description?.trim() || "—"}
+              </td>
+            </tr>
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Serial number
+              </th>
+              <td className="py-2 text-[13px] font-medium text-foreground">
+                {inspection.inspection_serial_number?.trim() || "—"}
+              </td>
+            </tr>
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Unit barcode
+              </th>
+              <td className="py-2 font-mono text-[13px] font-medium text-foreground">
+                {inspection.product_barcode?.trim() || "—"}
+              </td>
+            </tr>
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Inspector
+              </th>
+              <td className="py-2 font-medium text-foreground">
+                {inspection.inspector_name}
+              </td>
+            </tr>
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Warehouse
+              </th>
+              <td className="py-2 text-[13px] font-medium text-foreground">
+                {inspection.warehouse_code?.trim() || "—"}
+              </td>
+            </tr>
+            {inspection.plant_code?.trim() ? (
+              <tr className="border-b border-border/50 last:border-0">
+                <th
+                  scope="row"
+                  className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                >
+                  Supplier plant
+                </th>
+                <td className="py-2 text-[13px] font-medium text-foreground">
+                  {inspection.plant_code.trim()}
+                </td>
+              </tr>
+            ) : null}
+            <tr className="border-b border-border/50 last:border-0">
+              <th
+                scope="row"
+                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+              >
+                Inspection date
+              </th>
+              <td className="py-2 font-medium text-foreground">
+                {formatDate(inspection.created_at)}
+              </td>
+            </tr>
+            {inspection.reviewer_name?.trim() ||
+            inspection.reviewed_at?.trim() ||
+            inspection.reviewed_comment?.trim() ? (
+              <>
+                <tr className="border-b border-border/50 last:border-0">
+                  <th
+                    scope="row"
+                    className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                  >
+                    Reviewer
+                  </th>
+                  <td className="py-2 font-medium text-foreground">
+                    {inspection.reviewer_name?.trim() || "—"}
+                  </td>
+                </tr>
+                <tr className="border-b border-border/50 last:border-0">
+                  <th
+                    scope="row"
+                    className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                  >
+                    Reviewed
+                  </th>
+                  <td className="py-2 font-medium text-foreground">
+                    {inspection.reviewed_at?.trim()
+                      ? formatDate(inspection.reviewed_at.trim())
+                      : "—"}
+                  </td>
+                </tr>
+                {inspection.reviewed_comment?.trim() ? (
+                  <tr className="border-b border-border/50 last:border-0">
+                    <th
+                      scope="row"
+                      className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                    >
+                      Comment
+                    </th>
+                    <td className="py-2 text-[13px] leading-snug text-foreground">
+                      {inspection.reviewed_comment.trim()}
+                    </td>
+                  </tr>
+                ) : null}
+              </>
+            ) : null}
+          </tbody>
+        </table>
       </section>
 
       <section className="rounded-3xl border bg-card/80 p-4 shadow-sm">
@@ -638,7 +776,8 @@ export default function OpsInspectionDetailPage() {
               <OpsReviewStatusBadge status={inspection.review_status} />
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Manager decision — this inspection is waiting in Inspection Review.
+              Manager decision — this inspection is waiting in Inspection
+              Review.
             </p>
             <div className="space-y-1">
               <Label htmlFor="mgr-review-comment" className="text-xs">
@@ -685,11 +824,6 @@ export default function OpsInspectionDetailPage() {
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
               <span className="text-muted-foreground">Review status</span>
               <OpsReviewStatusBadge status={inspection.review_status} />
-            </p>
-            <p>
-              {isManager
-                ? "No manager action is required right now."
-                : "Only managers can approve or reject inspections from the Ops app."}
             </p>
           </div>
         )}
@@ -889,6 +1023,10 @@ export default function OpsInspectionDetailPage() {
               <Button
                 size="sm"
                 className="h-7 px-2 text-[11px]"
+                disabled={!FLAGS.issueTrackerRaise}
+                title={
+                  FLAGS.issueTrackerRaise ? undefined : "Raise is disabled."
+                }
                 onClick={() => {
                   setActiveGalleryUrl(null);
                   setRaiseIssueOpen(true);
@@ -973,7 +1111,16 @@ export default function OpsInspectionDetailPage() {
                           issue.status === "resolved" ? "secondary" : "outline"
                         }
                         className="h-7 px-2 text-[11px]"
-                        disabled={issue.status === "resolved"}
+                        disabled={
+                          issue.status === "resolved" ||
+                          !FLAGS.issueTrackerResolve
+                        }
+                        title={
+                          issue.status === "resolved" ||
+                          FLAGS.issueTrackerResolve
+                            ? undefined
+                            : "Resolve is disabled."
+                        }
                         onClick={() => resolveIssue(issue.id)}
                       >
                         <Link2 className="mr-1 h-3 w-3" />

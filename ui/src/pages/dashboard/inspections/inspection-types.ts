@@ -18,12 +18,22 @@ export interface Inspection {
   product_serial: string;
   product_category_id?: number;
   product_category_name?: string;
+  /** From detail `product.material_description` (model / variant line on the slip). */
+  product_description?: string | null;
+  /** From inspection detail `product.barcode` when present. */
+  product_barcode?: string | null;
+  /** From inspection detail `product.inspection_serial_number` (unit serial suffix). */
+  inspection_serial_number?: string | null;
   checklist_id: number;
   checklist_name: string;
   inspection_type: InspectionType;
   created_at: string;
   review_status?: string;
   is_under_review?: boolean;
+  /** Manager quality review (from inspection detail API when present). */
+  reviewer_name?: string | null;
+  reviewed_at?: string | null;
+  reviewed_comment?: string | null;
   checklist_quality?: InspectionQuestionStatus;
   warehouse_code?: string;
   plant_code?: string;

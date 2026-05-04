@@ -2,17 +2,16 @@ import { ChevronRight, ClipboardList } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
 import { OpsListEmptyState } from "@/components/ops/ops-list-empty-state";
 import { opsListEmptySectionClassName } from "@/components/ops/ops-list-section-classes";
-import { OpsListHint } from "@/components/ops/ops-list-hint";
-import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { PAGES } from "@/endpoints";
+import { InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
 import {
   getInspectionsPendingManagerReview,
   type Inspection,
 } from "@/pages/dashboard/inspections/inspection-service";
-import { InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
 
 function toTime(createdAt: string) {
   return new Date(createdAt).toLocaleTimeString([], {

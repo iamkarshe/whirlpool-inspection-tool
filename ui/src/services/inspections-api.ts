@@ -112,7 +112,13 @@ export function mapInspectionFullToInspection(
     device_id: String(full.device_id),
     device_fingerprint: full.device_fingerprint,
     product_id: full.product_id,
-    product_serial: full.product_material_code,
+    product_serial:
+      full.product?.material_code?.trim() || full.product_material_code,
+    product_category_name: full.product?.product_category_name ?? undefined,
+    product_description: full.product?.material_description ?? null,
+    product_barcode: full.product?.barcode ?? null,
+    inspection_serial_number:
+      full.product?.inspection_serial_number ?? null,
     checklist_id: full.inputs?.[0]?.checklist_id ?? 0,
     checklist_name: "",
     inspection_type: normalizeInspectionType(full.inspection_type),
@@ -122,6 +128,9 @@ export function mapInspectionFullToInspection(
     checklist_quality: cq,
     warehouse_code: full.warehouse_code ?? undefined,
     plant_code: full.plant_code ?? undefined,
+    reviewer_name: full.reviewer_name ?? null,
+    reviewed_at: full.reviewed_at ?? null,
+    reviewed_comment: full.reviewed_comment ?? null,
   };
 }
 

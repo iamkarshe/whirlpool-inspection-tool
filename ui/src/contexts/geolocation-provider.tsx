@@ -13,7 +13,6 @@ import {
 } from "@/lib/browser-location";
 import {
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -96,7 +95,9 @@ export function GeolocationProvider({ children }: { children: ReactNode }) {
     initial.coordinates,
   );
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [lastErrorMessage, setLastErrorMessage] = useState<string | undefined>();
+  const [lastErrorMessage, setLastErrorMessage] = useState<
+    string | undefined
+  >();
 
   const setStatus = useCallback((next: GeolocationStatus) => {
     statusRef.current = next;
@@ -256,12 +257,4 @@ export function GeolocationProvider({ children }: { children: ReactNode }) {
       />
     </GeolocationContext.Provider>
   );
-}
-
-export function useGeolocation(): GeolocationContextValue {
-  const ctx = useContext(GeolocationContext);
-  if (!ctx) {
-    throw new Error("useGeolocation must be used within GeolocationProvider");
-  }
-  return ctx;
 }
