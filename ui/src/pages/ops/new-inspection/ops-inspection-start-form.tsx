@@ -79,7 +79,10 @@ import {
   isValidIndianVehicleRegistration,
   normalizeIndianVehicleRegistration,
 } from "@/lib/indian-vehicle-registration";
-import { inspectionsApiValidationDialogContent } from "@/services/inspections-api";
+import {
+  inspectionsApiErrorMessage,
+  inspectionsApiValidationDialogContent,
+} from "@/services/inspections-api";
 import {
   acquireOpsInspectionBarcodeLock,
   loadOpsInspectionFormConfig,
@@ -97,6 +100,10 @@ const OPS_TRUCK_REG_INVALID_MESSAGE =
   "Truck number must be a valid Indian registration: state plate (e.g. CG01AC23334) or Bharat series (e.g. 21BH1234AA). Spaces and dashes are ignored.";
 /** How often we flush the draft ref to localStorage (ref is updated every render). */
 const DRAFT_SAVE_INTERVAL_MS = 2500;
+
+/** `detail` from `POST /api/inspections/barcode-lock` when another user holds the lock. */
+const BARCODE_LOCK_HELD_BY_OTHER_SNIPPET =
+  "locked for this inspection direction by another user";
 
 function inspectionTypeFromStartMode(
   startMode: InspectionStartMode,
@@ -244,6 +251,8 @@ export function OpsInspectionStartForm({
   const [validationDialog, setValidationDialog] = useState<{
     title: string;
     message: string;
+    /** Run when the user dismisses this dialog (e.g. navigate away after lock conflict). */
+    afterClose?: () => void;
   } | null>(null);
   const [noDamageAckOpen, setNoDamageAckOpen] = useState(false);
   const [draftSaveReady, setDraftSaveReady] = useState(false);
@@ -306,12 +315,22 @@ export function OpsInspectionStartForm({
       })
       .catch((e: unknown) => {
         if (effectDisposed || ctrl.signal.aborted) return;
-        toast.error(
-          opsInspectionApiError(
-            e,
-            "Could not reserve this unit for this inspection type.",
-          ),
+        const apiMessage = inspectionsApiErrorMessage(
+          e,
+          "Could not reserve this unit for this inspection type.",
         );
+        const heldByOther =
+          typeof apiMessage === "string" &&
+          apiMessage.toLowerCase().includes(BARCODE_LOCK_HELD_BY_OTHER_SNIPPET);
+        if (heldByOther) {
+          setValidationDialog({
+            title: "Inspection already in progress",
+            message: apiMessage,
+            afterClose: () => navigate(unitBackTo, { replace: true }),
+          });
+          return;
+        }
+        toast.error(opsInspectionApiError(e, apiMessage));
         navigate(unitBackTo, { replace: true });
       });
 
@@ -323,6 +342,15 @@ export function OpsInspectionStartForm({
       if (held) void releaseOpsInspectionBarcodeLock(held);
     };
   }, [loadingLocal, mode, barcode, navigate, unitBackTo]);
+
+  const dismissValidationDialog = useCallback(() => {
+    setValidationDialog((prev) => {
+      if (!prev) return null;
+      const { afterClose } = prev;
+      if (afterClose) afterClose();
+      return null;
+    });
+  }, []);
 
   const orderedItems = useMemo(
     () =>
@@ -889,23 +917,85 @@ export function OpsInspectionStartForm({
     toast.success("Inspection reset — timer at 0:00 and saved draft removed.");
   }, [mode, barcode]);
 
+  const validationNoticeDialog = (
+    <AlertDialog
+      open={validationDialog !== null}
+      onOpenChange={(open) => {
+        if (!open) dismissValidationDialog();
+      }}
+    >
+      <AlertDialogContent
+        className={cn(
+          "relative overflow-hidden border border-destructive/25 bg-card p-0 shadow-lg",
+          "shadow-destructive/15",
+        )}
+      >
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-0",
+            "bg-[radial-gradient(ellipse_at_top,_rgba(248,113,113,0.2),transparent_45%),radial-gradient(ellipse_at_bottom,_rgba(239,68,68,0.14),transparent_50%)]",
+            "blur-2xl",
+          )}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-destructive/10 via-transparent to-transparent"
+        />
+        <div
+          className={cn(
+            "relative z-10 flex min-h-[10rem] flex-col items-center justify-center gap-5",
+            "px-6 py-8 text-center sm:py-10",
+          )}
+        >
+          <AlertDialogTitle className="max-w-prose text-balance text-center text-destructive/90">
+            {validationDialog?.title ?? "Check your input"}
+          </AlertDialogTitle>
+          <AlertDialogDescription
+            className={cn(
+              "max-w-prose text-balance text-center text-foreground",
+              "whitespace-pre-wrap",
+            )}
+          >
+            {validationDialog?.message}
+          </AlertDialogDescription>
+          <div className="flex w-full max-w-xs justify-center pt-1">
+            <AlertDialogAction
+              variant="outline"
+              className="min-w-[7rem] border-destructive/40 text-destructive/90 hover:bg-destructive/10 hover:text-destructive"
+              onClick={dismissValidationDialog}
+            >
+              OK
+            </AlertDialogAction>
+          </div>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   if (loadingLocal) {
     return (
-      <div className="flex min-h-[32vh] flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Loading form…</p>
-      </div>
+      <>
+        {validationNoticeDialog}
+        <div className="flex min-h-[32vh] flex-col items-center justify-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading form…</p>
+        </div>
+      </>
     );
   }
 
   if (!barcodeLockReady) {
     return (
-      <div className="flex min-h-[32vh] flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">
-          Reserving this inspection on the server…
-        </p>
-      </div>
+      <>
+        {validationNoticeDialog}
+        <div className="flex min-h-[32vh] flex-col items-center justify-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Reserving this inspection on the server…
+          </p>
+        </div>
+      </>
     );
   }
 
@@ -943,6 +1033,8 @@ export function OpsInspectionStartForm({
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
+      {validationNoticeDialog}
+
       <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -956,61 +1048,6 @@ export function OpsInspectionStartForm({
             <AlertDialogCancel onClick={cancelLeave}>Stay</AlertDialogCancel>
             <AlertDialogAction onClick={confirmLeave}>Leave</AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={validationDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) setValidationDialog(null);
-        }}
-      >
-        <AlertDialogContent
-          className={cn(
-            "relative overflow-hidden border border-destructive/25 bg-card p-0 shadow-lg",
-            "shadow-destructive/15",
-          )}
-        >
-          {/* Same idea as auth layout: white card + soft tinted radials (login uses sky/violet; here danger). */}
-          <div
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute inset-0",
-              "bg-[radial-gradient(ellipse_at_top,_rgba(248,113,113,0.2),transparent_45%),radial-gradient(ellipse_at_bottom,_rgba(239,68,68,0.14),transparent_50%)]",
-              "blur-2xl",
-            )}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-destructive/10 via-transparent to-transparent"
-          />
-          <div
-            className={cn(
-              "relative z-10 flex min-h-[10rem] flex-col items-center justify-center gap-5",
-              "px-6 py-8 text-center sm:py-10",
-            )}
-          >
-            <AlertDialogTitle className="max-w-prose text-balance text-center text-destructive/90">
-              {validationDialog?.title ?? "Check your input"}
-            </AlertDialogTitle>
-            <AlertDialogDescription
-              className={cn(
-                "max-w-prose text-balance text-center text-foreground",
-                "whitespace-pre-wrap",
-              )}
-            >
-              {validationDialog?.message}
-            </AlertDialogDescription>
-            <div className="flex w-full max-w-xs justify-center pt-1">
-              <AlertDialogAction
-                variant="outline"
-                className="min-w-[7rem] border-destructive/40 text-destructive/90 hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => setValidationDialog(null)}
-              >
-                OK
-              </AlertDialogAction>
-            </div>
-          </div>
         </AlertDialogContent>
       </AlertDialog>
 

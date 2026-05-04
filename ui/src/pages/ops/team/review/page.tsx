@@ -57,10 +57,6 @@ export default function OpsTeamReviewPage() {
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <OpsListHint show={!loading && rows.length > 0}>
-        Tap an inspection to open details, then use Approve or Reject.
-      </OpsListHint>
-
       <section className={opsListEmptySectionClassName(loading, empty)}>
         {loading ? <OpsInspectionSkeleton variant="list" count={4} /> : null}
         {empty ? (
