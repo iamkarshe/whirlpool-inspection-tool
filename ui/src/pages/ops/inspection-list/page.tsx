@@ -1,7 +1,7 @@
-import { ChevronRight, ClipboardList } from "lucide-react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
+import { OpsInspectionListCard } from "@/components/ops/ops-inspection-list-card";
 import { OpsListEmptyState } from "@/components/ops/ops-list-empty-state";
 import { opsListEmptySectionClassName } from "@/components/ops/ops-list-section-classes";
 import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
@@ -18,8 +18,6 @@ import {
   getInspectionsForOpsList,
   type Inspection,
 } from "@/pages/dashboard/inspections/inspection-service";
-import { InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,36 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-function toListTime(createdAt: string) {
-  return new Date(createdAt).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function checklistBadge(i: Inspection) {
-  const q = i.checklist_quality;
-  if (q === "fail") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-300">
-        Checklist fail
-      </span>
-    );
-  }
-  if (q === "pass") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-300">
-        Checklist pass
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-      —
-    </span>
-  );
-}
 
 export default function OpsInspectionListPage() {
   const navigate = useNavigate();
@@ -250,46 +218,14 @@ export default function OpsInspectionListPage() {
         ) : null}
         {!loading && !empty
           ? rows.map((inspection) => (
-              <button
+              <OpsInspectionListCard
                 key={inspection.id}
-                type="button"
-                onClick={() =>
+                inspection={inspection}
+                mode="ops-inspection-list"
+                onOpen={() =>
                   navigate(PAGES.opsInspectionDetailPath(inspection.id))
                 }
-                className="flex w-full items-center justify-between gap-3 rounded-3xl border bg-card/80 p-3 text-left shadow-sm transition-colors hover:bg-accent"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-300">
-                    <ClipboardList className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <InspectionTypeBadge
-                        inspectionType={inspection.inspection_type}
-                      />
-                      {inspection.review_status ? (
-                        <Badge
-                          variant="outline"
-                          className="max-w-[140px] truncate text-[10px]"
-                        >
-                          {inspection.review_status}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="truncate text-sm font-semibold font-mono">
-                      {inspection.product_serial}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {inspection.inspector_name} ·{" "}
-                      {toListTime(inspection.created_at)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  {checklistBadge(inspection)}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </button>
+              />
             ))
           : null}
       </section>

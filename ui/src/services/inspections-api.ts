@@ -70,9 +70,35 @@ function normalizeInspectionType(
   return t.includes("outbound") ? "outbound" : "inbound";
 }
 
+/** List payloads may use snake_case, camelCase, or alternate plant keys depending on API version. */
+function optionalCodeFromListItem(
+  row: InspectionListItemResponse,
+  keys: readonly string[],
+): string | undefined {
+  const record = row as unknown as Record<string, unknown>;
+  for (const key of keys) {
+    const raw = record[key];
+    if (raw == null) continue;
+    const s = typeof raw === "string" ? raw.trim() : String(raw).trim();
+    if (s.length > 0) return s;
+  }
+  return undefined;
+}
+
 export function mapInspectionListItemToInspection(
   row: InspectionListItemResponse,
 ): Inspection {
+  const warehouse_code = optionalCodeFromListItem(row, [
+    "warehouse_code",
+    "warehouseCode",
+  ]);
+  const plant_code = optionalCodeFromListItem(row, [
+    "plant_code",
+    "plantCode",
+    "supplier_plant_code",
+    "supplierPlantCode",
+  ]);
+
   return {
     id: row.uuid,
     inspector_id: row.inspector_id,
@@ -90,8 +116,8 @@ export function mapInspectionListItemToInspection(
       row.review_status ?? "",
     ),
     checklist_quality: checklistQualityFromListItem(row),
-    warehouse_code: row.warehouse_code ?? undefined,
-    plant_code: row.plant_code ?? undefined,
+    warehouse_code,
+    plant_code,
     checklist_layers: {
       outer: row.outer,
       inner: row.inner,
