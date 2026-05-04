@@ -417,7 +417,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                handle: { title: "Team overview" },
+                handle: { title: "Inspections" },
                 element: (
                   <Suspense fallback={<PageLoader />}>
                     <OpsTeamPage />
@@ -459,7 +459,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "help",
-            handle: { title: "Help" },
+            handle: { title: "How to use" },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <OpsHelpPage />

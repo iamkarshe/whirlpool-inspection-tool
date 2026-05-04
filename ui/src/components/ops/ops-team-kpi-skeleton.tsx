@@ -19,7 +19,7 @@ export function OpsTeamKpiSkeleton() {
       className="space-y-4"
       aria-busy="true"
       aria-live="polite"
-      aria-label="Loading team KPIs"
+      aria-label="Loading inspection KPIs"
     >
       <div className="rounded-3xl border border-border/50 bg-muted/15 px-4 py-3.5 text-center shadow-sm ring-1 ring-border/40">
         <div className="mx-auto flex max-w-[220px] flex-col items-center gap-2">

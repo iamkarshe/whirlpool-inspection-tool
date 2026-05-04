@@ -125,7 +125,7 @@ export default function OpsInspectionListPage() {
           This link is incomplete.
         </p>
         <Button variant="outline" asChild>
-          <Link to={PAGES.OPS_TEAM}>Back to team overview</Link>
+          <Link to={PAGES.OPS_TEAM}>Back to inspections</Link>
         </Button>
       </div>
     );

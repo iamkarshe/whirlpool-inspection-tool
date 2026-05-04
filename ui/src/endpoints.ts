@@ -107,10 +107,17 @@ export const PAGES = {
 
   OPS_HOME: "/ops",
   OPS_NEW_INSPECTION: "/ops/new-inspection",
+  /** Barcode lookup only: same UI as new inspection entry, without starting flows. */
+  OPS_NEW_INSPECTION_SEARCH: "/ops/new-inspection?mode=search",
   OPS_NEW_INSPECTION_INBOUND: "/ops/new-inspection/inbound",
   OPS_NEW_INSPECTION_OUTBOUND: "/ops/new-inspection/outbound",
-  opsNewInspectionUnitPath: (barcode: string) =>
-    `${PAGES.OPS_NEW_INSPECTION}/unit/${encodeURIComponent(barcode)}`,
+  opsNewInspectionUnitPath: (
+    barcode: string,
+    opts?: { mode?: "search" },
+  ): string => {
+    const base = `${PAGES.OPS_NEW_INSPECTION}/unit/${encodeURIComponent(barcode)}`;
+    return opts?.mode === "search" ? `${base}?mode=search` : base;
+  },
   OPS_DATA: "/ops/data",
   OPS_SEARCH: "/ops/search",
   OPS_SETTINGS: "/ops/account",

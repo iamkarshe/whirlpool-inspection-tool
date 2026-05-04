@@ -1,7 +1,7 @@
 import { Barcode, ScanLine } from "lucide-react";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,13 @@ function getDefaultScannerEnabled() {
 
 export default function OpsNewInspectionPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchMode = searchParams.get("mode") === "search";
+
+  const unitOpts = useMemo(
+    () => (searchMode ? { mode: "search" as const } : undefined),
+    [searchMode],
+  );
 
   const [inspectionCode, setInspectionCode] = useState(() => {
     const params = new URLSearchParams(
@@ -47,9 +54,9 @@ export default function OpsNewInspectionPage() {
       const normalized = barcode.replace(/\s+/g, "").slice(0, OPS_BARCODE_LEN);
       if (normalized.length !== OPS_BARCODE_LEN) return;
       clearAllInspectionDraftsForBarcode(normalized);
-      navigate(PAGES.opsNewInspectionUnitPath(normalized));
+      navigate(PAGES.opsNewInspectionUnitPath(normalized, unitOpts));
     },
-    [navigate],
+    [navigate, unitOpts],
   );
 
   useEffect(() => {
@@ -65,19 +72,30 @@ export default function OpsNewInspectionPage() {
       .slice(0, OPS_BARCODE_LEN);
     if (fromUrl.length === OPS_BARCODE_LEN) {
       clearAllInspectionDraftsForBarcode(fromUrl);
-      navigate(PAGES.opsNewInspectionUnitPath(fromUrl), { replace: true });
+      navigate(PAGES.opsNewInspectionUnitPath(fromUrl, unitOpts), {
+        replace: true,
+      });
     }
-  }, [navigate]);
+  }, [navigate, unitOpts]);
 
   return (
     <div className="space-y-4">
       <header className="space-y-1">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          New inspection
+          {searchMode ? "Search inspection" : "New inspection"}
         </p>
         <p className="text-sm text-muted-foreground">
-          Scan or enter the {OPS_BARCODE_LEN}-character barcode. You will
-          confirm the product and choose inbound or outbound on the next screen.
+          {searchMode ?
+            <>
+              Scan or enter the {OPS_BARCODE_LEN}-character barcode to load the
+              unit and open existing inbound or outbound inspections.
+            </>
+          : <>
+              Scan or enter the {OPS_BARCODE_LEN}-character barcode. You will
+              confirm the product and choose inbound or outbound on the next
+              screen.
+            </>
+          }
         </p>
       </header>
 

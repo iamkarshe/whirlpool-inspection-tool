@@ -99,7 +99,7 @@ export default function OpsTeamPage() {
       } catch (e: unknown) {
         if (signal.aborted) return;
         setError(
-          opsInspectionApiError(e, "Could not load team KPIs. Try again."),
+          opsInspectionApiError(e, "Could not load inspection KPIs. Try again."),
         );
       } finally {
         if (!signal.aborted) {

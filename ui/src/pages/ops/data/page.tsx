@@ -1,3 +1,6 @@
+import { PAGES } from "@/endpoints";
+import { useSessionUser } from "@/hooks/use-session-user";
+import { isOpsManagerRole } from "@/lib/ops-role";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +16,7 @@ import {
 import { formatCalendarDateForApi } from "@/services/inspections-api";
 import { ArrowUpRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 function localYmd(d: Date): string {
   return formatCalendarDateForApi(d);
@@ -61,6 +64,14 @@ type RangeKpis = {
 };
 
 export default function OpsDataPage() {
+  const sessionUser = useSessionUser();
+  if (isOpsManagerRole(sessionUser?.role)) {
+    return <Navigate to={PAGES.OPS_TEAM} replace />;
+  }
+  return <OpsDataPageContent />;
+}
+
+function OpsDataPageContent() {
   const navigate = useNavigate();
   const [customOpen, setCustomOpen] = useState(false);
   const [fromDate, setFromDate] = useState("");

@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowLeft, Import, Loader2, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import type { BarcodeParseResponse } from "@/api/generated/model/barcodeParseResponse";
@@ -38,6 +38,8 @@ function formatWhen(iso: string): string {
 }
 
 export default function OpsNewInspectionUnitPage() {
+  const [searchParams] = useSearchParams();
+  const searchMode = searchParams.get("mode") === "search";
   const params = useParams<{ barcode: string }>();
   const rawParam = params.barcode ?? "";
   const barcode = decodeURIComponent(rawParam)
@@ -52,7 +54,13 @@ export default function OpsNewInspectionUnitPage() {
           barcode.
         </p>
         <Button variant="outline" asChild>
-          <Link to={PAGES.OPS_NEW_INSPECTION}>
+          <Link
+            to={
+              searchMode ?
+                PAGES.OPS_NEW_INSPECTION_SEARCH
+              : PAGES.OPS_NEW_INSPECTION
+            }
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to scan
           </Link>
@@ -61,11 +69,21 @@ export default function OpsNewInspectionUnitPage() {
     );
   }
 
-  return <UnitDetails key={barcode} barcode={barcode} />;
+  return <UnitDetails key={barcode} barcode={barcode} searchMode={searchMode} />;
 }
 
-function UnitDetails({ barcode }: { barcode: string }) {
+function UnitDetails({
+  barcode,
+  searchMode,
+}: {
+  barcode: string;
+  searchMode: boolean;
+}) {
   const navigate = useNavigate();
+  const allowStartInspection = !searchMode;
+  const scanHome = searchMode ?
+    PAGES.OPS_NEW_INSPECTION_SEARCH
+  : PAGES.OPS_NEW_INSPECTION;
   const [parsed, setParsed] = useState<BarcodeParseResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -115,7 +133,7 @@ function UnitDetails({ barcode }: { barcode: string }) {
           {loadError ?? "Unknown error."}
         </p>
         <Button variant="outline" asChild>
-          <Link to={PAGES.OPS_NEW_INSPECTION}>
+          <Link to={scanHome}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Try another barcode
           </Link>
@@ -132,7 +150,7 @@ function UnitDetails({ barcode }: { barcode: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            New inspection
+            {searchMode ? "Search inspection" : "New inspection"}
           </p>
           <p className="font-mono text-sm text-muted-foreground">{barcode}</p>
         </div>
@@ -140,7 +158,7 @@ function UnitDetails({ barcode }: { barcode: string }) {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => navigate(PAGES.OPS_NEW_INSPECTION)}
+          onClick={() => navigate(scanHome)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to scan
@@ -198,6 +216,7 @@ function UnitDetails({ barcode }: { barcode: string }) {
           icon={Import}
           inspection={inbound}
           startHref={startInboundTo}
+          allowStartInspection={allowStartInspection}
         />
         <FlowColumnCard
           variant="outbound"
@@ -206,15 +225,18 @@ function UnitDetails({ barcode }: { barcode: string }) {
           icon={Truck}
           inspection={outbound}
           startHref={startOutboundTo}
+          allowStartInspection={allowStartInspection}
         />
       </div>
 
-      {inbound && outbound ? (
+      {inbound && outbound ?
         <p className="text-center text-sm text-muted-foreground">
-          Inbound and outbound inspections already exist for this unit. Open one
-          above or use Search.
+          {searchMode ?
+            "Inbound and outbound inspections exist for this unit. Open details above."
+          : "Inbound and outbound inspections already exist for this unit. Open one above or use Search."
+          }
         </p>
-      ) : null}
+      : null}
     </div>
   );
 }
@@ -226,6 +248,7 @@ type FlowColumnCardProps = {
   icon: LucideIcon;
   inspection: InspectionWithChecklistPayload | null;
   startHref: string;
+  allowStartInspection: boolean;
 };
 
 function FlowColumnCard({
@@ -235,6 +258,7 @@ function FlowColumnCard({
   icon: Icon,
   inspection,
   startHref,
+  allowStartInspection,
 }: FlowColumnCardProps) {
   const recorded = inspection !== null;
   const reviewStatus = inspection
@@ -387,7 +411,7 @@ function FlowColumnCard({
                 Open Details
               </Link>
             </Button>
-          ) : (
+          ) : allowStartInspection ? (
             <Button
               asChild
               size="sm"
@@ -395,6 +419,10 @@ function FlowColumnCard({
             >
               <Link to={startHref}>Start Inspection</Link>
             </Button>
+          ) : (
+            <p className="text-center text-[11px] leading-snug text-muted-foreground">
+              No {title.toLowerCase()} inspection on record for this unit.
+            </p>
           )}
         </div>
       </div>

@@ -1,10 +1,8 @@
 import {
-  BarChart3,
   BookOpenText,
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
-  LineChart,
   ScanLine,
   Search,
 } from "lucide-react";
@@ -104,57 +102,19 @@ export default function OpsHomePage() {
         <section className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => navigate(PAGES.OPS_TEAM)}
-            className="group flex h-32 flex-col justify-between rounded-3xl border bg-violet-500/5 p-3 text-left shadow-sm ring-1 ring-violet-500/10 transition-all hover:-translate-y-0.5 hover:bg-violet-500/10 hover:shadow-md active:translate-y-0"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex rounded-full bg-violet-500/15 px-2 py-1 text-[11px] font-medium text-violet-800 dark:text-violet-200">
-                Team
-              </span>
-              <BarChart3 className="h-5 w-5 text-violet-600 dark:text-violet-300" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold">Team overview</p>
-              <p className="text-[11px] text-muted-foreground">
-                KPIs for your operators.
-              </p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate(PAGES.OPS_DATA)}
+            onClick={() => navigate(PAGES.OPS_NEW_INSPECTION_SEARCH)}
             className="group flex h-32 flex-col justify-between rounded-3xl border bg-amber-500/5 p-3 text-left shadow-sm ring-1 ring-amber-500/10 transition-all hover:-translate-y-0.5 hover:bg-amber-500/10 hover:shadow-md active:translate-y-0"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex rounded-full bg-amber-500/15 px-2 py-1 text-[11px] font-medium text-amber-800 dark:text-amber-200">
-                Data
+                Search
               </span>
-              <LineChart className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+              <Search className="h-5 w-5 text-amber-600 dark:text-amber-300" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-semibold">Inspection data</p>
+              <p className="text-sm font-semibold">Search inspection</p>
               <p className="text-[11px] text-muted-foreground">
-                Counts by date range.
-              </p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate(PAGES.OPS_TODAY_INSPECTIONS)}
-            className="group flex h-32 flex-col justify-between rounded-3xl border bg-sky-500/5 p-3 text-left shadow-sm ring-1 ring-sky-500/10 transition-all hover:-translate-y-0.5 hover:bg-sky-500/10 hover:shadow-md active:translate-y-0"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex rounded-full bg-sky-500/15 px-2 py-1 text-[11px] font-medium text-sky-800 dark:text-sky-200">
-                Activity
-              </span>
-              <ClipboardList className="h-5 w-5 text-sky-600 dark:text-sky-300" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold">{"Today's inspections"}</p>
-              <p className="text-[11px] text-muted-foreground">
-                Browse what was logged.
+                Look up a unit by barcode; open existing inspections only.
               </p>
             </div>
           </button>
@@ -162,18 +122,18 @@ export default function OpsHomePage() {
           <button
             type="button"
             onClick={() => navigate(PAGES.OPS_HELP)}
-            className="group flex h-32 flex-col justify-between rounded-3xl border bg-emerald-500/5 p-3 text-left shadow-sm ring-1 ring-emerald-500/10 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/10 hover:shadow-md active:translate-y-0"
+            className="group flex h-32 flex-col justify-between rounded-3xl border bg-violet-500/5 p-3 text-left shadow-sm ring-1 ring-violet-500/10 transition-all hover:-translate-y-0.5 hover:bg-violet-500/10 hover:shadow-md active:translate-y-0"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-200">
+              <span className="inline-flex rounded-full bg-violet-500/15 px-2 py-1 text-[11px] font-medium text-violet-700 dark:text-violet-300">
                 Guide
               </span>
-              <BookOpenText className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+              <BookOpenText className="h-5 w-5 text-violet-600 dark:text-violet-300" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-semibold">How to use</p>
+              <p className="text-sm font-semibold">How to use?</p>
               <p className="text-[11px] text-muted-foreground">
-                Review workflow tips.
+                Review queue, Inspections tab, and general app tips.
               </p>
             </div>
           </button>
@@ -239,7 +199,7 @@ export default function OpsHomePage() {
 
         <button
           type="button"
-          onClick={() => navigate(PAGES.OPS_DATA)}
+          onClick={() => navigate(PAGES.OPS_NEW_INSPECTION_SEARCH)}
           className="group flex h-32 flex-col justify-between rounded-3xl border bg-amber-500/5 p-3 text-left shadow-sm ring-1 ring-amber-500/10 transition-all hover:-translate-y-0.5 hover:bg-amber-500/10 hover:shadow-md active:translate-y-0"
         >
           <div className="flex items-center justify-between gap-2">
@@ -251,7 +211,7 @@ export default function OpsHomePage() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">Search Inspection</p>
             <p className="text-[11px] text-muted-foreground">
-              Look up inspection status by barcode or serial.
+              Scan or enter the unit barcode to open existing inspections.
             </p>
           </div>
         </button>

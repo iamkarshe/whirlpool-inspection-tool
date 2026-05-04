@@ -24,7 +24,7 @@ import {
   normalizeOpsRole,
 } from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
-import { CircleUser, Home, LineChart, ScanLine, Users } from "lucide-react";
+import { CircleUser, ClipboardList, Home, LineChart, ScanLine } from "lucide-react";
 import React, { useEffect } from "react";
 import {
   NavLink,
@@ -89,7 +89,12 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       : DEFAULT_TABS.filter((t) => t.path !== "/ops/new-inspection");
     if (!isOpsManagerRole(sessionUser?.role)) return base;
     const [home, ...rest] = base;
-    return [home!, { label: "Team", path: "/ops/team", icon: Users }, ...rest];
+    const withoutData = rest.filter((t) => t.path !== "/ops/data");
+    return [
+      home!,
+      { label: "Inspections", path: "/ops/team", icon: ClipboardList },
+      ...withoutData,
+    ];
   }, [sessionUser?.role]);
 
   const activeTab = React.useMemo(
@@ -152,6 +157,14 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       );
       if (q) return opsInspectionListTitle(q);
       return "Inspections";
+    }
+    const opsSearchParams = new URLSearchParams(location.search);
+    if (
+      opsSearchParams.get("mode") === "search" &&
+      (location.pathname === "/ops/new-inspection" ||
+        /^\/ops\/new-inspection\/unit\/[^/]+$/.test(location.pathname))
+    ) {
+      return "Search inspection";
     }
     if (!location.pathname.startsWith("/ops/today-inspections")) {
       return base;

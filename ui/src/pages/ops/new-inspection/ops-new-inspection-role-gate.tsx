@@ -1,13 +1,45 @@
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
-import { canOpsRoleStartNewInspection } from "@/lib/ops-role";
-import { Navigate, Outlet } from "react-router-dom";
+import {
+  canOpsRoleStartNewInspection,
+  isOpsManagerRole,
+} from "@/lib/ops-role";
+import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom";
 
-/** Blocks `/ops/new-inspection/*` for roles outside `OPS_ROLES_ALLOWED_NEW_INSPECTION`. */
+/**
+ * Operators: full new-inspection subtree.
+ * Managers: barcode lookup only — `/ops/new-inspection?mode=search` and matching
+ * `unit/:barcode?mode=search` (no inbound/outbound starts).
+ */
 export function OpsNewInspectionRoleGate() {
   const user = useSessionUser();
-  if (!canOpsRoleStartNewInspection(user?.role)) {
-    return <Navigate to={PAGES.OPS_HOME} replace />;
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  if (canOpsRoleStartNewInspection(user?.role)) {
+    return <Outlet />;
   }
-  return <Outlet />;
+
+  if (isOpsManagerRole(user?.role)) {
+    const path = location.pathname;
+    if (
+      path.includes("/new-inspection/inbound") ||
+      path.includes("/new-inspection/outbound")
+    ) {
+      return <Navigate to={PAGES.OPS_HOME} replace />;
+    }
+
+    const isIndex = path === "/ops/new-inspection";
+    const isUnit = /^\/ops\/new-inspection\/unit\/[^/]+$/.test(path);
+    if (!isIndex && !isUnit) {
+      return <Navigate to={PAGES.OPS_HOME} replace />;
+    }
+
+    if (searchParams.get("mode") !== "search") {
+      return <Navigate to={`${path}?mode=search`} replace />;
+    }
+    return <Outlet />;
+  }
+
+  return <Navigate to={PAGES.OPS_HOME} replace />;
 }
