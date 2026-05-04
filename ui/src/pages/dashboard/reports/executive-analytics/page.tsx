@@ -1,3 +1,4 @@
+import { DashboardModuleWipDialog } from "@/components/dashboard/dashboard-module-wip-dialog";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { ChartCard } from "@/components/chart-card";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
@@ -112,6 +113,10 @@ export default function ExecutiveAnalyticsPage() {
       data-testid="screen-dashboard-reports-executive-analytics"
       className="space-y-4"
     >
+      <DashboardModuleWipDialog
+        storageKey="reports-executive-analytics"
+        moduleName="Executive Analytics"
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Executive Analytics"

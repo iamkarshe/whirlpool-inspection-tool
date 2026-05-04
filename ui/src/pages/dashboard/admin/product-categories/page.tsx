@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
@@ -7,6 +7,7 @@ import ConfirmDeleteDialog from "@/components/dialog-confirm-delete";
 import PageActionBar from "@/components/page-action-bar";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
+import type { ServerTableDataLoadContext } from "@/hooks/use-server-table-data";
 import ProductCategoriesDataTable from "@/pages/dashboard/admin/product-categories/data-table";
 import { fetchProductCategoriesPage } from "@/services/product-categories-api";
 import { uploadSkusCsv, uploadSkusCsvErrorMessage } from "@/services/skus-api";
@@ -16,16 +17,20 @@ const PRODUCT_CATEGORY_LIST_SORT = {
   defaultSort: { sort_by: "id", sort_dir: "desc" as const },
 };
 
+const PRODUCT_CATEGORY_INITIAL_SORTING = [{ id: "id", desc: true }] as const;
+
 export default function ProductCategoriesPage() {
   const [categoryToDelete, setCategoryToDelete] =
     useState<ProductCategoryListItemResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { rows, isLoading, error: loadError, serverSide } =
-    useControlledServerTable<ProductCategoryListItemResponse>({
-    initialSorting: [{ id: "id", desc: true }],
-    errorMessage: "Failed to load product categories.",
-    load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
+  const loadProductCategories = useCallback(
+    async ({
+      signal,
+      pagination: p,
+      searchQuery: q,
+      sorting: s,
+    }: ServerTableDataLoadContext) => {
       const { sort_by, sort_dir } = sortingStateToApiSortQuery(
         s,
         PRODUCT_CATEGORY_LIST_SORT,
@@ -42,6 +47,14 @@ export default function ProductCategoriesPage() {
       );
       return { data: res.data, total: res.total };
     },
+    [],
+  );
+
+  const { rows, isLoading, error: loadError, serverSide } =
+    useControlledServerTable<ProductCategoryListItemResponse>({
+    initialSorting: [...PRODUCT_CATEGORY_INITIAL_SORTING],
+    errorMessage: "Failed to load product categories.",
+    load: loadProductCategories,
   });
 
   const handleCsvSubmit = async (file: File) => {

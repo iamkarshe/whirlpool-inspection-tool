@@ -73,7 +73,9 @@ export function ImageGalleryDialog({
                 className="h-full min-h-[320px] w-full object-contain"
               />
               {activeImageOverlay ? (
-                <div className="absolute bottom-2 left-2">{activeImageOverlay}</div>
+                <div className="absolute bottom-2 left-2">
+                  {activeImageOverlay}
+                </div>
               ) : null}
             </div>
 
@@ -85,7 +87,7 @@ export function ImageGalleryDialog({
                   shouldScrollThumbs ? "max-h-[460px] overflow-y-auto" : "",
                 )}
               >
-                {images.map((img) => {
+                {images.map((img, imgIdx) => {
                   const isActive = img.url === active;
                   return (
                     <button
@@ -109,7 +111,7 @@ export function ImageGalleryDialog({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm">
-                          {img.filename ?? "image"}
+                          Image #{imgIdx + 1}
                         </div>
                       </div>
                     </button>
@@ -125,10 +127,7 @@ export function ImageGalleryDialog({
 
         <DialogFooter className="mt-2 shrink-0">
           {active && activeImage && onRaiseIssue ? (
-            <Button
-              variant="outline"
-              onClick={() => onRaiseIssue(activeImage)}
-            >
+            <Button variant="outline" onClick={() => onRaiseIssue(activeImage)}>
               Raise an issue
             </Button>
           ) : null}

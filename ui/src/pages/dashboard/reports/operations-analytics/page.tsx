@@ -11,10 +11,12 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
+import { DashboardModuleWipDialog } from "@/components/dashboard/dashboard-module-wip-dialog";
 import { ChartCard } from "@/components/chart-card";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
@@ -50,15 +52,18 @@ import {
 } from "@/pages/dashboard/reports/operations-analytics/operations-analytics-service";
 import { WeeklyTrendDetailsDialog } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-details-dialog";
 import { WeeklyTrendTooltipContent } from "@/pages/dashboard/reports/operations-analytics/weekly-trend-tooltip-content";
-import { fetchAllProductCategories } from "@/services/product-categories-api";
-import { fetchAllUsers } from "@/services/users-api";
-import { fetchAllWarehouses } from "@/services/warehouses-api";
+import { fetchProductCategoriesPage } from "@/services/product-categories-api";
+import { fetchUsersPage } from "@/services/users-api";
+import { fetchWarehousesPage } from "@/services/warehouses-api";
 
 const trendChartConfig = {
   inspections: { label: "Inspections", color: "var(--chart-1)" },
   logins: { label: "Logins", color: "var(--chart-2)" },
   devices: { label: "Devices", color: "var(--chart-3)" },
 } satisfies ChartConfig;
+
+/** First page only for filter dropdowns until this section is rebuilt with search-as-you-type. */
+const FILTER_OPTIONS_PER_PAGE = 100;
 
 const summaryChartConfig = {
   value: { label: "Count", color: "var(--chart-1)" },
@@ -198,10 +203,8 @@ export default function OperationsAnalyticsPage() {
   const [warehouses, setWarehouses] = useState<WarehouseResponse[]>([]);
   const [productCategories, setProductCategories] = useState<
     ProductCategoryListItemResponse[]
-  >(
-    [],
-  );
-  const [operators, setOperators] = useState<User[]>([]);
+  >([]);
+  const [operators, setOperators] = useState<UserResponse[]>([]);
 
   const [filters, setFilters] = useState<OperationsAnalyticsFilters>({});
   const [selectedTrendPoint, setSelectedTrendPoint] =
@@ -250,21 +253,52 @@ export default function OperationsAnalyticsPage() {
       .finally(() => setLoading(false));
   }, [filters]);
 
-  useEffect(() => {
-    Promise.all([
-      fetchAllWarehouses(),
-      fetchAllProductCategories(),
-      fetchAllUsers(),
-    ]).then(([w, c, u]) => {
-      setWarehouses(w);
-      setProductCategories(c);
+  const filterOptionsLoadedRef = useRef(false);
+  const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
+
+  const ensureFilterOptionsLoaded = useCallback(async () => {
+    if (filterOptionsLoadedRef.current) return;
+    setFilterOptionsLoading(true);
+    try {
+      const [warehousesRes, categoriesRes, usersRes] = await Promise.all([
+        fetchWarehousesPage({
+          page: 1,
+          per_page: FILTER_OPTIONS_PER_PAGE,
+          sort_by: "id",
+          sort_dir: "desc",
+        }),
+        fetchProductCategoriesPage({
+          page: 1,
+          per_page: FILTER_OPTIONS_PER_PAGE,
+          sort_by: "id",
+          sort_dir: "desc",
+        }),
+        fetchUsersPage({
+          page: 1,
+          per_page: FILTER_OPTIONS_PER_PAGE,
+          sort_by: "id",
+          sort_dir: "desc",
+          role: "operator",
+        }),
+      ]);
+      setWarehouses(warehousesRes.data);
+      setProductCategories(categoriesRes.data);
       setOperators(
-        u.filter(
-          (x) => x.role.trim().toLowerCase() === "operator",
-        ),
+        usersRes.data.filter((x) => x.role.trim().toLowerCase() === "operator"),
       );
-    });
+      filterOptionsLoadedRef.current = true;
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error ? e.message : "Failed to load filter options.";
+      toast.error(message);
+    } finally {
+      setFilterOptionsLoading(false);
+    }
   }, []);
+
+  const handleFilterDialogOpen = useCallback(() => {
+    void ensureFilterOptionsLoaded();
+  }, [ensureFilterOptionsLoaded]);
 
   const filterValue = useMemo(
     () => ({
@@ -280,8 +314,6 @@ export default function OperationsAnalyticsPage() {
       {
         key: "warehouseIds",
         label: "Warehouse",
-        actionHref: PAGES.DASHBOARD_MASTERS_WAREHOUSES,
-        actionLabel: "Open warehouses",
         options: warehouses.map((w) => ({
           id: w.uuid,
           label: `${w.warehouse_code} — ${w.name}`,
@@ -346,6 +378,10 @@ export default function OperationsAnalyticsPage() {
       data-testid="screen-dashboard-reports-operations-analytics"
       className="space-y-4"
     >
+      <DashboardModuleWipDialog
+        storageKey="reports-operations-analytics"
+        moduleName="Operations Analytics"
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Operations Analytics"
@@ -360,6 +396,8 @@ export default function OperationsAnalyticsPage() {
             value={filterValue}
             onApply={applyFilters}
             triggerLabel="Filters"
+            onDialogOpen={handleFilterDialogOpen}
+            optionsLoading={filterOptionsLoading}
           />
           <Button variant="outline" size="sm">
             Download
@@ -401,8 +439,9 @@ export default function OperationsAnalyticsPage() {
                 data={trend}
                 margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
                 onClick={(state) => {
-                  const payload = state?.activePayload?.[0]
-                    ?.payload as OperationsTrendPoint | undefined;
+                  const payload = state?.activePayload?.[0]?.payload as
+                    | OperationsTrendPoint
+                    | undefined;
                   if (!payload) return;
                   setSelectedTrendPoint(payload);
                   setTrendDialogOpen(true);

@@ -2,6 +2,11 @@ import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+/** Stable key so `sorting` reference churn does not re-trigger loads. */
+function sortingFingerprint(sorting: SortingState): string {
+  return sorting.map((s) => `${String(s.id)}:${s.desc ? "d" : "a"}`).join("|");
+}
+
 export type ServerTableDataLoadContext = {
   signal: AbortSignal;
   pagination: PaginationState;
@@ -95,7 +100,7 @@ export function useServerTableData<T>({
     pagination.pageIndex,
     pagination.pageSize,
     searchQuery,
-    sorting,
+    sortingFingerprint(sorting),
     refreshKey,
     dataScopeKey,
   ]);

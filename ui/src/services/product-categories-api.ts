@@ -3,6 +3,7 @@ import { getProductCategories } from "@/api/generated/product-categories/product
 import type { GetProductCategoriesApiProductCategoriesGetParams } from "@/api/generated/model/getProductCategoriesApiProductCategoriesGetParams";
 import type { ProductCategoryListResponse } from "@/api/generated/model/productCategoryListResponse";
 import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
+import type { ProductResponse } from "@/api/generated/model/productResponse";
 
 export type ProductCategoriesListParams = Pick<
   GetProductCategoriesApiProductCategoriesGetParams,
@@ -27,6 +28,51 @@ export async function fetchProductCategoriesPage(
   );
 }
 
+/**
+ * Resolves the category UUID for a product using paged list calls, preferring
+ * `search` with the product's category name so usually only one or two requests run.
+ */
+export async function resolveProductCategoryUuidForProduct(
+  product: ProductResponse,
+  request?: { signal?: AbortSignal },
+): Promise<string | null> {
+  const signal = request?.signal;
+  const targetId = product.product_category_id;
+  const name = product.product_category_name?.trim();
+
+  const scanPages = async (search: string | null) => {
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const res = await fetchProductCategoriesPage(
+        {
+          page,
+          per_page: 100,
+          search: search && search.length > 0 ? search : null,
+          sort_by: "id",
+          sort_dir: "desc",
+        },
+        { signal },
+      );
+      const hit = res.data.find((c) => c.id === targetId);
+      if (hit) return hit.uuid;
+      totalPages = Math.max(1, res.total_pages ?? 1);
+      page += 1;
+    } while (page <= totalPages);
+    return null;
+  };
+
+  if (name) {
+    const byName = await scanPages(name);
+    if (byName) return byName;
+  }
+  return scanPages(null);
+}
+
+/**
+ * Fetches **every** page of product categories. Avoid in UI routes; prefer
+ * {@link fetchProductCategoriesPage} or {@link resolveProductCategoryUuidForProduct}.
+ */
 export async function fetchAllProductCategories(
   request?: { signal?: AbortSignal },
 ): Promise<ProductCategoryListItemResponse[]> {

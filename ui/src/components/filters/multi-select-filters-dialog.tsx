@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -56,6 +56,10 @@ export function MultiSelectFiltersDialog({
   triggerVariant = "outline",
   triggerSize = "sm",
   className,
+  /** Called when the dialog opens (e.g. lazy-load filter option lists). */
+  onDialogOpen,
+  /** When true, filter controls are disabled and a loading state is shown. */
+  optionsLoading = false,
 }: {
   title?: string;
   description?: string;
@@ -67,6 +71,8 @@ export function MultiSelectFiltersDialog({
   triggerVariant?: React.ComponentProps<typeof Button>["variant"];
   triggerSize?: React.ComponentProps<typeof Button>["size"];
   className?: string;
+  onDialogOpen?: () => void;
+  optionsLoading?: boolean;
 }) {
   const normalizedValue = useMemo(
     () => normalizeValue(value, sections),
@@ -88,7 +94,10 @@ export function MultiSelectFiltersDialog({
   );
 
   function handleOpenChange(nextOpen: boolean) {
-    if (nextOpen) setDraft(normalizedValue);
+    if (nextOpen) {
+      setDraft(normalizedValue);
+      onDialogOpen?.();
+    }
     setOpen(nextOpen);
   }
 
@@ -135,51 +144,60 @@ export function MultiSelectFiltersDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {sections.map((section) => {
-            const selected = draft[section.key] ?? [];
-            return (
-              <div
-                key={section.key}
-                className="w-full rounded-lg border bg-muted/10 p-3"
-              >
-                {(section.actionHref || section.actionLabel) && (
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {section.label}
-                    </p>
-                    {section.actionHref ? (
-                      <Link
-                        to={section.actionHref}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        {section.actionLabel ?? `Open ${section.label}`}
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    ) : null}
-                  </div>
-                )}
-                <MultiSelectCombobox
-                  label={section.label}
-                  options={section.options}
-                  value={selected}
-                  onChange={(next) =>
-                    setDraft((prev) => ({ ...prev, [section.key]: next }))
-                  }
-                />
-              </div>
-            );
-          })}
-        </div>
+        {optionsLoading ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+            Loading filter options…
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sections.map((section) => {
+              const selected = draft[section.key] ?? [];
+              return (
+                <div
+                  key={section.key}
+                  className="w-full rounded-lg border bg-muted/10 p-3"
+                >
+                  {(section.actionHref || section.actionLabel) && (
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {section.label}
+                      </p>
+                      {section.actionHref ? (
+                        <Link
+                          to={section.actionHref}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          {section.actionLabel ?? `Open ${section.label}`}
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      ) : null}
+                    </div>
+                  )}
+                  <MultiSelectCombobox
+                    label={section.label}
+                    options={section.options}
+                    value={selected}
+                    onChange={(next) =>
+                      setDraft((prev) => ({ ...prev, [section.key]: next }))
+                    }
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={clearAndApply}>
+          <Button variant="outline" onClick={clearAndApply} disabled={optionsLoading}>
             Clear
           </Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={apply}>Apply</Button>
+          <Button onClick={apply} disabled={optionsLoading}>
+            Apply
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

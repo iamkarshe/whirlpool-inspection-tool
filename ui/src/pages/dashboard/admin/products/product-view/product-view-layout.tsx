@@ -4,7 +4,7 @@ import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import type { ProductResponse } from "@/api/generated/model/productResponse";
 import { PAGES } from "@/endpoints";
 import type { ProductViewContext } from "@/pages/dashboard/admin/products/product-view/context";
-import { fetchAllProductCategories } from "@/services/product-categories-api";
+import { resolveProductCategoryUuidForProduct } from "@/services/product-categories-api";
 import { fetchProductDetail } from "@/services/products-api";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -29,13 +29,21 @@ export default function ProductViewLayout() {
     const run = async () => {
       setLoading(true);
       try {
-        const [detail, categories] = await Promise.all([
-          fetchProductDetail(productUuid, { signal: ac.signal }),
-          fetchAllProductCategories({ signal: ac.signal }),
-        ]);
+        const detail = await fetchProductDetail(productUuid, {
+          signal: ac.signal,
+        });
         if (cancelled) return;
         setProduct(detail);
-        setCategoryUuidById(new Map(categories.map((c) => [c.id, c.uuid] as const)));
+        const categoryUuid = await resolveProductCategoryUuidForProduct(
+          detail,
+          { signal: ac.signal },
+        );
+        if (cancelled) return;
+        const map = new Map<number, string>();
+        if (categoryUuid) {
+          map.set(detail.product_category_id, categoryUuid);
+        }
+        setCategoryUuidById(map);
       } catch (e: unknown) {
         if (cancelled || ac.signal.aborted) return;
         const message = e instanceof Error ? e.message : "Failed to load product.";
