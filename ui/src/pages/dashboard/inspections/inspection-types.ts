@@ -12,7 +12,10 @@ export interface Inspection {
   id: string;
   inspector_id: number;
   inspector_name: string;
+  /** Numeric FK `devices.id` (stringified). */
   device_id: string;
+  /** Row `devices.uuid` for admin device routes — use this for links, not `device_id`. */
+  device_uuid: string;
   device_fingerprint: string;
   product_id: number;
   product_serial: string;
@@ -70,7 +73,8 @@ export type InspectionRelationshipScan = {
   scannedAt: string;
   personId: number;
   personName: string;
-  deviceId: string;
+  /** `devices.uuid` for admin device links. */
+  deviceUuid: string;
   deviceFingerprint: string;
 };
 

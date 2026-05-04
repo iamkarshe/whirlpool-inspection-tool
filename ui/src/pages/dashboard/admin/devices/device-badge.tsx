@@ -1,6 +1,5 @@
 import {
   CheckCircle,
-  Fingerprint,
   Lock,
   Monitor,
   Smartphone,
@@ -34,19 +33,24 @@ export function DeviceIdBadge({
   id,
   deviceType,
   asLink = true,
+  /** Admin UI: show phone icon for device UUID rows (matches fingerprint badges). */
+  alwaysUseMobileIcon = false,
 }: {
   id: string;
   deviceType: DeviceType;
   asLink?: boolean;
+  alwaysUseMobileIcon?: boolean;
 }) {
-  const Icon = deviceType === "mobile" ? Smartphone : Monitor;
+  const Icon =
+    alwaysUseMobileIcon || deviceType === "mobile" ? Smartphone : Monitor;
   const content = (
     <Badge
       variant="secondary"
-      className={`${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`}
+      title={id}
+      className={`${BADGE_ICON_CLASS} max-w-[min(100%,14rem)] min-w-0 cursor-pointer font-mono normal-case transition-colors hover:bg-primary/15 hover:text-primary`}
     >
-      <Icon />
-      <span className="uppercase">{id}</span>
+      <Icon className="shrink-0" />
+      <span className="min-w-0 shrink truncate">{id}</span>
     </Badge>
   );
   if (asLink) {
@@ -132,13 +136,15 @@ export function DeviceFingerprintBadge({
 }: {
   fingerprint: string;
 }) {
+  const fp = fingerprint?.trim() ?? "";
   return (
     <Badge
       variant="outline"
-      className={`${BADGE_ICON_CLASS} max-w-[200px] truncate`}
+      title={fp.length > 0 ? fp : undefined}
+      className={`${BADGE_ICON_CLASS} max-w-[min(100%,16rem)] font-mono normal-case`}
     >
-      <Fingerprint />
-      <span className="uppercase">{fingerprint}</span>
+      <Smartphone className="shrink-0 text-muted-foreground" />
+      <span className="min-w-0 shrink truncate normal-case">{fp || "—"}</span>
     </Badge>
   );
 }

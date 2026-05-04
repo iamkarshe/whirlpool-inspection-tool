@@ -28,7 +28,8 @@ export const PAGES = {
   DASHBOARD_INSPECTIONS_INBOUND_APPROVED:
     "/dashboard/inspections/inbound/approved",
   DASHBOARD_INSPECTIONS_OUTBOUND: "/dashboard/inspections/outbound",
-  DASHBOARD_INSPECTIONS_OUTBOUND_FAILED: "/dashboard/inspections/outbound-failed",
+  DASHBOARD_INSPECTIONS_OUTBOUND_FAILED:
+    "/dashboard/inspections/outbound-failed",
   DASHBOARD_INSPECTIONS_OUTBOUND_IN_REVIEW:
     "/dashboard/inspections/outbound/in-review",
   DASHBOARD_INSPECTIONS_OUTBOUND_REJECTED:
@@ -42,8 +43,10 @@ export const PAGES = {
   DASHBOARD_TRANSACTIONS_REPORTS: "/dashboard/transactions/reports",
   DASHBOARD_TRANSACTIONS_INSPECTIONS: "/dashboard/inspections",
   DASHBOARD_REPORTS_DAILY_INSPECTIONS: "/dashboard/inspections",
-  DASHBOARD_REPORTS_OPERATIONS_ANALYTICS: "/dashboard/reports/operations-analytics",
-  DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS: "/dashboard/reports/executive-analytics",
+  DASHBOARD_REPORTS_OPERATIONS_ANALYTICS:
+    "/dashboard/reports/operations-analytics",
+  DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS:
+    "/dashboard/reports/executive-analytics",
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 
@@ -64,20 +67,18 @@ export const PAGES = {
   userViewLoginsPath: (userUuid: string) =>
     `/dashboard/admin/users/${userUuid}/logins`,
   userDevicesPath: (userUuid: string) =>
-    `/dashboard/admin/devices?user_uuid=${encodeURIComponent(userUuid)}`,
+    `${PAGES.DASHBOARD_ADMIN_DEVICES}?user_uuid=${encodeURIComponent(userUuid)}`,
   userInspectionsPath: (userUuid: string) =>
     `${PAGES.DASHBOARD_INSPECTIONS}?user_uuid=${encodeURIComponent(userUuid)}`,
-  deviceViewPath: (id: string) => `/dashboard/admin/devices/${id}`,
+  deviceViewPath: (id: string) => `${PAGES.DASHBOARD_ADMIN_DEVICES}/${id}`,
   deviceInspectionsPath: (id: string) =>
-    `/dashboard/admin/devices/${id}/inspections`,
-  deviceLoginsPath: (id: string) =>
-    `/dashboard/admin/devices/${id}/logins`,
+    `${PAGES.deviceViewPath(id)}/inspections`,
+  deviceLoginsPath: (id: string) => `${PAGES.deviceViewPath(id)}/logins`,
   deviceLockHistoryPath: (id: string) =>
-    `/dashboard/admin/devices/${id}/lock-history`,
-  deviceUsersPath: (id: string) =>
-    `/dashboard/admin/devices/${id}/users`,
+    `${PAGES.deviceViewPath(id)}/lock-history`,
+  deviceUsersPath: (id: string) => `${PAGES.deviceViewPath(id)}/users`,
   deviceNotificationsPath: (id: string) =>
-    `/dashboard/admin/devices/${id}/notifications`,
+    `${PAGES.deviceViewPath(id)}/notifications`,
 
   warehouseViewPath: (id: string) => `/dashboard/masters/warehouses/${id}`,
   warehouseUsersPath: (id: string) =>
@@ -97,17 +98,14 @@ export const PAGES = {
 
   DASHBOARD_ADMIN_LOGINS: "/dashboard/admin/logins",
   DASHBOARD_ADMIN_INTEGRATIONS: "/dashboard/admin/integrations",
-  integrationsOktaPath: () =>
-    `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/okta`,
-  integrationsAwsS3Path: () =>
-    `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/aws-s3`,
+  integrationsOktaPath: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/okta`,
+  integrationsAwsS3Path: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/aws-s3`,
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
   logViewPath: (id: string) => `${PAGES.DASHBOARD_ADMIN_LOGS}/${id}`,
   DASHBOARD_ADMIN_KNOWLEDGE_BASE: "/dashboard/admin/knowledge-base",
 
   OPS_HOME: "/ops",
   OPS_NEW_INSPECTION: "/ops/new-inspection",
-  /** Barcode lookup only: same UI as new inspection entry, without starting flows. */
   OPS_NEW_INSPECTION_SEARCH: "/ops/new-inspection?mode=search",
   OPS_NEW_INSPECTION_INBOUND: "/ops/new-inspection/inbound",
   OPS_NEW_INSPECTION_OUTBOUND: "/ops/new-inspection/outbound",

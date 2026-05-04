@@ -2,6 +2,7 @@ import { Lock, MoreHorizontal, Smartphone, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
+import { DeviceFingerprintLinkBadge } from "@/components/dashboard/device-fingerprint-link-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,8 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import {
-  DeviceFingerprintBadge,
   DeviceHeaderBadges,
+  DeviceIdBadge,
   DeviceLockedBadge,
   DeviceStatusBadge,
   DeviceTypeBadge,
@@ -99,7 +100,14 @@ function DeviceDetailCard({
               <Smartphone className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle>Device {device.id}</CardTitle>
+              <CardTitle className="flex flex-wrap items-center gap-2 text-xl">
+                <span>Device</span>
+                <DeviceIdBadge
+                  id={device.id}
+                  deviceType={device.device_type}
+                  alwaysUseMobileIcon
+                />
+              </CardTitle>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 <DeviceHeaderBadges device={device} />
               </div>
@@ -154,7 +162,10 @@ function DeviceDetailCard({
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground text-sm">Fingerprint</p>
-          <DeviceFingerprintBadge fingerprint={device.device_fingerprint} />
+          <DeviceFingerprintLinkBadge
+            deviceUuid={device.id}
+            fingerprint={device.device_fingerprint}
+          />
         </div>
         <div className="space-y-1 sm:col-span-2">
           <p className="text-muted-foreground text-sm">Device info</p>

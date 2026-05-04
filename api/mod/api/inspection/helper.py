@@ -400,6 +400,7 @@ def map_inspection_list_item(
         inspector_id=inspection.inspector_id,
         inspector_name=inspector.name if inspector else "",
         device_id=inspection.device_id,
+        device_uuid=device.uuid,
         device_fingerprint=device_display_label(device),
         product_id=inspection.product_id,
         product_material_code=product.material_code if product else "",
@@ -458,6 +459,7 @@ def map_inspection_detail(inspection: Inspection) -> InspectionDetailResponse:
         inspector_id=inspection.inspector_id,
         inspector_name=inspector.name if inspector else "",
         device_id=inspection.device_id,
+        device_uuid=device.uuid,
         device_fingerprint=device_display_label(device),
         product_id=inspection.product_id,
         product_material_code=product.material_code if product else "",
@@ -1625,6 +1627,7 @@ def create_inspection(
         loaded = (
             db.query(Inspection)
             .options(
+                joinedload(Inspection.device),
                 joinedload(Inspection.inputs).joinedload(InspectionInput.checklist),
                 joinedload(Inspection.images).joinedload(InspectionImage.checklist),
             )

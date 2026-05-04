@@ -88,6 +88,7 @@ class InspectionListItemResponse(BaseModel):
     inspector_id: int
     inspector_name: str
     device_id: int
+    device_uuid: uuid.UUID
     device_fingerprint: str
     product_id: int
     product_material_code: str
@@ -312,6 +313,7 @@ class InspectionDetailResponse(BaseModel):
     inspector_id: int
     inspector_name: str
     device_id: int
+    device_uuid: uuid.UUID
     device_fingerprint: str
     product_id: int
     product_material_code: str

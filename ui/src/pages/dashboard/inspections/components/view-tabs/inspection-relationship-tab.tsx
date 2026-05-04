@@ -4,12 +4,12 @@ import {
   ExternalLink,
   GitBranch,
   Loader2,
-  Smartphone,
   User,
   XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { DeviceFingerprintLinkBadge } from "@/components/dashboard/device-fingerprint-link-badge";
 import { KpiCardGrid } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,11 +98,11 @@ export function InspectionRelationshipTab({
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span>{relationship.inbound.personName}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-mono text-xs">
-                          {relationship.inbound.deviceFingerprint}
-                        </span>
+                      <div>
+                        <DeviceFingerprintLinkBadge
+                          deviceUuid={relationship.inbound.deviceUuid}
+                          fingerprint={relationship.inbound.deviceFingerprint}
+                        />
                       </div>
                       <div className="text-muted-foreground text-xs">
                         {formatDate(relationship.inbound.scannedAt)}
@@ -146,11 +146,13 @@ export function InspectionRelationshipTab({
                           <User className="h-4 w-4 text-muted-foreground" />
                           <span>{relationship.outbound.personName}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-mono text-xs">
-                            {relationship.outbound.deviceFingerprint}
-                          </span>
+                        <div>
+                          <DeviceFingerprintLinkBadge
+                            deviceUuid={relationship.outbound.deviceUuid}
+                            fingerprint={
+                              relationship.outbound.deviceFingerprint
+                            }
+                          />
                         </div>
                         <div className="text-muted-foreground text-xs">
                           {formatDate(relationship.outbound.scannedAt)}

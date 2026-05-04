@@ -61,12 +61,14 @@ def get_product_category_or_404(
 
 def map_product_category_inspection(inspection: Inspection) -> ProductCategoryInspectionResponse:
     inspector = inspection.inspector
+    device = inspection.device
     return ProductCategoryInspectionResponse(
         id=inspection.id,
         uuid=inspection.uuid,
         inspector_id=inspection.inspector_id,
         inspector_name=inspector.name if inspector else "",
         device_id=inspection.device_id,
+        device_uuid=device.uuid,
         inspection_type=inspection.inspection_type.value
         if hasattr(inspection.inspection_type, "value")
         else str(inspection.inspection_type),

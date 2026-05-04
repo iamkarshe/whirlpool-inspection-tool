@@ -1,3 +1,4 @@
+import { DeviceFingerprintLinkBadge } from "@/components/dashboard/device-fingerprint-link-badge";
 import { Button } from "@/components/ui/button";
 import {
   DataTable,
@@ -111,9 +112,10 @@ function buildDeviceColumns(
       accessorKey: "device_fingerprint",
       header: "Fingerprint",
       cell: ({ row }) => (
-        <span className="max-w-[140px] truncate font-mono text-xs text-muted-foreground">
-          {row.getValue("device_fingerprint")}
-        </span>
+        <DeviceFingerprintLinkBadge
+          deviceUuid={row.original.id}
+          fingerprint={String(row.getValue("device_fingerprint") ?? "")}
+        />
       ),
     },
     {

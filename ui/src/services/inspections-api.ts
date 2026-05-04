@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios";
 
 import { getInspections as getInspectionsApi } from "@/api/generated/inspections/inspections";
+import { deviceUuidForAdminDevicePath } from "@/lib/device-admin-path";
 import type { InspectionFullResponse } from "@/api/generated/model/inspectionFullResponse";
 import type { GetInspectionKpisApiInspectionsKpisGetParams } from "@/api/generated/model/getInspectionKpisApiInspectionsKpisGetParams";
 import type { GetInspectionsApiInspectionsGetParams } from "@/api/generated/model/getInspectionsApiInspectionsGetParams";
@@ -71,6 +72,16 @@ function normalizeInspectionType(
 }
 
 /** List payloads may use snake_case, camelCase, or alternate plant keys depending on API version. */
+function inspectionDeviceUuidFromApiPayload(
+  row: InspectionListItemResponse | InspectionFullResponse,
+): string {
+  const rec = row as unknown as Record<string, unknown>;
+  const raw = rec.device_uuid ?? rec.deviceUuid;
+  if (raw == null) return "";
+  const s = typeof raw === "string" ? raw.trim() : String(raw).trim();
+  return deviceUuidForAdminDevicePath(s);
+}
+
 function optionalCodeFromListItem(
   row: InspectionListItemResponse,
   keys: readonly string[],
@@ -104,6 +115,7 @@ export function mapInspectionListItemToInspection(
     inspector_id: row.inspector_id,
     inspector_name: row.inspector_name,
     device_id: String(row.device_id),
+    device_uuid: inspectionDeviceUuidFromApiPayload(row),
     device_fingerprint: row.device_fingerprint,
     product_id: row.product_id,
     product_serial: row.product_material_code,
@@ -136,6 +148,7 @@ export function mapInspectionFullToInspection(
     inspector_id: full.inspector_id,
     inspector_name: full.inspector_name,
     device_id: String(full.device_id),
+    device_uuid: inspectionDeviceUuidFromApiPayload(full),
     device_fingerprint: full.device_fingerprint,
     product_id: full.product_id,
     product_serial:

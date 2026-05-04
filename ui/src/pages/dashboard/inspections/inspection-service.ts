@@ -102,7 +102,7 @@ export async function getInspectionRelationship(
     scannedAt: i.created_at,
     personId: i.inspector_id,
     personName: i.inspector_name,
-    deviceId: i.device_id,
+    deviceUuid: i.device_uuid,
     deviceFingerprint: i.device_fingerprint,
   });
 

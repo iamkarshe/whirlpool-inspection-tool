@@ -12,6 +12,7 @@ export interface ProductCategoryInspectionResponse {
   inspector_id: number;
   inspector_name: string;
   device_id: number;
+  device_uuid?: string;
   inspection_type: string;
   product_id: number;
   warehouse_code: string | null;

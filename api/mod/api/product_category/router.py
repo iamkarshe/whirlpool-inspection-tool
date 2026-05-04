@@ -146,6 +146,7 @@ def get_product_category_inspections(
             Inspection.is_active.is_(is_active),
         )
         .options(
+            joinedload(Inspection.device),
             joinedload(Inspection.inspector),
             joinedload(Inspection.product_unit),
         )

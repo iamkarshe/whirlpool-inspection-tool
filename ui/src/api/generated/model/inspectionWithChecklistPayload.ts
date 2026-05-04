@@ -14,6 +14,7 @@ export interface InspectionWithChecklistPayload {
   inspection_type: string;
   inspector_id: number;
   device_id: number;
+  device_uuid?: string;
   product_id: number;
   product_unit_id: number;
   warehouse_code: string | null;

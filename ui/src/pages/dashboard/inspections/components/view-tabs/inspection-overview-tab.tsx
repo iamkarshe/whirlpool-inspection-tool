@@ -1,10 +1,9 @@
 import { Bug, ClipboardCheck, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 
+import { DeviceFingerprintLinkBadge } from "@/components/dashboard/device-fingerprint-link-badge";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PAGES } from "@/endpoints";
 import { InspectionChecklistBadge, InspectionProductBadge, InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
 import type { Inspection, InspectionQuestionResult } from "@/pages/dashboard/inspections/inspection-service";
 import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
@@ -94,12 +93,10 @@ export function InspectionOverviewTab({
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground text-sm">Device</p>
-            <Link
-              to={PAGES.deviceViewPath(inspection.device_id)}
-              className="font-mono text-sm text-primary hover:underline"
-            >
-              {inspection.device_fingerprint}
-            </Link>
+            <DeviceFingerprintLinkBadge
+              deviceUuid={inspection.device_uuid}
+              fingerprint={inspection.device_fingerprint}
+            />
           </div>
           <div className="space-y-1">
             <p className="text-muted-foreground text-sm">Product</p>

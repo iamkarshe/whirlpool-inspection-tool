@@ -75,6 +75,7 @@ class InspectionWithChecklistPayload(BaseModel):
     inspection_type: str
     inspector_id: int
     device_id: int
+    device_uuid: uuid.UUID
     product_id: int
     product_unit_id: int
     warehouse_code: str | None
@@ -217,12 +218,14 @@ def map_inspection_with_checklist_inputs(
     inner_imgs.sort()
     product_imgs.sort()
     mapped.sort(key=lambda x: (x.checklist.sort_order, x.checklist.id, x.id))
+    dev = inspection.device
     return InspectionWithChecklistPayload(
         id=inspection.id,
         uuid=inspection.uuid,
         inspection_type=_enum_str(inspection.inspection_type),
         inspector_id=inspection.inspector_id,
         device_id=inspection.device_id,
+        device_uuid=dev.uuid,
         product_id=inspection.product_id,
         product_unit_id=inspection.product_unit_id,
         warehouse_code=inspection.warehouse_code,
@@ -262,6 +265,7 @@ def fetch_inspections_for_product_unit(
     return (
         db.query(Inspection)
         .options(
+            joinedload(Inspection.device),
             joinedload(Inspection.inputs).joinedload(InspectionInput.checklist),
             joinedload(Inspection.images).joinedload(InspectionImage.checklist),
         )

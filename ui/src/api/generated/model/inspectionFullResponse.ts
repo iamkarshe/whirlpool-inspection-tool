@@ -19,6 +19,8 @@ export interface InspectionFullResponse {
   inspector_id: number;
   inspector_name: string;
   device_id: number;
+  /** `devices.uuid` for admin device URLs (added in API; optional for older specs). */
+  device_uuid?: string;
   device_fingerprint: string;
   product_id: number;
   product_material_code: string;

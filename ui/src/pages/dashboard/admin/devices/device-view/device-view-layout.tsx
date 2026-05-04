@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { PAGES } from "@/endpoints";
-import { DeviceHeaderBadges } from "@/pages/dashboard/admin/devices/device-badge";
+import {
+  DeviceHeaderBadges,
+  DeviceIdBadge,
+} from "@/pages/dashboard/admin/devices/device-badge";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import { loadDeviceView } from "@/pages/dashboard/admin/devices/device-view/controller";
 import { TabbedContent } from "@/components/tabbed-content";
@@ -83,8 +86,13 @@ export default function DeviceViewLayout() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Device [{device.id}]
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight">
+            <span>Device</span>
+            <DeviceIdBadge
+              id={device.id}
+              deviceType={device.device_type}
+              alwaysUseMobileIcon
+            />
           </h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <DeviceHeaderBadges device={device} />

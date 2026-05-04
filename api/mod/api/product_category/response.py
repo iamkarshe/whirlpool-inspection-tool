@@ -49,6 +49,7 @@ class ProductCategoryInspectionResponse(BaseModel):
     inspector_id: int
     inspector_name: str
     device_id: int
+    device_uuid: uuid.UUID
     inspection_type: str
     product_id: int
     warehouse_code: str | None

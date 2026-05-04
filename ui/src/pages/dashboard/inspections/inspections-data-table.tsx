@@ -1,9 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Eye, MoreHorizontal, Smartphone } from "lucide-react";
+import { ArrowUpDown, Eye, MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { DateRange } from "react-day-picker";
 
+import { DeviceFingerprintLinkBadge } from "@/components/dashboard/device-fingerprint-link-badge";
 import {
   ImageGalleryDialog,
   type GalleryImage,
@@ -233,15 +234,10 @@ const deviceColumn: ColumnDef<Inspection> = {
     </Button>
   ),
   cell: ({ row }) => (
-    <Link
-      to={PAGES.deviceViewPath(row.original.device_id)}
-      className="text-primary hover:underline"
-    >
-      <span className="inline-flex items-center gap-1.5 text-sm">
-        <Smartphone className="h-3.5 w-3.5" />
-        {row.original.device_fingerprint}
-      </span>
-    </Link>
+    <DeviceFingerprintLinkBadge
+      deviceUuid={row.original.device_uuid}
+      fingerprint={row.original.device_fingerprint}
+    />
   ),
 };
 
