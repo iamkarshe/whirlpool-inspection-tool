@@ -1,6 +1,9 @@
 import { getInspections } from "@/api/generated/inspections/inspections";
 import { BodyUploadInspectionImageApiInspectionsUploadImagePostDirection } from "@/api/generated/model/bodyUploadInspectionImageApiInspectionsUploadImagePostDirection";
 import type { ActiveChecklistGroupedResponse } from "@/api/generated/model/activeChecklistGroupedResponse";
+import type { BarcodeLockAcquireRequest } from "@/api/generated/model/barcodeLockAcquireRequest";
+import type { BarcodeLockReleaseResponse } from "@/api/generated/model/barcodeLockReleaseResponse";
+import type { BarcodeLockResponse } from "@/api/generated/model/barcodeLockResponse";
 import type { BarcodeParseResponse } from "@/api/generated/model/barcodeParseResponse";
 import type { ChecklistGroupBlock } from "@/api/generated/model/checklistGroupBlock";
 import type { GetInspectionKpisManagerApiInspectionsKpisManagerGetParams } from "@/api/generated/model/getInspectionKpisManagerApiInspectionsKpisManagerGetParams";
@@ -60,6 +63,28 @@ export async function parseInspectionBarcode(
   const api = getInspections();
   return api.parseInspectionBarcodeApiInspectionsParseBarcodeGet(
     { barcode },
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+export async function acquireOpsInspectionBarcodeLock(
+  body: BarcodeLockAcquireRequest,
+  opts?: { signal?: AbortSignal },
+): Promise<BarcodeLockResponse> {
+  const api = getInspections();
+  return api.acquireInspectionBarcodeLockApiInspectionsBarcodeLockPost(
+    body,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+export async function releaseOpsInspectionBarcodeLock(
+  body: BarcodeLockAcquireRequest,
+  opts?: { signal?: AbortSignal },
+): Promise<BarcodeLockReleaseResponse> {
+  const api = getInspections();
+  return api.releaseInspectionBarcodeLockApiInspectionsBarcodeLockReleasePost(
+    body,
     opts?.signal ? { signal: opts.signal } : undefined,
   );
 }

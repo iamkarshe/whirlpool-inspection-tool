@@ -22,7 +22,9 @@ import type { DamageGrading } from "@/api/generated/model/damageGrading";
 import type { DamageLikelyCause } from "@/api/generated/model/damageLikelyCause";
 import type { DamageSeverity } from "@/api/generated/model/damageSeverity";
 import type { DamageType } from "@/api/generated/model/damageType";
+import type { BarcodeLockAcquireRequest } from "@/api/generated/model/barcodeLockAcquireRequest";
 import type { InspectionMetadataResponse } from "@/api/generated/model/inspectionMetadataResponse";
+import { InspectionType } from "@/api/generated/model/inspectionType";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,8 +81,10 @@ import {
 } from "@/lib/indian-vehicle-registration";
 import { inspectionsApiValidationDialogContent } from "@/services/inspections-api";
 import {
+  acquireOpsInspectionBarcodeLock,
   loadOpsInspectionFormConfig,
   opsInspectionApiError,
+  releaseOpsInspectionBarcodeLock,
   startOpsInboundInspection,
   startOpsOutboundInspection,
   uploadOpsInspectionImage,
@@ -93,6 +97,14 @@ const OPS_TRUCK_REG_INVALID_MESSAGE =
   "Truck number must be a valid Indian registration: state plate (e.g. CG01AC23334) or Bharat series (e.g. 21BH1234AA). Spaces and dashes are ignored.";
 /** How often we flush the draft ref to localStorage (ref is updated every render). */
 const DRAFT_SAVE_INTERVAL_MS = 2500;
+
+function inspectionTypeFromStartMode(
+  startMode: InspectionStartMode,
+): BarcodeLockAcquireRequest["inspection_type"] {
+  return startMode === "inbound" ?
+      InspectionType.inbound
+    : InspectionType.outbound;
+}
 
 /** Stable empty list so memoized checklist rows do not re-render when a sibling updates images. */
 const NO_ANSWER_IMAGES_EMPTY: NoAnswerImageSlot[] = [];
@@ -224,6 +236,7 @@ export function OpsInspectionStartForm({
   >({});
 
   const [submitting, setSubmitting] = useState(false);
+  const [barcodeLockReady, setBarcodeLockReady] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
@@ -239,6 +252,8 @@ export function OpsInspectionStartForm({
   const allowNavigationWithoutLeavePromptRef = useRef(false);
   const draftHydratedRef = useRef(false);
   const draftPayloadRef = useRef<OpsInspectionDraftV1 | null>(null);
+  /** Set after `POST /api/inspections/barcode-lock` succeeds; cleared on release or unmount. */
+  const lockPayloadRef = useRef<BarcodeLockAcquireRequest | null>(null);
 
   useEffect(() => {
     draftHydratedRef.current = false;
@@ -268,6 +283,46 @@ export function OpsInspectionStartForm({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (loadingLocal) return;
+
+    setBarcodeLockReady(false);
+    let effectDisposed = false;
+    const ctrl = new AbortController();
+    const payload: BarcodeLockAcquireRequest = {
+      barcode,
+      inspection_type: inspectionTypeFromStartMode(mode),
+    };
+
+    void acquireOpsInspectionBarcodeLock(payload, { signal: ctrl.signal })
+      .then(() => {
+        if (effectDisposed) {
+          void releaseOpsInspectionBarcodeLock(payload);
+          return;
+        }
+        lockPayloadRef.current = payload;
+        setBarcodeLockReady(true);
+      })
+      .catch((e: unknown) => {
+        if (effectDisposed || ctrl.signal.aborted) return;
+        toast.error(
+          opsInspectionApiError(
+            e,
+            "Could not reserve this unit for this inspection type.",
+          ),
+        );
+        navigate(unitBackTo, { replace: true });
+      });
+
+    return () => {
+      effectDisposed = true;
+      ctrl.abort();
+      const held = lockPayloadRef.current;
+      lockPayloadRef.current = null;
+      if (held) void releaseOpsInspectionBarcodeLock(held);
+    };
+  }, [loadingLocal, mode, barcode, navigate, unitBackTo]);
 
   const orderedItems = useMemo(
     () =>
@@ -737,6 +792,11 @@ export function OpsInspectionStartForm({
           ...damageBlock,
         });
         clearInspectionDraft(mode, barcode);
+        const heldLock = lockPayloadRef.current;
+        lockPayloadRef.current = null;
+        if (heldLock) {
+          await releaseOpsInspectionBarcodeLock(heldLock).catch(() => {});
+        }
         toast.success("Inbound inspection started.");
         allowNavigationWithoutLeavePromptRef.current = true;
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
@@ -755,6 +815,11 @@ export function OpsInspectionStartForm({
           ...damageBlock,
         });
         clearInspectionDraft(mode, barcode);
+        const heldLock = lockPayloadRef.current;
+        lockPayloadRef.current = null;
+        if (heldLock) {
+          await releaseOpsInspectionBarcodeLock(heldLock).catch(() => {});
+        }
         toast.success("Outbound inspection started.");
         allowNavigationWithoutLeavePromptRef.current = true;
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
@@ -829,6 +894,17 @@ export function OpsInspectionStartForm({
       <div className="flex min-h-[32vh] flex-col items-center justify-center gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Loading form…</p>
+      </div>
+    );
+  }
+
+  if (!barcodeLockReady) {
+    return (
+      <div className="flex min-h-[32vh] flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          Reserving this inspection on the server…
+        </p>
       </div>
     );
   }
