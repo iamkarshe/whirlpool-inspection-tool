@@ -13,7 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PAGES } from "@/endpoints";
-import { OPS_BARCODE_LEN } from "@/pages/ops/new-inspection/constants";
+import {
+  OPS_BARCODE_LEN,
+  OPS_BARCODE_SCAN_TOP_HINT,
+} from "@/pages/ops/new-inspection/constants";
 import { clearAllInspectionDraftsForBarcode } from "@/pages/ops/new-inspection/inspection-draft-storage";
 
 function getDefaultScannerEnabled() {
@@ -47,7 +50,10 @@ export default function OpsNewInspectionPage() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanErrorOpen, setScanErrorOpen] = useState(false);
 
-  const isCodeValid = inspectionCode.trim().length === OPS_BARCODE_LEN;
+  const trimmedCode = inspectionCode.replace(/\s+/g, "").trim();
+  const isCodeValid = trimmedCode.length === OPS_BARCODE_LEN;
+  /** Bottom retail barcode on the label is typically EAN-13 (13 chars). */
+  const showScanTopHint = trimmedCode.length === 13;
 
   const goToUnit = useCallback(
     (barcode: string) => {
@@ -81,21 +87,18 @@ export default function OpsNewInspectionPage() {
   return (
     <div className="space-y-4">
       <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          {searchMode ? "Search inspection" : "New inspection"}
-        </p>
         <p className="text-sm text-muted-foreground">
-          {searchMode ?
+          {searchMode ? (
             <>
-              Scan or enter the {OPS_BARCODE_LEN}-character barcode to load the
-              unit and open existing inbound or outbound inspections.
+              Scan or enter the {OPS_BARCODE_LEN}-character barcode to find the
+              unit and view its inspections.
             </>
-          : <>
-              Scan or enter the {OPS_BARCODE_LEN}-character barcode. You will
-              confirm the product and choose inbound or outbound on the next
-              screen.
+          ) : (
+            <>
+              Scan or enter the {OPS_BARCODE_LEN}-character barcode to continue.
+              Next, confirm the product and choose inbound or outbound.
             </>
-          }
+          )}
         </p>
       </header>
 
@@ -127,14 +130,18 @@ export default function OpsNewInspectionPage() {
                 onScan={(detectedCodes) => {
                   const raw = detectedCodes[0]?.rawValue ?? "";
                   if (!raw) return;
-                  const normalized = raw
-                    .replace(/\s+/g, "")
-                    .slice(0, OPS_BARCODE_LEN);
-                  setInspectionCode(normalized);
+                  const normalized = raw.replace(/\s+/g, "").trim();
                   if (normalized.length === OPS_BARCODE_LEN) {
+                    setInspectionCode(normalized);
                     setScannerEnabled(false);
-                    goToUnit(normalized);
+                    return;
                   }
+                  if (normalized.length > OPS_BARCODE_LEN) {
+                    setInspectionCode(normalized.slice(0, OPS_BARCODE_LEN));
+                    setScannerEnabled(false);
+                    return;
+                  }
+                  setInspectionCode(normalized.slice(0, OPS_BARCODE_LEN));
                 }}
                 onError={(error) => {
                   const message =
@@ -161,8 +168,9 @@ export default function OpsNewInspectionPage() {
               <p className="text-xs text-destructive">{scanError}</p>
             ) : (
               <p className="text-xs text-muted-foreground text-center">
-                Point the camera at the barcode. We use the first{" "}
-                {OPS_BARCODE_LEN} characters.
+                Point at the top barcode only ({OPS_BARCODE_LEN} characters). If
+                you scan the bottom retail code by mistake, we will prompt you
+                to use the top code.
               </p>
             )}
           </div>
@@ -173,7 +181,7 @@ export default function OpsNewInspectionPage() {
             htmlFor="manual-code"
             className="block w-full text-center text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground"
           >
-            Enter manually
+            Use manual way
           </label>
           <div className="flex items-center gap-2 rounded-2xl border bg-background px-3 py-2">
             <ScanLine className="h-4 w-4 text-muted-foreground" />
@@ -199,6 +207,15 @@ export default function OpsNewInspectionPage() {
             {inspectionCode.length}/{OPS_BARCODE_LEN} characters
           </p>
         </div>
+
+        {showScanTopHint ? (
+          <p
+            role="status"
+            className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-950 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-50"
+          >
+            {OPS_BARCODE_SCAN_TOP_HINT}
+          </p>
+        ) : null}
 
         <Button
           type="button"

@@ -1,5 +1,13 @@
 import { ArrowLeft, Camera, Loader2, RotateCcw, X } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FocusEvent,
+} from "react";
 import {
   type BlockerFunction,
   useBlocker,
@@ -80,6 +88,9 @@ import {
 
 /** Reject originals larger than this before compression (memory / UX guard). */
 const MAX_RAW_IMAGE_BYTES = 25 * 1024 * 1024;
+
+const OPS_TRUCK_REG_INVALID_MESSAGE =
+  "Truck number must be a valid Indian registration: state plate (e.g. CG01AC23334) or Bharat series (e.g. 21BH1234AA). Spaces and dashes are ignored.";
 /** How often we flush the draft ref to localStorage (ref is updated every render). */
 const DRAFT_SAVE_INTERVAL_MS = 2500;
 
@@ -514,13 +525,30 @@ export function OpsInspectionStartForm({
     if (mode === "outbound" && !plantCode.trim()) {
       return "Choose a supplier plant.";
     }
-    const truck = truckNumber.trim();
+    const truck = normalizeIndianVehicleRegistration(truckNumber);
     if (!truck) return "Enter the truck number.";
     if (!isValidIndianVehicleRegistration(truck)) {
-      return "Truck number must be a valid Indian registration: state plate (e.g. CG01AC23334) or Bharat series (e.g. 21BH1234AA). Spaces and dashes are ignored.";
+      return OPS_TRUCK_REG_INVALID_MESSAGE;
     }
     return null;
   }, [warehouseCode, plantCode, truckNumber, mode]);
+
+  const handleTruckNumberBlur = useCallback(
+    (e: FocusEvent<HTMLInputElement>) => {
+      const normalized = normalizeIndianVehicleRegistration(
+        e.currentTarget.value,
+      );
+      setTruckNumber(normalized);
+      if (!normalized) return;
+      if (!isValidIndianVehicleRegistration(normalized)) {
+        setValidationDialog({
+          title: "Complete shipment info",
+          message: OPS_TRUCK_REG_INVALID_MESSAGE,
+        });
+      }
+    },
+    [],
+  );
 
   const damageStepError = useCallback((): string | null => {
     const parts = [
@@ -568,8 +596,10 @@ export function OpsInspectionStartForm({
           title: "Complete shipment info",
           message: err,
         });
+        setTruckNumber(normalizeIndianVehicleRegistration(truckNumber));
         return;
       }
+      setTruckNumber(normalizeIndianVehicleRegistration(truckNumber));
     }
     if (step.key === "damage") {
       const err = damageStepError();
@@ -1041,7 +1071,8 @@ export function OpsInspectionStartForm({
                 id={`tr-${mode}`}
                 value={truckNumber}
                 onChange={(e) => setTruckNumber(e.target.value)}
-                placeholder="CG01AC23334"
+                onBlur={handleTruckNumberBlur}
+                placeholder=""
                 className="h-9"
               />
             </div>
@@ -1053,7 +1084,7 @@ export function OpsInspectionStartForm({
                 id={`dk-${mode}`}
                 value={dockNumber}
                 onChange={(e) => setDockNumber(e.target.value)}
-                placeholder="Optional"
+                placeholder=""
                 className="h-9"
               />
             </div>
