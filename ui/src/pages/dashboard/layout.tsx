@@ -1,17 +1,25 @@
 import { AppNotificationsProvider } from "@/contexts/app-notifications-provider";
+import { DashboardModuleWipDialog } from "@/components/dashboard/dashboard-module-wip-dialog";
 import { SiteHeader } from "@/components/layout/header";
 import { AppSidebar } from "@/components/layout/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PAGES } from "@/endpoints";
 import { setPageTitle } from "@/lib/core";
 import React, { useEffect, useMemo } from "react";
-import { Outlet, useMatches } from "react-router-dom";
+import { Outlet, useLocation, useMatches } from "react-router-dom";
 
 type RouteHandle = { title?: string };
 
 export default function DashboardLayout() {
   const defaultOpen = true;
+  const location = useLocation();
 
   const matches = useMatches();
+
+  const isDashboardHome = useMemo(() => {
+    const path = location.pathname.replace(/\/+$/, "") || "/";
+    return path === PAGES.DASHBOARD;
+  }, [location.pathname]);
 
   const title = useMemo(() => {
     const match = [...matches]
@@ -48,6 +56,9 @@ export default function DashboardLayout() {
               data-testid="layout-dashboard"
               className="@container/main p-(--content-padding) xl:group-data-[theme-content-layout=centered]/layout:container xl:group-data-[theme-content-layout=centered]/layout:mx-auto"
             >
+              {isDashboardHome ? (
+                <DashboardModuleWipDialog moduleName="Dashboard" />
+              ) : null}
               <Outlet />
             </div>
           </div>

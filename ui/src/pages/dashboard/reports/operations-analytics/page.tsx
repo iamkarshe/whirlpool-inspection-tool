@@ -378,10 +378,7 @@ export default function OperationsAnalyticsPage() {
       data-testid="screen-dashboard-reports-operations-analytics"
       className="space-y-4"
     >
-      <DashboardModuleWipDialog
-        storageKey="reports-operations-analytics"
-        moduleName="Operations Analytics"
-      />
+      <DashboardModuleWipDialog moduleName="Operations Analytics" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Operations Analytics"

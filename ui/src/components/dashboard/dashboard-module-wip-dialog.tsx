@@ -1,5 +1,5 @@
 import { Construction } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-const STORAGE_PREFIX = "dashboard-module-wip:";
-
 export type DashboardModuleWipDialogProps = {
-  /** Short id for session dismissal, e.g. `dashboard-home`. */
-  storageKey: string;
   /** Human-readable module name (shown in copy). */
   moduleName: string;
   /** Optional extra sentence appended to the default message. */
@@ -25,44 +21,19 @@ export type DashboardModuleWipDialogProps = {
 };
 
 /**
- * Session-scoped “work in progress” notice for dashboard modules still under development.
- * Dismissal is remembered until the browser tab is closed.
+ * “Work in progress” notice for dashboard modules still under development.
+ * Opens whenever the host screen mounts; closing only hides it until the user
+ * leaves and returns (no sessionStorage).
  */
 export function DashboardModuleWipDialog({
-  storageKey,
   moduleName,
   extraMessage,
   className,
 }: DashboardModuleWipDialogProps) {
-  const dismissedKey = `${STORAGE_PREFIX}${storageKey}`;
-
-  const [open, setOpen] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.sessionStorage.getItem(dismissedKey) !== "1";
-    } catch {
-      return true;
-    }
-  });
-
-  const persistDismissed = useCallback(() => {
-    try {
-      window.sessionStorage.setItem(dismissedKey, "1");
-    } catch {
-      /* private mode / quota */
-    }
-  }, [dismissedKey]);
-
-  const handleOpenChange = useCallback(
-    (next: boolean) => {
-      if (!next) persistDismissed();
-      setOpen(next);
-    },
-    [persistDismissed],
-  );
+  const [open, setOpen] = useState(true);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className={cn(className)} showCloseButton>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-left">
@@ -79,7 +50,7 @@ export function DashboardModuleWipDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" onClick={() => handleOpenChange(false)}>
+          <Button type="button" onClick={() => setOpen(false)}>
             Got it
           </Button>
         </DialogFooter>

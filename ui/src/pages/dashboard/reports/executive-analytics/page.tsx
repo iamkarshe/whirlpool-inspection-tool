@@ -113,10 +113,7 @@ export default function ExecutiveAnalyticsPage() {
       data-testid="screen-dashboard-reports-executive-analytics"
       className="space-y-4"
     >
-      <DashboardModuleWipDialog
-        storageKey="reports-executive-analytics"
-        moduleName="Executive Analytics"
-      />
+      <DashboardModuleWipDialog moduleName="Executive Analytics" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Executive Analytics"

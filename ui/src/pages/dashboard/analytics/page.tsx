@@ -1,4 +1,3 @@
-import { DashboardModuleWipDialog } from "@/components/dashboard/dashboard-module-wip-dialog";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,10 +19,6 @@ export default function AnalyticsPage() {
       data-testid="screen-dashboard-analytics"
       className="space-y-4"
     >
-      <DashboardModuleWipDialog
-        storageKey="dashboard-home"
-        moduleName="Dashboard"
-      />
       <div className="flex flex-row items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
           Dashboard
