@@ -289,6 +289,7 @@ export function OpsInspectionStartForm({
   const [submitting, setSubmitting] = useState(false);
   const [barcodeLockReady, setBarcodeLockReady] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(true);
 
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
@@ -376,6 +377,10 @@ export function OpsInspectionStartForm({
     draftHydratedRef.current = false;
     setDraftSaveReady(false);
   }, [mode, barcode]);
+
+  useEffect(() => {
+    setIsMetadataExpanded(stepIndex === 0);
+  }, [stepIndex]);
 
   useEffect(() => {
     setParsedProductName(initialProductDetails?.productName?.trim() ?? "");
@@ -1256,7 +1261,7 @@ export function OpsInspectionStartForm({
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-3">
+      <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1.5">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             {mode === "inbound" ? "Inbound" : "Outbound"} Inspection
@@ -1282,7 +1287,12 @@ export function OpsInspectionStartForm({
       inboundMaterialId ||
       inboundProductCategoryName ||
       inboundSerialNumber ? (
-        <div className="relative space-y-0.5 overflow-hidden rounded-lg border border-border/60 bg-muted/15 px-2.5 py-1.5">
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-lg border border-border/60 bg-muted/15 px-2.5 py-1.5",
+            isMetadataExpanded ? "space-y-0.5" : "max-h-24",
+          )}
+        >
           <Package
             className="pointer-events-none absolute -right-1 top-0 h-10 w-10 text-muted-foreground/20"
             strokeWidth={1.75}
@@ -1323,6 +1333,19 @@ export function OpsInspectionStartForm({
                   {inboundMaterialId || "—"}
                 </span>
               </div>
+            </div>
+          ) : null}
+          {!isMetadataExpanded && stepIndex > 0 ? (
+            <div className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-background via-background/90 to-transparent pb-1 pt-5">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="h-7 rounded-full px-3 text-[11px]"
+                onClick={() => setIsMetadataExpanded(true)}
+              >
+                Expand
+              </Button>
             </div>
           ) : null}
         </div>
