@@ -363,7 +363,7 @@ export function OpsInspectionStartForm({
 
   const steps: WizardStep[] = useMemo(() => {
     const base: WizardStep[] = [
-      { key: "site", title: "Shipment" },
+      { key: "site", title: mode === "inbound" ? "Product Details" : "Shipment" },
       { key: "damage", title: "Damage" },
     ];
     for (const g of checklistGroups) {
@@ -374,7 +374,7 @@ export function OpsInspectionStartForm({
       });
     }
     return base;
-  }, [checklistGroups]);
+  }, [checklistGroups, mode]);
 
   const step = steps[stepIndex] ?? steps[0];
   const totalSteps = Math.max(1, steps.length);
