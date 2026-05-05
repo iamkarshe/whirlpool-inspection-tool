@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  ArrowRight,
   Camera,
   Loader2,
   Package,
@@ -544,6 +545,9 @@ export function OpsInspectionStartForm({
   const isLastStep = stepIndex >= steps.length - 1;
   const previousStepTitle =
     stepIndex > 0 ? (steps[stepIndex - 1]?.title ?? "") : "";
+  const nextStepTitle = !isLastStep
+    ? (steps[stepIndex + 1]?.title ?? "Next step")
+    : "";
 
   useEffect(() => {
     if (loadingLocal || draftHydratedRef.current) return;
@@ -1513,8 +1517,9 @@ export function OpsInspectionStartForm({
 
       <footer className="flex flex-col gap-2 pt-1">
         {!isLastStep ? (
-          <Button type="button" className="w-full" onClick={goNext}>
-            Next
+          <Button type="button" className="w-full gap-2" onClick={goNext}>
+            <span className="truncate">Next to {nextStepTitle}</span>
+            <ArrowRight className="h-4 w-4 shrink-0" />
           </Button>
         ) : (
           <Button
