@@ -733,9 +733,9 @@ def embed_inspection_media_urls(
     body: InspectionWithChecklistPayload,
 ) -> tuple[list[InspectionInputItemResponse], list[str], list[str], list[str]]:
     """Apply ``build_url`` to packaging/product image lists and checklist image URLs."""
-    outer_layer_urls = [build_url(p) for p in body.outer_packaging_images]
-    inner_layer_urls = [build_url(p) for p in body.inner_packaging_images]
-    product_layer_urls = [build_url(p) for p in body.product_images]
+    outer_layer_urls = [build_url(p) for p in body.outer_packaging_side_images]
+    inner_layer_urls = [build_url(p) for p in body.inner_packaging_side_images]
+    product_layer_urls = [build_url(p) for p in body.product_side_images]
     inputs_out = [
         inp.model_copy(
             update={"image_urls": [build_url(u) for u in inp.image_urls]}
@@ -755,9 +755,9 @@ def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:
         product=map_inspection_product_for_print(inspection),
         product_unit_id=body.product_unit_id,
         inputs=inputs_out,
-        outer_packaging_images=outer_imgs,
-        inner_packaging_images=inner_imgs,
-        product_images=product_imgs,
+        outer_packaging_side_images=outer_imgs,
+        inner_packaging_side_images=inner_imgs,
+        product_side_images=product_imgs,
         outer_packaging_checks=ChecklistLayerPassFail(
             pass_count=body.outer_packaging_checks.pass_count,
             fail_count=body.outer_packaging_checks.fail_count,
@@ -1580,9 +1580,9 @@ def create_inspection(
             truck_number=body.truck_number,
             dock_number=body.dock_number,
             truck_docking_time=body.truck_docking_time,
-            outer_packaging_images=body.outer_packaging_images,
-            inner_packaging_images=body.inner_packaging_images,
-            product_images=body.product_images,
+            outer_packaging_side_images=body.outer_packaging_side_images,
+            inner_packaging_side_images=body.inner_packaging_side_images,
+            product_side_images=body.product_side_images,
             device_time_taken=body.device_time_taken,
             damage_type=body.damage_type,
             damage_severity=body.damage_severity,

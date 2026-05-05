@@ -681,9 +681,9 @@ class Inspection(TimestampSoftDeleteMixin, Base):
     )
     reviewed_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    outer_packaging_images: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
-    inner_packaging_images: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
-    product_images: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
+    outer_packaging_side_images: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
+    inner_packaging_side_images: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
+    product_side_images: Mapped[list[str]] = mapped_column(JSONB, nullable=True)
 
     device_time_taken: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"

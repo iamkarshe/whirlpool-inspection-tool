@@ -88,9 +88,9 @@ class InspectionWithChecklistPayload(BaseModel):
     created_at: datetime
     updated_at: datetime
     inputs: list[InspectionInputItemResponse]
-    outer_packaging_images: list[str]
-    inner_packaging_images: list[str]
-    product_images: list[str]
+    outer_packaging_side_images: list[str]
+    inner_packaging_side_images: list[str]
+    product_side_images: list[str]
     outer_packaging_checks: ChecklistLayerPassFail
     inner_packaging_checks: ChecklistLayerPassFail
     product_checks: ChecklistLayerPassFail
@@ -244,9 +244,9 @@ def map_inspection_with_checklist_inputs(
         created_at=inspection.created_at,
         updated_at=inspection.updated_at,
         inputs=mapped,
-        outer_packaging_images=outer_imgs,
-        inner_packaging_images=inner_imgs,
-        product_images=product_imgs,
+        outer_packaging_side_images=outer_imgs,
+        inner_packaging_side_images=inner_imgs,
+        product_side_images=product_imgs,
         outer_packaging_checks=ChecklistLayerPassFail(pass_count=o_y, fail_count=o_n),
         inner_packaging_checks=ChecklistLayerPassFail(pass_count=i_y, fail_count=i_n),
         product_checks=ChecklistLayerPassFail(pass_count=p_y, fail_count=p_n),

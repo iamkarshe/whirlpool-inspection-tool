@@ -340,9 +340,9 @@ class InspectionFullResponse(InspectionDetailResponse):
     product: InspectionProductForPrint
     product_unit_id: int
     inputs: list[InspectionInputItemResponse]
-    outer_packaging_images: list[str]
-    inner_packaging_images: list[str]
-    product_images: list[str]
+    outer_packaging_side_images: list[str]
+    inner_packaging_side_images: list[str]
+    product_side_images: list[str]
     outer_packaging_checks: ChecklistLayerPassFail
     inner_packaging_checks: ChecklistLayerPassFail
     product_checks: ChecklistLayerPassFail
@@ -405,9 +405,9 @@ class StartInboundInspectionRequest(BaseModel):
     damage_cause: DamageLikelyCause | None = None
     damage_grade: DamageGrading | None = None
     truck_docking_time: datetime
-    outer_packaging_images: list[str] = Field(..., min_length=1)
-    inner_packaging_images: list[str] = Field(..., min_length=1)
-    product_images: list[str] = Field(..., min_length=1)
+    outer_packaging_side_images: list[str] = Field(..., min_length=1)
+    inner_packaging_side_images: list[str] = Field(..., min_length=1)
+    product_side_images: list[str] = Field(..., min_length=1)
     device_time_taken: int = Field(..., ge=10)
     checklist_answers: list[ChecklistAnswerEntry] = Field(default_factory=list)
 
@@ -428,9 +428,9 @@ class StartInboundInspectionRequest(BaseModel):
         return parse_to_utc_datetime(v)
 
     @field_validator(
-        "outer_packaging_images",
-        "inner_packaging_images",
-        "product_images",
+        "outer_packaging_side_images",
+        "inner_packaging_side_images",
+        "product_side_images",
         mode="before",
     )
     @classmethod
@@ -479,9 +479,9 @@ class StartOutboundInspectionRequest(BaseModel):
     damage_cause: DamageLikelyCause | None = None
     damage_grade: DamageGrading | None = None
     truck_docking_time: datetime
-    outer_packaging_images: list[str] = Field(..., min_length=1)
-    inner_packaging_images: list[str] = Field(..., min_length=1)
-    product_images: list[str] = Field(..., min_length=1)
+    outer_packaging_side_images: list[str] = Field(..., min_length=1)
+    inner_packaging_side_images: list[str] = Field(..., min_length=1)
+    product_side_images: list[str] = Field(..., min_length=1)
     device_time_taken: int = Field(..., ge=0)
     checklist_answers: list[ChecklistAnswerEntry] = Field(default_factory=list)
 
@@ -502,9 +502,9 @@ class StartOutboundInspectionRequest(BaseModel):
         return parse_to_utc_datetime(v)
 
     @field_validator(
-        "outer_packaging_images",
-        "inner_packaging_images",
-        "product_images",
+        "outer_packaging_side_images",
+        "inner_packaging_side_images",
+        "product_side_images",
         mode="before",
     )
     @classmethod
