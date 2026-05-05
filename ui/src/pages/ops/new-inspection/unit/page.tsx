@@ -1,7 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowLeft, Import, Loader2, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { toast } from "sonner";
 
 import type { BarcodeParseResponse } from "@/api/generated/model/barcodeParseResponse";
@@ -56,9 +61,9 @@ export default function OpsNewInspectionUnitPage() {
         <Button variant="outline" asChild>
           <Link
             to={
-              searchMode ?
-                PAGES.OPS_NEW_INSPECTION_SEARCH
-              : PAGES.OPS_NEW_INSPECTION
+              searchMode
+                ? PAGES.OPS_NEW_INSPECTION_SEARCH
+                : PAGES.OPS_NEW_INSPECTION
             }
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -69,7 +74,9 @@ export default function OpsNewInspectionUnitPage() {
     );
   }
 
-  return <UnitDetails key={barcode} barcode={barcode} searchMode={searchMode} />;
+  return (
+    <UnitDetails key={barcode} barcode={barcode} searchMode={searchMode} />
+  );
 }
 
 function UnitDetails({
@@ -81,9 +88,9 @@ function UnitDetails({
 }) {
   const navigate = useNavigate();
   const allowStartInspection = !searchMode;
-  const scanHome = searchMode ?
-    PAGES.OPS_NEW_INSPECTION_SEARCH
-  : PAGES.OPS_NEW_INSPECTION;
+  const scanHome = searchMode
+    ? PAGES.OPS_NEW_INSPECTION_SEARCH
+    : PAGES.OPS_NEW_INSPECTION;
   const [parsed, setParsed] = useState<BarcodeParseResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -217,6 +224,12 @@ function UnitDetails({
           inspection={inbound}
           startHref={startInboundTo}
           allowStartInspection={allowStartInspection}
+          startState={{
+            productName: parsed.product.material_description,
+            materialId: parsed.product.material_code,
+            productCategoryName: parsed.product_category.name,
+            serialNumber: parsed.segments.serial_number,
+          }}
         />
         <FlowColumnCard
           variant="outbound"
@@ -226,17 +239,22 @@ function UnitDetails({
           inspection={outbound}
           startHref={startOutboundTo}
           allowStartInspection={allowStartInspection}
+          startState={{
+            productName: parsed.product.material_description,
+            materialId: parsed.product.material_code,
+            productCategoryName: parsed.product_category.name,
+            serialNumber: parsed.segments.serial_number,
+          }}
         />
       </div>
 
-      {inbound && outbound ?
+      {inbound && outbound ? (
         <p className="text-center text-sm text-muted-foreground">
-          {searchMode ?
-            "Inbound and outbound inspections exist for this unit. Open details above."
-          : "Inbound and outbound inspections already exist for this unit. Open one above or use Search."
-          }
+          {searchMode
+            ? "Inbound and outbound inspections exist for this unit. Open details above."
+            : "Inbound and outbound inspections already exist for this unit. Open one above or use Search."}
         </p>
-      : null}
+      ) : null}
     </div>
   );
 }
@@ -249,6 +267,12 @@ type FlowColumnCardProps = {
   inspection: InspectionWithChecklistPayload | null;
   startHref: string;
   allowStartInspection: boolean;
+  startState?: {
+    productName?: string;
+    materialId?: string;
+    productCategoryName?: string;
+    serialNumber?: string;
+  };
 };
 
 function FlowColumnCard({
@@ -259,6 +283,7 @@ function FlowColumnCard({
   inspection,
   startHref,
   allowStartInspection,
+  startState,
 }: FlowColumnCardProps) {
   const recorded = inspection !== null;
   const reviewStatus = inspection
@@ -417,7 +442,9 @@ function FlowColumnCard({
               size="sm"
               className="h-7 w-full text-[11px] font-medium"
             >
-              <Link to={startHref}>Start Inspection</Link>
+              <Link to={startHref} state={startState}>
+                Start Inspection
+              </Link>
             </Button>
           ) : (
             <p className="text-center text-[11px] leading-snug text-muted-foreground">

@@ -1,4 +1,11 @@
-import { ArrowLeft, Camera, Loader2, RotateCcw, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  Loader2,
+  Package,
+  RotateCcw,
+  X,
+} from "lucide-react";
 import {
   memo,
   useCallback,
@@ -69,6 +76,7 @@ import {
   toDatetimeLocalValue,
 } from "@/pages/ops/new-inspection/inspection-start-shared";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import { useSessionUser } from "@/hooks/use-session-user";
 import {
   compressInspectionImageFile,
   INSPECTION_IMAGE_MAX_UPLOAD_BYTES,
@@ -87,6 +95,7 @@ import {
   acquireOpsInspectionBarcodeLock,
   loadOpsInspectionFormConfig,
   opsInspectionApiError,
+  parseInspectionBarcode,
   releaseOpsInspectionBarcodeLock,
   startOpsInboundInspection,
   startOpsOutboundInspection,
@@ -100,6 +109,7 @@ const OPS_TRUCK_REG_INVALID_MESSAGE =
   "Truck number must be a valid Indian registration: state plate (e.g. CG01AC23334) or Bharat series (e.g. 21BH1234AA). Spaces and dashes are ignored.";
 /** How often we flush the draft ref to localStorage (ref is updated every render). */
 const DRAFT_SAVE_INTERVAL_MS = 2500;
+const TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES = 10;
 
 /** `detail` from `POST /api/inspections/barcode-lock` when another user holds the lock. */
 const BARCODE_LOCK_HELD_BY_OTHER_SNIPPET =
@@ -121,6 +131,12 @@ export type OpsInspectionStartFormProps = {
   barcode: string;
   /** Navigate target after user confirms leaving the inspection page. */
   unitBackTo: string;
+  initialProductDetails?: {
+    productName?: string;
+    materialId?: string;
+    productCategoryName?: string;
+    serialNumber?: string;
+  } | null;
 };
 
 type WizardStep = {
@@ -203,13 +219,29 @@ function imagesFromDraft(
   return out;
 }
 
+function truckDockingTimeError(localValue: string): string | null {
+  const parsed = new Date(localValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Choose a valid truck docking time.";
+  }
+  const maxAllowed = new Date(
+    Date.now() + TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES * 60 * 1000,
+  );
+  if (parsed.getTime() > maxAllowed.getTime()) {
+    return "Truck docking time cannot be more than 10 minutes ahead of current time.";
+  }
+  return null;
+}
+
 export function OpsInspectionStartForm({
   mode,
   barcode,
   unitBackTo,
+  initialProductDetails,
 }: OpsInspectionStartFormProps) {
   const navigate = useNavigate();
   const { acquireLocation } = useGeolocation();
+  const sessionUser = useSessionUser();
 
   const [metadata, setMetadata] = useState<InspectionMetadataResponse | null>(
     null,
@@ -241,6 +273,18 @@ export function OpsInspectionStartForm({
   const [photoUploadCountByItem, setPhotoUploadCountByItem] = useState<
     Record<number, number>
   >({});
+  const [parsedProductName, setParsedProductName] = useState(
+    initialProductDetails?.productName?.trim() ?? "",
+  );
+  const [parsedMaterialId, setParsedMaterialId] = useState(
+    initialProductDetails?.materialId?.trim() ?? "",
+  );
+  const [parsedProductCategoryName, setParsedProductCategoryName] = useState(
+    initialProductDetails?.productCategoryName?.trim() ?? "",
+  );
+  const [parsedSerialNumber, setParsedSerialNumber] = useState(
+    initialProductDetails?.serialNumber?.trim() ?? "",
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [barcodeLockReady, setBarcodeLockReady] = useState(false);
@@ -264,10 +308,120 @@ export function OpsInspectionStartForm({
   /** Set after `POST /api/inspections/barcode-lock` succeeds; cleared on release or unmount. */
   const lockPayloadRef = useRef<BarcodeLockAcquireRequest | null>(null);
 
+  const warehouseOptions = useMemo(() => {
+    const allWarehouses = metadata?.warehouses ?? [];
+    const role = sessionUser?.role?.trim().toLowerCase();
+    if (role !== "operator") return allWarehouses;
+
+    const allowed = new Set(
+      (sessionUser?.allowed_warehouses ?? [])
+        .map((code) => code.trim())
+        .filter((code) => code.length > 0),
+    );
+    if (allowed.size === 0) return [];
+    return allWarehouses.filter((w) => allowed.has(w.value.trim()));
+  }, [
+    metadata?.warehouses,
+    sessionUser?.allowed_warehouses,
+    sessionUser?.role,
+  ]);
+
+  const inboundProductName = useMemo(() => {
+    if (parsedProductName) return parsedProductName;
+    const record = metadata as (Record<string, unknown> & object) | null;
+    const raw = record?.product_name;
+    return typeof raw === "string" ? raw.trim() : "";
+  }, [metadata, parsedProductName]);
+
+  const inboundMaterialId = useMemo(() => {
+    if (parsedMaterialId) return parsedMaterialId;
+    const record = metadata as (Record<string, unknown> & object) | null;
+    const raw = record?.material_id;
+    if (raw == null) return "";
+    return String(raw).trim();
+  }, [metadata, parsedMaterialId]);
+
+  const inboundProductCategoryName = useMemo(() => {
+    if (parsedProductCategoryName) return parsedProductCategoryName;
+    const record = metadata as (Record<string, unknown> & object) | null;
+    const raw = record?.product_category_name;
+    return typeof raw === "string" ? raw.trim() : "";
+  }, [metadata, parsedProductCategoryName]);
+
+  const inboundSerialNumber = useMemo(() => {
+    if (parsedSerialNumber) return parsedSerialNumber;
+    const record = metadata as (Record<string, unknown> & object) | null;
+    const raw = record?.serial_number ?? record?.inspection_serial_number;
+    if (raw == null) return "";
+    return String(raw).trim();
+  }, [metadata, parsedSerialNumber]);
+
+  useEffect(() => {
+    if (warehouseOptions.length === 1) {
+      const only = warehouseOptions[0]?.value ?? "";
+      if (only && warehouseCode !== only) {
+        setWarehouseCode(only);
+      }
+      return;
+    }
+    if (
+      warehouseCode.trim() &&
+      !warehouseOptions.some((w) => w.value === warehouseCode)
+    ) {
+      setWarehouseCode("");
+    }
+  }, [warehouseCode, warehouseOptions]);
+
   useEffect(() => {
     draftHydratedRef.current = false;
     setDraftSaveReady(false);
   }, [mode, barcode]);
+
+  useEffect(() => {
+    setParsedProductName(initialProductDetails?.productName?.trim() ?? "");
+    setParsedMaterialId(initialProductDetails?.materialId?.trim() ?? "");
+    setParsedProductCategoryName(
+      initialProductDetails?.productCategoryName?.trim() ?? "",
+    );
+    setParsedSerialNumber(initialProductDetails?.serialNumber?.trim() ?? "");
+  }, [
+    initialProductDetails?.materialId,
+    initialProductDetails?.productCategoryName,
+    initialProductDetails?.productName,
+    initialProductDetails?.serialNumber,
+  ]);
+
+  useEffect(() => {
+    if (
+      parsedProductName ||
+      parsedMaterialId ||
+      parsedProductCategoryName ||
+      parsedSerialNumber
+    )
+      return;
+
+    let cancelled = false;
+    parseInspectionBarcode(barcode)
+      .then((res) => {
+        if (cancelled) return;
+        setParsedProductName(res.product.material_description?.trim() ?? "");
+        setParsedMaterialId(res.product.material_code?.trim() ?? "");
+        setParsedProductCategoryName(res.product_category.name?.trim() ?? "");
+        setParsedSerialNumber(res.segments.serial_number?.trim() ?? "");
+      })
+      .catch(() => {
+        // Non-blocking fallback only; form can continue without this header metadata.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    barcode,
+    parsedMaterialId,
+    parsedProductCategoryName,
+    parsedProductName,
+    parsedSerialNumber,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -363,7 +517,10 @@ export function OpsInspectionStartForm({
 
   const steps: WizardStep[] = useMemo(() => {
     const base: WizardStep[] = [
-      { key: "site", title: mode === "inbound" ? "Product Details" : "Shipment" },
+      {
+        key: "site",
+        title: mode === "inbound" ? "Product Details" : "Shipment",
+      },
       { key: "damage", title: "Damage" },
     ];
     for (const g of checklistGroups) {
@@ -613,8 +770,13 @@ export function OpsInspectionStartForm({
     if (!isValidIndianVehicleRegistration(truck)) {
       return OPS_TRUCK_REG_INVALID_MESSAGE;
     }
+    const dockingError = truckDockingTimeError(truckDockingLocal);
+    if (dockingError) return dockingError;
     return null;
-  }, [warehouseCode, plantCode, truckNumber, mode]);
+  }, [warehouseCode, plantCode, truckNumber, mode, truckDockingLocal]);
+
+  const siteStepValidationTitle =
+    mode === "inbound" ? "Complete Product Details" : "Complete shipment info";
 
   const handleTruckNumberBlur = useCallback(
     (e: FocusEvent<HTMLInputElement>) => {
@@ -625,12 +787,12 @@ export function OpsInspectionStartForm({
       if (!normalized) return;
       if (!isValidIndianVehicleRegistration(normalized)) {
         setValidationDialog({
-          title: "Complete shipment info",
+          title: siteStepValidationTitle,
           message: OPS_TRUCK_REG_INVALID_MESSAGE,
         });
       }
     },
-    [],
+    [siteStepValidationTitle],
   );
 
   const damageStepError = useCallback((): string | null => {
@@ -676,7 +838,7 @@ export function OpsInspectionStartForm({
       const err = siteStepError();
       if (err) {
         setValidationDialog({
-          title: "Complete shipment info",
+          title: siteStepValidationTitle,
           message: err,
         });
         setTruckNumber(normalizeIndianVehicleRegistration(truckNumber));
@@ -742,7 +904,7 @@ export function OpsInspectionStartForm({
     const siteErr = siteStepError();
     if (siteErr) {
       setValidationDialog({
-        title: "Complete shipment info",
+        title: siteStepValidationTitle,
         message: siteErr,
       });
       return;
@@ -1025,8 +1187,6 @@ export function OpsInspectionStartForm({
     noAnswerImages: imagesStr,
   };
 
-  const titleLabel =
-    mode === "inbound" ? "Inbound inspection" : "Outbound inspection";
   const plantSelectValue =
     mode === "outbound" ? plantCode.trim() || undefined : undefined;
   const theme = mode === "inbound" ? "sky" : "amber";
@@ -1099,9 +1259,8 @@ export function OpsInspectionStartForm({
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-3">
         <div className="min-w-0 space-y-1.5">
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            {mode === "inbound" ? "Inbound" : "Outbound"}
+            {mode === "inbound" ? "Inbound" : "Outbound"} Inspection
           </p>
-          <h1 className="text-lg font-semibold tracking-tight">{titleLabel}</h1>
           <button
             type="button"
             onClick={requestLeaveViaBarcode}
@@ -1118,6 +1277,56 @@ export function OpsInspectionStartForm({
         </div>
         <InspectionElapsedTimer startedAt={startedAt} theme={theme} />
       </header>
+
+      {inboundProductName ||
+      inboundMaterialId ||
+      inboundProductCategoryName ||
+      inboundSerialNumber ? (
+        <div className="relative space-y-0.5 overflow-hidden rounded-lg border border-border/60 bg-muted/15 px-2.5 py-1.5">
+          <Package
+            className="pointer-events-none absolute -right-1 top-0 h-10 w-10 text-muted-foreground/20"
+            strokeWidth={1.75}
+          />
+          {inboundProductCategoryName ? (
+            <div>
+              <span className="text-xs text-muted-foreground">
+                Product Category:
+              </span>
+              <span className="-mt-0.5 block text-xs leading-tight text-foreground">
+                {inboundProductCategoryName}
+              </span>
+            </div>
+          ) : null}
+          {inboundProductName ? (
+            <div>
+              <span className="text-xs text-muted-foreground">
+                Product Name:
+              </span>
+              <span className="block text-sm font-medium leading-tight text-foreground">
+                {inboundProductName}
+              </span>
+            </div>
+          ) : null}
+          {inboundMaterialId || inboundSerialNumber ? (
+            <div className="grid grid-cols-2 gap-x-2">
+              <div className="min-w-0">
+                <span className="text-xs text-muted-foreground">Serial:</span>
+                <span className="-mt-0.5 block truncate font-mono text-xs leading-tight text-foreground">
+                  {inboundSerialNumber || "—"}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs text-muted-foreground">
+                  Material ID:
+                </span>
+                <span className="-mt-0.5 block truncate font-mono text-xs leading-tight text-foreground">
+                  {inboundMaterialId || "—"}
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2 text-xs">
@@ -1138,13 +1347,13 @@ export function OpsInspectionStartForm({
             <Select
               value={warehouseCode}
               onValueChange={setWarehouseCode}
-              disabled={!metadata?.warehouses?.length}
+              disabled={!warehouseOptions.length}
             >
               <SelectTrigger id={`w-${mode}`} className="h-9 w-full">
                 <SelectValue placeholder="Select warehouse" />
               </SelectTrigger>
               <SelectContent>
-                {(metadata?.warehouses ?? []).map((w) => (
+                {warehouseOptions.map((w) => (
                   <SelectItem key={w.value} value={w.value}>
                     {w.label}
                   </SelectItem>
@@ -1210,6 +1419,12 @@ export function OpsInspectionStartForm({
               id={`dt-${mode}`}
               type="datetime-local"
               step={60}
+              max={toDatetimeLocalValue(
+                new Date(
+                  Date.now() +
+                    TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES * 60 * 1000,
+                ),
+              )}
               value={truckDockingLocal}
               onChange={(e) => setTruckDockingLocal(e.target.value)}
               className="h-9"

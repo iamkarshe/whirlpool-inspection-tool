@@ -17,6 +17,5 @@ export interface LoginResponse {
   access_token: string;
   token_type?: string;
   device_uuid?: string | null;
-  /** Warehouse codes the user may access; null for superadmin. */
   allowed_warehouses?: string[] | null;
 }

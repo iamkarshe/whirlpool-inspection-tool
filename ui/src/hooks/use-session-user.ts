@@ -12,6 +12,7 @@ export type SessionUser = {
   role: string;
   designation: string | null;
   is_active: boolean;
+  allowed_warehouses?: string[] | null;
 };
 
 let cachedRaw: string | null = null;
@@ -39,6 +40,11 @@ function readSessionUser(): SessionUser | null {
         designation:
           typeof parsed.designation === "string" ? parsed.designation : null,
         is_active: typeof parsed.is_active === "boolean" ? parsed.is_active : true,
+        allowed_warehouses: Array.isArray(parsed.allowed_warehouses)
+          ? parsed.allowed_warehouses.filter(
+              (w): w is string => typeof w === "string",
+            )
+          : null,
       };
       return cachedUser;
     }

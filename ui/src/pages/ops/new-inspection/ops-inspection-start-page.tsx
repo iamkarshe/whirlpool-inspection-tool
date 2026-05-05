@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { PAGES } from "@/endpoints";
@@ -13,8 +13,18 @@ type OpsInspectionStartPageProps = {
 
 export function OpsInspectionStartPage({ mode }: OpsInspectionStartPageProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const barcode = (searchParams.get("barcode") ?? "").replace(/\s+/g, "");
+  const routeState = (location.state as
+    | {
+        productName?: string;
+        materialId?: string;
+        productCategoryName?: string;
+          serialNumber?: string;
+      }
+    | null
+    | undefined) ?? null;
 
   useEffect(() => {
     if (barcode.length !== OPS_BARCODE_LEN) {
@@ -32,6 +42,7 @@ export function OpsInspectionStartPage({ mode }: OpsInspectionStartPageProps) {
       mode={mode}
       barcode={barcode}
       unitBackTo={PAGES.opsNewInspectionUnitPath(barcode)}
+      initialProductDetails={routeState}
     />
   );
 }
