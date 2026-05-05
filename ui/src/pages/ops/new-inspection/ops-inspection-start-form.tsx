@@ -108,8 +108,8 @@ const BARCODE_LOCK_HELD_BY_OTHER_SNIPPET =
 function inspectionTypeFromStartMode(
   startMode: InspectionStartMode,
 ): BarcodeLockAcquireRequest["inspection_type"] {
-  return startMode === "inbound" ?
-      InspectionType.inbound
+  return startMode === "inbound"
+    ? InspectionType.inbound
     : InspectionType.outbound;
 }
 
@@ -1442,7 +1442,10 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
               checked={isYes}
               onCheckedChange={(c) => onAnswerChange(item.id, c ? "yes" : "no")}
               className={cn(
-                "h-9 w-14 shrink-0 data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-rose-600",
+                "h-9 w-14 shrink-0 data-[state=checked]:bg-emerald-600",
+                isNo
+                  ? "data-[state=unchecked]:bg-rose-600"
+                  : "data-[state=unchecked]:bg-muted",
               )}
             />
             <button
