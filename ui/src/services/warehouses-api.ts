@@ -1,12 +1,11 @@
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { GetWarehousesApiWarehousesGetParams } from "@/api/generated/model/getWarehousesApiWarehousesGetParams";
 import type { WarehouseCreateRequest } from "@/api/generated/model/warehouseCreateRequest";
-import type { WarehouseDeviceResponse } from "@/api/generated/model/warehouseDeviceResponse";
-import type { WarehouseInfoResponse } from "@/api/generated/model/warehouseInfoResponse";
+import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 import type { WarehouseListResponse } from "@/api/generated/model/warehouseListResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
-import type { WarehouseUserResponse } from "@/api/generated/model/warehouseUserResponse";
 import { getInspections } from "@/api/generated/inspections/inspections";
 import { getWarehouses } from "@/api/generated/warehouses/warehouses";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
@@ -14,7 +13,15 @@ import { isAxiosError } from "axios";
 
 export type WarehousesListParams = Pick<
   GetWarehousesApiWarehousesGetParams,
-  "page" | "per_page" | "search" | "sort_by" | "sort_dir" | "date_field" | "date_from" | "date_to" | "is_active"
+  | "page"
+  | "per_page"
+  | "search"
+  | "sort_by"
+  | "sort_dir"
+  | "date_field"
+  | "date_from"
+  | "date_to"
+  | "is_active"
 >;
 
 export type WarehouseInspectionsListParams = {
@@ -51,8 +58,8 @@ export type WarehouseResponseWithStats = WarehouseResponse & {
 
 export type WarehouseInfoViewData = {
   warehouse: WarehouseResponseWithStats;
-  users: WarehouseUserResponse[];
-  devices: WarehouseDeviceResponse[];
+  users: UserResponse[];
+  devices: DeviceResponse[];
 };
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -64,7 +71,11 @@ function normalizeWarehouseInfo(raw: unknown): WarehouseInfoViewData {
     throw new Error("Invalid warehouse response.");
   }
   if ("warehouse" in raw) {
-    const wrapped = raw as unknown as WarehouseInfoResponse;
+    const wrapped = raw as {
+      warehouse?: unknown;
+      users?: UserResponse[];
+      devices?: DeviceResponse[];
+    };
     return {
       warehouse: wrapped.warehouse as WarehouseResponseWithStats,
       users: wrapped.users ?? [],
@@ -156,9 +167,9 @@ export async function uploadWarehousesCsv(
   );
 }
 
-export async function fetchAllWarehouses(
-  request?: { signal?: AbortSignal },
-): Promise<WarehouseResponse[]> {
+export async function fetchAllWarehouses(request?: {
+  signal?: AbortSignal;
+}): Promise<WarehouseResponse[]> {
   const api = getWarehouses();
   const perPage = 100;
   let page = 1;
@@ -176,7 +187,10 @@ export async function fetchAllWarehouses(
   return rows;
 }
 
-export function warehouseApiErrorMessage(err: unknown, fallback: string): string {
+export function warehouseApiErrorMessage(
+  err: unknown,
+  fallback: string,
+): string {
   if (!isAxiosError(err)) return err instanceof Error ? err.message : fallback;
   const data = err.response?.data as unknown;
   if (
@@ -192,6 +206,7 @@ export function warehouseApiErrorMessage(err: unknown, fallback: string): string
   if (typeof err.response?.status === "number") {
     return `${fallback} (HTTP ${err.response.status}).`;
   }
-  if (typeof err.message === "string" && err.message.length > 0) return err.message;
+  if (typeof err.message === "string" && err.message.length > 0)
+    return err.message;
   return fallback;
 }

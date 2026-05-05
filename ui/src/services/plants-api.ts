@@ -5,30 +5,46 @@ import type { GetPlantsApiPlantsGetParams } from "@/api/generated/model/getPlant
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
 import type { PlantCreateRequest } from "@/api/generated/model/plantCreateRequest";
-import type { PlantDeviceResponse } from "@/api/generated/model/plantDeviceResponse";
-import type { PlantInfoResponse } from "@/api/generated/model/plantInfoResponse";
+import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
 import type { PlantListResponse } from "@/api/generated/model/plantListResponse";
 import type { PlantResponse } from "@/api/generated/model/plantResponse";
-import type { PlantUserResponse } from "@/api/generated/model/plantUserResponse";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 import { getPlants } from "@/api/generated/plants/plants";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 
 export type PlantsListParams = Pick<
   GetPlantsApiPlantsGetParams,
-  "page" | "per_page" | "search" | "sort_by" | "sort_dir" | "date_field" | "date_from" | "date_to" | "is_active"
+  | "page"
+  | "per_page"
+  | "search"
+  | "sort_by"
+  | "sort_dir"
+  | "date_field"
+  | "date_from"
+  | "date_to"
+  | "is_active"
 >;
 
 export type PlantInspectionsListParams = Pick<
   GetInspectionsApiInspectionsGetParams,
-  "page" | "per_page" | "search" | "sort_by" | "sort_dir" | "date_field" | "date_from" | "date_to" | "is_active" | "inspection_type"
+  | "page"
+  | "per_page"
+  | "search"
+  | "sort_by"
+  | "sort_dir"
+  | "date_field"
+  | "date_from"
+  | "date_to"
+  | "is_active"
+  | "inspection_type"
 > & {
   plant_uuid: string;
 };
 
 export type PlantInfoViewData = {
   plant: PlantResponse;
-  users: PlantUserResponse[];
-  devices: PlantDeviceResponse[];
+  users: UserResponse[];
+  devices: DeviceResponse[];
 };
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -40,9 +56,13 @@ function normalizePlantInfo(raw: unknown): PlantInfoViewData {
     throw new Error("Invalid plant response.");
   }
   if ("plant" in raw) {
-    const wrapped = raw as unknown as PlantInfoResponse;
+    const wrapped = raw as {
+      plant?: PlantResponse;
+      users?: UserResponse[];
+      devices?: DeviceResponse[];
+    };
     return {
-      plant: wrapped.plant,
+      plant: wrapped.plant as PlantResponse,
       users: wrapped.users ?? [],
       devices: wrapped.devices ?? [],
     };
@@ -148,6 +168,7 @@ export function plantsApiErrorMessage(err: unknown, fallback: string): string {
   if (typeof err.response?.status === "number") {
     return `${fallback} (HTTP ${err.response.status}).`;
   }
-  if (typeof err.message === "string" && err.message.length > 0) return err.message;
+  if (typeof err.message === "string" && err.message.length > 0)
+    return err.message;
   return fallback;
 }

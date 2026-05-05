@@ -1,4 +1,4 @@
-import type { PlantDeviceResponse } from "@/api/generated/model/plantDeviceResponse";
+import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -6,7 +6,7 @@ import { ArrowUpDown } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import type { PlantViewContext } from "./context";
 
-const columns: ColumnDef<PlantDeviceResponse>[] = [
+const columns: ColumnDef<DeviceResponse>[] = [
   {
     accessorKey: "uuid",
     header: ({ column }) => (

@@ -1,4 +1,4 @@
-import type { WarehouseUserResponse } from "@/api/generated/model/warehouseUserResponse";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -6,7 +6,7 @@ import { ArrowUpDown } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import type { WarehouseViewContext } from "./context";
 
-const columns: ColumnDef<WarehouseUserResponse>[] = [
+const columns: ColumnDef<UserResponse>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (

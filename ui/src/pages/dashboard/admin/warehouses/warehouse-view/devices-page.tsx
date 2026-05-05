@@ -1,4 +1,4 @@
-import type { WarehouseDeviceResponse } from "@/api/generated/model/warehouseDeviceResponse";
+import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -6,7 +6,7 @@ import { ArrowUpDown } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import type { WarehouseViewContext } from "./context";
 
-const columns: ColumnDef<WarehouseDeviceResponse>[] = [
+const columns: ColumnDef<DeviceResponse>[] = [
   {
     accessorKey: "uuid",
     header: ({ column }) => (

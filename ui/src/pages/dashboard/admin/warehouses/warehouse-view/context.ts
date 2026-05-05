@@ -1,9 +1,9 @@
-import type { WarehouseDeviceResponse } from "@/api/generated/model/warehouseDeviceResponse";
-import type { WarehouseUserResponse } from "@/api/generated/model/warehouseUserResponse";
+import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
+import type { UserResponse } from "@/api/generated/model/userResponse";
 import type { WarehouseResponseWithStats } from "@/services/warehouses-api";
 
 export type WarehouseViewContext = {
   warehouse: WarehouseResponseWithStats;
-  users: WarehouseUserResponse[];
-  devices: WarehouseDeviceResponse[];
+  users: UserResponse[];
+  devices: DeviceResponse[];
 };

@@ -112,6 +112,10 @@ const OPS_TRUCK_REG_INVALID_MESSAGE =
 const DRAFT_SAVE_INTERVAL_MS = 2500;
 const TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES = 10;
 
+/** Placeholder path until OPS captures real packaging-side photos at submit-time. */
+const OPS_PACKAGING_SIDE_IMAGE_PLACEHOLDER =
+  "pending-upload:no-packaging-side-captured-at-submit";
+
 /** `detail` from `POST /api/inspections/barcode-lock` when another user holds the lock. */
 const BARCODE_LOCK_HELD_BY_OTHER_SNIPPET =
   "locked for this inspection direction by another user";
@@ -525,9 +529,8 @@ export function OpsInspectionStartForm({
     const base: WizardStep[] = [
       {
         key: "site",
-        title: mode === "inbound" ? "Product Details" : "Shipment",
+        title: "Product Details",
       },
-      { key: "damage", title: "Damage" },
     ];
     for (const g of checklistGroups) {
       base.push({
@@ -536,6 +539,7 @@ export function OpsInspectionStartForm({
         group: g,
       });
     }
+    base.push({ key: "damage", title: "Damage" });
     return base;
   }, [checklistGroups, mode]);
 
@@ -561,7 +565,7 @@ export function OpsInspectionStartForm({
       }
       setStartedAt(draft.startedAt);
       setWarehouseCode(draft.warehouseCode);
-      setPlantCode(mode === "outbound" ? draft.plantCode : "");
+      setPlantCode(mode === "inbound" ? draft.plantCode : "");
       setTruckNumber(draft.truckNumber);
       setDockNumber(draft.dockNumber);
       setTruckDockingLocal(draft.truckDockingLocal);
@@ -583,7 +587,7 @@ export function OpsInspectionStartForm({
   const dirty = useMemo(() => {
     if (stepIndex > 0) return true;
     if (warehouseCode.trim()) return true;
-    if (mode === "outbound" && plantCode.trim()) return true;
+    if (mode === "inbound" && plantCode.trim()) return true;
     if (truckNumber.trim()) return true;
     if (dockNumber.trim()) return true;
     if (damageType || damageSeverity || damageCause || damageGrade) return true;
@@ -771,18 +775,30 @@ export function OpsInspectionStartForm({
 
   const siteStepError = useCallback((): string | null => {
     if (!warehouseCode.trim()) return "Choose a warehouse from the list.";
-    if (mode === "outbound" && !plantCode.trim()) {
+    if (mode === "inbound" && !plantCode.trim()) {
       return "Choose a supplier plant.";
     }
-    const truck = normalizeIndianVehicleRegistration(truckNumber);
-    if (!truck) return "Enter the truck number.";
-    if (!isValidIndianVehicleRegistration(truck)) {
-      return OPS_TRUCK_REG_INVALID_MESSAGE;
+    if (!dockNumber.trim()) {
+      return "Enter the dock number.";
     }
-    const dockingError = truckDockingTimeError(truckDockingLocal);
-    if (dockingError) return dockingError;
+    if (mode === "inbound") {
+      const truck = normalizeIndianVehicleRegistration(truckNumber);
+      if (!truck) return "Enter the truck number.";
+      if (!isValidIndianVehicleRegistration(truck)) {
+        return OPS_TRUCK_REG_INVALID_MESSAGE;
+      }
+      const dockingError = truckDockingTimeError(truckDockingLocal);
+      if (dockingError) return dockingError;
+    }
     return null;
-  }, [warehouseCode, plantCode, truckNumber, mode, truckDockingLocal]);
+  }, [
+    warehouseCode,
+    plantCode,
+    dockNumber,
+    truckNumber,
+    mode,
+    truckDockingLocal,
+  ]);
 
   const siteStepValidationTitle =
     mode === "inbound" ? "Complete Product Details" : "Complete shipment info";
@@ -975,6 +991,10 @@ export function OpsInspectionStartForm({
         }
       : {};
 
+    const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+    const deviceTimeTakenInbound = Math.max(10, elapsedSec);
+    const deviceTimeTakenOutbound = Math.max(0, elapsedSec);
+    const sideImagesSingle = [OPS_PACKAGING_SIDE_IMAGE_PLACEHOLDER];
     setSubmitting(true);
     try {
       if (mode === "inbound") {
@@ -982,11 +1002,16 @@ export function OpsInspectionStartForm({
           barcode,
           device_uuid: deviceUuid,
           warehouse_code: warehouseCode.trim(),
+          supplier_plant_code: plantCode.trim(),
           lat: coords.lat,
           lng: coords.lng,
           truck_number: truckNumberNormalized,
           dock_number: dockNumber.trim() || null,
           truck_docking_time: dockingIso,
+          outer_packaging_side_images: sideImagesSingle,
+          inner_packaging_side_images: sideImagesSingle,
+          product_side_images: sideImagesSingle,
+          device_time_taken: deviceTimeTakenInbound,
           checklist_answers,
           ...damageBlock,
         });
@@ -1004,12 +1029,15 @@ export function OpsInspectionStartForm({
           barcode,
           device_uuid: deviceUuid,
           warehouse_code: warehouseCode.trim(),
-          supplier_plant_code: plantCode.trim(),
           lat: coords.lat,
           lng: coords.lng,
-          truck_number: truckNumberNormalized,
+          truck_number: truckNumberNormalized || "OUTBOUND",
           dock_number: dockNumber.trim() || null,
           truck_docking_time: dockingIso,
+          outer_packaging_side_images: sideImagesSingle,
+          inner_packaging_side_images: sideImagesSingle,
+          product_side_images: sideImagesSingle,
+          device_time_taken: deviceTimeTakenOutbound,
           checklist_answers,
           ...damageBlock,
         });
@@ -1197,7 +1225,7 @@ export function OpsInspectionStartForm({
   };
 
   const plantSelectValue =
-    mode === "outbound" ? plantCode.trim() || undefined : undefined;
+    mode === "inbound" ? plantCode.trim() || undefined : undefined;
   const theme = mode === "inbound" ? "sky" : "amber";
 
   return (
@@ -1388,10 +1416,10 @@ export function OpsInspectionStartForm({
               </SelectContent>
             </Select>
           </div>
-          {mode === "outbound" ? (
+          {mode === "inbound" ? (
             <div className="mt-2 space-y-2">
               <Label htmlFor={`p-${mode}`} className="text-xs">
-                Supplier plant
+                Supplier Plant
               </Label>
               <Select
                 value={plantSelectValue}
@@ -1411,21 +1439,58 @@ export function OpsInspectionStartForm({
               </Select>
             </div>
           ) : null}
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor={`tr-${mode}`} className="text-xs">
-                Truck #
-              </Label>
-              <Input
-                id={`tr-${mode}`}
-                value={truckNumber}
-                onChange={(e) => setTruckNumber(e.target.value)}
-                onBlur={handleTruckNumberBlur}
-                placeholder=""
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1">
+          {mode === "inbound" ? (
+            <>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor={`tr-${mode}`} className="text-xs">
+                    Truck #
+                  </Label>
+                  <Input
+                    id={`tr-${mode}`}
+                    value={truckNumber}
+                    onChange={(e) => setTruckNumber(e.target.value)}
+                    onBlur={handleTruckNumberBlur}
+                    placeholder=""
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor={`dk-${mode}`} className="text-xs">
+                    Dock
+                  </Label>
+                  <Input
+                    id={`dk-${mode}`}
+                    value={dockNumber}
+                    onChange={(e) => setDockNumber(e.target.value)}
+                    placeholder=""
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <div className="mt-2 space-y-1">
+                <Label htmlFor={`dt-${mode}`} className="text-xs">
+                  Truck docking time
+                </Label>
+                <Input
+                  id={`dt-${mode}`}
+                  type="datetime-local"
+                  step={60}
+                  max={toDatetimeLocalValue(
+                    new Date(
+                      Date.now() +
+                        TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES * 60 * 1000,
+                    ),
+                  )}
+                  value={truckDockingLocal}
+                  onChange={(e) => setTruckDockingLocal(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+            </>
+          ) : null}
+          {mode === "outbound" ? (
+            <div className="mt-2 space-y-1">
               <Label htmlFor={`dk-${mode}`} className="text-xs">
                 Dock
               </Label>
@@ -1437,26 +1502,7 @@ export function OpsInspectionStartForm({
                 className="h-9"
               />
             </div>
-          </div>
-          <div className="mt-2 space-y-1">
-            <Label htmlFor={`dt-${mode}`} className="text-xs">
-              Truck docking time
-            </Label>
-            <Input
-              id={`dt-${mode}`}
-              type="datetime-local"
-              step={60}
-              max={toDatetimeLocalValue(
-                new Date(
-                  Date.now() +
-                    TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES * 60 * 1000,
-                ),
-              )}
-              value={truckDockingLocal}
-              onChange={(e) => setTruckDockingLocal(e.target.value)}
-              className="h-9"
-            />
-          </div>
+          ) : null}
         </section>
       ) : null}
 
