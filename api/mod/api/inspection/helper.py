@@ -1502,6 +1502,11 @@ def create_inspection(
             )
 
         supplier_plant_code = body.supplier_plant_code
+        if inspection_type == InspectionType.inbound and not supplier_plant_code:
+            raise HTTPException(
+                status_code=400,
+                detail="supplier_plant_code is required for inbound inspections",
+            )
         if supplier_plant_code is not None:
             if (
                 db.query(Plant)

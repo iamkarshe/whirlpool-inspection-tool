@@ -2116,44 +2116,6 @@
             "description": "Optional filter by plant UUID"
           },
           {
-            "name": "date_from",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today",
-              "title": "Date From"
-            },
-            "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today"
-          },
-          {
-            "name": "date_to",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today",
-              "title": "Date To"
-            },
-            "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today"
-          },
-          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -2236,6 +2198,44 @@
               "title": "Date Field"
             },
             "description": "Column key from the route's allowed date_fields (e.g. created_at)"
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today",
+              "title": "Date From"
+            },
+            "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today",
+              "title": "Date To"
+            },
+            "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today"
           }
         ],
         "responses": {
@@ -5284,6 +5284,11 @@
             "type": "integer",
             "title": "Device Id"
           },
+          "device_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Device Uuid"
+          },
           "device_fingerprint": {
             "type": "string",
             "title": "Device Fingerprint"
@@ -5439,26 +5444,30 @@
             "type": "array",
             "title": "Inputs"
           },
-          "outer_packaging_images": {
+          "outer_packaging_side_images": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Outer Packaging Images"
+            "title": "Outer Packaging Side Images"
           },
-          "inner_packaging_images": {
+          "inner_packaging_side_images": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Inner Packaging Images"
+            "title": "Inner Packaging Side Images"
           },
-          "product_images": {
+          "product_side_images": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Product Images"
+            "title": "Product Side Images"
+          },
+          "device_time_taken": {
+            "type": "integer",
+            "title": "Device Time Taken"
           },
           "outer_packaging_checks": {
             "$ref": "#/components/schemas/ChecklistLayerPassFail"
@@ -5485,6 +5494,7 @@
           "inspector_id",
           "inspector_name",
           "device_id",
+          "device_uuid",
           "device_fingerprint",
           "product_id",
           "product_material_code",
@@ -5506,9 +5516,10 @@
           "product",
           "product_unit_id",
           "inputs",
-          "outer_packaging_images",
-          "inner_packaging_images",
-          "product_images",
+          "outer_packaging_side_images",
+          "inner_packaging_side_images",
+          "product_side_images",
+          "device_time_taken",
           "outer_packaging_checks",
           "inner_packaging_checks",
           "product_checks",
@@ -5682,6 +5693,11 @@
             "type": "integer",
             "title": "Device Id"
           },
+          "device_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Device Uuid"
+          },
           "device_fingerprint": {
             "type": "string",
             "title": "Device Fingerprint"
@@ -5785,6 +5801,7 @@
           "inspector_id",
           "inspector_name",
           "device_id",
+          "device_uuid",
           "device_fingerprint",
           "product_id",
           "product_material_code",
@@ -6099,6 +6116,11 @@
             "type": "integer",
             "title": "Device Id"
           },
+          "device_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Device Uuid"
+          },
           "product_id": {
             "type": "integer",
             "title": "Product Id"
@@ -6201,26 +6223,26 @@
             "type": "array",
             "title": "Inputs"
           },
-          "outer_packaging_images": {
+          "outer_packaging_side_images": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Outer Packaging Images"
+            "title": "Outer Packaging Side Images"
           },
-          "inner_packaging_images": {
+          "inner_packaging_side_images": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Inner Packaging Images"
+            "title": "Inner Packaging Side Images"
           },
-          "product_images": {
+          "product_side_images": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Product Images"
+            "title": "Product Side Images"
           },
           "outer_packaging_checks": {
             "$ref": "#/components/schemas/ChecklistLayerPassFail"
@@ -6247,6 +6269,7 @@
           "inspection_type",
           "inspector_id",
           "device_id",
+          "device_uuid",
           "product_id",
           "product_unit_id",
           "warehouse_code",
@@ -6259,9 +6282,9 @@
           "created_at",
           "updated_at",
           "inputs",
-          "outer_packaging_images",
-          "inner_packaging_images",
-          "product_images",
+          "outer_packaging_side_images",
+          "inner_packaging_side_images",
+          "product_side_images",
           "outer_packaging_checks",
           "inner_packaging_checks",
           "product_checks",
@@ -7520,6 +7543,11 @@
             "type": "integer",
             "title": "Device Id"
           },
+          "device_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Device Uuid"
+          },
           "inspection_type": {
             "type": "string",
             "title": "Inspection Type"
@@ -7563,6 +7591,7 @@
           "inspector_id",
           "inspector_name",
           "device_id",
+          "device_uuid",
           "inspection_type",
           "product_id",
           "warehouse_code",
@@ -8088,14 +8117,8 @@
             "title": "Warehouse Code"
           },
           "supplier_plant_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "minLength": 1,
             "title": "Supplier Plant Code"
           },
           "lat": {
@@ -8171,6 +8194,35 @@
             "format": "date-time",
             "title": "Truck Docking Time"
           },
+          "outer_packaging_side_images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Outer Packaging Side Images"
+          },
+          "inner_packaging_side_images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Inner Packaging Side Images"
+          },
+          "product_side_images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Product Side Images"
+          },
+          "device_time_taken": {
+            "type": "integer",
+            "minimum": 10,
+            "title": "Device Time Taken"
+          },
           "checklist_answers": {
             "items": {
               "$ref": "#/components/schemas/ChecklistAnswerEntry"
@@ -8184,10 +8236,15 @@
           "barcode",
           "device_uuid",
           "warehouse_code",
+          "supplier_plant_code",
           "lat",
           "lng",
           "truck_number",
-          "truck_docking_time"
+          "truck_docking_time",
+          "outer_packaging_side_images",
+          "inner_packaging_side_images",
+          "product_side_images",
+          "device_time_taken"
         ],
         "title": "StartInboundInspectionRequest"
       },
@@ -8292,6 +8349,35 @@
             "format": "date-time",
             "title": "Truck Docking Time"
           },
+          "outer_packaging_side_images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Outer Packaging Side Images"
+          },
+          "inner_packaging_side_images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Inner Packaging Side Images"
+          },
+          "product_side_images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Product Side Images"
+          },
+          "device_time_taken": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Device Time Taken"
+          },
           "checklist_answers": {
             "items": {
               "$ref": "#/components/schemas/ChecklistAnswerEntry"
@@ -8308,7 +8394,11 @@
           "lat",
           "lng",
           "truck_number",
-          "truck_docking_time"
+          "truck_docking_time",
+          "outer_packaging_side_images",
+          "inner_packaging_side_images",
+          "product_side_images",
+          "device_time_taken"
         ],
         "title": "StartOutboundInspectionRequest"
       },

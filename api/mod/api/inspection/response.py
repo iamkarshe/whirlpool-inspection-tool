@@ -396,7 +396,7 @@ class StartInboundInspectionRequest(BaseModel):
     barcode: str = Field(..., min_length=1)
     device_uuid: uuid.UUID
     warehouse_code: str = Field(..., min_length=1)
-    supplier_plant_code: str | None = None
+    supplier_plant_code: str = Field(..., min_length=1)
     lat: float = Field(..., ge=INDIA_LAT_MIN, le=INDIA_LAT_MAX)
     lng: float = Field(..., ge=INDIA_LNG_MIN, le=INDIA_LNG_MAX)
     truck_number: str = Field(..., min_length=1)
@@ -454,9 +454,7 @@ class StartInboundInspectionRequest(BaseModel):
     def normalize_and_validate_answers(self):
         self.barcode = self.barcode.strip()
         self.warehouse_code = self.warehouse_code.strip()
-        if self.supplier_plant_code is not None:
-            s = self.supplier_plant_code.strip()
-            self.supplier_plant_code = s if s else None
+        self.supplier_plant_code = self.supplier_plant_code.strip()
         if self.dock_number is not None:
             d = self.dock_number.strip()
             self.dock_number = d if d else None
