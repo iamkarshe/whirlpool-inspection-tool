@@ -405,6 +405,10 @@ class StartInboundInspectionRequest(BaseModel):
     damage_cause: DamageLikelyCause | None = None
     damage_grade: DamageGrading | None = None
     truck_docking_time: datetime
+    outer_packaging_images: list[str] = Field(..., min_length=1)
+    inner_packaging_images: list[str] = Field(..., min_length=1)
+    product_images: list[str] = Field(..., min_length=1)
+    device_time_taken: int = Field(..., ge=10)
     checklist_answers: list[ChecklistAnswerEntry] = Field(default_factory=list)
 
     @field_validator("truck_number", mode="after")
@@ -422,6 +426,28 @@ class StartInboundInspectionRequest(BaseModel):
     @classmethod
     def coerce_truck_docking_time(cls, v):
         return parse_to_utc_datetime(v)
+
+    @field_validator(
+        "outer_packaging_images",
+        "inner_packaging_images",
+        "product_images",
+        mode="before",
+    )
+    @classmethod
+    def coerce_layer_images(cls, v):
+        if v is None:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("Layer image fields must be arrays of URL strings")
+        out: list[str] = []
+        for index, item in enumerate(v):
+            if item is None:
+                raise ValueError(f"image[{index}] must not be null")
+            image_url = str(item).strip()
+            if not image_url:
+                raise ValueError(f"image[{index}] must be a non-empty URL string")
+            out.append(image_url)
+        return out
 
     @model_validator(mode="after")
     def normalize_and_validate_answers(self):
@@ -453,6 +479,10 @@ class StartOutboundInspectionRequest(BaseModel):
     damage_cause: DamageLikelyCause | None = None
     damage_grade: DamageGrading | None = None
     truck_docking_time: datetime
+    outer_packaging_images: list[str] = Field(..., min_length=1)
+    inner_packaging_images: list[str] = Field(..., min_length=1)
+    product_images: list[str] = Field(..., min_length=1)
+    device_time_taken: int = Field(..., ge=0)
     checklist_answers: list[ChecklistAnswerEntry] = Field(default_factory=list)
 
     @field_validator("truck_number", mode="after")
@@ -470,6 +500,28 @@ class StartOutboundInspectionRequest(BaseModel):
     @classmethod
     def coerce_truck_docking_time(cls, v):
         return parse_to_utc_datetime(v)
+
+    @field_validator(
+        "outer_packaging_images",
+        "inner_packaging_images",
+        "product_images",
+        mode="before",
+    )
+    @classmethod
+    def coerce_layer_images(cls, v):
+        if v is None:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("Layer image fields must be arrays of URL strings")
+        out: list[str] = []
+        for index, item in enumerate(v):
+            if item is None:
+                raise ValueError(f"image[{index}] must not be null")
+            image_url = str(item).strip()
+            if not image_url:
+                raise ValueError(f"image[{index}] must be a non-empty URL string")
+            out.append(image_url)
+        return out
 
     @model_validator(mode="after")
     def normalize_and_validate_answers(self):
