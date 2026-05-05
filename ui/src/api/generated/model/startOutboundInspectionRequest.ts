@@ -36,5 +36,13 @@ export interface StartOutboundInspectionRequest {
   damage_cause?: DamageLikelyCause | null;
   damage_grade?: DamageGrading | null;
   truck_docking_time: string;
+  /** @minItems 1 */
+  outer_packaging_side_images: string[];
+  /** @minItems 1 */
+  inner_packaging_side_images: string[];
+  /** @minItems 1 */
+  product_side_images: string[];
+  /** @minimum 0 */
+  device_time_taken: number;
   checklist_answers?: ChecklistAnswerEntry[];
 }

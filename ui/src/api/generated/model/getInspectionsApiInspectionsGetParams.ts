@@ -21,14 +21,6 @@ warehouse_uuid?: string | null;
  */
 plant_uuid?: string | null;
 /**
- * With date_field: range start (UTC date); omit both dates for default last 7 days including today
- */
-date_from?: string | null;
-/**
- * With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today
- */
-date_to?: string | null;
-/**
  * @minimum 1
  */
 page?: number;
@@ -44,4 +36,12 @@ sort_dir?: string;
  * Column key from the route's allowed date_fields (e.g. created_at)
  */
 date_field?: string | null;
+/**
+ * With date_field: range start (UTC date); omit both dates for default last 7 days including today
+ */
+date_from?: string | null;
+/**
+ * With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today
+ */
+date_to?: string | null;
 };

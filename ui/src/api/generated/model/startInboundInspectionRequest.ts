@@ -17,7 +17,8 @@ export interface StartInboundInspectionRequest {
   device_uuid: string;
   /** @minLength 1 */
   warehouse_code: string;
-  supplier_plant_code?: string | null;
+  /** @minLength 1 */
+  supplier_plant_code: string;
   /**
      * @minimum 6
      * @maximum 37.6
@@ -36,5 +37,13 @@ export interface StartInboundInspectionRequest {
   damage_cause?: DamageLikelyCause | null;
   damage_grade?: DamageGrading | null;
   truck_docking_time: string;
+  /** @minItems 1 */
+  outer_packaging_side_images: string[];
+  /** @minItems 1 */
+  inner_packaging_side_images: string[];
+  /** @minItems 1 */
+  product_side_images: string[];
+  /** @minimum 10 */
+  device_time_taken: number;
   checklist_answers?: ChecklistAnswerEntry[];
 }

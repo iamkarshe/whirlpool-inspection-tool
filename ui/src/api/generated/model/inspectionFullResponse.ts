@@ -19,8 +19,7 @@ export interface InspectionFullResponse {
   inspector_id: number;
   inspector_name: string;
   device_id: number;
-  /** `devices.uuid` for admin device URLs (added in API; optional for older specs). */
-  device_uuid?: string;
+  device_uuid: string;
   device_fingerprint: string;
   product_id: number;
   product_material_code: string;
@@ -42,9 +41,10 @@ export interface InspectionFullResponse {
   product: InspectionProductForPrint;
   product_unit_id: number;
   inputs: InspectionInputItemResponse[];
-  outer_packaging_images: string[];
-  inner_packaging_images: string[];
-  product_images: string[];
+  outer_packaging_side_images: string[];
+  inner_packaging_side_images: string[];
+  product_side_images: string[];
+  device_time_taken: number;
   outer_packaging_checks: ChecklistLayerPassFail;
   inner_packaging_checks: ChecklistLayerPassFail;
   product_checks: ChecklistLayerPassFail;

@@ -14,7 +14,7 @@ export interface InspectionWithChecklistPayload {
   inspection_type: string;
   inspector_id: number;
   device_id: number;
-  device_uuid?: string;
+  device_uuid: string;
   product_id: number;
   product_unit_id: number;
   warehouse_code: string | null;
@@ -27,9 +27,9 @@ export interface InspectionWithChecklistPayload {
   created_at: string;
   updated_at: string;
   inputs: InspectionInputItemResponse[];
-  outer_packaging_images: string[];
-  inner_packaging_images: string[];
-  product_images: string[];
+  outer_packaging_side_images: string[];
+  inner_packaging_side_images: string[];
+  product_side_images: string[];
   outer_packaging_checks: ChecklistLayerPassFail;
   inner_packaging_checks: ChecklistLayerPassFail;
   product_checks: ChecklistLayerPassFail;
