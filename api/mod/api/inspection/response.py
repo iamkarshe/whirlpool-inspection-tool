@@ -343,6 +343,7 @@ class InspectionFullResponse(InspectionDetailResponse):
     outer_packaging_side_images: list[str]
     inner_packaging_side_images: list[str]
     product_side_images: list[str]
+    device_time_taken: int
     outer_packaging_checks: ChecklistLayerPassFail
     inner_packaging_checks: ChecklistLayerPassFail
     product_checks: ChecklistLayerPassFail

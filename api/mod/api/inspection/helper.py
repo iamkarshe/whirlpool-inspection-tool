@@ -731,11 +731,16 @@ def map_inspection_product_for_print(inspection: Inspection) -> InspectionProduc
 
 def embed_inspection_media_urls(
     body: InspectionWithChecklistPayload,
+    inspection: Inspection,
 ) -> tuple[list[InspectionInputItemResponse], list[str], list[str], list[str]]:
     """Apply ``build_url`` to packaging/product image lists and checklist image URLs."""
-    outer_layer_urls = [build_url(p) for p in body.outer_packaging_side_images]
-    inner_layer_urls = [build_url(p) for p in body.inner_packaging_side_images]
-    product_layer_urls = [build_url(p) for p in body.product_side_images]
+    outer_layer_urls = [
+        build_url(path) for path in (inspection.outer_packaging_side_images or [])
+    ]
+    inner_layer_urls = [
+        build_url(path) for path in (inspection.inner_packaging_side_images or [])
+    ]
+    product_layer_urls = [build_url(path) for path in (inspection.product_side_images or [])]
     inputs_out = [
         inp.model_copy(
             update={"image_urls": [build_url(u) for u in inp.image_urls]}
@@ -749,7 +754,9 @@ def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:
     """Single place to build the full inspection row (detail + checklist parity)."""
     detail = map_inspection_detail(inspection)
     body = map_inspection_with_checklist_inputs(inspection)
-    inputs_out, outer_imgs, inner_imgs, product_imgs = embed_inspection_media_urls(body)
+    inputs_out, outer_imgs, inner_imgs, product_imgs = embed_inspection_media_urls(
+        body, inspection
+    )
     return InspectionFullResponse(
         **detail.model_dump(),
         product=map_inspection_product_for_print(inspection),
@@ -758,6 +765,7 @@ def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:
         outer_packaging_side_images=outer_imgs,
         inner_packaging_side_images=inner_imgs,
         product_side_images=product_imgs,
+        device_time_taken=inspection.device_time_taken,
         outer_packaging_checks=ChecklistLayerPassFail(
             pass_count=body.outer_packaging_checks.pass_count,
             fail_count=body.outer_packaging_checks.fail_count,
