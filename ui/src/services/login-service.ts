@@ -26,7 +26,9 @@ export {
 
 function normalizeLoginErrorMessage(err: unknown): string {
   if (!isAxiosError(err)) {
-    return err instanceof Error ? err.message : "Something went wrong. Try again.";
+    return err instanceof Error
+      ? err.message
+      : "Something went wrong. Try again.";
   }
   const status = err.response?.status;
   const data = err.response?.data;
@@ -44,16 +46,19 @@ function normalizeLoginErrorMessage(err: unknown): string {
     const first = detail[0]?.msg ?? detail[0]?.type;
     if (typeof first === "string" && first.length > 0) return first;
   }
-  if (typeof err.message === "string" && err.message.length > 0) return err.message;
-  return status ? `Could not login (HTTP ${status}).` : "Could not reach the server. Check API URL.";
+  if (typeof err.message === "string" && err.message.length > 0)
+    return err.message;
+  return status
+    ? `Could not login (HTTP ${status}).`
+    : "Could not reach the server. Check API URL.";
 }
 
 /** Canonical API roles: `superadmin` | `manager` | `operator` (lowercase). */
 export function resolvePostLoginHref(roleRaw: string): string {
   const r = roleRaw.trim().toLowerCase();
   if (r === "operator" || r === "manager") return PAGES.OPS_HOME;
-  if (r === "superadmin") return PAGES.DASHBOARD;
-  return PAGES.DASHBOARD;
+  if (r === "superadmin") return PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS;
+  return PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS;
 }
 
 function notifySessionChanged(): void {
@@ -116,15 +121,16 @@ export async function loginWithEmailPassword(
     throw new Error("Email is required.");
   }
   if (!password || password.length < LOGIN_PASSWORD_MIN_LENGTH) {
-    throw new Error(`Password must be at least ${LOGIN_PASSWORD_MIN_LENGTH} characters.`);
+    throw new Error(
+      `Password must be at least ${LOGIN_PASSWORD_MIN_LENGTH} characters.`,
+    );
   }
   if (password.length > LOGIN_PASSWORD_MAX_LENGTH) {
-    throw new Error(`Password must be at most ${LOGIN_PASSWORD_MAX_LENGTH} characters.`);
+    throw new Error(
+      `Password must be at most ${LOGIN_PASSWORD_MAX_LENGTH} characters.`,
+    );
   }
-  if (
-    !Number.isFinite(coordinates.lat) ||
-    !Number.isFinite(coordinates.lng)
-  ) {
+  if (!Number.isFinite(coordinates.lat) || !Number.isFinite(coordinates.lng)) {
     throw new Error("A valid device location is required to sign in.");
   }
 

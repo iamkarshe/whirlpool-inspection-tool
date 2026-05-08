@@ -8,7 +8,6 @@ function normalizeRole(role: string): string {
   return role.trim().toLowerCase();
 }
 
-/** Ops PWA: token required; only `operator` and `manager` may use `/ops`. */
 export function OpsRouter() {
   const location = useLocation();
   const sessionUser = useSessionUser();
@@ -19,11 +18,7 @@ export function OpsRouter() {
 
   if (!hasToken) {
     return (
-      <Navigate
-        to={PAGES.LOGIN}
-        replace
-        state={{ from: location.pathname }}
-      />
+      <Navigate to={PAGES.LOGIN} replace state={{ from: location.pathname }} />
     );
   }
 
@@ -36,4 +31,3 @@ export function OpsRouter() {
 
   return <Outlet />;
 }
-

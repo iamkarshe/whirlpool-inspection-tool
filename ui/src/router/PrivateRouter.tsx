@@ -1,11 +1,21 @@
 import { Toaster } from "@/components/ui/sonner";
+import { PAGES } from "@/endpoints";
 import DashboardLayout from "@/pages/dashboard/layout";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+
+const ACCESS_TOKEN_KEY = "whirlpool.access_token";
 
 export default function PrivateRouter() {
-  const isAuthed = true; // replace with your auth state
+  const location = useLocation();
+  const hasToken =
+    typeof window !== "undefined" &&
+    Boolean(window.localStorage.getItem(ACCESS_TOKEN_KEY)?.trim());
 
-  if (!isAuthed) return <Navigate to="/login" replace />;
+  if (!hasToken) {
+    return (
+      <Navigate to={PAGES.LOGIN} replace state={{ from: location.pathname }} />
+    );
+  }
 
   return (
     <>

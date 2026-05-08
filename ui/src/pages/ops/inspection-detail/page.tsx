@@ -1,12 +1,17 @@
 import {
   ArrowLeft,
+  BadgeCheck,
   CheckCircle2,
   FileX2,
   Image as ImageIcon,
   ImageOff,
   Flag,
+  Gauge,
   Link2,
   ListChecks,
+  Package,
+  Tag,
+  Truck,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -258,6 +263,127 @@ function formatSecondsHuman(seconds: number): string {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${m}m ${String(s).padStart(2, "0")}s`;
+}
+
+type DamageBadgeDef = {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  className: string;
+};
+
+const DAMAGE_BADGES = {
+  type: {
+    packaging: {
+      label: "Packaging",
+      icon: Package,
+      className:
+        "border-sky-500/30 bg-sky-500/10 text-sky-950 dark:text-sky-100",
+    },
+    cosmetic: {
+      label: "Cosmetic",
+      icon: Tag,
+      className:
+        "border-violet-500/30 bg-violet-500/10 text-violet-950 dark:text-violet-100",
+    },
+    accessories: {
+      label: "Accessories",
+      icon: BadgeCheck,
+      className:
+        "border-emerald-500/30 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100",
+    },
+  } satisfies Record<string, DamageBadgeDef>,
+  severity: {
+    minor: {
+      label: "Minor",
+      icon: Gauge,
+      className:
+        "border-amber-500/35 bg-amber-500/10 text-amber-950 dark:text-amber-100",
+    },
+    major: {
+      label: "Major",
+      icon: Gauge,
+      className:
+        "border-rose-500/35 bg-rose-500/10 text-rose-900 dark:text-rose-100",
+    },
+  } satisfies Record<string, DamageBadgeDef>,
+  cause: {
+    transit: {
+      label: "Transit",
+      icon: Truck,
+      className:
+        "border-indigo-500/30 bg-indigo-500/10 text-indigo-950 dark:text-indigo-100",
+    },
+    handling: {
+      label: "Handling",
+      icon: Truck,
+      className:
+        "border-slate-500/30 bg-slate-500/10 text-slate-950 dark:text-slate-100",
+    },
+    packaging: {
+      label: "Packaging",
+      icon: Package,
+      className:
+        "border-sky-500/30 bg-sky-500/10 text-sky-950 dark:text-sky-100",
+    },
+    manufacturing: {
+      label: "Manufacturing",
+      icon: Tag,
+      className:
+        "border-teal-500/30 bg-teal-500/10 text-teal-950 dark:text-teal-100",
+    },
+  } satisfies Record<string, DamageBadgeDef>,
+  grade: {
+    DGR: {
+      label: "DGR",
+      icon: BadgeCheck,
+      className:
+        "border-slate-500/30 bg-slate-500/10 text-slate-950 dark:text-slate-100",
+    },
+    LDGR: {
+      label: "LDGR",
+      icon: BadgeCheck,
+      className:
+        "border-slate-500/30 bg-slate-500/10 text-slate-950 dark:text-slate-100",
+    },
+    SCRAP: {
+      label: "SCRAP",
+      icon: XCircle,
+      className:
+        "border-rose-500/35 bg-rose-500/10 text-rose-900 dark:text-rose-100",
+    },
+  } satisfies Record<string, DamageBadgeDef>,
+} as const;
+
+function DamageValueBadge({
+  kind,
+  value,
+}: {
+  kind: keyof typeof DAMAGE_BADGES;
+  value: string | null | undefined;
+}) {
+  const v = (value ?? "").trim();
+  if (!v) return <span className="text-muted-foreground text-sm">—</span>;
+
+  const defs = DAMAGE_BADGES[kind] as Record<string, DamageBadgeDef>;
+  const def = defs[v] ?? {
+    label: v,
+    icon: Tag,
+    className:
+      "border-border/70 bg-muted/20 text-foreground dark:text-foreground",
+  };
+  const Icon = def.icon;
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide",
+        def.className,
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {def.label}
+    </Badge>
+  );
 }
 
 export default function OpsInspectionDetailPage() {
@@ -1070,7 +1196,10 @@ export default function OpsInspectionDetailPage() {
                       Type
                     </th>
                     <td className="py-2 text-[13px] font-medium text-foreground">
-                      {inspection.damage_type?.trim() || "—"}
+                      <DamageValueBadge
+                        kind="type"
+                        value={inspection.damage_type}
+                      />
                     </td>
                   </tr>
                   <tr className="border-b border-border/50 last:border-0">
@@ -1081,7 +1210,10 @@ export default function OpsInspectionDetailPage() {
                       Severity
                     </th>
                     <td className="py-2 text-[13px] font-medium text-foreground">
-                      {inspection.damage_severity?.trim() || "—"}
+                      <DamageValueBadge
+                        kind="severity"
+                        value={inspection.damage_severity}
+                      />
                     </td>
                   </tr>
                   <tr className="border-b border-border/50 last:border-0">
@@ -1092,7 +1224,10 @@ export default function OpsInspectionDetailPage() {
                       Cause
                     </th>
                     <td className="py-2 text-[13px] font-medium text-foreground">
-                      {inspection.damage_cause?.trim() || "—"}
+                      <DamageValueBadge
+                        kind="cause"
+                        value={inspection.damage_cause}
+                      />
                     </td>
                   </tr>
                   <tr className="border-b border-border/50 last:border-0">
@@ -1103,7 +1238,10 @@ export default function OpsInspectionDetailPage() {
                       Grade
                     </th>
                     <td className="py-2 text-[13px] font-medium text-foreground">
-                      {inspection.damage_grade?.trim() || "—"}
+                      <DamageValueBadge
+                        kind="grade"
+                        value={inspection.damage_grade}
+                      />
                     </td>
                   </tr>
                 </tbody>
@@ -1263,7 +1401,7 @@ export default function OpsInspectionDetailPage() {
           <section className="space-y-2 rounded-3xl border bg-card/80 p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Captured Images
+                Defective Images
               </h2>
               <Badge variant="outline" className="text-[10px]">
                 {allImages.length}
@@ -1277,7 +1415,7 @@ export default function OpsInspectionDetailPage() {
                 variant="compact"
                 icon={ImageOff}
                 title="No images captured"
-                description="Photos attached to checklist answers (and other captured images) will appear in this gallery."
+                description="Photos attached to checklist answers will appear in this gallery."
               />
             ) : (
               <div className="space-y-3">

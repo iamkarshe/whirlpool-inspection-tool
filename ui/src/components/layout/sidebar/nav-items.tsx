@@ -29,9 +29,14 @@ export const navItems: NavGroup[] = [
     title: "Menu",
     items: [
       {
-        title: "Dashboard",
-        href: PAGES.DASHBOARD,
+        title: "Operations Analytics",
+        href: PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS,
         icon: GaugeIcon,
+      },
+      {
+        title: "Executive Analytics",
+        href: PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS,
+        icon: ChartBarDecreasingIcon,
       },
       {
         title: "Masters",
@@ -87,21 +92,6 @@ export const navItems: NavGroup[] = [
           {
             title: "Approved Outbound",
             href: PAGES.DASHBOARD_INSPECTIONS_OUTBOUND_APPROVED,
-          },
-        ],
-      },
-      {
-        title: "Analytics",
-        href: "#",
-        icon: ChartBarDecreasingIcon,
-        items: [
-          {
-            title: "Operations Analytics",
-            href: PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS,
-          },
-          {
-            title: "Executive Analytics",
-            href: PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS,
           },
         ],
       },
