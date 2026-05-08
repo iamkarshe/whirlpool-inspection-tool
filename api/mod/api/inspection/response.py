@@ -320,6 +320,15 @@ class InspectionDetailResponse(BaseModel):
     inspection_type: str
     warehouse_code: str | None
     plant_code: str | None
+    serial_number: str | None
+    manufactured_year: int | None
+    truck_number: str | None
+    truck_docking_time: datetime | None
+    dock_number: str | None
+    damage_type: str | None
+    damage_severity: str | None
+    damage_cause: str | None
+    damage_grade: str | None
     lat: float | None
     lng: float | None
     ip_address: str | None
@@ -344,6 +353,8 @@ class InspectionFullResponse(InspectionDetailResponse):
     inner_packaging_side_images: list[str]
     product_side_images: list[str]
     device_time_taken: int
+    inbound_inspection_uuid: uuid.UUID | None = None
+    outbound_inspection_uuid: uuid.UUID | None = None
     outer_packaging_checks: ChecklistLayerPassFail
     inner_packaging_checks: ChecklistLayerPassFail
     product_checks: ChecklistLayerPassFail

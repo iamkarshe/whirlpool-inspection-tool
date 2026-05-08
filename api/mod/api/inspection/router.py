@@ -625,4 +625,30 @@ def get_inspection_detail(
         uid = getattr(request.state, "user_id", None)
         if uid is None or inspection.inspector_id != int(uid):
             raise HTTPException(status_code=404, detail="Inspection not found")
-    return present_inspection_full(inspection)
+    inbound_uuid: uuid.UUID | None = None
+    outbound_uuid: uuid.UUID | None = None
+    if inspection.product_unit_id is not None:
+        rows = (
+            db.query(Inspection.inspection_type, Inspection.uuid)
+            .filter(
+                Inspection.product_unit_id == inspection.product_unit_id,
+                Inspection.is_active.is_(True),
+            )
+            .order_by(Inspection.created_at.desc())
+            .all()
+        )
+        for inspection_type, inspection_uuid in rows:
+            if inbound_uuid is None and inspection_type == InspectionType.inbound:
+                inbound_uuid = inspection_uuid
+            if outbound_uuid is None and inspection_type == InspectionType.outbound:
+                outbound_uuid = inspection_uuid
+            if inbound_uuid is not None and outbound_uuid is not None:
+                break
+
+    resp = present_inspection_full(inspection)
+    return resp.model_copy(
+        update={
+            "inbound_inspection_uuid": inbound_uuid,
+            "outbound_inspection_uuid": outbound_uuid,
+        }
+    )

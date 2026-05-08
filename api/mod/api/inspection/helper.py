@@ -466,6 +466,23 @@ def map_inspection_detail(inspection: Inspection) -> InspectionDetailResponse:
         inspection_type=inspection_type_value(inspection),
         warehouse_code=inspection.warehouse_code,
         plant_code=inspection.supplier_plant_code,
+        serial_number=inspection.serial_number,
+        manufactured_year=inspection.manufactured_year,
+        truck_number=inspection.truck_number,
+        truck_docking_time=inspection.truck_docking_time,
+        dock_number=inspection.dock_number,
+        damage_type=inspection.damage_type.value
+        if getattr(inspection, "damage_type", None) is not None
+        else None,
+        damage_severity=inspection.damage_severity.value
+        if getattr(inspection, "damage_severity", None) is not None
+        else None,
+        damage_cause=inspection.damage_likely_cause.value
+        if getattr(inspection, "damage_likely_cause", None) is not None
+        else None,
+        damage_grade=inspection.damage_grading.value
+        if getattr(inspection, "damage_grading", None) is not None
+        else None,
         lat=inspection.lat,
         lng=inspection.lng,
         ip_address=str(inspection.ip_address)
@@ -758,6 +775,30 @@ def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:
     inputs_out, outer_imgs, inner_imgs, product_imgs = embed_inspection_media_urls(
         body, inspection
     )
+    # Checklist input images (by layer) for checks.image_urls only.
+    outer_input_urls: list[str] = []
+    inner_input_urls: list[str] = []
+    product_input_urls: list[str] = []
+    for img in (inspection.images or []):
+        if not img.is_active or not img.image_url:
+            continue
+        ch = img.checklist
+        if ch is None:
+            continue
+        group_label = (
+            ch.group_name.value if hasattr(ch.group_name, "value") else str(ch.group_name)
+        )
+        layer = checklist_inspection_layer_key(group_label)
+        if layer == "outer":
+            outer_input_urls.append(build_url(img.image_url))
+        elif layer == "inner":
+            inner_input_urls.append(build_url(img.image_url))
+        elif layer == "product_checklist":
+            product_input_urls.append(build_url(img.image_url))
+    outer_input_urls.sort()
+    inner_input_urls.sort()
+    product_input_urls.sort()
+
     return InspectionFullResponse(
         **detail.model_dump(),
         product=map_inspection_product_for_print(inspection),
@@ -770,17 +811,17 @@ def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:
         outer_packaging_checks=ChecklistLayerPassFail(
             pass_count=body.outer_packaging_checks.pass_count,
             fail_count=body.outer_packaging_checks.fail_count,
-            image_urls=outer_imgs,
+            image_urls=outer_input_urls,
         ),
         inner_packaging_checks=ChecklistLayerPassFail(
             pass_count=body.inner_packaging_checks.pass_count,
             fail_count=body.inner_packaging_checks.fail_count,
-            image_urls=inner_imgs,
+            image_urls=inner_input_urls,
         ),
         product_checks=ChecklistLayerPassFail(
             pass_count=body.product_checks.pass_count,
             fail_count=body.product_checks.fail_count,
-            image_urls=product_imgs,
+            image_urls=product_input_urls,
         ),
         checklist_pass_total=body.checklist_pass_total,
         checklist_fail_total=body.checklist_fail_total,
