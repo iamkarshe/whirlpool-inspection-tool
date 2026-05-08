@@ -112,16 +112,49 @@ const OPS_TRUCK_REG_INVALID_MESSAGE =
 const DRAFT_SAVE_INTERVAL_MS = 2500;
 const TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES = 10;
 
-type SideImageKey = "top" | "bottom" | "left" | "right" | "front";
-const SIDE_IMAGE_SLOTS: { key: SideImageKey; label: string }[] = [
-  { key: "top", label: "Top" },
-  { key: "bottom", label: "Bottom" },
-  { key: "left", label: "Left" },
-  { key: "right", label: "Right" },
-  { key: "front", label: "Front" },
-];
+type SideImageKey =
+  | "top"
+  | "side1"
+  | "side2"
+  | "side3"
+  | "side4"
+  | "barcode_sticker"
+  | "mrp_label"
+  | "energy_label"
+  | "accessories";
 
 type SideImageSectionKey = "outer" | "inner" | "product";
+
+const SIDE_IMAGE_SLOTS_BY_SECTION: Record<
+  SideImageSectionKey,
+  { key: SideImageKey; label: string }[]
+> = {
+  outer: [
+    { key: "top", label: "Top" },
+    { key: "side1", label: "Side 1" },
+    { key: "side2", label: "Side 2" },
+    { key: "side3", label: "Side 3" },
+    { key: "side4", label: "Side 4" },
+    { key: "barcode_sticker", label: "Barcode sticker" },
+    { key: "mrp_label", label: "MRP label" },
+    { key: "energy_label", label: "Energy label" },
+  ],
+  inner: [
+    { key: "top", label: "Top" },
+    { key: "side1", label: "Side 1" },
+    { key: "side2", label: "Side 2" },
+    { key: "side3", label: "Side 3" },
+    { key: "side4", label: "Side 4" },
+    { key: "accessories", label: "Accessories" },
+  ],
+  product: [
+    { key: "top", label: "Top" },
+    { key: "side1", label: "Side 1" },
+    { key: "side2", label: "Side 2" },
+    { key: "side3", label: "Side 3" },
+    { key: "side4", label: "Side 4" },
+  ],
+};
 
 function sideSectionFromGroupName(
   groupName: string,
@@ -134,17 +167,24 @@ function sideSectionFromGroupName(
   return null;
 }
 
-function createEmptySideImages(): Record<
-  SideImageKey,
-  NoAnswerImageSlot | null
-> {
-  return {
+function createEmptySideImages(
+  section: SideImageSectionKey,
+): Record<SideImageKey, NoAnswerImageSlot | null> {
+  const base: Record<SideImageKey, NoAnswerImageSlot | null> = {
     top: null,
-    bottom: null,
-    left: null,
-    right: null,
-    front: null,
+    side1: null,
+    side2: null,
+    side3: null,
+    side4: null,
+    barcode_sticker: null,
+    mrp_label: null,
+    energy_label: null,
+    accessories: null,
   };
+  for (const slot of SIDE_IMAGE_SLOTS_BY_SECTION[section]) {
+    base[slot.key] = null;
+  }
+  return base;
 }
 
 function hasServerPath(slot: NoAnswerImageSlot | null | undefined): boolean {
@@ -153,15 +193,21 @@ function hasServerPath(slot: NoAnswerImageSlot | null | undefined): boolean {
 }
 
 function sideImagesHaveAllUploads(
+  section: SideImageSectionKey,
   images: Record<SideImageKey, NoAnswerImageSlot | null>,
 ): boolean {
-  return SIDE_IMAGE_SLOTS.every((s) => hasServerPath(images[s.key]));
+  return SIDE_IMAGE_SLOTS_BY_SECTION[section].every((s) =>
+    hasServerPath(images[s.key]),
+  );
 }
 
 function sideImagesSubmitPaths(
+  section: SideImageSectionKey,
   images: Record<SideImageKey, NoAnswerImageSlot | null>,
 ): string[] {
-  return SIDE_IMAGE_SLOTS.map((s) => images[s.key]?.path ?? "").filter(Boolean);
+  return SIDE_IMAGE_SLOTS_BY_SECTION[section]
+    .map((s) => images[s.key]?.path ?? "")
+    .filter(Boolean);
 }
 
 /** `detail` from `POST /api/inspections/barcode-lock` when another user holds the lock. */
@@ -323,9 +369,9 @@ export function OpsInspectionStartForm({
     inner: Record<SideImageKey, NoAnswerImageSlot | null>;
     product: Record<SideImageKey, NoAnswerImageSlot | null>;
   }>(() => ({
-    outer: createEmptySideImages(),
-    inner: createEmptySideImages(),
-    product: createEmptySideImages(),
+    outer: createEmptySideImages("outer"),
+    inner: createEmptySideImages("inner"),
+    product: createEmptySideImages("product"),
   }));
 
   const [sideImageUploading, setSideImageUploading] = useState<{
@@ -333,9 +379,39 @@ export function OpsInspectionStartForm({
     inner: Record<SideImageKey, boolean>;
     product: Record<SideImageKey, boolean>;
   }>(() => ({
-    outer: { top: false, bottom: false, left: false, right: false, front: false },
-    inner: { top: false, bottom: false, left: false, right: false, front: false },
-    product: { top: false, bottom: false, left: false, right: false, front: false },
+    outer: {
+      top: false,
+      side1: false,
+      side2: false,
+      side3: false,
+      side4: false,
+      barcode_sticker: false,
+      mrp_label: false,
+      energy_label: false,
+      accessories: false,
+    },
+    inner: {
+      top: false,
+      side1: false,
+      side2: false,
+      side3: false,
+      side4: false,
+      barcode_sticker: false,
+      mrp_label: false,
+      energy_label: false,
+      accessories: false,
+    },
+    product: {
+      top: false,
+      side1: false,
+      side2: false,
+      side3: false,
+      side4: false,
+      barcode_sticker: false,
+      mrp_label: false,
+      energy_label: false,
+      accessories: false,
+    },
   }));
 
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -644,15 +720,15 @@ export function OpsInspectionStartForm({
       setTruckDockingLocal(draft.truckDockingLocal);
       setSideImagesBySection({
         outer: {
-          ...createEmptySideImages(),
+          ...createEmptySideImages("outer"),
           ...(draft.outerPackagingSideImages ?? {}),
         } as Record<SideImageKey, NoAnswerImageSlot | null>,
         inner: {
-          ...createEmptySideImages(),
+          ...createEmptySideImages("inner"),
           ...(draft.innerPackagingSideImages ?? {}),
         } as Record<SideImageKey, NoAnswerImageSlot | null>,
         product: {
-          ...createEmptySideImages(),
+          ...createEmptySideImages("product"),
           ...(draft.productSideImages ?? {}),
         } as Record<SideImageKey, NoAnswerImageSlot | null>,
       });
@@ -927,7 +1003,7 @@ export function OpsInspectionStartForm({
       const section = sideSectionFromGroupName(group.group_name ?? "");
       if (section) {
         const imgs = sideImagesBySection[section];
-        if (!sideImagesHaveAllUploads(imgs)) {
+        if (!sideImagesHaveAllUploads(section, imgs)) {
           return "Upload all 5 images (Top, Bottom, Left, Right, Front) before continuing.";
         }
       }
@@ -1156,9 +1232,16 @@ export function OpsInspectionStartForm({
     const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
     const deviceTimeTakenInbound = Math.max(10, elapsedSec);
     const deviceTimeTakenOutbound = Math.max(0, elapsedSec);
-    const outerSideImages = sideImagesSubmitPaths(sideImagesBySection.outer);
-    const innerSideImages = sideImagesSubmitPaths(sideImagesBySection.inner);
+    const outerSideImages = sideImagesSubmitPaths(
+      "outer",
+      sideImagesBySection.outer,
+    );
+    const innerSideImages = sideImagesSubmitPaths(
+      "inner",
+      sideImagesBySection.inner,
+    );
     const productSideImages = sideImagesSubmitPaths(
+      "product",
       sideImagesBySection.product,
     );
     setSubmitting(true);
@@ -1266,6 +1349,46 @@ export function OpsInspectionStartForm({
     setTruckNumber("");
     setDockNumber("");
     setTruckDockingLocal(toDatetimeLocalValue());
+    setSideImagesBySection({
+      outer: createEmptySideImages("outer"),
+      inner: createEmptySideImages("inner"),
+      product: createEmptySideImages("product"),
+    });
+    setSideImageUploading({
+      outer: {
+        top: false,
+        side1: false,
+        side2: false,
+        side3: false,
+        side4: false,
+        barcode_sticker: false,
+        mrp_label: false,
+        energy_label: false,
+        accessories: false,
+      },
+      inner: {
+        top: false,
+        side1: false,
+        side2: false,
+        side3: false,
+        side4: false,
+        barcode_sticker: false,
+        mrp_label: false,
+        energy_label: false,
+        accessories: false,
+      },
+      product: {
+        top: false,
+        side1: false,
+        side2: false,
+        side3: false,
+        side4: false,
+        barcode_sticker: false,
+        mrp_label: false,
+        energy_label: false,
+        accessories: false,
+      },
+    });
     setDamageType("");
     setDamageSeverity("");
     setDamageCause("");
@@ -1744,11 +1867,11 @@ export function OpsInspectionStartForm({
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold">{title}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    Upload all 5 (required)
+                    Upload all required images.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {SIDE_IMAGE_SLOTS.map((slot) => {
+                  {SIDE_IMAGE_SLOTS_BY_SECTION[section].map((slot) => {
                     const img = images[slot.key];
                     const has = hasServerPath(img);
                     const isUploading = sideImageUploading[section][slot.key];

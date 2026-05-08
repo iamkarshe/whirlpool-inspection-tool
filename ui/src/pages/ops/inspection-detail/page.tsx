@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Camera,
   CheckCircle2,
   FileX2,
   Image as ImageIcon,
@@ -16,7 +15,7 @@ import { toast } from "sonner";
 
 import { InspectionReviewStatus } from "@/api/generated/model/inspectionReviewStatus";
 import { useSessionUser } from "@/hooks/use-session-user";
-import { canOpsRoleStartNewInspection, isOpsManagerRole } from "@/lib/ops-role";
+import { isOpsManagerRole } from "@/lib/ops-role";
 
 import type {
   IssueSeverity,
@@ -55,10 +54,8 @@ import type { InspectionType } from "@/pages/dashboard/inspections/inspection-ty
 import {
   getInspectionById,
   getInspectionQuestionResults,
-  getInspectionRelationship,
   type Inspection,
   type InspectionQuestionResult,
-  type InspectionRelationship,
 } from "@/pages/dashboard/inspections/inspection-service";
 import {
   deriveIsUnderReviewFromReviewStatus,
@@ -79,7 +76,7 @@ const SECTION_ITEMS = [
 ] as const;
 
 type SectionKey = (typeof SECTION_ITEMS)[number]["key"];
-type DetailTab = "overview" | "checks" | "images" | "issues" | "relationship";
+type DetailTab = "overview" | "checks" | "images" | "issues";
 
 type ManualIssue = {
   id: string;
@@ -104,6 +101,38 @@ type FlatImage = {
   section: SectionKey;
   question: string;
 };
+
+const OPS_SIDE_IMAGE_LABELS: Record<SectionKey, string[]> = {
+  "outer-packaging": [
+    "Top",
+    "Side 1",
+    "Side 2",
+    "Side 3",
+    "Side 4",
+    "Barcode sticker",
+    "MRP label",
+    "Energy label",
+  ],
+  "inner-packaging": ["Top", "Side 1", "Side 2", "Side 3", "Side 4", "Accessories"],
+  product: ["Top", "Side 1", "Side 2", "Side 3", "Side 4"],
+};
+
+function apiImageUrl(pathOrUrl: string): string {
+  const s = (pathOrUrl ?? "").trim();
+  if (!s) return "";
+  if (
+    s.startsWith("http://") ||
+    s.startsWith("https://") ||
+    s.startsWith("data:") ||
+    s.startsWith("blob:")
+  ) {
+    return s;
+  }
+  const base = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+  const rel = s.startsWith("/") ? s : `/${s}`;
+  if (!base) return rel;
+  return `${base}${rel}`;
+}
 
 function getCounts(rows: InspectionQuestionResult[]) {
   const total = rows.length;
@@ -221,8 +250,6 @@ export default function OpsInspectionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(true);
   const [inspection, setInspection] = useState<Inspection | null>(null);
-  const [relationship, setRelationship] =
-    useState<InspectionRelationship | null>(null);
   const [sectionRows, setSectionRows] = useState<
     Record<SectionKey, InspectionQuestionResult[]>
   >({
@@ -267,16 +294,6 @@ export default function OpsInspectionDetailPage() {
 
   useEffect(() => {
     let cancelled = false;
-    getInspectionRelationship(id).then((result) => {
-      if (!cancelled) setRelationship(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  useEffect(() => {
-    let cancelled = false;
     queueMicrotask(() => setReviewLoading(true));
     Promise.all([
       getInspectionQuestionResults(id, "outer-packaging"),
@@ -314,7 +331,7 @@ export default function OpsInspectionDetailPage() {
       ...sectionRows["inner-packaging"],
       ...sectionRows.product,
     ];
-    return source.flatMap((row, index) =>
+    const checklistImages = source.flatMap((row, index) =>
       row.images.map((img) => ({
         key: `${row.id}-${index}-${img.url}`,
         url: img.url,
@@ -323,6 +340,96 @@ export default function OpsInspectionDetailPage() {
         question: row.question,
       })),
     );
+
+    const outerSide =
+      inspection?.outer_packaging_side_images?.map((p, i) => ({
+        key: `side-outer-${i}-${p}`,
+        url: apiImageUrl(p),
+        filename: OPS_SIDE_IMAGE_LABELS["outer-packaging"][i] ?? `Outer ${i + 1}`,
+        section: "outer-packaging" as const,
+        question: `Outer Packaging — ${OPS_SIDE_IMAGE_LABELS["outer-packaging"][i] ?? `Image ${i + 1}`}`,
+      })) ?? [];
+
+    const innerSide =
+      inspection?.inner_packaging_side_images?.map((p, i) => ({
+        key: `side-inner-${i}-${p}`,
+        url: apiImageUrl(p),
+        filename: OPS_SIDE_IMAGE_LABELS["inner-packaging"][i] ?? `Inner ${i + 1}`,
+        section: "inner-packaging" as const,
+        question: `Inner Packaging — ${OPS_SIDE_IMAGE_LABELS["inner-packaging"][i] ?? `Image ${i + 1}`}`,
+      })) ?? [];
+
+    const productSide =
+      inspection?.product_side_images?.map((p, i) => ({
+        key: `side-product-${i}-${p}`,
+        url: apiImageUrl(p),
+        filename: OPS_SIDE_IMAGE_LABELS.product[i] ?? `Product ${i + 1}`,
+        section: "product" as const,
+        question: `Product — ${OPS_SIDE_IMAGE_LABELS.product[i] ?? `Image ${i + 1}`}`,
+      })) ?? [];
+
+    const sideImages = [...outerSide, ...innerSide, ...productSide].filter(
+      (img) => img.url.trim().length > 0,
+    );
+
+    return [...sideImages, ...checklistImages];
+  }, [inspection, sectionRows]);
+
+  const sideImagesBySection = useMemo(() => {
+    const outer =
+      inspection?.outer_packaging_side_images?.map((p, i) => ({
+        url: apiImageUrl(p),
+        filename:
+          OPS_SIDE_IMAGE_LABELS["outer-packaging"][i] ?? `Outer ${i + 1}`,
+      })) ?? [];
+    const inner =
+      inspection?.inner_packaging_side_images?.map((p, i) => ({
+        url: apiImageUrl(p),
+        filename:
+          OPS_SIDE_IMAGE_LABELS["inner-packaging"][i] ?? `Inner ${i + 1}`,
+      })) ?? [];
+    const product =
+      inspection?.product_side_images?.map((p, i) => ({
+        url: apiImageUrl(p),
+        filename: OPS_SIDE_IMAGE_LABELS.product[i] ?? `Product ${i + 1}`,
+      })) ?? [];
+
+    return {
+      outer: outer.filter((img) => img.url.trim().length > 0),
+      inner: inner.filter((img) => img.url.trim().length > 0),
+      product: product.filter((img) => img.url.trim().length > 0),
+    };
+  }, [inspection]);
+
+  const capturedImagesBySection = useMemo(() => {
+    const outer = sectionRows["outer-packaging"].flatMap((row, idx) =>
+      row.images.map((img) => ({
+        key: `cap-outer-${row.id}-${idx}-${img.url}`,
+        url: img.url,
+        filename: img.filename,
+        section: "outer-packaging" as const,
+        question: row.question,
+      })),
+    );
+    const inner = sectionRows["inner-packaging"].flatMap((row, idx) =>
+      row.images.map((img) => ({
+        key: `cap-inner-${row.id}-${idx}-${img.url}`,
+        url: img.url,
+        filename: img.filename,
+        section: "inner-packaging" as const,
+        question: row.question,
+      })),
+    );
+    const product = sectionRows.product.flatMap((row, idx) =>
+      row.images.map((img) => ({
+        key: `cap-product-${row.id}-${idx}-${img.url}`,
+        url: img.url,
+        filename: img.filename,
+        section: "product" as const,
+        question: row.question,
+      })),
+    );
+    return { outer, inner, product };
   }, [sectionRows]);
 
   const systemIssues = useMemo<ManualIssue[]>(() => {
@@ -830,7 +937,7 @@ export default function OpsInspectionDetailPage() {
       </section>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as DetailTab)}>
-        <TabsList className="grid w-full grid-cols-5 rounded-2xl bg-muted/60 p-1">
+        <TabsList className="grid w-full grid-cols-4 rounded-2xl bg-muted/60 p-1">
           <TabsTrigger value="overview" className="text-[11px]">
             Overview
           </TabsTrigger>
@@ -842,9 +949,6 @@ export default function OpsInspectionDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="issues" className="text-[11px]">
             Issues
-          </TabsTrigger>
-          <TabsTrigger value="relationship" className="text-[11px]">
-            Related
           </TabsTrigger>
         </TabsList>
 
@@ -961,54 +1065,178 @@ export default function OpsInspectionDetailPage() {
           <section className="space-y-2 rounded-3xl border bg-card/80 p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Side Images
+              </h2>
+              <Badge variant="outline" className="text-[10px]">
+                {sideImagesBySection.outer.length +
+                  sideImagesBySection.inner.length +
+                  sideImagesBySection.product.length}
+              </Badge>
+            </div>
+
+            <div className="space-y-3">
+              {(
+                [
+                  {
+                    key: "outer",
+                    title: "Outer Packaging",
+                    images: sideImagesBySection.outer,
+                  },
+                  {
+                    key: "inner",
+                    title: "Inner Packaging",
+                    images: sideImagesBySection.inner,
+                  },
+                  {
+                    key: "product",
+                    title: "Product",
+                    images: sideImagesBySection.product,
+                  },
+                ] as const
+              ).map((block) => (
+                <div key={block.key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {block.title}
+                    </p>
+                    <Badge variant="outline" className="text-[10px]">
+                      {block.images.length}
+                    </Badge>
+                  </div>
+                  {block.images.length === 0 ? (
+                    <OpsListEmptyState
+                      variant="compact"
+                      icon={ImageOff}
+                      title="No side images captured"
+                      description="These are the required Outer/Inner/Product photos captured during inspection start."
+                    />
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {block.images.map((img) => (
+                        <button
+                          key={`${block.key}-${img.url}`}
+                          type="button"
+                          className="relative overflow-hidden rounded-xl border bg-muted/20"
+                          onClick={() => {
+                            setGalleryImages(
+                              block.images.map((i) => ({
+                                url: i.url,
+                                filename: i.filename,
+                              })),
+                            );
+                            setActiveGalleryUrl(img.url);
+                            setGalleryOpen(true);
+                          }}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.filename ?? block.title}
+                            className="h-24 w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-2 rounded-3xl border bg-card/80 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Captured Images
               </h2>
               <Badge variant="outline" className="text-[10px]">
                 {allImages.length}
               </Badge>
             </div>
-            {allImages.length === 0 ? (
+            {capturedImagesBySection.outer.length +
+              capturedImagesBySection.inner.length +
+              capturedImagesBySection.product.length ===
+            0 ? (
               <OpsListEmptyState
                 variant="compact"
                 icon={ImageOff}
                 title="No images captured"
-                description="Photos attached to checklist answers will appear in this gallery."
+                description="Photos attached to checklist answers (and other captured images) will appear in this gallery."
               />
             ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {allImages.map((img) => {
-                  const imageIssueCount = issueRows.filter(
-                    (i) => i.imageUrl === img.url,
-                  ).length;
-                  return (
-                    <button
-                      key={img.key}
-                      type="button"
-                      className="relative overflow-hidden rounded-xl border bg-muted/20"
-                      onClick={() => {
-                        setGalleryImages(
-                          allImages.map((i) => ({
-                            url: i.url,
-                            filename: i.filename,
-                          })),
-                        );
-                        setActiveGalleryUrl(img.url);
-                        setGalleryOpen(true);
-                      }}
-                    >
-                      <img
-                        src={img.url}
-                        alt={img.filename ?? img.question}
-                        className="h-24 w-full object-cover"
+              <div className="space-y-3">
+                {(
+                  [
+                    {
+                      key: "outer",
+                      title: "Outer Packaging",
+                      images: capturedImagesBySection.outer,
+                    },
+                    {
+                      key: "inner",
+                      title: "Inner Packaging",
+                      images: capturedImagesBySection.inner,
+                    },
+                    {
+                      key: "product",
+                      title: "Product",
+                      images: capturedImagesBySection.product,
+                    },
+                  ] as const
+                ).map((block) => (
+                  <div key={block.key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        {block.title}
+                      </p>
+                      <Badge variant="outline" className="text-[10px]">
+                        {block.images.length}
+                      </Badge>
+                    </div>
+                    {block.images.length === 0 ? (
+                      <OpsListEmptyState
+                        variant="compact"
+                        icon={ImageOff}
+                        title="No images captured"
+                        description="Photos attached to checklist answers will appear here."
                       />
-                      {imageIssueCount > 0 ? (
-                        <span className="absolute top-1 right-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground">
-                          {imageIssueCount}
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {block.images.map((img) => {
+                          const imageIssueCount = issueRows.filter(
+                            (i) => i.imageUrl === img.url,
+                          ).length;
+                          return (
+                            <button
+                              key={img.key}
+                              type="button"
+                              className="relative overflow-hidden rounded-xl border bg-muted/20"
+                              onClick={() => {
+                                setGalleryImages(
+                                  block.images.map((i) => ({
+                                    url: i.url,
+                                    filename: i.filename,
+                                  })),
+                                );
+                                setActiveGalleryUrl(img.url);
+                                setGalleryOpen(true);
+                              }}
+                            >
+                              <img
+                                src={img.url}
+                                alt={img.filename ?? img.question}
+                                className="h-24 w-full object-cover"
+                              />
+                              {imageIssueCount > 0 ? (
+                                <span className="absolute top-1 right-1 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground">
+                                  {imageIssueCount}
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </section>
@@ -1134,58 +1362,8 @@ export default function OpsInspectionDetailPage() {
           </section>
         </TabsContent>
 
-        <TabsContent value="relationship" className="mt-3">
-          <section className="space-y-2 rounded-3xl border bg-card/80 p-3 shadow-sm">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Relationship
-            </h2>
-            {relationship ? (
-              <div className="space-y-2 text-[11px]">
-                <div className="rounded-2xl border bg-muted/20 p-2.5">
-                  <p className="font-medium">Inbound scan</p>
-                  <p className="text-muted-foreground">
-                    {relationship.inbound.personName}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {formatDate(relationship.inbound.scannedAt)}
-                  </p>
-                </div>
-                <div className="rounded-2xl border bg-muted/20 p-2.5">
-                  <p className="font-medium">Outbound scan</p>
-                  {relationship.outbound ? (
-                    <>
-                      <p className="text-muted-foreground">
-                        {relationship.outbound.personName}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {formatDate(relationship.outbound.scannedAt)}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground">Not available</p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <OpsListEmptyState
-                variant="compact"
-                icon={Link2}
-                title="No relationship data"
-                description="Linked inbound and outbound scans will appear here when the system has them."
-              />
-            )}
-          </section>
-        </TabsContent>
       </Tabs>
 
-      {canOpsRoleStartNewInspection(sessionUser?.role) ? (
-        <Button className="w-full" variant="outline" asChild>
-          <Link to={PAGES.OPS_NEW_INSPECTION}>
-            <Camera className="mr-2 h-4 w-4" />
-            Start new inspection
-          </Link>
-        </Button>
-      ) : null}
     </div>
   );
 }

@@ -46,6 +46,11 @@ export interface Inspection {
     inner: InspectionChecklistLayerCounts;
     product: InspectionChecklistLayerCounts;
   };
+
+  /** Side images captured at inspection start (detail payload only). */
+  outer_packaging_side_images?: string[];
+  inner_packaging_side_images?: string[];
+  product_side_images?: string[];
 }
 
 export type InspectionSectionKey =

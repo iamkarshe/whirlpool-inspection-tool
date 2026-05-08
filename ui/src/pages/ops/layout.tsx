@@ -225,75 +225,75 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         )}
         inert={!envGate.environmentReady ? true : undefined}
       >
-        <header className="sticky top-0 z-20 border-b bg-background/80 px-4 pb-2 pt-3 backdrop-blur_">
-        <div className="mx-auto flex max-w-md items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-0.5">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              {import.meta.env.VITE_APP_TITLE}
-            </p>
-            {shouldRenderLogo && <BrandLogo />}
-            {!shouldRenderLogo && (
-              <p
-                key={location.pathname}
-                className="text-base font-semibold tracking-tight animate-in fade-in-0 slide-in-from-bottom-2"
-              >
-                {effectiveTitle}
+        <header className="sticky top-0 z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
+          <div className="mx-auto flex max-w-md items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                {import.meta.env.VITE_APP_TITLE}
               </p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {sessionUser?.role?.trim() ? (
-              <span
-                className={cn(
-                  "inline-flex max-w-[10.5rem] items-center truncate rounded-md border px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] tabular-nums sm:max-w-[14rem]",
-                  roleBadgeClass,
-                )}
+              {shouldRenderLogo && <BrandLogo />}
+              {!shouldRenderLogo && (
+                <p
+                  key={location.pathname}
+                  className="text-base font-semibold tracking-tight animate-in fade-in-0 slide-in-from-bottom-2"
+                >
+                  {effectiveTitle}
+                </p>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {sessionUser?.role?.trim() ? (
+                <span
+                  className={cn(
+                    "inline-flex max-w-[10.5rem] items-center truncate rounded-md border px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] tabular-nums sm:max-w-[14rem]",
+                    roleBadgeClass,
+                  )}
+                >
+                  {formatOpsRoleBadgeLabel(sessionUser.role)}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => navigate("/ops/account")}
+                title={
+                  sessionUser?.name?.trim()?.length
+                    ? sessionUser.name
+                    : "Account"
+                }
+                className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full border bg-primary/10 px-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/15"
               >
-                {formatOpsRoleBadgeLabel(sessionUser.role)}
-              </span>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => navigate("/ops/account")}
-              title={
-                sessionUser?.name?.trim()?.length ? sessionUser.name : "Account"
-              }
-              className="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full border bg-primary/10 px-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/15"
-            >
-              {headerInitials}
-            </button>
+                {headerInitials}
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
-      <main className="flex-1 px-4 pb-20 pt-3">
-        <Outlet />
-      </main>
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/80 pb-safe pt-2 backdrop-blur_">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4">
-          {navTabs.map((tab) => (
-            <NavLink
-              key={tab.path}
-              to={tab.path}
-              end={tab.path === "/ops"}
-              className={({ isActive }) =>
-                cn(
-                  "flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-muted-foreground transition-all",
-                  isActive &&
-                    "bg-accent text-accent-foreground shadow-sm translate-y-[-2px]",
-                )
-              }
-            >
-              <tab.icon className="h-5 w-5" />
-              <span>{tab.label}</span>
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+        </header>
+        <main className="flex-1 px-4 pb-20 pt-3">
+          <Outlet />
+        </main>
+        <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/80 pb-safe pt-2 backdrop-blur_">
+          <div className="mx-auto flex max-w-md items-center justify-between px-4">
+            {navTabs.map((tab) => (
+              <NavLink
+                key={tab.path}
+                to={tab.path}
+                end={tab.path === "/ops"}
+                className={({ isActive }) =>
+                  cn(
+                    "flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-muted-foreground transition-all",
+                    isActive &&
+                      "bg-accent text-accent-foreground shadow-sm translate-y-[-2px]",
+                  )
+                }
+              >
+                <tab.icon className="h-5 w-5" />
+                <span>{tab.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </div>
       <OpsEnvironmentGateDialog
-        open={
-          !envGate.environmentReady && !envGate.isLocationPromptOpen
-        }
+        open={!envGate.environmentReady && !envGate.isLocationPromptOpen}
         online={envGate.online}
         apiBaseConfigured={envGate.apiBaseConfigured}
         healthOk={envGate.healthOk}
