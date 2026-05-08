@@ -146,6 +146,7 @@ export function mapInspectionListItemToInspection(
 export function mapInspectionFullToInspection(
   full: InspectionFullResponse,
 ): Inspection {
+  const rec = full as unknown as Record<string, unknown>;
   const cq: InspectionQuestionStatus =
     full.checklist_fail_total > 0 ? "fail" : "pass";
   return {
@@ -178,6 +179,23 @@ export function mapInspectionFullToInspection(
     outer_packaging_side_images: full.outer_packaging_side_images ?? [],
     inner_packaging_side_images: full.inner_packaging_side_images ?? [],
     product_side_images: full.product_side_images ?? [],
+    device_time_taken:
+      typeof full.device_time_taken === "number" ? full.device_time_taken : null,
+    dock_number: (rec.dock_number as string | null | undefined) ?? null,
+    truck_number: (rec.truck_number as string | null | undefined) ?? null,
+    truck_docking_time:
+      (rec.truck_docking_time as string | null | undefined) ?? null,
+    manufactured_year:
+      typeof rec.manufactured_year === "number" ? rec.manufactured_year : null,
+    serial_number: (rec.serial_number as string | null | undefined) ?? null,
+    damage_type: (rec.damage_type as string | null | undefined) ?? null,
+    damage_severity: (rec.damage_severity as string | null | undefined) ?? null,
+    damage_cause: (rec.damage_cause as string | null | undefined) ?? null,
+    damage_grade: (rec.damage_grade as string | null | undefined) ?? null,
+    inbound_inspection_uuid:
+      (rec.inbound_inspection_uuid as string | null | undefined) ?? null,
+    outbound_inspection_uuid:
+      (rec.outbound_inspection_uuid as string | null | undefined) ?? null,
   };
 }
 

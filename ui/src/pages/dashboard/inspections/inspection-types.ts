@@ -51,6 +51,20 @@ export interface Inspection {
   outer_packaging_side_images?: string[];
   inner_packaging_side_images?: string[];
   product_side_images?: string[];
+
+  /** Shipment / capture metadata (detail payload). */
+  serial_number?: string | null;
+  manufactured_year?: number | null;
+  truck_number?: string | null;
+  truck_docking_time?: string | null;
+  dock_number?: string | null;
+  damage_type?: string | null;
+  damage_severity?: string | null;
+  damage_cause?: string | null;
+  damage_grade?: string | null;
+  device_time_taken?: number | null;
+  inbound_inspection_uuid?: string | null;
+  outbound_inspection_uuid?: string | null;
 }
 
 export type InspectionSectionKey =

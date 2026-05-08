@@ -113,7 +113,14 @@ const OPS_SIDE_IMAGE_LABELS: Record<SectionKey, string[]> = {
     "MRP label",
     "Energy label",
   ],
-  "inner-packaging": ["Top", "Side 1", "Side 2", "Side 3", "Side 4", "Accessories"],
+  "inner-packaging": [
+    "Top",
+    "Side 1",
+    "Side 2",
+    "Side 3",
+    "Side 4",
+    "Accessories",
+  ],
   product: ["Top", "Side 1", "Side 2", "Side 3", "Side 4"],
 };
 
@@ -128,7 +135,10 @@ function apiImageUrl(pathOrUrl: string): string {
   ) {
     return s;
   }
-  const base = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+  const base = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(
+    /\/$/,
+    "",
+  );
   const rel = s.startsWith("/") ? s : `/${s}`;
   if (!base) return rel;
   return `${base}${rel}`;
@@ -243,6 +253,13 @@ function StatusPill({ status }: { status: "pass" | "fail" }) {
   );
 }
 
+function formatSecondsHuman(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}m ${String(s).padStart(2, "0")}s`;
+}
+
 export default function OpsInspectionDetailPage() {
   const { id = "" } = useParams();
   const sessionUser = useSessionUser();
@@ -345,7 +362,8 @@ export default function OpsInspectionDetailPage() {
       inspection?.outer_packaging_side_images?.map((p, i) => ({
         key: `side-outer-${i}-${p}`,
         url: apiImageUrl(p),
-        filename: OPS_SIDE_IMAGE_LABELS["outer-packaging"][i] ?? `Outer ${i + 1}`,
+        filename:
+          OPS_SIDE_IMAGE_LABELS["outer-packaging"][i] ?? `Outer ${i + 1}`,
         section: "outer-packaging" as const,
         question: `Outer Packaging — ${OPS_SIDE_IMAGE_LABELS["outer-packaging"][i] ?? `Image ${i + 1}`}`,
       })) ?? [];
@@ -354,7 +372,8 @@ export default function OpsInspectionDetailPage() {
       inspection?.inner_packaging_side_images?.map((p, i) => ({
         key: `side-inner-${i}-${p}`,
         url: apiImageUrl(p),
-        filename: OPS_SIDE_IMAGE_LABELS["inner-packaging"][i] ?? `Inner ${i + 1}`,
+        filename:
+          OPS_SIDE_IMAGE_LABELS["inner-packaging"][i] ?? `Inner ${i + 1}`,
         section: "inner-packaging" as const,
         question: `Inner Packaging — ${OPS_SIDE_IMAGE_LABELS["inner-packaging"][i] ?? `Image ${i + 1}`}`,
       })) ?? [];
@@ -759,30 +778,7 @@ export default function OpsInspectionDetailPage() {
                 {inspection.inspector_name}
               </td>
             </tr>
-            <tr className="border-b border-border/50 last:border-0">
-              <th
-                scope="row"
-                className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
-              >
-                Warehouse
-              </th>
-              <td className="py-2 text-[13px] font-medium text-foreground">
-                {inspection.warehouse_code?.trim() || "—"}
-              </td>
-            </tr>
-            {inspection.plant_code?.trim() ? (
-              <tr className="border-b border-border/50 last:border-0">
-                <th
-                  scope="row"
-                  className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
-                >
-                  Supplier plant
-                </th>
-                <td className="py-2 text-[13px] font-medium text-foreground">
-                  {inspection.plant_code.trim()}
-                </td>
-              </tr>
-            ) : null}
+
             <tr className="border-b border-border/50 last:border-0">
               <th
                 scope="row"
@@ -956,42 +952,164 @@ export default function OpsInspectionDetailPage() {
           <section className="space-y-2 rounded-3xl border bg-card/80 p-3 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Quick Actions
+                Overview
               </h2>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 text-xs"
-                onClick={() => {
-                  setGalleryImages(
-                    allImages.map((img) => ({
-                      url: img.url,
-                      filename: img.filename,
-                    })),
-                  );
-                  setActiveGalleryUrl(allImages[0]?.url ?? null);
-                  setGalleryOpen(true);
-                }}
-              >
-                <ImageIcon className="mr-1 h-3.5 w-3.5" />
-                View images
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 text-xs"
-                onClick={() => {
-                  setActiveGalleryUrl(null);
-                  setRaiseIssueOpen(true);
-                }}
-              >
-                <Flag className="mr-1 h-3.5 w-3.5" />
-                Raise issue
-              </Button>
-            </div>
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-border/50 last:border-0">
+                  <th
+                    scope="row"
+                    className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                  >
+                    Dock
+                  </th>
+                  <td className="py-2 text-[13px] font-medium text-foreground">
+                    {inspection.dock_number?.trim() || "—"}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-border/50 last:border-0">
+                  <th
+                    scope="row"
+                    className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                  >
+                    Truck number
+                  </th>
+                  <td className="py-2 text-[13px] font-medium text-foreground">
+                    {inspection.truck_number?.trim() || "—"}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-border/50 last:border-0">
+                  <th
+                    scope="row"
+                    className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                  >
+                    Docking time
+                  </th>
+                  <td className="py-2 text-[13px] font-medium text-foreground">
+                    {inspection.truck_docking_time?.trim()
+                      ? formatDate(inspection.truck_docking_time.trim())
+                      : "—"}
+                  </td>
+                </tr>
+
+                <tr className="border-b border-border/50 last:border-0">
+                  <th
+                    scope="row"
+                    className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                  >
+                    Inspection time
+                  </th>
+                  <td className="py-2 text-[13px] font-medium text-foreground">
+                    {typeof inspection.device_time_taken === "number"
+                      ? formatSecondsHuman(inspection.device_time_taken)
+                      : "—"}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </section>
+
+          <section className="space-y-2 rounded-3xl border bg-card/80 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Location
+              </h2>
+            </div>
+            <table className="w-full text-sm">
+              <tbody>
+                {inspection.warehouse_code?.trim() ? (
+                  <tr className="border-b border-border/50 last:border-0">
+                    <th
+                      scope="row"
+                      className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                    >
+                      Warehouse
+                    </th>
+                    <td className="py-2 text-[13px] font-medium text-foreground">
+                      {inspection.warehouse_code.trim()}
+                    </td>
+                  </tr>
+                ) : null}
+                {inspection.plant_code?.trim() ? (
+                  <tr className="border-b border-border/50 last:border-0">
+                    <th
+                      scope="row"
+                      className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                    >
+                      Supplier plant
+                    </th>
+                    <td className="py-2 text-[13px] font-medium text-foreground">
+                      {inspection.plant_code.trim()}
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </section>
+
+          {inspection.damage_type?.trim() ||
+          inspection.damage_severity?.trim() ||
+          inspection.damage_cause?.trim() ||
+          inspection.damage_grade?.trim() ? (
+            <section className="space-y-2 rounded-3xl border bg-card/80 p-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Damage
+                </h2>
+              </div>
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr className="border-b border-border/50 last:border-0">
+                    <th
+                      scope="row"
+                      className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                    >
+                      Type
+                    </th>
+                    <td className="py-2 text-[13px] font-medium text-foreground">
+                      {inspection.damage_type?.trim() || "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border/50 last:border-0">
+                    <th
+                      scope="row"
+                      className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                    >
+                      Severity
+                    </th>
+                    <td className="py-2 text-[13px] font-medium text-foreground">
+                      {inspection.damage_severity?.trim() || "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border/50 last:border-0">
+                    <th
+                      scope="row"
+                      className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                    >
+                      Cause
+                    </th>
+                    <td className="py-2 text-[13px] font-medium text-foreground">
+                      {inspection.damage_cause?.trim() || "—"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border/50 last:border-0">
+                    <th
+                      scope="row"
+                      className="w-[36%] max-w-[10rem] py-2 pr-3 text-left align-top font-normal text-muted-foreground"
+                    >
+                      Grade
+                    </th>
+                    <td className="py-2 text-[13px] font-medium text-foreground">
+                      {inspection.damage_grade?.trim() || "—"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="checks" className="mt-3 space-y-3">
@@ -1361,9 +1479,7 @@ export default function OpsInspectionDetailPage() {
             )}
           </section>
         </TabsContent>
-
       </Tabs>
-
     </div>
   );
 }
