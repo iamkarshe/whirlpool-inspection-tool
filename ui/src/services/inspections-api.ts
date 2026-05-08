@@ -76,7 +76,12 @@ function inspectionDeviceUuidFromApiPayload(
   row: InspectionListItemResponse | InspectionFullResponse,
 ): string {
   const rec = row as unknown as Record<string, unknown>;
-  const raw = rec.device_uuid ?? rec.deviceUuid;
+  const nested = rec.device as Record<string, unknown> | undefined;
+  const raw =
+    rec.device_uuid ??
+    rec.deviceUuid ??
+    nested?.uuid ??
+    nested?.device_uuid;
   if (raw == null) return "";
   const s = typeof raw === "string" ? raw.trim() : String(raw).trim();
   return deviceUuidForAdminDevicePath(s);

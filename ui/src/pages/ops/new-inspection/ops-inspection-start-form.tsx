@@ -541,7 +541,7 @@ export function OpsInspectionStartForm({
     }
     base.push({ key: "damage", title: "Damage" });
     return base;
-  }, [checklistGroups, mode]);
+  }, [checklistGroups]);
 
   const step = steps[stepIndex] ?? steps[0];
   const totalSteps = Math.max(1, steps.length);

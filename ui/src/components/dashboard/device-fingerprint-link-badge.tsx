@@ -49,6 +49,7 @@ export function DeviceFingerprintLinkBadge({
       to={deviceHref}
       className={cn("inline-flex min-w-0 max-w-[min(100%,16rem)]", className)}
       title={fp.length > 0 ? fp : undefined}
+      onClick={(e) => e.stopPropagation()}
     >
       {badge}
     </Link>

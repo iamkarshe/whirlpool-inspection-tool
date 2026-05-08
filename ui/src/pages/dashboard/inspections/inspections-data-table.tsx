@@ -222,7 +222,7 @@ function SectionStatusCell({
 
 const deviceColumn: ColumnDef<Inspection> = {
   id: "device",
-  accessorKey: "device_fingerprint",
+  accessorKey: "device_uuid",
   header: ({ column }) => (
     <Button
       className="-ml-3"
