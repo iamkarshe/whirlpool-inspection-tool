@@ -20,6 +20,13 @@ export type OpsInspectionDraftV1 = {
   truckNumber: string;
   dockNumber: string;
   truckDockingLocal: string;
+  /**
+   * 5 side images per section, uploaded via `POST /api/inspections/upload-image`.
+   * Stored as NoAnswerImageSlot entries because the shape matches submit needs (path).
+   */
+  outerPackagingSideImages?: Record<string, NoAnswerImageSlot | null>;
+  innerPackagingSideImages?: Record<string, NoAnswerImageSlot | null>;
+  productSideImages?: Record<string, NoAnswerImageSlot | null>;
   damageType: string;
   damageSeverity: string;
   damageCause: string;

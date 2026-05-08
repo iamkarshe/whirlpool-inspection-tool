@@ -112,9 +112,57 @@ const OPS_TRUCK_REG_INVALID_MESSAGE =
 const DRAFT_SAVE_INTERVAL_MS = 2500;
 const TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES = 10;
 
-/** Placeholder path until OPS captures real packaging-side photos at submit-time. */
-const OPS_PACKAGING_SIDE_IMAGE_PLACEHOLDER =
-  "pending-upload:no-packaging-side-captured-at-submit";
+type SideImageKey = "top" | "bottom" | "left" | "right" | "front";
+const SIDE_IMAGE_SLOTS: { key: SideImageKey; label: string }[] = [
+  { key: "top", label: "Top" },
+  { key: "bottom", label: "Bottom" },
+  { key: "left", label: "Left" },
+  { key: "right", label: "Right" },
+  { key: "front", label: "Front" },
+];
+
+type SideImageSectionKey = "outer" | "inner" | "product";
+
+function sideSectionFromGroupName(
+  groupName: string,
+): SideImageSectionKey | null {
+  const s = groupName.trim().toLowerCase();
+  if (!s) return null;
+  if (s.includes("outer")) return "outer";
+  if (s.includes("inner")) return "inner";
+  if (s.includes("product")) return "product";
+  return null;
+}
+
+function createEmptySideImages(): Record<
+  SideImageKey,
+  NoAnswerImageSlot | null
+> {
+  return {
+    top: null,
+    bottom: null,
+    left: null,
+    right: null,
+    front: null,
+  };
+}
+
+function hasServerPath(slot: NoAnswerImageSlot | null | undefined): boolean {
+  if (!slot) return false;
+  return noAnswerImageHasServerPath(slot);
+}
+
+function sideImagesHaveAllUploads(
+  images: Record<SideImageKey, NoAnswerImageSlot | null>,
+): boolean {
+  return SIDE_IMAGE_SLOTS.every((s) => hasServerPath(images[s.key]));
+}
+
+function sideImagesSubmitPaths(
+  images: Record<SideImageKey, NoAnswerImageSlot | null>,
+): string[] {
+  return SIDE_IMAGE_SLOTS.map((s) => images[s.key]?.path ?? "").filter(Boolean);
+}
 
 /** `detail` from `POST /api/inspections/barcode-lock` when another user holds the lock. */
 const BARCODE_LOCK_HELD_BY_OTHER_SNIPPET =
@@ -270,6 +318,26 @@ export function OpsInspectionStartForm({
   const [damageCause, setDamageCause] = useState("");
   const [damageGrade, setDamageGrade] = useState("");
 
+  const [sideImagesBySection, setSideImagesBySection] = useState<{
+    outer: Record<SideImageKey, NoAnswerImageSlot | null>;
+    inner: Record<SideImageKey, NoAnswerImageSlot | null>;
+    product: Record<SideImageKey, NoAnswerImageSlot | null>;
+  }>(() => ({
+    outer: createEmptySideImages(),
+    inner: createEmptySideImages(),
+    product: createEmptySideImages(),
+  }));
+
+  const [sideImageUploading, setSideImageUploading] = useState<{
+    outer: Record<SideImageKey, boolean>;
+    inner: Record<SideImageKey, boolean>;
+    product: Record<SideImageKey, boolean>;
+  }>(() => ({
+    outer: { top: false, bottom: false, left: false, right: false, front: false },
+    inner: { top: false, bottom: false, left: false, right: false, front: false },
+    product: { top: false, bottom: false, left: false, right: false, front: false },
+  }));
+
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [remarksMap, setRemarksMap] = useState<Record<number, string>>({});
   const [noAnswerImages, setNoAnswerImages] = useState<
@@ -385,6 +453,11 @@ export function OpsInspectionStartForm({
 
   useEffect(() => {
     setIsMetadataExpanded(stepIndex === 0);
+  }, [stepIndex]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [stepIndex]);
 
   useEffect(() => {
@@ -569,6 +642,20 @@ export function OpsInspectionStartForm({
       setTruckNumber(draft.truckNumber);
       setDockNumber(draft.dockNumber);
       setTruckDockingLocal(draft.truckDockingLocal);
+      setSideImagesBySection({
+        outer: {
+          ...createEmptySideImages(),
+          ...(draft.outerPackagingSideImages ?? {}),
+        } as Record<SideImageKey, NoAnswerImageSlot | null>,
+        inner: {
+          ...createEmptySideImages(),
+          ...(draft.innerPackagingSideImages ?? {}),
+        } as Record<SideImageKey, NoAnswerImageSlot | null>,
+        product: {
+          ...createEmptySideImages(),
+          ...(draft.productSideImages ?? {}),
+        } as Record<SideImageKey, NoAnswerImageSlot | null>,
+      });
       setDamageType(draft.damageType);
       setDamageSeverity(draft.damageSeverity);
       setDamageCause(draft.damageCause);
@@ -837,6 +924,13 @@ export function OpsInspectionStartForm({
 
   const groupStepError = useCallback(
     (group: ChecklistGroupBlock): string | null => {
+      const section = sideSectionFromGroupName(group.group_name ?? "");
+      if (section) {
+        const imgs = sideImagesBySection[section];
+        if (!sideImagesHaveAllUploads(imgs)) {
+          return "Upload all 5 images (Top, Bottom, Left, Right, Front) before continuing.";
+        }
+      }
       for (const item of group.items) {
         const v = (answers[item.id] ?? "").trim();
         if (!v) {
@@ -855,7 +949,75 @@ export function OpsInspectionStartForm({
       }
       return null;
     },
-    [answers, noAnswerImages],
+    [answers, noAnswerImages, sideImagesBySection],
+  );
+
+  const uploadSideImage = useCallback(
+    async (
+      section: SideImageSectionKey,
+      key: SideImageKey,
+      file: File | null,
+    ) => {
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image.`);
+        return;
+      }
+      if (file.size > MAX_RAW_IMAGE_BYTES) {
+        toast.error(
+          `${file.name} is too large before compression (max ${Math.round(MAX_RAW_IMAGE_BYTES / (1024 * 1024))} MB).`,
+        );
+        return;
+      }
+      try {
+        setSideImageUploading((prev) => ({
+          ...prev,
+          [section]: { ...prev[section], [key]: true },
+        }));
+        const compressed = await compressInspectionImageFile(file);
+        if (compressed.size > INSPECTION_IMAGE_MAX_UPLOAD_BYTES) {
+          toast.error(
+            `${file.name} is still over ${Math.round(INSPECTION_IMAGE_MAX_UPLOAD_BYTES / 1000)} KB after compression. Try another photo.`,
+          );
+          return;
+        }
+        const { path } = await uploadOpsInspectionImage({
+          barcode,
+          mode,
+          file: compressed,
+        });
+        setSideImagesBySection((prev) => ({
+          ...prev,
+          [section]: {
+            ...prev[section],
+            [key]: {
+              name: `${section}-${key}`,
+              path,
+            } satisfies NoAnswerImageSlot,
+          },
+        }));
+      } catch (e: unknown) {
+        toast.error(
+          opsInspectionApiError(e, `Could not upload ${file.name}. Try again.`),
+        );
+      } finally {
+        setSideImageUploading((prev) => ({
+          ...prev,
+          [section]: { ...prev[section], [key]: false },
+        }));
+      }
+    },
+    [barcode, mode],
+  );
+
+  const removeSideImage = useCallback(
+    (section: SideImageSectionKey, key: SideImageKey) => {
+      setSideImagesBySection((prev) => ({
+        ...prev,
+        [section]: { ...prev[section], [key]: null },
+      }));
+    },
+    [],
   );
 
   const goNext = () => {
@@ -994,7 +1156,11 @@ export function OpsInspectionStartForm({
     const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
     const deviceTimeTakenInbound = Math.max(10, elapsedSec);
     const deviceTimeTakenOutbound = Math.max(0, elapsedSec);
-    const sideImagesSingle = [OPS_PACKAGING_SIDE_IMAGE_PLACEHOLDER];
+    const outerSideImages = sideImagesSubmitPaths(sideImagesBySection.outer);
+    const innerSideImages = sideImagesSubmitPaths(sideImagesBySection.inner);
+    const productSideImages = sideImagesSubmitPaths(
+      sideImagesBySection.product,
+    );
     setSubmitting(true);
     try {
       if (mode === "inbound") {
@@ -1008,9 +1174,9 @@ export function OpsInspectionStartForm({
           truck_number: truckNumberNormalized,
           dock_number: dockNumber.trim() || null,
           truck_docking_time: dockingIso,
-          outer_packaging_side_images: sideImagesSingle,
-          inner_packaging_side_images: sideImagesSingle,
-          product_side_images: sideImagesSingle,
+          outer_packaging_side_images: outerSideImages,
+          inner_packaging_side_images: innerSideImages,
+          product_side_images: productSideImages,
           device_time_taken: deviceTimeTakenInbound,
           checklist_answers,
           ...damageBlock,
@@ -1034,9 +1200,9 @@ export function OpsInspectionStartForm({
           truck_number: truckNumberNormalized || "OUTBOUND",
           dock_number: dockNumber.trim() || null,
           truck_docking_time: dockingIso,
-          outer_packaging_side_images: sideImagesSingle,
-          inner_packaging_side_images: sideImagesSingle,
-          product_side_images: sideImagesSingle,
+          outer_packaging_side_images: outerSideImages,
+          inner_packaging_side_images: innerSideImages,
+          product_side_images: productSideImages,
           device_time_taken: deviceTimeTakenOutbound,
           checklist_answers,
           ...damageBlock,
@@ -1215,6 +1381,9 @@ export function OpsInspectionStartForm({
     truckNumber,
     dockNumber,
     truckDockingLocal,
+    outerPackagingSideImages: sideImagesBySection.outer,
+    innerPackagingSideImages: sideImagesBySection.inner,
+    productSideImages: sideImagesBySection.product,
     damageType,
     damageSeverity,
     damageCause,
@@ -1558,6 +1727,103 @@ export function OpsInspectionStartForm({
               />
             ))}
           </div>
+          {(() => {
+            const section = sideSectionFromGroupName(
+              step.group?.group_name ?? "",
+            );
+            if (!section) return null;
+            const images = sideImagesBySection[section];
+            const title =
+              section === "outer"
+                ? "Outer Packaging images"
+                : section === "inner"
+                  ? "Inner Packaging images"
+                  : "Product images";
+            return (
+              <div className="mt-3 space-y-2 pt-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold">{title}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Upload all 5 (required)
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {SIDE_IMAGE_SLOTS.map((slot) => {
+                    const img = images[slot.key];
+                    const has = hasServerPath(img);
+                    const isUploading = sideImageUploading[section][slot.key];
+                    return (
+                      <div
+                        key={`${section}-${slot.key}`}
+                        className="relative overflow-hidden rounded-xl border border-sky-500/15 bg-sky-500/[0.04] p-2 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="sr-only">{slot.label}</span>
+                          {has ? (
+                            <button
+                              type="button"
+                              className="ml-auto rounded-full p-1 text-muted-foreground hover:bg-sky-500/10 hover:text-sky-900 dark:hover:text-sky-100"
+                              onClick={() => removeSideImage(section, slot.key)}
+                              aria-label={`Remove ${slot.label} image`}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
+                        <div className="mt-2 flex items-center justify-center">
+                          {has ? (
+                            <img
+                              src={noAnswerImageDisplaySrc(img!)}
+                              alt=""
+                              className="h-24 w-full rounded-md object-cover ring-1 ring-border/60"
+                            />
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              asChild
+                              className={cn(
+                                "w-full justify-center border border-sky-500/20 bg-sky-500/10 text-xs font-semibold text-sky-950 shadow-sm",
+                                "hover:bg-sky-500/15 dark:text-sky-50",
+                                isUploading && "opacity-70 cursor-wait",
+                              )}
+                              disabled={isUploading}
+                            >
+                              <label className="cursor-pointer">
+                                {isUploading ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Camera className="mr-2 h-4 w-4" />
+                                )}
+                                {isUploading
+                                  ? "Uploading…"
+                                  : `Upload ${slot.label} image`}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  className="sr-only"
+                                  onChange={(e) => {
+                                    void uploadSideImage(
+                                      section,
+                                      slot.key,
+                                      e.target.files?.[0] ?? null,
+                                    );
+                                    e.target.value = "";
+                                  }}
+                                />
+                              </label>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </section>
       ) : null}
 

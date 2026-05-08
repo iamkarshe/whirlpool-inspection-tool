@@ -16,15 +16,16 @@ export function OpsInspectionStartPage({ mode }: OpsInspectionStartPageProps) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const barcode = (searchParams.get("barcode") ?? "").replace(/\s+/g, "");
-  const routeState = (location.state as
-    | {
-        productName?: string;
-        materialId?: string;
-        productCategoryName?: string;
+  const routeState =
+    (location.state as
+      | {
+          productName?: string;
+          materialId?: string;
+          productCategoryName?: string;
           serialNumber?: string;
-      }
-    | null
-    | undefined) ?? null;
+        }
+      | null
+      | undefined) ?? null;
 
   useEffect(() => {
     if (barcode.length !== OPS_BARCODE_LEN) {
