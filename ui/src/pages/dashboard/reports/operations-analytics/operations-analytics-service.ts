@@ -2,12 +2,13 @@
  * Aggregates KPIs from inspections, logins, and devices for Operations Analytics.
  * Uses existing module services.
  */
+import type { DateRange } from "react-day-picker";
 import { getDeviceKpis } from "@/pages/dashboard/admin/devices/device-service";
 import { getLoginKpis } from "@/pages/dashboard/admin/logins/login-service";
-import { getInspectionKpis } from "@/pages/dashboard/inspections/inspection-service";
+import { getInspectionKpisForDateRange } from "@/pages/dashboard/inspections/inspection-service";
 
 export interface OperationsAnalyticsKpis {
-  inspections: Awaited<ReturnType<typeof getInspectionKpis>>;
+  inspections: Awaited<ReturnType<typeof getInspectionKpisForDateRange>>;
   logins: Awaited<ReturnType<typeof getLoginKpis>>;
   devices: Awaited<ReturnType<typeof getDeviceKpis>>;
 }
@@ -35,9 +36,10 @@ function scaleInt(value: number, scale: number) {
 
 export async function getOperationsAnalyticsKpis(
   filters?: OperationsAnalyticsFilters,
+  dateRange?: DateRange,
 ): Promise<OperationsAnalyticsKpis> {
   const [inspections, logins, devices] = await Promise.all([
-    getInspectionKpis(),
+    getInspectionKpisForDateRange(dateRange),
     getLoginKpis(),
     getDeviceKpis(),
   ]);
@@ -103,6 +105,7 @@ export interface OperationsSummaryByCategory {
 
 export async function getOperationsTrendFiltered(
   filters?: OperationsAnalyticsFilters,
+  _dateRange?: DateRange,
 ): Promise<OperationsTrendPoint[]> {
   const scale = getFilterScale(filters);
   const base = await getOperationsTrend();
@@ -116,6 +119,7 @@ export async function getOperationsTrendFiltered(
 
 export async function getOperationsSummaryByCategory(
   filters?: OperationsAnalyticsFilters,
+  _dateRange?: DateRange,
 ): Promise<OperationsSummaryByCategory[]> {
   const scale = getFilterScale(filters);
   return new Promise((r) =>

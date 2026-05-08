@@ -3,6 +3,8 @@
  * avg inspection time, pending approvals. Mock data for UI; replace with API.
  */
 
+import type { DateRange } from "react-day-picker";
+
 /** Whirlpool defect classification (3 types). */
 export type DefectType = "critical" | "major" | "minor";
 
@@ -86,7 +88,9 @@ const inspectionVolumeTrend: VolumeTrendPoint[] = [
   { week: "W6", volume: 980, defects: 27 },
 ];
 
-export async function getExecutiveAnalyticsKpis(): Promise<ExecutiveAnalyticsKpis> {
+export async function getExecutiveAnalyticsKpis(
+  _range?: DateRange,
+): Promise<ExecutiveAnalyticsKpis> {
   return new Promise((resolve) => {
     setTimeout(
       () =>
@@ -109,24 +113,34 @@ export async function getExecutiveAnalyticsKpis(): Promise<ExecutiveAnalyticsKpi
   });
 }
 
-export async function getInspectionVolumeByLocation(): Promise<VolumeByDimension[]> {
+export async function getInspectionVolumeByLocation(
+  _range?: DateRange,
+): Promise<VolumeByDimension[]> {
   return new Promise((r) => setTimeout(() => r([...inspectionVolumeByLocation]), 200));
 }
 
-export async function getInspectionVolumeByOperator(): Promise<VolumeByDimension[]> {
+export async function getInspectionVolumeByOperator(
+  _range?: DateRange,
+): Promise<VolumeByDimension[]> {
   return new Promise((r) => setTimeout(() => r([...inspectionVolumeByOperator]), 200));
 }
 
-export async function getInspectionVolumeByProductCategory(): Promise<VolumeByDimension[]> {
+export async function getInspectionVolumeByProductCategory(
+  _range?: DateRange,
+): Promise<VolumeByDimension[]> {
   return new Promise((r) =>
     setTimeout(() => r([...inspectionVolumeByProductCategory]), 200),
   );
 }
 
-export async function getDefectRateByType(): Promise<DefectRateByType[]> {
+export async function getDefectRateByType(
+  _range?: DateRange,
+): Promise<DefectRateByType[]> {
   return new Promise((r) => setTimeout(() => r([...defectRateByWhirlpoolType]), 200));
 }
 
-export async function getInspectionVolumeTrend(): Promise<VolumeTrendPoint[]> {
+export async function getInspectionVolumeTrend(
+  _range?: DateRange,
+): Promise<VolumeTrendPoint[]> {
   return new Promise((r) => setTimeout(() => r([...inspectionVolumeTrend]), 200));
 }

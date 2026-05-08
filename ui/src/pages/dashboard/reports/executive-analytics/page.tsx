@@ -25,6 +25,7 @@ import { ExecutiveTooltipContent } from "@/pages/dashboard/reports/executive-ana
 import { AlertTriangle, ClipboardCheck, Clock, Inbox } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import type { DateRange } from "react-day-picker";
 
 const volumeChartConfig = {
   volume: {
@@ -89,14 +90,15 @@ export default function ExecutiveAnalyticsPage() {
   const [defectByType, setDefectByType] = useState<DefectRateByType[]>([]);
   const [volumeTrend, setVolumeTrend] = useState<VolumeTrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     queueMicrotask(() => setLoading(true));
     Promise.all([
-      getExecutiveAnalyticsKpis(),
-      getInspectionVolumeByLocation(),
-      getDefectRateByType(),
-      getInspectionVolumeTrend(),
+      getExecutiveAnalyticsKpis(dateRange),
+      getInspectionVolumeByLocation(dateRange),
+      getDefectRateByType(dateRange),
+      getInspectionVolumeTrend(dateRange),
     ])
       .then(([k, loc, def, trend]) => {
         setKpis(k);
@@ -105,7 +107,7 @@ export default function ExecutiveAnalyticsPage() {
         setVolumeTrend(trend);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [dateRange]);
 
   return (
     <div
@@ -120,7 +122,7 @@ export default function ExecutiveAnalyticsPage() {
           description="Inspection volume by location, operator, product, avg inspection time, approvals."
         />
         <div className="flex items-center gap-2">
-          <CalendarDateRangePicker />
+          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
           <Button variant="outline" size="sm">
             Download
           </Button>

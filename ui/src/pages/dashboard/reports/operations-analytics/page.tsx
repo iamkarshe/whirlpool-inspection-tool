@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import type { DateRange } from "react-day-picker";
 
 import { DashboardModuleWipDialog } from "@/components/dashboard/dashboard-module-wip-dialog";
 import { ChartCard } from "@/components/chart-card";
@@ -199,6 +200,7 @@ export default function OperationsAnalyticsPage() {
     OperationsSummaryByCategory[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const [warehouses, setWarehouses] = useState<WarehouseResponse[]>([]);
   const [productCategories, setProductCategories] = useState<
@@ -241,9 +243,9 @@ export default function OperationsAnalyticsPage() {
   useEffect(() => {
     queueMicrotask(() => setLoading(true));
     Promise.all([
-      getOperationsAnalyticsKpis(filters),
-      getOperationsTrendFiltered(filters),
-      getOperationsSummaryByCategory(filters),
+      getOperationsAnalyticsKpis(filters, dateRange),
+      getOperationsTrendFiltered(filters, dateRange),
+      getOperationsSummaryByCategory(filters, dateRange),
     ])
       .then(([k, t, s]) => {
         setKpis(k);
@@ -251,7 +253,7 @@ export default function OperationsAnalyticsPage() {
         setSummaryByCategory(s);
       })
       .finally(() => setLoading(false));
-  }, [filters]);
+  }, [filters, dateRange]);
 
   const filterOptionsLoadedRef = useRef(false);
   const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
@@ -385,10 +387,10 @@ export default function OperationsAnalyticsPage() {
           description="Inspection, login, and device metrics for the selected period."
         />
         <div className="flex items-center gap-2">
-          <CalendarDateRangePicker />
+          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
           <MultiSelectFiltersDialog
             title="Filters"
-            description="Multi-select filters. Applying updates the URL for sharing."
+            description="Refine results using multi-select filters."
             sections={filterSections}
             value={filterValue}
             onApply={applyFilters}
