@@ -59,6 +59,7 @@ Recommended behavior:
 - Upsert subscriptions by `endpoint`.
 - Attach the authenticated `user_id` from the JWT/session.
 - Attach `device_uuid` when present so notifications can target a specific PWA device.
+- Send a welcome/setup confirmation notification after saving the subscription.
 - Delete subscriptions when Web Push returns `404` or `410`.
 - Persist each outbound push in `push_notifications` before sending so delivery attempts
   can be audited and failed sends can be retried or inspected later.
@@ -210,10 +211,16 @@ Example targeting a user:
 ```python
 @router.post("/send/user")
 def send_user_notification(
+    request: Request,
     payload: PushUserSendRequest,
     db=Depends(get_db),
 ):
     user = get_push_target_user_by_uuid_or_404(db, payload.user_uuid)
+    if not current_user_is_superadmin(request) and user.id != request.state.user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only superadmin can send notifications to other users",
+        )
     subscriptions = list_active_subscriptions_for_user(db, user.id)
     for subscription in subscriptions:
         send_web_push(db, subscription, payload.notification)
