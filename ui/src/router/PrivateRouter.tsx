@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/sonner";
 import { PAGES } from "@/endpoints";
 import DashboardLayout from "@/pages/dashboard/layout";
 import { Navigate, useLocation } from "react-router-dom";
@@ -17,10 +16,5 @@ export default function PrivateRouter() {
     );
   }
 
-  return (
-    <>
-      <DashboardLayout />
-      <Toaster />
-    </>
-  );
+  return <DashboardLayout />;
 }
