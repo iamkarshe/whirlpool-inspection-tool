@@ -21,15 +21,32 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { PAGES } from "@/endpoints";
-import { useIsTablet } from "@/hooks/use-mobile";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
 
-const RELEASE_CODE = "v1.0.0";
+const RELEASE_CODE = `v${import.meta.env.VITE_APP_BUILD}`;
 const LAST_UPDATED = "2026-03-05";
+let clientIpCache: string | null = null;
+let clientIpRequest: Promise<string> | null = null;
+
+function fetchClientIpOnce(): Promise<string> {
+  if (clientIpCache) return Promise.resolve(clientIpCache);
+  if (!clientIpRequest) {
+    clientIpRequest = fetch("https://api.ipify.org?format=json")
+      .then((res) => res.json() as Promise<{ ip: string }>)
+      .then((data) => {
+        clientIpCache = data.ip;
+        return data.ip;
+      })
+      .catch(() => {
+        clientIpCache = "—";
+        return "—";
+      });
+  }
+  return clientIpRequest;
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { setOpen, setOpenMobile, isMobile } = useSidebar();
-  const isTablet = useIsTablet();
+  const { setOpenMobile, isMobile } = useSidebar();
   const [clientIp, setClientIp] = useState<string | null>(null);
   const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(
     () => {
@@ -46,18 +63,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // COMBAK
   useEffect(() => {
     if (isMobile) setOpenMobile(false);
-  }, [isMobile]);
-
-  // COMBAK
-  useEffect(() => {
-    setOpen(!isTablet);
-  }, [isTablet]);
+  }, [isMobile, setOpenMobile]);
 
   useEffect(() => {
-    fetch("https://api.ipify.org?format=json")
-      .then((res) => res.json())
-      .then((data: { ip: string }) => setClientIp(data.ip))
-      .catch(() => setClientIp("—"));
+    let cancelled = false;
+    void fetchClientIpOnce().then((ip) => {
+      if (!cancelled) setClientIp(ip);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

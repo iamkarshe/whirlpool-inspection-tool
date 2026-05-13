@@ -18,8 +18,36 @@ export interface ReleaseNote {
 
 export const releaseNotes: ReleaseNote[] = [
   {
-    id: "v1.0.0",
-    version: "v1.0.0",
+    id: "v0.0.3",
+    version: "v0.0.3",
+    releasedAt: "2026-05-13",
+    title: "Operations workflow update",
+    features: [
+      { text: "Updated mandatory inspection image capture by packaging and product section", type: "feature" },
+      {
+        text: "Added gallery-or-camera source picker for inspection uploads",
+        type: "feature",
+      },
+      { text: "Improved Ops inspection detail metadata, side images, and captured image grouping", type: "improvement" },
+      { text: "Added auth build badge with cache/storage clear reload action", type: "feature" },
+      { text: "Added New Delhi fallback coordinates when browser location is unavailable", type: "fix" },
+    ],
+  },
+  {
+    id: "v0.0.2",
+    version: "v0.0.2",
+    releasedAt: "2026-05-08",
+    title: "Inspection and analytics refinements",
+    features: [
+      { text: "Moved supplier plant capture to inbound inspections", type: "fix" },
+      { text: "Updated Ops form step order and copy", type: "improvement" },
+      { text: "Added date range API wiring for operations and executive analytics", type: "improvement" },
+      { text: "Removed extra list fetch from Ops inspection detail page", type: "fix" },
+    ],
+  },
+  {
+    id: "v0.0.1",
+    version: "v0.0.1",
     releasedAt: "2026-03-05",
     title: "Initial release",
     features: [
@@ -28,24 +56,7 @@ export const releaseNotes: ReleaseNote[] = [
         text: "Masters for users, product categories, products and warehouses",
         type: "feature",
       },
-      { text: "CSV import templates and improved empty states", type: "improvement" },
-      { text: "Inspections, logins, and devices modules", type: "feature" },
-      { text: "Operations and Executive analytics with charts", type: "feature" },
-      { text: "Release notes and system info in sidebar", type: "chore" },
-    ],
-  },
-  {
-    id: "v0.9.0",
-    version: "v0.9.0",
-    releasedAt: "2026-02-28",
-    title: "Beta",
-    features: [
-      { text: "Admin: users, devices, logins, integrations, logs", type: "feature" },
-      { text: "Device view with details, inspections, logins, users", type: "feature" },
-      { text: "User view with devices, inspections, logins", type: "feature" },
-      { text: "Warehouse view and master data", type: "feature" },
-      { text: "AWS S3 integration configuration", type: "feature" },
-      { text: "Fixed date range filter on data tables", type: "fix" },
+      { text: "Inspections, logins, devices, and release notes modules", type: "feature" },
     ],
   },
 ];
