@@ -168,8 +168,18 @@ async def upsert_push_subscription(
 
 ## Sending Notifications
 
+Each send creates one `push_notifications` row per target subscription, then updates
+that row to `sent` or `failed`. Expired browser subscriptions (`404` / `410`) are
+deactivated so future sends skip them.
+
 ```python
-async def send_web_push(subscription_row, payload: PushSendPayload):
+def send_web_push(db, subscription_row, payload: PushSendPayload):
+    notification = create_pending_push_notification(
+        db=db,
+        user_id=subscription_row.user_id,
+        payload=payload,
+        push_subscription=subscription_row,
+    )
     subscription_info = {
         "endpoint": subscription_row.endpoint,
         "keys": {
@@ -186,24 +196,29 @@ async def send_web_push(subscription_row, payload: PushSendPayload):
             vapid_claims={"sub": VAPID_SUBJECT},
         )
     except WebPushException as exc:
+        mark_push_notification_failed(notification, exc)
         if exc.response is not None and exc.response.status_code in {404, 410}:
-            await deactivate_subscription(subscription_row.endpoint)
-            return
-        raise
+            deactivate_subscription(subscription_row)
+        return notification
+
+    mark_push_notification_sent(notification)
+    return notification
 ```
 
 Example targeting a user:
 
 ```python
-@router.post("/send/user/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def send_user_notification(
+@router.post("/send/user/{user_id}")
+def send_user_notification(
     user_id: int,
     payload: PushSendPayload,
     db=Depends(get_db),
 ):
-    subscriptions = await list_active_subscriptions_for_user(db, user_id)
+    subscriptions = list_active_subscriptions_for_user(db, user_id)
     for subscription in subscriptions:
-        await send_web_push(subscription, payload)
+        send_web_push(db, subscription, payload)
+    db.commit()
+    return {"attempted": len(subscriptions)}
 ```
 
 Send payload example:
@@ -213,7 +228,12 @@ Send payload example:
   "title": "Inspection Assigned",
   "body": "A new inbound inspection is ready.",
   "url": "/ops/today-inspections",
-  "tag": "inspection-assigned"
+  "tag": "inspection-assigned",
+  "icon": "/icons/icon-192.png",
+  "badge": "/icons/badge-72.png",
+  "data": {
+    "inspection_uuid": "..."
+  }
 }
 ```
 

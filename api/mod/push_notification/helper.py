@@ -1,9 +1,17 @@
+import json
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
+from pywebpush import WebPushException, webpush
 from sqlalchemy.orm import Session
 
-from mod.model import Device, PushNotification, PushSubscription
+from mod.model import (
+    Device,
+    PushNotification,
+    PushNotificationStatus,
+    PushSubscription,
+)
 from mod.push_notification.request import PushSendPayload, PushSubscriptionCreate
 
 
@@ -114,3 +122,126 @@ def create_pending_push_notification(
     db.add(push_notification)
     db.flush()
     return push_notification
+
+
+def list_active_subscriptions_for_user(
+    db: Session,
+    user_id: int,
+) -> list[PushSubscription]:
+    return (
+        db.query(PushSubscription)
+        .filter(
+            PushSubscription.user_id == user_id,
+            PushSubscription.is_active.is_(True),
+        )
+        .all()
+    )
+
+
+def mark_push_notification_sent(
+    push_notification: PushNotification,
+) -> None:
+    push_notification.status = PushNotificationStatus.sent
+    push_notification.sent_at = datetime.now(timezone.utc)
+    push_notification.failure_status_code = None
+    push_notification.failure_message = None
+
+
+def mark_push_notification_failed(
+    push_notification: PushNotification,
+    *,
+    status_code: int | None,
+    message: str,
+) -> None:
+    push_notification.status = PushNotificationStatus.failed
+    push_notification.failure_status_code = status_code
+    push_notification.failure_message = message[:4000]
+
+
+def deactivate_push_subscription(push_subscription: PushSubscription) -> None:
+    push_subscription.is_active = False
+
+
+def push_payload_dict(payload: PushSendPayload) -> dict:
+    return payload.model_dump(exclude_none=True)
+
+
+def send_web_push(
+    db: Session,
+    push_subscription: PushSubscription,
+    payload: PushSendPayload,
+    *,
+    vapid_private_key_path: str,
+    vapid_subject: str,
+) -> PushNotification:
+    push_notification = create_pending_push_notification(
+        db,
+        user_id=push_subscription.user_id,
+        payload=payload,
+        push_subscription=push_subscription,
+    )
+    subscription_info = {
+        "endpoint": push_subscription.endpoint,
+        "keys": {
+            "p256dh": push_subscription.p256dh,
+            "auth": push_subscription.auth,
+        },
+    }
+    try:
+        webpush(
+            subscription_info=subscription_info,
+            data=json.dumps(push_payload_dict(payload)),
+            vapid_private_key=vapid_private_key_path,
+            vapid_claims={"sub": vapid_subject},
+        )
+    except WebPushException as exc:
+        response = getattr(exc, "response", None)
+        status_code = getattr(response, "status_code", None)
+        mark_push_notification_failed(
+            push_notification,
+            status_code=status_code,
+            message=str(exc),
+        )
+        if status_code in {404, 410}:
+            deactivate_push_subscription(push_subscription)
+        db.flush()
+        return push_notification
+
+    mark_push_notification_sent(push_notification)
+    db.flush()
+    return push_notification
+
+
+def send_user_push_notifications(
+    db: Session,
+    user_id: int,
+    payload: PushSendPayload,
+    *,
+    vapid_private_key_path: str,
+    vapid_subject: str,
+) -> dict[str, int]:
+    push_subscriptions = list_active_subscriptions_for_user(db, user_id)
+    attempted = sent = failed = deactivated = 0
+    for push_subscription in push_subscriptions:
+        was_active = bool(push_subscription.is_active)
+        push_notification = send_web_push(
+            db,
+            push_subscription,
+            payload,
+            vapid_private_key_path=vapid_private_key_path,
+            vapid_subject=vapid_subject,
+        )
+        attempted += 1
+        if push_notification.status == PushNotificationStatus.sent:
+            sent += 1
+        elif push_notification.status == PushNotificationStatus.failed:
+            failed += 1
+        if was_active and not push_subscription.is_active:
+            deactivated += 1
+
+    return {
+        "attempted": attempted,
+        "sent": sent,
+        "failed": failed,
+        "deactivated": deactivated,
+    }
