@@ -1,6 +1,7 @@
-import { LogOut } from "lucide-react";
+import { BellRing, DownloadCloud, Loader2, LogOut, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import { OpsSettingsContent } from "@/components/ops/ops-settings-content";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +23,24 @@ import {
   userInitialsFromName,
 } from "@/lib/ops-user-display";
 import { clearAuthenticatedSession } from "@/services/login-service";
+import {
+  initPwaInstallPromptCapture,
+  installPwaApp,
+  isPwaInstallPromptAvailable,
+  isStandaloneDisplay,
+  subscribePwaInstallState,
+} from "@/services/pwa-install";
+import {
+  isPushNotificationSupported,
+  subscribeCurrentDeviceToPush,
+} from "@/services/push-notifications";
 
 type ConfirmAction = "logout" | null;
+type NotificationSupportState = NotificationPermission | "unsupported";
+type InstallHelp = {
+  title: string;
+  steps: string[];
+};
 
 function shortenMiddle(value: string, head = 10, tail = 6): string {
   const t = value.trim();
@@ -31,10 +48,64 @@ function shortenMiddle(value: string, head = 10, tail = 6): string {
   return `${t.slice(0, head)}…${t.slice(-tail)}`;
 }
 
+function readNotificationSupportState(): NotificationSupportState {
+  if (!isPushNotificationSupported()) return "unsupported";
+  return Notification.permission;
+}
+
+function getPwaInstallHelp(): InstallHelp {
+  if (typeof navigator === "undefined") {
+    return {
+      title: "Add this app to your home screen",
+      steps: ["Open your browser menu.", "Choose Add to Home screen."],
+    };
+  }
+
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    return {
+      title: "Add this app on iPhone",
+      steps: [
+        "Open this site in Safari.",
+        "Tap the Share button in the bottom toolbar.",
+        "Choose Add to Home Screen.",
+        "Tap Add to confirm.",
+      ],
+    };
+  }
+
+  if (/Android/i.test(ua)) {
+    return {
+      title: "Add this app on Android",
+      steps: [
+        "Open this site in Chrome.",
+        "Tap the three-dot menu.",
+        "Choose Install app or Add to Home screen.",
+        "Confirm the install prompt.",
+      ],
+    };
+  }
+
+  return {
+    title: "Install this PWA",
+    steps: [
+      "Use the install icon in the browser address bar if it appears.",
+      "Or open the browser menu and choose Install app.",
+    ],
+  };
+}
+
 export default function OpsAccountPage() {
   const navigate = useNavigate();
   const user = useSessionUser();
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const [installBusy, setInstallBusy] = useState(false);
+  const [installHelpOpen, setInstallHelpOpen] = useState(false);
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const [installAvailable, setInstallAvailable] = useState(false);
+  const [standaloneInstalled, setStandaloneInstalled] = useState(false);
+  const [notificationState, setNotificationState] =
+    useState<NotificationSupportState>(() => readNotificationSupportState());
   const [deviceFingerprint] = useState(() => {
     try {
       return typeof window === "undefined"
@@ -60,10 +131,62 @@ export default function OpsAccountPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    initPwaInstallPromptCapture();
+    const sync = () => {
+      setInstallAvailable(isPwaInstallPromptAvailable());
+      setStandaloneInstalled(isStandaloneDisplay());
+    };
+    sync();
+    return subscribePwaInstallState(sync);
+  }, []);
+
   const handleConfirmLogout = () => {
     clearAuthenticatedSession();
     setConfirmAction(null);
     navigate(PAGES.LOGIN, { replace: true });
+  };
+
+  const handleInstallApp = async () => {
+    setInstallBusy(true);
+    try {
+      const outcome = await installPwaApp();
+      setInstallAvailable(isPwaInstallPromptAvailable());
+      setStandaloneInstalled(isStandaloneDisplay());
+
+      if (outcome === "accepted") {
+        toast.success("App install started.");
+      } else if (outcome === "installed") {
+        toast.success("App is already installed.");
+      } else if (outcome === "dismissed") {
+        toast.info("Install skipped for now.");
+      } else {
+        setInstallHelpOpen(true);
+      }
+    } catch {
+      toast.error("Unable to start app install right now.");
+    } finally {
+      setInstallBusy(false);
+    }
+  };
+
+  const handleAllowNotifications = async () => {
+    setNotificationBusy(true);
+    try {
+      await subscribeCurrentDeviceToPush();
+      setNotificationState(readNotificationSupportState());
+      toast.success("Notifications enabled for this device.");
+    } catch (error) {
+      setNotificationState(readNotificationSupportState());
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to enable notifications.",
+      );
+    } finally {
+      setNotificationBusy(false);
+    }
   };
 
   if (!user) {
@@ -189,6 +312,83 @@ export default function OpsAccountPage() {
         </dl>
       </section>
 
+      <section className="space-y-3 overflow-hidden rounded-3xl border bg-gradient-to-br from-sky-500/10 via-card to-emerald-500/10 p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-emerald-500 text-white shadow-lg shadow-sky-500/20">
+            <Smartphone className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold">App experience</h2>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Add this PWA to your phone and enable alerts whenever you are
+              ready.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={handleInstallApp}
+            disabled={installBusy || standaloneInstalled}
+            className="flex min-h-20 items-center gap-3 rounded-2xl border border-sky-500/20 bg-sky-500/10 px-3 py-3 text-left transition-colors hover:bg-sky-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500 text-white">
+              {installBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <DownloadCloud className="h-4 w-4" />
+              )}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">
+                {standaloneInstalled ? "App installed" : "Add as App"}
+              </span>
+              <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
+                {installAvailable
+                  ? "Install directly on this phone."
+                  : "Use browser menu if install prompt is unavailable."}
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAllowNotifications}
+            disabled={
+              notificationBusy ||
+              notificationState === "granted" ||
+              notificationState === "unsupported"
+            }
+            className="flex min-h-20 items-center gap-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-3 text-left transition-colors hover:bg-indigo-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500 text-white">
+              {notificationBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <BellRing className="h-4 w-4" />
+              )}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">
+                {notificationState === "granted"
+                  ? "Notifications allowed"
+                  : notificationState === "denied"
+                    ? "Notifications blocked"
+                    : "Allow Notification"}
+              </span>
+              <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
+                {notificationState === "unsupported"
+                  ? "Push is not supported on this browser."
+                  : notificationState === "denied"
+                    ? "Enable it from browser site settings."
+                    : "Get inspection alerts on this phone."}
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
       <OpsSettingsContent />
 
       <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
@@ -236,6 +436,33 @@ export default function OpsAccountPage() {
             </Button>
             <Button type="button" onClick={handleConfirmLogout}>
               Yes, log me out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={installHelpOpen} onOpenChange={setInstallHelpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{getPwaInstallHelp().title}</DialogTitle>
+            <DialogDescription>
+              This browser did not expose the native install prompt, so follow
+              these steps to add the PWA manually.
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="space-y-2 rounded-2xl border bg-muted/30 p-4 text-sm">
+            {getPwaInstallHelp().steps.map((step, index) => (
+              <li key={step} className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                  {index + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+          <DialogFooter>
+            <Button type="button" onClick={() => setInstallHelpOpen(false)}>
+              Got it
             </Button>
           </DialogFooter>
         </DialogContent>

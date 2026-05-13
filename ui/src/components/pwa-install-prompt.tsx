@@ -3,39 +3,18 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  getPwaInstallPrompt,
+  hasPwaInstallPromptBeenDismissed,
+  initPwaInstallPromptCapture,
+  installPwaApp,
+  isStandaloneDisplay,
+  markPwaInstallPromptDismissed,
+  subscribePwaInstallState,
+  type BeforeInstallPromptEvent,
+} from "@/services/pwa-install";
 
 const INSTALL_TOAST_ID = "whirlpool-pwa-install";
-const INSTALL_DISMISSED_KEY = "whirlpool.pwaInstall.dismissed";
-const INSTALL_ACCEPTED_KEY = "whirlpool.pwaInstall.accepted";
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-};
-
-function isStandaloneDisplay(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true
-  );
-}
-
-function isMobileInstallTarget(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(max-width: 767px)").matches ||
-    /Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent)
-  );
-}
-
-function hasInstallPromptBeenDismissed(): boolean {
-  if (typeof window === "undefined") return true;
-  return (
-    window.localStorage.getItem(INSTALL_ACCEPTED_KEY) === "true" ||
-    window.sessionStorage.getItem(INSTALL_DISMISSED_KEY) === "true"
-  );
-}
 
 export function PwaInstallPrompt() {
   const isMobile = useIsMobile();
@@ -43,35 +22,12 @@ export function PwaInstallPrompt() {
     useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (event: Event) => {
-      if (
-        !isMobileInstallTarget() ||
-        isStandaloneDisplay() ||
-        hasInstallPromptBeenDismissed()
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-      setInstallPrompt(event as BeforeInstallPromptEvent);
-    };
-
-    const handleAppInstalled = () => {
-      window.localStorage.setItem(INSTALL_ACCEPTED_KEY, "true");
+    initPwaInstallPromptCapture();
+    setInstallPrompt(getPwaInstallPrompt());
+    return subscribePwaInstallState(() => {
       toast.dismiss(INSTALL_TOAST_ID);
-      setInstallPrompt(null);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt,
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
+      setInstallPrompt(getPwaInstallPrompt());
+    });
   }, []);
 
   useEffect(() => {
@@ -79,7 +35,7 @@ export function PwaInstallPrompt() {
       !isMobile ||
       !installPrompt ||
       isStandaloneDisplay() ||
-      hasInstallPromptBeenDismissed()
+      hasPwaInstallPromptBeenDismissed()
     ) {
       return;
     }
@@ -114,12 +70,10 @@ export function PwaInstallPrompt() {
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-slate-950/20 transition-transform active:scale-[0.98] dark:bg-white dark:text-slate-950"
                   onClick={async () => {
                     toast.dismiss(toastId);
-                    await installPrompt.prompt();
-                    const choice = await installPrompt.userChoice;
+                    const choice = await installPwaApp();
                     setInstallPrompt(null);
 
-                    if (choice.outcome === "accepted") {
-                      window.localStorage.setItem(INSTALL_ACCEPTED_KEY, "true");
+                    if (choice === "accepted") {
                       toast.success("App install started.");
                     } else {
                       toast.info("Install skipped for now.");
@@ -133,10 +87,7 @@ export function PwaInstallPrompt() {
                   type="button"
                   className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                   onClick={() => {
-                    window.sessionStorage.setItem(
-                      INSTALL_DISMISSED_KEY,
-                      "true",
-                    );
+                    markPwaInstallPromptDismissed();
                     toast.dismiss(toastId);
                   }}
                 >
