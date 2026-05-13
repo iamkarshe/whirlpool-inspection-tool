@@ -31,7 +31,13 @@ import {
   normalizeOpsRole,
 } from "@/lib/ops-role";
 import { cn } from "@/lib/utils";
-import { CircleUser, Home, ScanLine } from "lucide-react";
+import {
+  CircleUser,
+  DownloadCloud,
+  Home,
+  Loader2,
+  ScanLine,
+} from "lucide-react";
 import React, { useEffect } from "react";
 import {
   NavLink,
@@ -40,6 +46,14 @@ import {
   useMatches,
   useNavigate,
 } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  getPwaInstallHelp,
+  initPwaInstallPromptCapture,
+  installPwaApp,
+  isStandaloneDisplay,
+  subscribePwaInstallState,
+} from "@/services/pwa-install";
 
 type OpsLayoutProps = {
   className?: string;
@@ -74,6 +88,11 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   const sessionUser = useSessionUser();
   const envGate = useOpsEnvironmentGate();
   const [showDesktopWarning, setShowDesktopWarning] = React.useState(false);
+  const [installBusy, setInstallBusy] = React.useState(false);
+  const [installHelpOpen, setInstallHelpOpen] = React.useState(false);
+  const [standaloneInstalled, setStandaloneInstalled] = React.useState(() =>
+    isStandaloneDisplay(),
+  );
 
   const headerInitials = sessionUser?.name?.trim()?.length
     ? userInitialsFromName(sessionUser.name)
@@ -88,11 +107,43 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
     }
   }, []);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    initPwaInstallPromptCapture();
+    const syncInstallState = () => {
+      setStandaloneInstalled(isStandaloneDisplay());
+    };
+    syncInstallState();
+    return subscribePwaInstallState(syncInstallState);
+  }, []);
+
   const handleDismissDesktopWarning = () => {
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("ops-desktop-warning-seen", "1");
     }
     setShowDesktopWarning(false);
+  };
+
+  const handleInstallApp = async () => {
+    setInstallBusy(true);
+    try {
+      const outcome = await installPwaApp();
+      setStandaloneInstalled(isStandaloneDisplay());
+
+      if (outcome === "accepted") {
+        toast.success("App install started.");
+      } else if (outcome === "installed") {
+        toast.success("App is already installed.");
+      } else if (outcome === "dismissed") {
+        toast.info("Install skipped for now.");
+      } else {
+        setInstallHelpOpen(true);
+      }
+    } catch {
+      toast.error("Unable to start app install right now.");
+    } finally {
+      setInstallBusy(false);
+    }
   };
 
   const navTabs = React.useMemo(() => {
@@ -138,6 +189,8 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
       .find((m) => (m.handle as RouteHandle | undefined)?.title);
     return ((match?.handle as RouteHandle | undefined)?.title ?? "").toString();
   }, [matches]);
+
+  const installHelp = React.useMemo(() => getPwaInstallHelp(), []);
 
   const roleBadgeClass = React.useMemo(() => {
     const r = normalizeOpsRole(sessionUser?.role);
@@ -289,6 +342,21 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
                 <span>{tab.label}</span>
               </NavLink>
             ))}
+            {!standaloneInstalled ? (
+              <button
+                type="button"
+                onClick={handleInstallApp}
+                disabled={installBusy}
+                className="flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-sky-700 transition-all hover:bg-sky-500/10 disabled:cursor-wait disabled:opacity-70 dark:text-sky-300"
+              >
+                {installBusy ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <DownloadCloud className="h-5 w-5" />
+                )}
+                <span>Install</span>
+              </button>
+            ) : null}
           </div>
         </nav>
       </div>
@@ -317,6 +385,32 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
           <DialogFooter className="mt-2 justify-end">
             <Button type="button" onClick={handleDismissDesktopWarning}>
               Continue here
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={installHelpOpen} onOpenChange={setInstallHelpOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{installHelp.title}</DialogTitle>
+            <DialogDescription>
+              This browser did not expose the native install prompt, so follow
+              these steps to add the PWA manually.
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="space-y-2 rounded-2xl border bg-muted/30 p-4 text-sm">
+            {installHelp.steps.map((step, index) => (
+              <li key={step} className="flex gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                  {index + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+          <DialogFooter>
+            <Button type="button" onClick={() => setInstallHelpOpen(false)}>
+              Got it
             </Button>
           </DialogFooter>
         </DialogContent>

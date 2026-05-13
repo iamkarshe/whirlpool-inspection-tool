@@ -28,6 +28,7 @@ import {
   installPwaApp,
   isPwaInstallPromptAvailable,
   isStandaloneDisplay,
+  getPwaInstallHelp,
   subscribePwaInstallState,
 } from "@/services/pwa-install";
 import {
@@ -37,10 +38,6 @@ import {
 
 type ConfirmAction = "logout" | null;
 type NotificationSupportState = NotificationPermission | "unsupported";
-type InstallHelp = {
-  title: string;
-  steps: string[];
-};
 
 function shortenMiddle(value: string, head = 10, tail = 6): string {
   const t = value.trim();
@@ -51,48 +48,6 @@ function shortenMiddle(value: string, head = 10, tail = 6): string {
 function readNotificationSupportState(): NotificationSupportState {
   if (!isPushNotificationSupported()) return "unsupported";
   return Notification.permission;
-}
-
-function getPwaInstallHelp(): InstallHelp {
-  if (typeof navigator === "undefined") {
-    return {
-      title: "Add this app to your home screen",
-      steps: ["Open your browser menu.", "Choose Add to Home screen."],
-    };
-  }
-
-  const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/i.test(ua)) {
-    return {
-      title: "Add this app on iPhone",
-      steps: [
-        "Open this site in Safari.",
-        "Tap the Share button in the bottom toolbar.",
-        "Choose Add to Home Screen.",
-        "Tap Add to confirm.",
-      ],
-    };
-  }
-
-  if (/Android/i.test(ua)) {
-    return {
-      title: "Add this app on Android",
-      steps: [
-        "Open this site in Chrome.",
-        "Tap the three-dot menu.",
-        "Choose Install app or Add to Home screen.",
-        "Confirm the install prompt.",
-      ],
-    };
-  }
-
-  return {
-    title: "Install this PWA",
-    steps: [
-      "Use the install icon in the browser address bar if it appears.",
-      "Or open the browser menu and choose Install app.",
-    ],
-  };
 }
 
 export default function OpsAccountPage() {

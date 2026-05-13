@@ -8,6 +8,10 @@ export type BeforeInstallPromptEvent = Event & {
 };
 
 export type PwaInstallOutcome = "accepted" | "dismissed" | "installed" | "unavailable";
+export type PwaInstallHelp = {
+  title: string;
+  steps: string[];
+};
 
 let installPrompt: BeforeInstallPromptEvent | null = null;
 let listenersAttached = false;
@@ -52,6 +56,48 @@ export function getPwaInstallPrompt(): BeforeInstallPromptEvent | null {
 
 export function isPwaInstallPromptAvailable(): boolean {
   return installPrompt !== null && !isStandaloneDisplay();
+}
+
+export function getPwaInstallHelp(): PwaInstallHelp {
+  if (typeof navigator === "undefined") {
+    return {
+      title: "Add this app to your home screen",
+      steps: ["Open your browser menu.", "Choose Add to Home screen."],
+    };
+  }
+
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    return {
+      title: "Add this app on iPhone",
+      steps: [
+        "Open this site in Safari.",
+        "Tap the Share button in the bottom toolbar.",
+        "Choose Add to Home Screen.",
+        "Tap Add to confirm.",
+      ],
+    };
+  }
+
+  if (/Android/i.test(ua)) {
+    return {
+      title: "Add this app on Android",
+      steps: [
+        "Open this site in Chrome.",
+        "Tap the three-dot menu.",
+        "Choose Install app or Add to Home screen.",
+        "Confirm the install prompt.",
+      ],
+    };
+  }
+
+  return {
+    title: "Install this PWA",
+    steps: [
+      "Use the install icon in the browser address bar if it appears.",
+      "Or open the browser menu and choose Install app.",
+    ],
+  };
 }
 
 export async function installPwaApp(): Promise<PwaInstallOutcome> {
