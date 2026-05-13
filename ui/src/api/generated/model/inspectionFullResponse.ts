@@ -26,6 +26,15 @@ export interface InspectionFullResponse {
   inspection_type: string;
   warehouse_code: string | null;
   plant_code: string | null;
+  serial_number: string | null;
+  manufactured_year: number | null;
+  truck_number: string | null;
+  truck_docking_time: string | null;
+  dock_number: string | null;
+  damage_type: string | null;
+  damage_severity: string | null;
+  damage_cause: string | null;
+  damage_grade: string | null;
   lat: number | null;
   lng: number | null;
   ip_address: string | null;
@@ -45,6 +54,8 @@ export interface InspectionFullResponse {
   inner_packaging_side_images: string[];
   product_side_images: string[];
   device_time_taken: number;
+  inbound_inspection_uuid?: string | null;
+  outbound_inspection_uuid?: string | null;
   outer_packaging_checks: ChecklistLayerPassFail;
   inner_packaging_checks: ChecklistLayerPassFail;
   product_checks: ChecklistLayerPassFail;
