@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Camera,
+  Image as ImageIcon,
   Loader2,
   Package,
   RotateCcw,
@@ -124,6 +125,15 @@ type SideImageKey =
   | "accessories";
 
 type SideImageSectionKey = "outer" | "inner" | "product";
+
+type ImagePickerTarget =
+  | { kind: "checklist"; itemId: number }
+  | {
+      kind: "side";
+      section: SideImageSectionKey;
+      sideKey: SideImageKey;
+      label: string;
+    };
 
 const SIDE_IMAGE_SLOTS_BY_SECTION: Record<
   SideImageSectionKey,
@@ -442,6 +452,8 @@ export function OpsInspectionStartForm({
 
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
+  const [imagePickerTarget, setImagePickerTarget] =
+    useState<ImagePickerTarget | null>(null);
   const [validationDialog, setValidationDialog] = useState<{
     title: string;
     message: string;
@@ -1096,6 +1108,24 @@ export function OpsInspectionStartForm({
     [],
   );
 
+  const handleImagePickerFiles = useCallback(
+    (files: FileList | null) => {
+      const target = imagePickerTarget;
+      if (!target) return;
+      if (target.kind === "checklist") {
+        pickNoAnswerFilesForItem(target.itemId, files);
+      } else {
+        void uploadSideImage(
+          target.section,
+          target.sideKey,
+          files?.[0] ?? null,
+        );
+      }
+      setImagePickerTarget(null);
+    },
+    [imagePickerTarget, pickNoAnswerFilesForItem, uploadSideImage],
+  );
+
   const goNext = () => {
     if (step.key === "site") {
       const err = siteStepError();
@@ -1519,6 +1549,9 @@ export function OpsInspectionStartForm({
   const plantSelectValue =
     mode === "inbound" ? plantCode.trim() || undefined : undefined;
   const theme = mode === "inbound" ? "sky" : "amber";
+  const imagePickerAllowsMultiple = imagePickerTarget?.kind === "checklist";
+  const imagePickerLabel =
+    imagePickerTarget?.kind === "side" ? imagePickerTarget.label : "photos";
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -1581,6 +1614,59 @@ export function OpsInspectionStartForm({
             >
               Restart
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={imagePickerTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setImagePickerTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Choose image source</AlertDialogTitle>
+            <AlertDialogDescription>
+              Upload {imagePickerLabel} from your gallery or open the camera.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" asChild>
+              <label className="cursor-pointer justify-center">
+                <ImageIcon className="mr-2 h-4 w-4" />
+                Files / Gallery
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple={imagePickerAllowsMultiple}
+                  className="sr-only"
+                  onChange={(e) => {
+                    handleImagePickerFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </Button>
+            <Button variant="outline" asChild>
+              <label className="cursor-pointer justify-center">
+                <Camera className="mr-2 h-4 w-4" />
+                Camera
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  onChange={(e) => {
+                    handleImagePickerFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </Button>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1844,7 +1930,9 @@ export function OpsInspectionStartForm({
                 remark={remarksMap[item.id] ?? ""}
                 onRemarkChange={setRemark}
                 images={noAnswerImages[item.id] ?? NO_ANSWER_IMAGES_EMPTY}
-                onPickFiles={pickNoAnswerFilesForItem}
+                onRequestImageSource={(itemId) =>
+                  setImagePickerTarget({ kind: "checklist", itemId })
+                }
                 onRemoveImage={removeNoAnswerImageForItem}
                 uploadingPhotoCount={photoUploadCountByItem[item.id] ?? 0}
               />
@@ -1905,38 +1993,29 @@ export function OpsInspectionStartForm({
                               type="button"
                               variant="secondary"
                               size="sm"
-                              asChild
                               className={cn(
                                 "w-full justify-center border border-sky-500/20 bg-sky-500/10 text-xs font-semibold text-sky-950 shadow-sm",
                                 "hover:bg-sky-500/15 dark:text-sky-50",
                                 isUploading && "opacity-70 cursor-wait",
                               )}
                               disabled={isUploading}
+                              onClick={() =>
+                                setImagePickerTarget({
+                                  kind: "side",
+                                  section,
+                                  sideKey: slot.key,
+                                  label: `${slot.label} image`,
+                                })
+                              }
                             >
-                              <label className="cursor-pointer">
-                                {isUploading ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Camera className="mr-2 h-4 w-4" />
-                                )}
-                                {isUploading
-                                  ? "Uploading…"
-                                  : `Upload ${slot.label} image`}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  capture="environment"
-                                  className="sr-only"
-                                  onChange={(e) => {
-                                    void uploadSideImage(
-                                      section,
-                                      slot.key,
-                                      e.target.files?.[0] ?? null,
-                                    );
-                                    e.target.value = "";
-                                  }}
-                                />
-                              </label>
+                              {isUploading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Camera className="mr-2 h-4 w-4" />
+                              )}
+                              {isUploading
+                                ? "Uploading…"
+                                : `Upload ${slot.label} image`}
                             </Button>
                           )}
                         </div>
@@ -2046,7 +2125,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   remark,
   onRemarkChange,
   images,
-  onPickFiles,
+  onRequestImageSource,
   onRemoveImage,
   uploadingPhotoCount = 0,
 }: {
@@ -2056,7 +2135,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   remark: string;
   onRemarkChange: (id: number, v: string) => void;
   images: NoAnswerImageSlot[];
-  onPickFiles: (itemId: number, files: FileList | null) => void;
+  onRequestImageSource: (itemId: number) => void;
   onRemoveImage: (itemId: number, index: number) => void;
   uploadingPhotoCount?: number;
 }) {
@@ -2158,34 +2237,15 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  asChild
                   disabled={uploadingPhotoCount > 0}
+                  onClick={() => onRequestImageSource(item.id)}
                 >
-                  <label
-                    className={cn(
-                      "cursor-pointer",
-                      uploadingPhotoCount > 0 &&
-                        "pointer-events-none opacity-60",
-                    )}
-                  >
-                    {uploadingPhotoCount > 0 ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Camera className="mr-1.5 h-3.5 w-3.5" />
-                    )}
-                    {uploadingPhotoCount > 0 ? "Uploading…" : "Add photos"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="sr-only"
-                      disabled={uploadingPhotoCount > 0}
-                      onChange={(e) => {
-                        onPickFiles(item.id, e.target.files);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
+                  {uploadingPhotoCount > 0 ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Camera className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {uploadingPhotoCount > 0 ? "Uploading…" : "Add photos"}
                 </Button>
                 {item.min_upload_files > 0 ? (
                   <span className="text-[11px] text-muted-foreground">
