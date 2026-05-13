@@ -3,6 +3,7 @@ import {
   DownloadCloud,
   Loader2,
   LogOut,
+  Send,
   Smartphone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -39,6 +40,7 @@ import {
 } from "@/services/pwa-install";
 import {
   isPushNotificationSupported,
+  sendTestPushNotificationToUser,
   subscribeCurrentDeviceToPush,
 } from "@/services/push-notifications";
 
@@ -63,6 +65,7 @@ export default function OpsAccountPage() {
   const [installBusy, setInstallBusy] = useState(false);
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
   const [notificationBusy, setNotificationBusy] = useState(false);
+  const [testNotificationBusy, setTestNotificationBusy] = useState(false);
   const [installAvailable, setInstallAvailable] = useState(false);
   const [standaloneInstalled, setStandaloneInstalled] = useState(false);
   const [notificationState, setNotificationState] =
@@ -147,6 +150,26 @@ export default function OpsAccountPage() {
       );
     } finally {
       setNotificationBusy(false);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    if (!user?.uuid) return;
+    setTestNotificationBusy(true);
+    try {
+      await subscribeCurrentDeviceToPush();
+      await sendTestPushNotificationToUser(user.uuid);
+      setNotificationState(readNotificationSupportState());
+      toast.success("Test notification sent.");
+    } catch (error) {
+      setNotificationState(readNotificationSupportState());
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to send test notification.",
+      );
+    } finally {
+      setTestNotificationBusy(false);
     }
   };
 
@@ -279,8 +302,7 @@ export default function OpsAccountPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold">App experience</h2>
             <p className="text-xs leading-5 text-muted-foreground">
-              Add this to your phone for a smooth, app-like experience with
-              quick access and notifications.
+              App-like smooth experience with easy access and notifications.
             </p>
           </div>
         </div>
@@ -346,6 +368,31 @@ export default function OpsAccountPage() {
             </span>
           </button>
         </div>
+
+        {notificationState === "granted" ? (
+          <button
+            type="button"
+            onClick={handleSendTestNotification}
+            disabled={testNotificationBusy}
+            className="flex min-h-14 items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-3 text-left transition-colors hover:bg-emerald-500/15 disabled:cursor-wait disabled:opacity-70"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white">
+              {testNotificationBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">
+                Send test notification
+              </span>
+              <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
+                Sends a sample alert through the backend push API.
+              </span>
+            </span>
+          </button>
+        ) : null}
       </section>
 
       <OpsSettingsContent />

@@ -2,6 +2,7 @@ import { getPush } from "@/api/generated/push/push";
 import type {
   BrowserPushSubscription,
   PushSubscriptionCreate,
+  PushUserSendRequest,
 } from "@/api/generated/model";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
 import { getServerAssignedDeviceUuid } from "@/lib/session-device-uuid";
@@ -167,4 +168,25 @@ export async function subscribeCurrentDeviceToPush(): Promise<void> {
     buildPushSubscriptionPayload(subscription),
   );
   markPushNotificationsEnabled();
+}
+
+export async function sendTestPushNotificationToUser(
+  userUuid: string,
+): Promise<void> {
+  const payload: PushUserSendRequest = {
+    user_uuid: userUuid,
+    notification: {
+      title: "Whirlpool PDI test",
+      body: "Push notifications are working on this device.",
+      url: "/ops",
+      tag: "whirlpool-push-test",
+      data: {
+        kind: "test",
+        sent_at: new Date().toISOString(),
+        device_uuid: getServerAssignedDeviceUuid(),
+      },
+    },
+  };
+
+  await getPush().sendUserNotificationApiPushSendUserPost(payload);
 }
