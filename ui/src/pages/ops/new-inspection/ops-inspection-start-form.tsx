@@ -6,6 +6,7 @@ import {
   Loader2,
   Package,
   RotateCcw,
+  UploadCloud,
   X,
 } from "lucide-react";
 import {
@@ -15,6 +16,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentType,
   type FocusEvent,
 } from "react";
 import {
@@ -115,16 +117,21 @@ const TRUCK_DOCKING_FUTURE_TOLERANCE_MINUTES = 10;
 
 type SideImageKey =
   | "top"
-  | "side1"
-  | "side2"
-  | "side3"
-  | "side4"
+  | "front"
+  | "back"
+  | "left"
+  | "right"
+  | "eps1"
+  | "eps2"
+  | "eps3"
   | "barcode_sticker"
   | "mrp_label"
   | "energy_label"
-  | "accessories";
+  | "accessories"
+  | "inside_product";
 
 type SideImageSectionKey = "outer" | "inner" | "product";
+type SideImageSlot = { key: SideImageKey; label: string; required?: boolean };
 
 type ImagePickerTarget =
   | { kind: "checklist"; itemId: number }
@@ -137,32 +144,31 @@ type ImagePickerTarget =
 
 const SIDE_IMAGE_SLOTS_BY_SECTION: Record<
   SideImageSectionKey,
-  { key: SideImageKey; label: string }[]
+  SideImageSlot[]
 > = {
   outer: [
+    { key: "front", label: "Front" },
+    { key: "back", label: "Back" },
+    { key: "left", label: "Left" },
+    { key: "right", label: "Right" },
     { key: "top", label: "Top" },
-    { key: "side1", label: "Side 1" },
-    { key: "side2", label: "Side 2" },
-    { key: "side3", label: "Side 3" },
-    { key: "side4", label: "Side 4" },
-    { key: "barcode_sticker", label: "Barcode sticker" },
-    { key: "mrp_label", label: "MRP label" },
-    { key: "energy_label", label: "Energy label" },
+    { key: "barcode_sticker", label: "Barcode Sticker" },
+    { key: "mrp_label", label: "MRP Label" },
+    { key: "energy_label", label: "Energy Label" },
   ],
   inner: [
-    { key: "top", label: "Top" },
-    { key: "side1", label: "Side 1" },
-    { key: "side2", label: "Side 2" },
-    { key: "side3", label: "Side 3" },
-    { key: "side4", label: "Side 4" },
+    { key: "eps1", label: "EPS 1" },
+    { key: "eps2", label: "EPS 2" },
+    { key: "eps3", label: "EPS 3", required: false },
     { key: "accessories", label: "Accessories" },
   ],
   product: [
+    { key: "front", label: "Front" },
+    { key: "back", label: "Back" },
+    { key: "left", label: "Left" },
+    { key: "right", label: "Right" },
     { key: "top", label: "Top" },
-    { key: "side1", label: "Side 1" },
-    { key: "side2", label: "Side 2" },
-    { key: "side3", label: "Side 3" },
-    { key: "side4", label: "Side 4" },
+    { key: "inside_product", label: "Inside Product" },
   ],
 };
 
@@ -182,19 +188,41 @@ function createEmptySideImages(
 ): Record<SideImageKey, NoAnswerImageSlot | null> {
   const base: Record<SideImageKey, NoAnswerImageSlot | null> = {
     top: null,
-    side1: null,
-    side2: null,
-    side3: null,
-    side4: null,
+    front: null,
+    back: null,
+    left: null,
+    right: null,
+    eps1: null,
+    eps2: null,
+    eps3: null,
     barcode_sticker: null,
     mrp_label: null,
     energy_label: null,
     accessories: null,
+    inside_product: null,
   };
   for (const slot of SIDE_IMAGE_SLOTS_BY_SECTION[section]) {
     base[slot.key] = null;
   }
   return base;
+}
+
+function createEmptySideImageUploading(): Record<SideImageKey, boolean> {
+  return {
+    top: false,
+    front: false,
+    back: false,
+    left: false,
+    right: false,
+    eps1: false,
+    eps2: false,
+    eps3: false,
+    barcode_sticker: false,
+    mrp_label: false,
+    energy_label: false,
+    accessories: false,
+    inside_product: false,
+  };
 }
 
 function hasServerPath(slot: NoAnswerImageSlot | null | undefined): boolean {
@@ -207,7 +235,7 @@ function sideImagesHaveAllUploads(
   images: Record<SideImageKey, NoAnswerImageSlot | null>,
 ): boolean {
   return SIDE_IMAGE_SLOTS_BY_SECTION[section].every((s) =>
-    hasServerPath(images[s.key]),
+    s.required === false ? true : hasServerPath(images[s.key]),
   );
 }
 
@@ -218,6 +246,28 @@ function sideImagesSubmitPaths(
   return SIDE_IMAGE_SLOTS_BY_SECTION[section]
     .map((s) => images[s.key]?.path ?? "")
     .filter(Boolean);
+}
+
+function sideSectionPanelMeta(section: SideImageSectionKey): {
+  title: string;
+  icon: ComponentType<{ className?: string }>;
+} {
+  if (section === "outer") {
+    return {
+      title: "Outer Packaging",
+      icon: Package,
+    };
+  }
+  if (section === "inner") {
+    return {
+      title: "Inner Packaging",
+      icon: ImageIcon,
+    };
+  }
+  return {
+    title: "Product",
+    icon: Camera,
+  };
 }
 
 /** `detail` from `POST /api/inspections/barcode-lock` when another user holds the lock. */
@@ -389,39 +439,9 @@ export function OpsInspectionStartForm({
     inner: Record<SideImageKey, boolean>;
     product: Record<SideImageKey, boolean>;
   }>(() => ({
-    outer: {
-      top: false,
-      side1: false,
-      side2: false,
-      side3: false,
-      side4: false,
-      barcode_sticker: false,
-      mrp_label: false,
-      energy_label: false,
-      accessories: false,
-    },
-    inner: {
-      top: false,
-      side1: false,
-      side2: false,
-      side3: false,
-      side4: false,
-      barcode_sticker: false,
-      mrp_label: false,
-      energy_label: false,
-      accessories: false,
-    },
-    product: {
-      top: false,
-      side1: false,
-      side2: false,
-      side3: false,
-      side4: false,
-      barcode_sticker: false,
-      mrp_label: false,
-      energy_label: false,
-      accessories: false,
-    },
+    outer: createEmptySideImageUploading(),
+    inner: createEmptySideImageUploading(),
+    product: createEmptySideImageUploading(),
   }));
 
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -1016,7 +1036,7 @@ export function OpsInspectionStartForm({
       if (section) {
         const imgs = sideImagesBySection[section];
         if (!sideImagesHaveAllUploads(section, imgs)) {
-          return "Upload all 5 images (Top, Bottom, Left, Right, Front) before continuing.";
+          return "Upload all required images before continuing.";
         }
       }
       for (const item of group.items) {
@@ -1385,39 +1405,9 @@ export function OpsInspectionStartForm({
       product: createEmptySideImages("product"),
     });
     setSideImageUploading({
-      outer: {
-        top: false,
-        side1: false,
-        side2: false,
-        side3: false,
-        side4: false,
-        barcode_sticker: false,
-        mrp_label: false,
-        energy_label: false,
-        accessories: false,
-      },
-      inner: {
-        top: false,
-        side1: false,
-        side2: false,
-        side3: false,
-        side4: false,
-        barcode_sticker: false,
-        mrp_label: false,
-        energy_label: false,
-        accessories: false,
-      },
-      product: {
-        top: false,
-        side1: false,
-        side2: false,
-        side3: false,
-        side4: false,
-        barcode_sticker: false,
-        mrp_label: false,
-        energy_label: false,
-        accessories: false,
-      },
+      outer: createEmptySideImageUploading(),
+      inner: createEmptySideImageUploading(),
+      product: createEmptySideImageUploading(),
     });
     setDamageType("");
     setDamageSeverity("");
@@ -1944,19 +1934,17 @@ export function OpsInspectionStartForm({
             );
             if (!section) return null;
             const images = sideImagesBySection[section];
-            const title =
-              section === "outer"
-                ? "Outer Packaging images"
-                : section === "inner"
-                  ? "Inner Packaging images"
-                  : "Product images";
+            const panel = sideSectionPanelMeta(section);
+            const PanelIcon = panel.icon;
             return (
               <div className="mt-3 space-y-2 pt-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold">{title}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Upload all required images.
-                  </p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="inline-flex items-center gap-1.5 text-xs font-semibold">
+                      <PanelIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      {panel.title}
+                    </p>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {SIDE_IMAGE_SLOTS_BY_SECTION[section].map((slot) => {
@@ -1968,8 +1956,7 @@ export function OpsInspectionStartForm({
                         key={`${section}-${slot.key}`}
                         className="relative overflow-hidden rounded-xl border border-sky-500/15 bg-sky-500/[0.04] p-2 shadow-sm"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="sr-only">{slot.label}</span>
+                        <div className="flex items-center justify-end gap-2">
                           {has ? (
                             <button
                               type="button"
@@ -1994,7 +1981,7 @@ export function OpsInspectionStartForm({
                               variant="secondary"
                               size="sm"
                               className={cn(
-                                "w-full justify-center border border-sky-500/20 bg-sky-500/10 text-xs font-semibold text-sky-950 shadow-sm",
+                                "w-full justify-start border border-sky-500/20 bg-sky-500/10 text-xs font-semibold text-sky-950 shadow-sm",
                                 "hover:bg-sky-500/15 dark:text-sky-50",
                                 isUploading && "opacity-70 cursor-wait",
                               )}
@@ -2011,11 +1998,23 @@ export function OpsInspectionStartForm({
                               {isUploading ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               ) : (
-                                <Camera className="mr-2 h-4 w-4" />
+                                <UploadCloud className="mr-2 h-4 w-4" />
                               )}
-                              {isUploading
-                                ? "Uploading…"
-                                : `Upload ${slot.label} image`}
+                              <span className="min-w-0 flex-1 truncate text-left">
+                                {isUploading
+                                  ? "Uploading…"
+                                  : `Upload ${slot.label} image`}
+                              </span>
+                              <span
+                                className={cn(
+                                  "ml-auto shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none",
+                                  slot.required === false
+                                    ? "border-yellow-500/40 bg-yellow-500/15 text-yellow-800 dark:text-yellow-200"
+                                    : "border-blue-500/40 bg-blue-500/15 text-blue-800 dark:text-blue-200",
+                                )}
+                              >
+                                {slot.required === false ? "Optional" : "Required"}
+                              </span>
                             </Button>
                           )}
                         </div>

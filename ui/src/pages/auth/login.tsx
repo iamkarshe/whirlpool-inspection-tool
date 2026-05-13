@@ -1,3 +1,8 @@
+import type { ChangeEvent, SubmitEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,10 +23,6 @@ import {
   loginWithEmailPassword,
   resolvePostLoginHref,
 } from "@/services/login-service";
-import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 export default function LoginPage() {
   const navigate = useNavigate();

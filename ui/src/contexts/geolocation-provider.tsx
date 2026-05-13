@@ -24,6 +24,10 @@ import {
 const OPS_GEO_SESSION_KEY = "whirlpool.ops.geolocationSession.v1";
 /** Re-use coordinates for this long without asking again (reload-safe). */
 const OPS_GEO_SESSION_MAX_AGE_MS = 4 * 60 * 60 * 1000;
+const FALLBACK_GEO_COORDS: GeolocationCoords = {
+  lat: 28.6448,
+  lng: 77.216721,
+};
 
 type StoredGeoSession = { lat: number; lng: number; savedAt: number };
 
@@ -73,7 +77,7 @@ function getInitialGeoState(): {
     return { status: "idle", coordinates: null };
   }
   if (!isGeolocationSupported()) {
-    return { status: "unsupported", coordinates: null };
+    return { status: "ready", coordinates: FALLBACK_GEO_COORDS };
   }
   const stored = readStoredGeoSession();
   if (stored) {
@@ -109,6 +113,14 @@ export function GeolocationProvider({ children }: { children: ReactNode }) {
     setCoordinatesState(next);
   }, []);
 
+  const useFallbackCoordinates = useCallback(() => {
+    setCoordinates(FALLBACK_GEO_COORDS);
+    setStatus("ready");
+    setDialogOpen(false);
+    writeStoredGeoSession(FALLBACK_GEO_COORDS);
+    return FALLBACK_GEO_COORDS;
+  }, [setCoordinates, setStatus]);
+
   /** After reload: if permission is already granted, reuse cached fix without opening dialogs. */
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -131,16 +143,14 @@ export function GeolocationProvider({ children }: { children: ReactNode }) {
         writeStoredGeoSession(coords);
         return;
       }
-      if (result.code === 1) {
-        setLastErrorMessage(result.message);
-        setStatus("locked");
-      }
+      setLastErrorMessage(result.message);
+      useFallbackCoordinates();
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [setCoordinates, setStatus]);
+  }, [setCoordinates, setStatus, useFallbackCoordinates]);
 
   const flushPending = useCallback((value: GeolocationCoords | null) => {
     const list = pendingResolvers.current;
@@ -152,14 +162,11 @@ export function GeolocationProvider({ children }: { children: ReactNode }) {
 
   const acquireLocation = useCallback((): Promise<GeolocationCoords | null> => {
     if (!isGeolocationSupported()) {
-      setStatus("unsupported");
-      setDialogOpen(true);
-      return Promise.resolve(null);
+      return Promise.resolve(useFallbackCoordinates());
     }
 
     if (statusRef.current === "unsupported") {
-      setDialogOpen(true);
-      return Promise.resolve(null);
+      return Promise.resolve(useFallbackCoordinates());
     }
 
     if (statusRef.current === "ready" && coordinatesRef.current) {
@@ -178,14 +185,13 @@ export function GeolocationProvider({ children }: { children: ReactNode }) {
         setStatus("prompt");
       }
     });
-  }, [setStatus]);
+  }, [setStatus, useFallbackCoordinates]);
 
   const handleAllowLocation = useCallback(async () => {
     if (!isGeolocationSupported()) {
-      setStatus("unsupported");
       setLastErrorMessage(undefined);
-      setDialogOpen(true);
-      flushPending(null);
+      const fallback = useFallbackCoordinates();
+      flushPending(fallback);
       return;
     }
 
@@ -204,10 +210,9 @@ export function GeolocationProvider({ children }: { children: ReactNode }) {
     }
 
     setLastErrorMessage(result.message);
-    setStatus("locked");
-    setDialogOpen(true);
-    flushPending(null);
-  }, [flushPending, setCoordinates, setStatus]);
+    const fallback = useFallbackCoordinates();
+    flushPending(fallback);
+  }, [flushPending, setCoordinates, setStatus, useFallbackCoordinates]);
 
   const handleDialogOpenChange = useCallback((open: boolean) => {
     const unlocked =
