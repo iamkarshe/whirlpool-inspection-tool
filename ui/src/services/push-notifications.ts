@@ -1,22 +1,25 @@
-import { apiClient } from "@/api/axios-instance";
+import { getPush } from "@/api/generated/push/push";
+import type {
+  BrowserPushSubscription,
+  PushSubscriptionCreate,
+} from "@/api/generated/model";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
 import { getServerAssignedDeviceUuid } from "@/lib/session-device-uuid";
-
-const VAPID_PUBLIC_KEY_ENDPOINT = "/api/push/vapid-public-key";
-const PUSH_SUBSCRIPTION_ENDPOINT = "/api/push/subscriptions";
 
 type VapidPublicKeyResponse = {
   publicKey?: string;
   public_key?: string;
 };
 
-export type PushSubscriptionPayload = {
-  subscription: PushSubscriptionJSON;
-  device_uuid: string | null;
-  device_fingerprint: string | null;
-  user_agent: string;
-  timezone: string;
+export type PushNotificationSetupStatus = {
+  supported: boolean;
+  permission: NotificationPermission | "unsupported";
+  serviceWorkerReady: boolean;
+  subscribed: boolean;
+  enabled: boolean;
 };
+
+const PUSH_NOTIFICATIONS_ENABLED_KEY = "whirlpool.pwaNotifications.enabled";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -42,23 +45,89 @@ export function isPushNotificationSupported(): boolean {
   );
 }
 
-async function resolveVapidPublicKey(): Promise<string> {
-  const envKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
-  if (envKey) return envKey;
+export async function getCurrentPushNotificationSetupStatus(): Promise<PushNotificationSetupStatus> {
+  if (!isPushNotificationSupported()) {
+    return {
+      supported: false,
+      permission: "unsupported",
+      serviceWorkerReady: false,
+      subscribed: false,
+      enabled: false,
+    };
+  }
 
-  const response = await apiClient.get<VapidPublicKeyResponse>(
-    VAPID_PUBLIC_KEY_ENDPOINT,
-  );
-  const key = response.data.publicKey ?? response.data.public_key;
+  const permission = Notification.permission;
+  let serviceWorkerReady = false;
+  let subscribed = false;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    serviceWorkerReady = true;
+    subscribed = Boolean(await registration.pushManager.getSubscription());
+  } catch {
+    serviceWorkerReady = false;
+  }
+
+  const enabled = permission === "granted" && serviceWorkerReady && subscribed;
+  if (enabled) {
+    window.localStorage.setItem(PUSH_NOTIFICATIONS_ENABLED_KEY, "true");
+  }
+
+  return {
+    supported: true,
+    permission,
+    serviceWorkerReady,
+    subscribed,
+    enabled,
+  };
+}
+
+export function markPushNotificationsEnabled(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PUSH_NOTIFICATIONS_ENABLED_KEY, "true");
+}
+
+function normalizeVapidPublicKeyResponse(response: unknown): string {
+  const rec =
+    response && typeof response === "object"
+      ? (response as VapidPublicKeyResponse)
+      : {};
+  const key = rec.publicKey ?? rec.public_key;
   if (!key?.trim()) {
     throw new Error("VAPID public key is not configured.");
   }
   return key.trim();
 }
 
+async function resolveVapidPublicKey(): Promise<string> {
+  const envKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
+  if (envKey) return envKey;
+
+  const response = await getPush().getVapidPublicKeyApiPushVapidPublicKeyGet();
+  return normalizeVapidPublicKeyResponse(response);
+}
+
+function browserSubscriptionFromPushSubscription(
+  subscription: PushSubscription,
+): BrowserPushSubscription {
+  const json = subscription.toJSON();
+  const p256dh = json.keys?.p256dh;
+  const auth = json.keys?.auth;
+
+  if (!json.endpoint || !p256dh || !auth) {
+    throw new Error("Browser returned an incomplete push subscription.");
+  }
+
+  return {
+    endpoint: json.endpoint,
+    expirationTime: json.expirationTime ?? null,
+    keys: { p256dh, auth },
+  };
+}
+
 function buildPushSubscriptionPayload(
   subscription: PushSubscription,
-): PushSubscriptionPayload {
+): PushSubscriptionCreate {
   let deviceFingerprint: string | null = null;
   try {
     deviceFingerprint = getOrCreatePersistentDeviceId();
@@ -67,7 +136,7 @@ function buildPushSubscriptionPayload(
   }
 
   return {
-    subscription: subscription.toJSON(),
+    subscription: browserSubscriptionFromPushSubscription(subscription),
     device_uuid: getServerAssignedDeviceUuid(),
     device_fingerprint: deviceFingerprint,
     user_agent: navigator.userAgent,
@@ -94,8 +163,8 @@ export async function subscribeCurrentDeviceToPush(): Promise<void> {
       applicationServerKey: urlBase64ToUint8Array(await resolveVapidPublicKey()),
     }));
 
-  await apiClient.post(
-    PUSH_SUBSCRIPTION_ENDPOINT,
+  await getPush().savePushSubscriptionApiPushSubscriptionsPost(
     buildPushSubscriptionPayload(subscription),
   );
+  markPushNotificationsEnabled();
 }

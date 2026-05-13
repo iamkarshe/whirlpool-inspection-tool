@@ -14,20 +14,25 @@ self.addEventListener("push", (event) => {
   let payload = {};
 
   try {
-    payload = event.data ? event.data.json() : {};
+    if (event.data) {
+      payload = event.data.json();
+    }
   } catch {
-    payload = {};
+    payload = {
+      body: event.data ? event.data.text() : "You have a new update.",
+    };
   }
 
-  const title = payload.title || "Whirlpool Insights";
+  const notification = payload.notification || payload;
+  const title = notification.title || "Whirlpool Insights";
   const options = {
-    body: payload.body || "You have a new update.",
-    icon: payload.icon || "/assets/icons/icon-192.png",
-    badge: payload.badge || "/assets/icons/icon-192.png",
-    tag: payload.tag || "whirlpool-insights",
+    body: notification.body || "You have a new update.",
+    icon: notification.icon || "/assets/icons/icon-192.png",
+    badge: notification.badge || "/assets/icons/icon-192.png",
+    tag: notification.tag || "whirlpool-insights",
     data: {
-      url: payload.url || "/",
-      ...(payload.data || {}),
+      url: notification.url || payload.url || "/",
+      ...(notification.data || payload.data || {}),
     },
   };
 

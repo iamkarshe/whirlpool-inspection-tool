@@ -817,7 +817,7 @@ export default function OpsInspectionDetailPage() {
           </Link>
         </Button>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground font-title">
             Inspection
           </p>
           <h1 className="text-balance text-lg font-semibold leading-snug tracking-tight">

@@ -281,7 +281,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         <header className="sticky top-0 z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
           <div className="mx-auto flex max-w-md items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground font-title">
                 {import.meta.env.VITE_APP_TITLE}
               </p>
               {shouldRenderLogo && <BrandLogo />}
@@ -323,7 +323,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         <main className="flex-1 px-4 pb-20 pt-3">
           <Outlet />
         </main>
-        <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/80 pb-safe pt-2 backdrop-blur_">
+        <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/80 pb-safe pt-2 backdrop-blur_ font-title uppercase">
           <div className="mx-auto flex max-w-md items-center justify-between px-4">
             {navTabs.map((tab) => (
               <NavLink
@@ -347,7 +347,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
                 type="button"
                 onClick={handleInstallApp}
                 disabled={installBusy}
-                className="flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-sky-700 transition-all hover:bg-sky-500/10 disabled:cursor-wait disabled:opacity-70 dark:text-sky-300"
+                className="flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-sky-700 transition-all hover:bg-sky-500/10 disabled:cursor-wait disabled:opacity-70 dark:text-sky-300 font-title uppercase"
               >
                 {installBusy ? (
                   <Loader2 className="h-5 w-5 animate-spin" />

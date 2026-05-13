@@ -1,4 +1,10 @@
-import { BellRing, DownloadCloud, Loader2, LogOut, Smartphone } from "lucide-react";
+import {
+  BellRing,
+  DownloadCloud,
+  Loader2,
+  LogOut,
+  Smartphone,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -231,9 +237,7 @@ export default function OpsAccountPage() {
               className="max-w-[min(220px,70vw)] break-all font-mono text-xs text-right"
               title={serverDeviceUuid ?? undefined}
             >
-              {serverDeviceUuid
-                ? shortenMiddle(serverDeviceUuid, 10, 10)
-                : "—"}
+              {serverDeviceUuid ? shortenMiddle(serverDeviceUuid, 10, 10) : "—"}
             </dd>
           </div>
           <div className="flex items-start justify-between gap-4">
@@ -275,8 +279,8 @@ export default function OpsAccountPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold">App experience</h2>
             <p className="text-xs leading-5 text-muted-foreground">
-              Add this PWA to your phone and enable alerts whenever you are
-              ready.
+              Add this to your phone for a smooth, app-like experience with
+              quick access and notifications.
             </p>
           </div>
         </div>

@@ -9,6 +9,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { PushNotificationSetupAccordion } from "@/components/ops/push-notification-setup-accordion";
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { firstNameFromDisplayName } from "@/lib/ops-user-display";
@@ -145,7 +146,7 @@ export default function OpsHomePage() {
   return (
     <div className="space-y-4">
       <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground font-title">
           {"Today's Work"}
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">
@@ -155,7 +156,6 @@ export default function OpsHomePage() {
           Four quick actions to keep your warehouse in top shape.
         </p>
       </header>
-
       <section className="grid grid-cols-2 gap-3">
         {canNewInspection ? (
           <button
@@ -235,6 +235,8 @@ export default function OpsHomePage() {
           </div>
         </button>
       </section>
+
+      <PushNotificationSetupAccordion />
     </div>
   );
 }
