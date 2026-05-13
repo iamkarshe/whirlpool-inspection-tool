@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_ALLOW_DEFAULT_LOCATION: string;
   readonly VITE_APP_EMAIL: string;
   readonly VITE_APP_PASSWORD: string;
+  readonly VITE_VAPID_PUBLIC_KEY?: string;
 }
 
 interface ImportMeta {
