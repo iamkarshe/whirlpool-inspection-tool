@@ -46,9 +46,9 @@ export function OpsKpiPeriodBanner({
       <p className="mt-1.5 text-sm font-semibold leading-snug text-foreground">
         {formatKpiDateRange(dateFrom, dateTo)}
       </p>
-      {onChangePeriodClick ?
+      {onChangePeriodClick ? (
         <p className="mt-2 flex items-center justify-center gap-2 text-[11px] font-medium text-violet-800 dark:text-violet-200">
-          {isUpdating ?
+          {isUpdating ? (
             <>
               <Loader2
                 className="h-3.5 w-3.5 shrink-0 animate-spin opacity-80"
@@ -56,9 +56,11 @@ export function OpsKpiPeriodBanner({
               />
               <span>Updating…</span>
             </>
-          : <span>Tap to change period</span>}
+          ) : (
+            <span>Tap to change period</span>
+          )}
         </p>
-      : null}
+      ) : null}
     </>
   );
 
@@ -147,7 +149,7 @@ export function OpsKpiMetricGroup({
         className,
       )}
     >
-      <p className="mb-2.5 font-mono text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="mb-2.5 text-center font-mono font-title text-[11px] font-bold uppercase tracking-[10px] text-muted-foreground">
         {title}
       </p>
       {children}

@@ -332,9 +332,9 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
                 end={tab.path === "/ops"}
                 className={({ isActive }) =>
                   cn(
-                    "flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-muted-foreground transition-all",
+                    "mx-0.5 flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-muted-foreground transition-[background-color,color,box-shadow,border-color] duration-200 ease-out",
                     isActive &&
-                      "bg-accent text-accent-foreground shadow-sm translate-y-[-2px]",
+                      "border border-sky-500/20 bg-[radial-gradient(ellipse_at_top,_#dff8ff_0%,_#dff8ff_44%,_#eefdf5_100%)] text-sky-950 shadow-sm ring-1 ring-sky-500/15 dark:bg-[radial-gradient(ellipse_at_top,_#0f3140_0%,_#0f3140_44%,_#0f2f24_100%)] dark:text-sky-50",
                   )
                 }
               >
@@ -347,7 +347,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
                 type="button"
                 onClick={handleInstallApp}
                 disabled={installBusy}
-                className="flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-sky-700 transition-all hover:bg-sky-500/10 disabled:cursor-wait disabled:opacity-70 dark:text-sky-300 font-title uppercase"
+                className="mx-0.5 flex flex-1 flex-col items-center gap-1 rounded-full px-3 py-2 text-[11px] font-medium text-sky-700 transition-all hover:bg-sky-500/10 disabled:cursor-wait disabled:opacity-70 dark:text-sky-300 font-title uppercase"
               >
                 {installBusy ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
