@@ -60,6 +60,8 @@ Recommended behavior:
 - Attach the authenticated `user_id` from the JWT/session.
 - Attach `device_uuid` when present so notifications can target a specific PWA device.
 - Delete subscriptions when Web Push returns `404` or `410`.
+- Persist each outbound push in `push_notifications` before sending so delivery attempts
+  can be audited and failed sends can be retried or inspected later.
 
 ## FastAPI Setup
 
@@ -214,6 +216,12 @@ Send payload example:
   "tag": "inspection-assigned"
 }
 ```
+
+Recommended notification storage:
+
+- `push_subscriptions`: current browser/device subscription state, unique by `endpoint`.
+- `push_notifications`: outbound notification attempts with `title`, `body`, `url`,
+  `tag`, optional `icon` / `badge` / `data`, `status`, `sent_at`, and failure details.
 
 ## Service Worker Payload
 

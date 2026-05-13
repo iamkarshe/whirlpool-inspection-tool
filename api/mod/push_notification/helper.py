@@ -3,8 +3,8 @@ import uuid
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from mod.model import Device, PushSubscription
-from mod.push_notification.request import PushSubscriptionCreate
+from mod.model import Device, PushNotification, PushSubscription
+from mod.push_notification.request import PushSendPayload, PushSubscriptionCreate
 
 
 def resolve_push_subscription_device(
@@ -85,3 +85,32 @@ def upsert_push_subscription(
 
     db.flush()
     return push_subscription
+
+
+def create_pending_push_notification(
+    db: Session,
+    user_id: int,
+    payload: PushSendPayload,
+    push_subscription: PushSubscription | None = None,
+    device: Device | None = None,
+) -> PushNotification:
+    resolved_device = device or (
+        push_subscription.device if push_subscription is not None else None
+    )
+    push_notification = PushNotification(
+        user_id=user_id,
+        device_id=resolved_device.id if resolved_device is not None else None,
+        push_subscription_id=push_subscription.id
+        if push_subscription is not None
+        else None,
+        title=payload.title,
+        body=payload.body,
+        url=payload.url,
+        tag=payload.tag,
+        icon=payload.icon,
+        badge=payload.badge,
+        payload_data=payload.data,
+    )
+    db.add(push_notification)
+    db.flush()
+    return push_notification

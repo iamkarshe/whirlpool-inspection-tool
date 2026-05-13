@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -21,7 +23,10 @@ class PushSubscriptionCreate(BaseModel):
 
 
 class PushSendPayload(BaseModel):
-    title: str = Field(default="Whirlpool Insights")
-    body: str
-    url: str = "/"
-    tag: str = "whirlpool-insights"
+    title: str = Field(default="Whirlpool Insights", max_length=200)
+    body: str = Field(..., min_length=1)
+    url: str = Field(default="/", max_length=1024)
+    tag: str = Field(default="whirlpool-insights", max_length=128)
+    icon: str | None = Field(default=None, max_length=1024)
+    badge: str | None = Field(default=None, max_length=1024)
+    data: dict[str, Any] | None = None

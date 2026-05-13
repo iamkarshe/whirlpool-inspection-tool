@@ -79,6 +79,12 @@ class LogLevel(str, enum.Enum):
     error = "error"
 
 
+class PushNotificationStatus(str, enum.Enum):
+    pending = "pending"
+    sent = "sent"
+    failed = "failed"
+
+
 class DamageType(str, enum.Enum):
     packaging = "packaging"
     cosmetic = "cosmetic"
@@ -127,6 +133,9 @@ CHECKLIST_PHOTO_RULE_DB = pg_str_enum(
 CHECKLIST_GROUP_DB = pg_str_enum(ChecklistGroup, name="checklist_group", length=32)
 INSPECTION_TYPE_DB = pg_str_enum(InspectionType, name="inspection_type", length=16)
 LOG_LEVEL_DB = pg_str_enum(LogLevel, name="log_level", length=16)
+PUSH_NOTIFICATION_STATUS_DB = pg_str_enum(
+    PushNotificationStatus, name="push_notification_status", length=16
+)
 DAMAGE_TYPE_DB = pg_str_enum(DamageType, name="damage_type", length=32)
 DAMAGE_SEVERITY_DB = pg_str_enum(DamageSeverity, name="damage_severity", length=16)
 DAMAGE_LIKELY_CAUSE_DB = pg_str_enum(
@@ -280,6 +289,10 @@ class User(TimestampSoftDeleteMixin, Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    push_notifications: Mapped[list["PushNotification"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     barcode_locks: Mapped[list["BarcodeLock"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
@@ -340,6 +353,9 @@ class Device(TimestampSoftDeleteMixin, Base):
     push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
         back_populates="device"
     )
+    push_notifications: Mapped[list["PushNotification"]] = relationship(
+        back_populates="device"
+    )
 
 
 class PushSubscription(TimestampSoftDeleteMixin, Base):
@@ -376,6 +392,60 @@ class PushSubscription(TimestampSoftDeleteMixin, Base):
 
     user: Mapped["User"] = relationship(back_populates="push_subscriptions")
     device: Mapped["Device | None"] = relationship(back_populates="push_subscriptions")
+    push_notifications: Mapped[list["PushNotification"]] = relationship(
+        back_populates="push_subscription"
+    )
+
+
+class PushNotification(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "push_notifications"
+    __table_args__ = (
+        Index("ix_push_notifications_user_status", "user_id", "status"),
+        Index("ix_push_notifications_user_created", "user_id", "created_at"),
+        Index("ix_push_notifications_subscription", "push_subscription_id"),
+        Index("ix_push_notifications_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    device_id: Mapped[int | None] = mapped_column(
+        ForeignKey("devices.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    push_subscription_id: Mapped[int | None] = mapped_column(
+        ForeignKey("push_subscriptions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str] = mapped_column(String(1024), nullable=False, server_default="/")
+    tag: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
+    icon: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    badge: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    payload_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    status: Mapped[PushNotificationStatus] = mapped_column(
+        PUSH_NOTIFICATION_STATUS_DB,
+        nullable=False,
+        server_default=PushNotificationStatus.pending.value,
+        index=True,
+    )
+    sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    failure_status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    failure_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="push_notifications")
+    device: Mapped["Device | None"] = relationship(back_populates="push_notifications")
+    push_subscription: Mapped["PushSubscription | None"] = relationship(
+        back_populates="push_notifications"
+    )
 
 
 class ProductCategory(TimestampSoftDeleteMixin, Base):
