@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -30,3 +31,8 @@ class PushSendPayload(BaseModel):
     icon: str | None = Field(default=None, max_length=1024)
     badge: str | None = Field(default=None, max_length=1024)
     data: dict[str, Any] | None = None
+
+
+class PushUserSendRequest(BaseModel):
+    user_uuid: uuid.UUID
+    notification: PushSendPayload

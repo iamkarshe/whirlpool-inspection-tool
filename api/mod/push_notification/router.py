@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 
 from mod.api.middleware import auth_dependency
 from mod.push_notification.helper import (
+    get_push_target_user_by_uuid_or_404,
     send_user_push_notifications,
     upsert_push_subscription,
 )
-from mod.push_notification.request import PushSendPayload, PushSubscriptionCreate
+from mod.push_notification.request import PushSubscriptionCreate, PushUserSendRequest
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.env import get_env
@@ -43,22 +44,22 @@ async def save_push_subscription(
 
 
 @router.post(
-    "/send/user/{user_id}",
+    "/send/user",
     dependencies=[Depends(auth_dependency)],
 )
 @exception_handler_decorator
 @check_api_role(["superadmin", "manager"])
 def send_user_notification(
     request: Request,
-    user_id: int,
-    payload: PushSendPayload,
+    payload: PushUserSendRequest,
     db: Session = Depends(get_db),
 ):
     try:
+        target_user = get_push_target_user_by_uuid_or_404(db, payload.user_uuid)
         summary = send_user_push_notifications(
             db,
-            user_id,
-            payload,
+            target_user.id,
+            payload.notification,
             vapid_private_key_path=VAPID_PRIVATE_KEY_PATH,
             vapid_subject=VAPID_SUBJECT,
         )

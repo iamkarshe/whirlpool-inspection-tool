@@ -11,6 +11,7 @@ from mod.model import (
     PushNotification,
     PushNotificationStatus,
     PushSubscription,
+    User,
 )
 from mod.push_notification.request import PushSendPayload, PushSubscriptionCreate
 
@@ -136,6 +137,23 @@ def list_active_subscriptions_for_user(
         )
         .all()
     )
+
+
+def get_push_target_user_by_uuid_or_404(
+    db: Session,
+    user_uuid: uuid.UUID,
+) -> User:
+    user = (
+        db.query(User)
+        .filter(
+            User.uuid == user_uuid,
+            User.is_active.is_(True),
+        )
+        .first()
+    )
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
 def mark_push_notification_sent(

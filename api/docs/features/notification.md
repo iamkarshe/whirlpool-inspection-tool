@@ -208,15 +208,15 @@ def send_web_push(db, subscription_row, payload: PushSendPayload):
 Example targeting a user:
 
 ```python
-@router.post("/send/user/{user_id}")
+@router.post("/send/user")
 def send_user_notification(
-    user_id: int,
-    payload: PushSendPayload,
+    payload: PushUserSendRequest,
     db=Depends(get_db),
 ):
-    subscriptions = list_active_subscriptions_for_user(db, user_id)
+    user = get_push_target_user_by_uuid_or_404(db, payload.user_uuid)
+    subscriptions = list_active_subscriptions_for_user(db, user.id)
     for subscription in subscriptions:
-        send_web_push(db, subscription, payload)
+        send_web_push(db, subscription, payload.notification)
     db.commit()
     return {"attempted": len(subscriptions)}
 ```
@@ -225,14 +225,17 @@ Send payload example:
 
 ```json
 {
-  "title": "Inspection Assigned",
-  "body": "A new inbound inspection is ready.",
-  "url": "/ops/today-inspections",
-  "tag": "inspection-assigned",
-  "icon": "/icons/icon-192.png",
-  "badge": "/icons/badge-72.png",
-  "data": {
-    "inspection_uuid": "..."
+  "user_uuid": "0f1a5ee8-10f2-4c78-8173-d2ffdd08c19f",
+  "notification": {
+    "title": "Inspection Assigned",
+    "body": "A new inbound inspection is ready.",
+    "url": "/ops/today-inspections",
+    "tag": "inspection-assigned",
+    "icon": "/icons/icon-192.png",
+    "badge": "/icons/badge-72.png",
+    "data": {
+      "inspection_uuid": "..."
+    }
   }
 }
 ```
