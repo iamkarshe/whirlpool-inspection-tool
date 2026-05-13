@@ -31,6 +31,10 @@ export default function OpsNewInspectionPage() {
   const [searchParams] = useSearchParams();
   const searchMode = searchParams.get("mode") === "search";
 
+  const allowManualCode =
+    import.meta.env.VITE_ALLOW_MANUAL_CODE === "true" ||
+    searchParams.get("manual") === "true";
+
   const unitOpts = useMemo(
     () => (searchMode ? { mode: "search" as const } : undefined),
     [searchMode],
@@ -176,37 +180,39 @@ export default function OpsNewInspectionPage() {
           </div>
         ) : null}
 
-        <div className="space-y-1 rounded-2xl border border-dashed bg-muted/20 p-3">
-          <label
-            htmlFor="manual-code"
-            className="block w-full text-center text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground"
-          >
-            Use manual way
-          </label>
-          <div className="flex items-center gap-2 rounded-2xl border bg-background px-3 py-2">
-            <ScanLine className="h-4 w-4 text-muted-foreground" />
-            <input
-              id="manual-code"
-              type="text"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              value={inspectionCode}
-              onChange={(event) =>
-                setInspectionCode(
-                  event.target.value
-                    .replace(/\s+/g, "")
-                    .slice(0, OPS_BARCODE_LEN),
-                )
-              }
-              placeholder={`Enter ${OPS_BARCODE_LEN} characters`}
-              className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
+        {allowManualCode ? (
+          <div className="space-y-1 rounded-2xl border border-dashed bg-muted/20 p-3">
+            <label
+              htmlFor="manual-code"
+              className="block w-full text-center text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground"
+            >
+              Use manual way
+            </label>
+            <div className="flex items-center gap-2 rounded-2xl border bg-background px-3 py-2">
+              <ScanLine className="h-4 w-4 text-muted-foreground" />
+              <input
+                id="manual-code"
+                type="text"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                value={inspectionCode}
+                onChange={(event) =>
+                  setInspectionCode(
+                    event.target.value
+                      .replace(/\s+/g, "")
+                      .slice(0, OPS_BARCODE_LEN),
+                  )
+                }
+                placeholder={`Enter ${OPS_BARCODE_LEN} characters`}
+                className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            <p className="text-center text-[11px] text-muted-foreground">
+              {inspectionCode.length}/{OPS_BARCODE_LEN} characters
+            </p>
           </div>
-          <p className="text-center text-[11px] text-muted-foreground">
-            {inspectionCode.length}/{OPS_BARCODE_LEN} characters
-          </p>
-        </div>
+        ) : null}
 
         {showScanTopHint ? (
           <p
