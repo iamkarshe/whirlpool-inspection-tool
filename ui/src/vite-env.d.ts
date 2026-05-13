@@ -18,3 +18,9 @@ interface ImportMeta {
 interface Navigator {
   readonly standalone?: boolean;
 }
+
+interface Window {
+  readonly __WHIRLPOOL_ENV__?: {
+    readonly VITE_API_BASE_URL?: string;
+  };
+}

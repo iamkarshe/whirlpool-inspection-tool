@@ -2,10 +2,15 @@ import axios, { type AxiosRequestConfig } from "axios";
 
 import { bootstrapServerDeviceUuidFromStorage } from "@/lib/session-device-uuid";
 
-const baseURL = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(
-  /\/$/,
-  "",
-);
+function resolveApiBaseUrl(): string {
+  if (typeof window === "undefined") return "";
+  return String(window.__WHIRLPOOL_ENV__?.VITE_API_BASE_URL ?? "").replace(
+    /\/$/,
+    "",
+  );
+}
+
+const baseURL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL,
