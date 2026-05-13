@@ -10,7 +10,6 @@ from sqlalchemy import (
     Column,
     DateTime,
     Double,
-    Enum as SQLEnum,
     ForeignKey,
     Index,
     Integer,
@@ -20,9 +19,23 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import INET, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+def pg_str_enum(enum_cls: type, *, name: str, length: int) -> SQLEnum:
+    return SQLEnum(
+        enum_cls,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        values_callable=lambda cls: [m.value for m in cls],
+        length=length,
+    )
 
 
 class Base(DeclarativeBase):
@@ -104,17 +117,6 @@ class InspectionInputReviewStatus(str, enum.Enum):
     REJECTED = "REJECTED"
 
 
-def pg_str_enum(enum_cls: type, *, name: str, length: int) -> SQLEnum:
-    return SQLEnum(
-        enum_cls,
-        name=name,
-        native_enum=False,
-        create_constraint=True,
-        values_callable=lambda cls: [m.value for m in cls],
-        length=length,
-    )
-
-
 DEVICE_TYPE_DB = pg_str_enum(DeviceType, name="device_type", length=16)
 CHECKLIST_FIELD_TYPE_DB = pg_str_enum(
     ChecklistFieldType, name="checklist_field_type", length=16
@@ -149,34 +151,6 @@ INPUT_REVIEW_EVENT_FROM_DB = pg_str_enum(
 INPUT_REVIEW_EVENT_TO_DB = pg_str_enum(
     InspectionInputReviewStatus, name="inspection_input_review_evt_to", length=20
 )
-
-
-class TimestampSoftDeleteMixin:
-    uuid: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-        index=True,
-    )
-
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="true"
-    )
-
-    created_at: Mapped[Any] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-    )
-
-    updated_at: Mapped[Any] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
-
 
 user_allowed_warehouses_tbl = Table(
     "user_allowed_warehouses",
@@ -213,6 +187,33 @@ user_allowed_plants_tbl = Table(
     ),
     Index("ix_user_allowed_plants_user_id", "user_id"),
 )
+
+
+class TimestampSoftDeleteMixin:
+    uuid: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="true"
+    )
+
+    created_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
 
 class Role(TimestampSoftDeleteMixin, Base):
@@ -275,6 +276,10 @@ class User(TimestampSoftDeleteMixin, Base):
         )
     )
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
+    push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     barcode_locks: Mapped[list["BarcodeLock"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
@@ -332,6 +337,45 @@ class Device(TimestampSoftDeleteMixin, Base):
     user: Mapped["User"] = relationship(back_populates="devices")
     inspections: Mapped[list["Inspection"]] = relationship(back_populates="device")
     logs: Mapped[list["Log"]] = relationship(back_populates="device")
+    push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
+        back_populates="device"
+    )
+
+
+class PushSubscription(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "push_subscriptions"
+    __table_args__ = (
+        UniqueConstraint("endpoint", name="uq_push_subscriptions_endpoint"),
+        Index("ix_push_subscriptions_user_active", "user_id", "is_active"),
+        Index("ix_push_subscriptions_device_active", "device_id", "is_active"),
+        Index(
+            "ix_push_subscriptions_device_fingerprint_active",
+            "device_fingerprint",
+            "is_active",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    device_id: Mapped[int | None] = mapped_column(
+        ForeignKey("devices.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    device_fingerprint: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    endpoint: Mapped[str] = mapped_column(String(2048), nullable=False)
+    p256dh: Mapped[str] = mapped_column(Text, nullable=False)
+    auth: Mapped[str] = mapped_column(Text, nullable=False)
+    expiration_time: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    user_agent: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+
+    user: Mapped["User"] = relationship(back_populates="push_subscriptions")
+    device: Mapped["Device | None"] = relationship(back_populates="push_subscriptions")
 
 
 class ProductCategory(TimestampSoftDeleteMixin, Base):

@@ -1,0 +1,2 @@
+vapid --gen
+vapid --applicationServerKey
