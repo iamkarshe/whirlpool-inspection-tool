@@ -1,14 +1,16 @@
 import time
 import uuid
-from fastapi import APIRouter, Request
+
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
 from mod.api.integration.helper import get_okta_credentials
+from mod.okta.helper import get_okta_access_token, get_okta_user_info
 
 router = APIRouter(tags=["Okta SSO"])
 
 
-@router.get("/okta-sso")
+@router.get("/sso")
 def okta_sso_login(
     request: Request,
 ):
@@ -34,3 +36,34 @@ def okta_sso_login(
         f"&state={state}"
     )
     return RedirectResponse(okta_login_url)
+
+
+@router.get("/authorization-code/callback")
+def okta_sso_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    error_description: str | None = None,
+):
+    if error:
+        detail = error_description or error
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Okta authorization failed: {detail}",
+        )
+
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing authorization code from Okta",
+        )
+
+    access_token = get_okta_access_token(code)
+    user_info = get_okta_user_info(access_token)
+
+    return {
+        "message": "Okta SSO callback",
+        "state": state,
+        "user_info": user_info,
+    }
