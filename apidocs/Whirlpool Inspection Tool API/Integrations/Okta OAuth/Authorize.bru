@@ -1,0 +1,32 @@
+meta {
+  name: Authorize
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{okta_server}}/oauth2/default/v1/authorize?client_id={{okta_client}}&response_type=code&response_mode=query&scope=openid profile email&redirect_uri=http://localhost:8000/authorization-code/callback&nonce=UBGW&state={{$randomUUID}}
+  body: none
+  auth: inherit
+}
+
+params:query {
+  client_id: {{okta_client}}
+  response_type: code
+  response_mode: query
+  scope: openid profile email
+  redirect_uri: http://localhost:8000/authorization-code/callback
+  nonce: UBGW
+  state: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}

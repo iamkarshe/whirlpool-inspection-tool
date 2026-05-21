@@ -1,0 +1,22 @@
+meta {
+  name: Issuer
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{okta_server}}/oauth2/default/.well-known/openid-configuration
+  body: none
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}

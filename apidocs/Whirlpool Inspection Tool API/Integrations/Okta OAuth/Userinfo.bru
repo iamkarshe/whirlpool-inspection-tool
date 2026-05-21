@@ -1,0 +1,32 @@
+meta {
+  name: Userinfo
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{okta_server}}/oauth2/default/v1/userinfo
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{okta_access_token}}
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}
+
+body:form-urlencoded {
+  grant_type: authorization_code
+  code: k39VHA2AqV4EFlhjjB5uPQbHRJ8M3hRdJqvascL3vu4
+  redirect_uri: http://localhost:8000/authorization-code/callback
+}

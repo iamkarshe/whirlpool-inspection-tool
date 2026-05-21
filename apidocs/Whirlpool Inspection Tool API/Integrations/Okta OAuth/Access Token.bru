@@ -1,0 +1,38 @@
+meta {
+  name: Access Token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{okta_server}}/oauth2/default/v1/token
+  body: formUrlEncoded
+  auth: basic
+}
+
+auth:basic {
+  username: {{okta_client}}
+  password: {{okta_secret}}
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}
+
+body:form-urlencoded {
+  grant_type: authorization_code
+  code: k39VHA2AqV4EFlhjjB5uPQbHRJ8M3hRdJqvascL3vu4
+  redirect_uri: http://localhost:8000/authorization-code/callback
+}
+
+script:post-response {
+  let data = res.body;
+  bru.setEnvVar("okta_access_token", data.access_token, { persist: true });
+}

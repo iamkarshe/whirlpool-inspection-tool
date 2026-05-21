@@ -47,10 +47,14 @@ def load_credentials_payload() -> dict[str, dict[str, str]]:
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail="credentials.json contains invalid JSON") from exc
+        raise HTTPException(
+            status_code=500, detail="credentials.json contains invalid JSON"
+        ) from exc
 
     if not isinstance(parsed, dict):
-        raise HTTPException(status_code=500, detail="credentials.json has invalid structure")
+        raise HTTPException(
+            status_code=500, detail="credentials.json has invalid structure"
+        )
 
     okta = parsed.get("okta_sso", {})
     aws = parsed.get("aws_s3", {})
@@ -82,7 +86,9 @@ def save_credentials_payload(payload: dict[str, Any]) -> None:
     )
 
 
-def map_masked_credentials_response(payload: dict[str, dict[str, str]]) -> IntegrationCredentialsResponse:
+def map_masked_credentials_response(
+    payload: dict[str, dict[str, str]],
+) -> IntegrationCredentialsResponse:
     return IntegrationCredentialsResponse(
         okta_sso=OktaSsoCredentialsResponse(
             okta_domain=payload["okta_sso"]["okta_domain"],
@@ -104,7 +110,9 @@ def get_integration_credentials() -> IntegrationCredentialsResponse:
     return map_masked_credentials_response(payload)
 
 
-def update_okta_credentials(update: OktaSsoUpdateRequest) -> IntegrationCredentialsResponse:
+def update_okta_credentials(
+    update: OktaSsoUpdateRequest,
+) -> IntegrationCredentialsResponse:
     payload = load_credentials_payload()
     payload["okta_sso"] = {
         "okta_domain": update.okta_domain,
@@ -116,7 +124,9 @@ def update_okta_credentials(update: OktaSsoUpdateRequest) -> IntegrationCredenti
     return map_masked_credentials_response(payload)
 
 
-def update_aws_s3_credentials(update: AwsS3UpdateRequest) -> IntegrationCredentialsResponse:
+def update_aws_s3_credentials(
+    update: AwsS3UpdateRequest,
+) -> IntegrationCredentialsResponse:
     payload = load_credentials_payload()
     payload["aws_s3"] = {
         "bucket_name": update.bucket_name,
@@ -126,3 +136,13 @@ def update_aws_s3_credentials(update: AwsS3UpdateRequest) -> IntegrationCredenti
     }
     save_credentials_payload(payload)
     return map_masked_credentials_response(payload)
+
+
+def get_okta_credentials() -> OktaSsoCredentialsResponse:
+    payload = load_credentials_payload()
+    return OktaSsoCredentialsResponse(
+        client_id=payload["okta_sso"]["client_id"],
+        client_secret=payload["okta_sso"]["client_secret"],
+        redirect_uri=payload["okta_sso"]["redirect_uri"],
+        okta_domain=payload["okta_sso"]["okta_domain"],
+    )

@@ -18,6 +18,7 @@ from mod.api.sku.router import router as sku_router
 from mod.api.user.router import router as user_router
 from mod.api.warehouse.router import router as warehouse_router
 from mod.auth.router import router as auth_router
+from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
 from mod.tagmetadata import tags_metadata
 from utils.log import setup_logging
@@ -69,6 +70,7 @@ app.include_router(product_category_router)
 app.include_router(reports_router)
 app.include_router(sku_router)
 app.include_router(push_notification_router)
+app.include_router(okta_sso_router)
 
 uploads_dir = Path(__file__).resolve().parent / "uploads"
 uploads_dir.mkdir(parents=True, exist_ok=True)
