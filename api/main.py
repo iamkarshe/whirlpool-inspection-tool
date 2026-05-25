@@ -23,6 +23,7 @@ from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
 from mod.tagmetadata import tags_metadata
 from utils.log import setup_logging
+from utils.vpn_access import VpnAccessMiddleware
 
 setup_logging()
 
@@ -56,6 +57,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# When LOGIN_VPN_IP is set, /auth, /api, and Okta SSO routes require VPN client IP.
+app.add_middleware(VpnAccessMiddleware)
 
 # API routes
 app.include_router(auth_router)
