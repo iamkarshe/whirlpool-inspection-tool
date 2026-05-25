@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import jwt
 from fastapi import HTTPException, Request, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from mod.auth.actions import (
     log_login_action,
@@ -12,7 +12,7 @@ from mod.auth.actions import (
     upsert_device_action,
 )
 from mod.auth.device_helper import (
-    count_other_active_devices,
+    build_login_device_context,
     list_active_devices_for_user,
 )
 from mod.auth.request import LoginDeviceInfo, ResolveDevicesRequest
@@ -24,9 +24,15 @@ from mod.auth.response import (
     ResolveDevicesResponse,
 )
 from mod.auth.session import create_user_session, deregister_device
-from mod.model import Device, Role, User
+from mod.model import Device, User
+from utils.common import normalize_login_email
 from utils.env import get_allow_multi_login
 from utils.jwt import ALGORITHM, SECRET_KEY, create_access_token
+
+LOGIN_USER_LOAD_OPTIONS = (
+    joinedload(User.role),
+    joinedload(User.warehouses_scope),
+)
 
 SSO_LOGIN_TOKEN_TYPE = "sso_login"
 SSO_LOGIN_TOKEN_EXPIRY_MINUTES = 15
@@ -39,6 +45,16 @@ class RequestClientContext:
     user_agent: str | None
 
 
+def get_user_for_login(db: Session, email: str) -> User | None:
+    normalized_email = normalize_login_email(email)
+    return (
+        db.query(User)
+        .options(*LOGIN_USER_LOAD_OPTIONS)
+        .filter(User.email == normalized_email)
+        .first()
+    )
+
+
 def get_request_client_context(request: Request) -> RequestClientContext:
     return RequestClientContext(
         client_ip=request.client.host if request.client else None,
@@ -47,10 +63,29 @@ def get_request_client_context(request: Request) -> RequestClientContext:
     )
 
 
-def resolve_role_context(db: Session, user: User) -> tuple[str, list[str] | None]:
-    role: Role | None = db.query(Role).filter(Role.id == user.role_id).first()
-    role_name = role.role if role is not None else ""
-    is_superadmin = (role_name or "").lower() == "superadmin"
+def resolve_role_context(
+    db: Session,
+    user: User,
+    ctx: RequestClientContext,
+) -> tuple[str, list[str] | None]:
+    role = user.role
+    role_name = (role.role or "").strip() if role is not None else ""
+    if role is None or not role.is_active or not role_name:
+        log_login_failure_action(
+            db=db,
+            user=user,
+            client_ip=ctx.client_ip,
+            proxy_ip=ctx.proxy_ip,
+            user_agent=ctx.user_agent,
+            reason="missing_or_inactive_role",
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User has no valid role assigned",
+        )
+
+    is_superadmin = role_name.lower() == "superadmin"
     allowed_warehouses: list[str] | None = (
         None if is_superadmin else list(user.allowed_warehouse)
     )
@@ -139,7 +174,7 @@ def complete_login(
     *,
     device_payload: LoginDeviceInfo | None = None,
 ) -> LoginResponse:
-    role_name, allowed_warehouses = resolve_role_context(db, user)
+    role_name, allowed_warehouses = resolve_role_context(db, user, ctx)
     allow_multi_login = get_allow_multi_login()
 
     device = upsert_device_action(
@@ -173,19 +208,12 @@ def complete_login(
     db.flush()
 
     current_device_uuid = device.uuid if device is not None else None
-    active_devices = list_active_devices_for_user(
+    active_devices, requires_device_selection = build_login_device_context(
         db,
         user.id,
+        allow_multi_login=allow_multi_login,
         current_device_uuid=current_device_uuid,
-    )
-    requires_device_selection = (
-        not allow_multi_login
-        and count_other_active_devices(
-            db,
-            user.id,
-            except_device_id=device_id,
-        )
-        > 0
+        current_device_id=device_id,
     )
 
     db.commit()
@@ -203,8 +231,7 @@ def complete_login(
 
 
 def create_sso_login_token(email: str) -> str:
-    """Short-lived token exchanged via /auth/login-token after Okta SSO redirect."""
-    normalized_email = email.strip().lower()
+    normalized_email = normalize_login_email(email)
     payload = {
         "typ": SSO_LOGIN_TOKEN_TYPE,
         "email": normalized_email,
@@ -241,7 +268,7 @@ def verify_sso_login_token(token: str) -> str:
             detail="Invalid SSO login token",
         )
 
-    return email.strip().lower()
+    return normalize_login_email(email)
 
 
 def get_user_device_by_uuid_or_404(

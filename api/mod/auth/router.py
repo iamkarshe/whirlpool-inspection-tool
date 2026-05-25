@@ -6,6 +6,7 @@ from mod.auth.helper import (
     complete_login,
     ensure_user_is_active,
     get_request_client_context,
+    get_user_for_login,
     log_user_not_found_and_raise,
     verify_sso_login_token,
 )
@@ -26,7 +27,7 @@ def login(
 ) -> LoginResponse:
     ctx = get_request_client_context(request)
 
-    user: User | None = db.query(User).filter(User.email == str(payload.email)).first()
+    user: User | None = get_user_for_login(db, str(payload.email))
 
     if user is None:
         log_user_not_found_and_raise(db, ctx, reason="user_not_found")
@@ -65,7 +66,7 @@ def login_token(
     ctx = get_request_client_context(request)
     email = verify_sso_login_token(payload.access_token)
 
-    user: User | None = db.query(User).filter(User.email.ilike(email)).first()
+    user: User | None = get_user_for_login(db, email)
 
     if user is None:
         log_user_not_found_and_raise(

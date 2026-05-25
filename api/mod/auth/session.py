@@ -1,6 +1,7 @@
 import datetime
 
 from fastapi import HTTPException, status
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from mod.model import Device, PushSubscription, UserSession
@@ -28,9 +29,11 @@ def create_user_session(
 
 
 def verify_user_session_active(db: Session, jti: str | None) -> None:
-    """Reject bearer tokens whose session was revoked (deregister / device resolve)."""
     if not jti:
-        return
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token, please login again",
+        )
 
     session = (
         db.query(UserSession)
@@ -103,18 +106,16 @@ def revoke_sessions_for_devices(db: Session, device_ids: list[int]) -> int:
 
 
 def deactivate_push_subscriptions_for_device(db: Session, device_id: int) -> int:
-    subscriptions = (
-        db.query(PushSubscription)
-        .filter(
+    result = db.execute(
+        update(PushSubscription)
+        .where(
             PushSubscription.device_id == device_id,
             PushSubscription.is_active.is_(True),
         )
-        .all()
+        .values(is_active=False)
     )
-    for subscription in subscriptions:
-        subscription.is_active = False
     db.flush()
-    return len(subscriptions)
+    return int(result.rowcount or 0)
 
 
 def deactivate_push_subscriptions_for_user_except_device(
@@ -123,18 +124,18 @@ def deactivate_push_subscriptions_for_user_except_device(
     *,
     except_device_id: int | None,
 ) -> int:
-    query = db.query(PushSubscription).filter(
+    conditions = [
         PushSubscription.user_id == user_id,
         PushSubscription.is_active.is_(True),
-    )
+    ]
     if except_device_id is not None:
-        query = query.filter(PushSubscription.device_id != except_device_id)
+        conditions.append(PushSubscription.device_id != except_device_id)
 
-    subscriptions = query.all()
-    for subscription in subscriptions:
-        subscription.is_active = False
+    result = db.execute(
+        update(PushSubscription).where(*conditions).values(is_active=False)
+    )
     db.flush()
-    return len(subscriptions)
+    return int(result.rowcount or 0)
 
 
 def deregister_device(

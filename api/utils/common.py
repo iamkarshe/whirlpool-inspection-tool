@@ -14,6 +14,10 @@ YES_NO_PASS_VALUES: frozenset[str] = frozenset({"yes", "y", "pass", "true", "1",
 YES_NO_FAIL_VALUES: frozenset[str] = frozenset({"no", "n", "fail", "false", "0"})
 
 
+def normalize_login_email(email: str) -> str:
+    return email.strip().lower()
+
+
 def to_proper_case(value: str) -> str:
     return " ".join(word.capitalize() for word in value.strip().split())
 

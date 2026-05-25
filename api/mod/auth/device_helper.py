@@ -73,6 +73,24 @@ def list_active_devices_for_user(
     *,
     current_device_uuid: uuid.UUID | None = None,
 ) -> list[ActiveDeviceResponse]:
+    active_devices, _requires_device_selection = build_login_device_context(
+        db,
+        user_id,
+        allow_multi_login=True,
+        current_device_uuid=current_device_uuid,
+        current_device_id=None,
+    )
+    return active_devices
+
+
+def build_login_device_context(
+    db: Session,
+    user_id: int,
+    *,
+    allow_multi_login: bool,
+    current_device_uuid: uuid.UUID | None,
+    current_device_id: int | None,
+) -> tuple[list[ActiveDeviceResponse], bool]:
     session_device_ids = device_ids_with_active_sessions(db, user_id)
     devices = (
         db.query(Device)
@@ -83,7 +101,7 @@ def list_active_devices_for_user(
         .order_by(Device.updated_at.desc())
         .all()
     )
-    return [
+    active_devices = [
         map_active_device(
             device,
             is_current=current_device_uuid is not None
@@ -92,18 +110,10 @@ def list_active_devices_for_user(
         )
         for device in devices
     ]
+    if allow_multi_login:
+        return active_devices, False
 
-
-def count_other_active_devices(
-    db: Session,
-    user_id: int,
-    *,
-    except_device_id: int | None,
-) -> int:
-    query = db.query(Device).filter(
-        Device.user_id == user_id,
-        Device.is_active.is_(True),
+    other_active_count = sum(
+        1 for device in devices if device.id != current_device_id
     )
-    if except_device_id is not None:
-        query = query.filter(Device.id != except_device_id)
-    return query.count()
+    return active_devices, other_active_count > 0

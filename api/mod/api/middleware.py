@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from mod.auth.session import verify_request_access_token
 from mod.model import User
@@ -16,6 +16,7 @@ async def auth_dependency(
     try:
         user = (
             db.query(User)
+            .options(joinedload(User.role))
             .filter(
                 User.id == int(user_id),
                 User.is_active.is_(True),
@@ -36,4 +37,4 @@ async def auth_dependency(
 
     request.state.user_id = user.id
     request.state.user_email = user.email
-    request.state.role = getattr(user.role, "role", None)
+    request.state.role = user.role.role if user.role is not None else None
