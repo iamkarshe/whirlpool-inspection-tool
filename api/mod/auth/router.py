@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from mod.auth.actions import (
-    log_login_action,
-    log_login_failure_action,
-    upsert_device_action,
+from mod.auth.actions import log_login_failure_action
+from mod.auth.helper import (
+    complete_login,
+    ensure_user_is_active,
+    get_request_client_context,
+    log_user_not_found_and_raise,
+    verify_sso_login_token,
 )
-from mod.auth.request import ForgotPasswordRequest, LoginRequest
+from mod.auth.request import ForgotPasswordRequest, LoginRequest, LoginTokenRequest
 from mod.auth.response import ForgotPasswordResponse, LoginResponse
-from mod.model import Role, User
+from mod.model import User
 from utils.db import get_db
-from utils.jwt import create_access_token
 from utils.password import verify_password
 
 router = APIRouter(tags=["Auth"], prefix="/auth")
@@ -22,49 +24,22 @@ def login(
     payload: LoginRequest,
     db: Session = Depends(get_db),
 ) -> LoginResponse:
-    client_ip = request.client.host if request.client else None
-    proxy_ip = request.headers.get("X-Forwarded-For")
-    user_agent = request.headers.get("User-Agent")
+    ctx = get_request_client_context(request)
 
     user: User | None = db.query(User).filter(User.email == str(payload.email)).first()
 
     if user is None:
-        log_login_failure_action(
-            db=db,
-            user=None,
-            client_ip=client_ip,
-            proxy_ip=proxy_ip,
-            user_agent=user_agent,
-            reason="user_not_found",
-        )
-        db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
+        log_user_not_found_and_raise(db, ctx, reason="user_not_found")
 
-    if not user.is_active:
-        log_login_failure_action(
-            db=db,
-            user=user,
-            client_ip=client_ip,
-            proxy_ip=proxy_ip,
-            user_agent=user_agent,
-            reason="inactive_user",
-        )
-        db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User is inactive",
-        )
+    ensure_user_is_active(db, user, ctx)
 
     if not verify_password(payload.password, user.password):
         log_login_failure_action(
             db=db,
             user=user,
-            client_ip=client_ip,
-            proxy_ip=proxy_ip,
-            user_agent=user_agent,
+            client_ip=ctx.client_ip,
+            proxy_ip=ctx.proxy_ip,
+            user_agent=ctx.user_agent,
             reason="invalid_password",
         )
         db.commit()
@@ -73,47 +48,31 @@ def login(
             detail="Invalid email or password",
         )
 
-    role: Role | None = db.query(Role).filter(Role.id == user.role_id).first()
-    role_name = role.role if role is not None else ""
-    is_superadmin = (role_name or "").lower() == "superadmin"
-    allowed_warehouses: list[str] | None = (
-        None if is_superadmin else list(user.allowed_warehouse)
-    )
+    return complete_login(db, user, ctx, device_payload=payload.device)
 
-    access_token = create_access_token(user_id=user.id)
 
-    # Create / update device and audit log
-    device = upsert_device_action(
-        db=db,
-        user=user,
-        device_payload=payload.device,
-        client_ip=client_ip,
-        proxy_ip=proxy_ip,
-    )
-    log_login_action(
-        db=db,
-        user=user,
-        device=device,
-        access_token=access_token,
-        client_ip=client_ip,
-        proxy_ip=proxy_ip,
-        user_agent=user_agent,
-    )
+@router.post("/login-token", response_model=LoginResponse)
+def login_token(
+    request: Request,
+    payload: LoginTokenRequest,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
+    ctx = get_request_client_context(request)
+    email = verify_sso_login_token(payload.access_token)
 
-    db.commit()
+    user: User | None = db.query(User).filter(User.email.ilike(email)).first()
 
-    return LoginResponse(
-        id=user.id,
-        uuid=user.uuid,
-        name=user.name,
-        email=user.email,
-        role=role_name,
-        designation=user.designation,
-        is_active=user.is_active,
-        access_token=access_token,
-        device_uuid=device.uuid if device is not None else None,
-        allowed_warehouses=allowed_warehouses,
-    )
+    if user is None:
+        log_user_not_found_and_raise(
+            db,
+            ctx,
+            reason="sso_user_not_found",
+            detail="No account found for this SSO user",
+        )
+
+    ensure_user_is_active(db, user, ctx, failure_reason="sso_inactive_user")
+
+    return complete_login(db, user, ctx, device_payload=payload.device)
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)

@@ -20,5 +20,13 @@ class LoginRequest(BaseModel):
     device: LoginDeviceInfo | None = None
 
 
+class LoginTokenRequest(BaseModel):
+    access_token: str = Field(
+        min_length=10,
+        description="Short-lived SSO exchange token from the Okta callback redirect",
+    )
+    device: LoginDeviceInfo | None = None
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

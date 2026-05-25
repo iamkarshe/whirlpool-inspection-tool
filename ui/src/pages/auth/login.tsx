@@ -24,6 +24,8 @@ import {
   resolvePostLoginHref,
 } from "@/services/login-service";
 
+const ALLOW_FORGOT_PASSWORD = false;
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { isLocationReady, coordinatesRef, acquireLocation } = useGeolocation();
@@ -96,6 +98,11 @@ export default function LoginPage() {
     [isLocationReady],
   );
 
+  const redirectOktaSSO = () => {
+    const url = String(import.meta.env["VITE_API_BASE_URL"]).concat("/sso");
+    return (window.location.href = url);
+  };
+
   return (
     <AuthLayout title="Login">
       <div className={cardLockClass}>
@@ -126,12 +133,15 @@ export default function LoginPage() {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link
-                    to={PAGES.FORGOT_PASSWORD}
-                    className="ml-auto inline-block text-sm underline"
-                  >
-                    Forgot your password?
-                  </Link>
+
+                  {ALLOW_FORGOT_PASSWORD && (
+                    <Link
+                      to={PAGES.FORGOT_PASSWORD}
+                      className="ml-auto inline-block text-sm underline"
+                    >
+                      Forgot your password?
+                    </Link>
+                  )}
                 </div>
                 <Input
                   id="password"
@@ -170,6 +180,7 @@ export default function LoginPage() {
                   className="w-full"
                   type="button"
                   disabled={!isLocationReady}
+                  onClick={redirectOktaSSO}
                 >
                   Okta SSO Login
                 </Button>

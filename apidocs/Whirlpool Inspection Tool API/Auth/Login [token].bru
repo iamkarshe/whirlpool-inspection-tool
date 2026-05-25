@@ -1,0 +1,124 @@
+meta {
+  name: Login [token]
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/login-token
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXAiOiJzc29fbG9naW4iLCJlbWFpbCI6InJhbXNoYXJhbkB3aGlybHBvb2wuY29tIiwiZXhwIjoxNzc5NzIxNzIyfQ.9_wdPJA0vT_Qq5CEyfBg7P6IZfeLQ1UFUeri07C9-DM",
+    "device": {
+      "imei": "web_7f9c2c8a-5c63-4e5b-8d09-19a0d2e9e1d2",
+      "device_type": "desktop",
+      "device_fingerprint": "fp_5c8f2c44e91a3f",
+      "device_info": {
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120",
+        "platform": "Linux x86_64",
+        "language": "en-IN",
+        "timezone": "Asia/Kolkata",
+        "screen_resolution": "1920x1080"
+      },
+      "current_lat": 12.9716,
+      "current_lng": 77.5946
+    }
+  }
+}
+
+script:post-response {
+  let data = res.body;
+  bru.setEnvVar("access_token", data.access_token, { persist: true });
+}
+
+example {
+  name: 200 Response
+  description: Successful Response
+  
+  request: {
+    url: {{baseUrl}}/auth/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email": "",
+        "password": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "id": 0,
+          "uuid": "",
+          "name": "",
+          "email": "",
+          "role": "",
+          "designation": "",
+          "is_active": false
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 Response
+  description: Validation Error
+  
+  request: {
+    url: {{baseUrl}}/auth/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "email": "",
+        "password": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "detail": [
+            {
+              "loc": [],
+              "msg": "",
+              "type": "",
+              "input": "",
+              "ctx": {}
+            }
+          ]
+        }
+      '''
+    }
+  }
+}

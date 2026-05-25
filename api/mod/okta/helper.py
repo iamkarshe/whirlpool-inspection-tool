@@ -106,3 +106,18 @@ def get_okta_user_info(access_token: str) -> dict[str, str]:
         )
 
     return normalize_okta_user_info(payload)
+
+
+def resolve_okta_user_email(user_info: dict[str, str]) -> str:
+    email = (
+        user_info.get("email")
+        or user_info.get("preferred_username")
+        or user_info.get("sub")
+        or ""
+    ).strip()
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Okta userinfo did not include an email address",
+        )
+    return email
