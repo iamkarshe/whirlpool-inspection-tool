@@ -38,7 +38,7 @@ from utils.vpn_access import VpnAccessMiddleware, client_can_access_app
 setup_logging()
 
 app_name = "Whirlpool PDI Tool API"
-app_version = "1.0.3"
+app_version = "1.5.1"
 
 app = FastAPI(
     title=app_name,
