@@ -1,8 +1,11 @@
+import { Loader2, RefreshCcw } from "lucide-react";
 import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import type { LoginResponse } from "@/api/generated/model/loginResponse";
+import type { VersionResponse } from "@/api/generated/model/versionResponse";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,22 +16,43 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGeolocation } from "@/hooks/use-geolocation";
 import { PAGES } from "@/endpoints";
+import { useGeolocation } from "@/hooks/use-geolocation";
 import AuthLayout from "@/pages/auth/layout";
-import type { LoginResponse } from "@/api/generated/model/loginResponse";
+import { VpnAccessLock } from "@/pages/auth/vpn-access-lock";
+import {
+  fetchAppVersion,
+  normalizeVersionCheckError,
+} from "@/services/app-version";
 import {
   LOGIN_PASSWORD_MAX_LENGTH,
   LOGIN_PASSWORD_MIN_LENGTH,
+  clearAuthenticatedSession,
   loginWithEmailPassword,
+  loginWithSsoExchangeToken,
   resolvePostLoginHref,
 } from "@/services/login-service";
 
 const ALLOW_FORGOT_PASSWORD = false;
 
+type AccessGateState = "checking" | "allowed" | "blocked" | "error";
+
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isLocationReady, coordinatesRef, acquireLocation } = useGeolocation();
+
+  const ssoExchangeToken = useMemo(
+    () => searchParams.get("token")?.trim() || null,
+    [searchParams],
+  );
+  const ssoAttemptRef = useRef<string | null>(null);
+  const [isCompletingSso, setIsCompletingSso] = useState(false);
+
+  const [accessGate, setAccessGate] = useState<AccessGateState>("checking");
+  const [versionInfo, setVersionInfo] = useState<VersionResponse | null>(null);
+  const [accessCheckError, setAccessCheckError] = useState<string | null>(null);
+  const [isRecheckingAccess, setIsRecheckingAccess] = useState(false);
 
   const [email, setEmail] = useState(
     import.meta.env.DEV ? import.meta.env.VITE_DEFAULT_EMAIL : "",
@@ -38,9 +62,90 @@ export default function LoginPage() {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const runAccessCheck = useCallback(async () => {
+    setAccessCheckError(null);
+    try {
+      const version = await fetchAppVersion();
+      setVersionInfo(version);
+
+      if (!version.can_access_app) {
+        clearAuthenticatedSession();
+        setAccessGate("blocked");
+        return;
+      }
+
+      setAccessGate("allowed");
+    } catch (err: unknown) {
+      setAccessCheckError(normalizeVersionCheckError(err));
+      setAccessGate("error");
+    }
+  }, []);
+
   useEffect(() => {
+    void runAccessCheck();
+  }, [runAccessCheck]);
+
+  useEffect(() => {
+    if (accessGate !== "allowed") return;
     void acquireLocation();
-  }, [acquireLocation]);
+  }, [accessGate, acquireLocation]);
+
+  useEffect(() => {
+    if (accessGate !== "allowed" || !ssoExchangeToken) return;
+    if (ssoAttemptRef.current === ssoExchangeToken) return;
+    ssoAttemptRef.current = ssoExchangeToken;
+
+    let cancelled = false;
+
+    const completeSsoLogin = async () => {
+      setIsCompletingSso(true);
+      try {
+        const coords = coordinatesRef.current ?? (await acquireLocation());
+        if (!coords) {
+          throw new Error("Allow location access to complete Okta sign-in.");
+        }
+
+        const session = await loginWithSsoExchangeToken(
+          ssoExchangeToken,
+          coords,
+        );
+        if (cancelled) return;
+
+        toast.success(`Welcome back, ${session.name}.`);
+        navigate(resolvePostLoginHref(session.role), { replace: true });
+      } catch (err: unknown) {
+        if (cancelled) return;
+        ssoAttemptRef.current = null;
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Okta sign-in failed. Try again.";
+        toast.error(message);
+        navigate(PAGES.LOGIN, { replace: true });
+      } finally {
+        if (!cancelled) setIsCompletingSso(false);
+      }
+    };
+
+    void completeSsoLogin();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    accessGate,
+    ssoExchangeToken,
+    acquireLocation,
+    coordinatesRef,
+    navigate,
+  ]);
+
+  const handleRetryAccessCheck = async () => {
+    setIsRecheckingAccess(true);
+    setAccessGate("checking");
+    await runAccessCheck();
+    setIsRecheckingAccess(false);
+  };
 
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);
@@ -52,7 +157,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || accessGate !== "allowed") return;
 
     const coords = coordinatesRef.current ?? (await acquireLocation());
     if (!coords) {
@@ -99,9 +204,98 @@ export default function LoginPage() {
   );
 
   const redirectOktaSSO = () => {
+    if (accessGate !== "allowed") return;
     const url = String(import.meta.env["VITE_API_BASE_URL"]).concat("/sso");
     return (window.location.href = url);
   };
+
+  if (accessGate === "checking") {
+    return (
+      <AuthLayout title="Login">
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Loader2 className="size-8 animate-spin" aria-hidden />
+          <p className="text-sm">Verifying network access…</p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (accessGate === "blocked") {
+    return (
+      <AuthLayout title="Access restricted">
+        <VpnAccessLock
+          appName={versionInfo?.message}
+          apiVersion={versionInfo?.version}
+          isRetrying={isRecheckingAccess}
+          onRetry={() => {
+            void handleRetryAccessCheck();
+          }}
+        />
+      </AuthLayout>
+    );
+  }
+
+  if (isCompletingSso && ssoExchangeToken) {
+    return (
+      <AuthLayout title="Login">
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Loader2 className="size-8 animate-spin" aria-hidden />
+          <p className="text-sm">Completing Okta sign-in…</p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  if (accessGate === "error") {
+    return (
+      <AuthLayout title="Login">
+        <Card className="mx-auto w-full max-w-md">
+          <CardHeader>
+            <img src="/logo.svg" alt="Whirlpool" />
+            <CardTitle className="text-2xl">Cannot verify access</CardTitle>
+            <CardDescription>
+              {accessCheckError ??
+                "We could not confirm whether this network may use the app."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={isRecheckingAccess}
+              onClick={() => {
+                void handleRetryAccessCheck();
+              }}
+            >
+              {isRecheckingAccess ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Retrying…
+                </>
+              ) : (
+                <>
+                  <RefreshCcw />
+                  Try again
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </AuthLayout>
+    );
+  }
+
+  if (ssoExchangeToken) {
+    return (
+      <AuthLayout title="Login">
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Loader2 className="size-8 animate-spin" aria-hidden />
+          <p className="text-sm">Preparing Okta sign-in…</p>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout title="Login">

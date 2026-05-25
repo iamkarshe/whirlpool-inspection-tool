@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
+import { clearAuthenticatedSession } from "@/services/login-service";
 import { getAvatarImage } from "@/lib/utils";
 import { Activity, BadgeCheck, Bell, Info, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -115,7 +116,8 @@ export default function UserMenu() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
-                  navigate(PAGES.LOGIN);
+                  clearAuthenticatedSession();
+                  navigate(PAGES.LOGIN, { replace: true });
                 }}
               >
                 Log out

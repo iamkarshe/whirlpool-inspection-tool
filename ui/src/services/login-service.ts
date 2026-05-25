@@ -18,33 +18,45 @@ const SESSION_ROLE_LEGACY_KEY = "whirlpool.role";
 
 export const LOGIN_PASSWORD_MIN_LENGTH = 6;
 export const LOGIN_PASSWORD_MAX_LENGTH = 128;
+/** Matches OpenAPI `LoginTokenRequest.access_token` minLength. */
+export const SSO_EXCHANGE_TOKEN_MIN_LENGTH = 10;
 
 export {
   getServerAssignedDeviceUuid,
   serverDeviceUuidRef,
 } from "@/lib/session-device-uuid";
 
-function normalizeLoginErrorMessage(err: unknown): string {
+function extractApiDetailMessage(data: unknown): string | null {
+  if (typeof data !== "object" || data === null || !("detail" in data)) {
+    return null;
+  }
+  const detail = (data as { detail?: unknown }).detail;
+  if (typeof detail === "string" && detail.trim().length > 0) {
+    return detail.trim();
+  }
+  if (Array.isArray(detail)) {
+    const first = (detail as HTTPValidationError["detail"])?.[0]?.msg ??
+      (detail as HTTPValidationError["detail"])?.[0]?.type;
+    if (typeof first === "string" && first.length > 0) return first;
+  }
+  return null;
+}
+
+function normalizeLoginErrorMessage(
+  err: unknown,
+  unauthorizedFallback = "Invalid email or password.",
+): string {
   if (!isAxiosError(err)) {
     return err instanceof Error
       ? err.message
       : "Something went wrong. Try again.";
   }
   const status = err.response?.status;
-  const data = err.response?.data;
+  const detailMessage = extractApiDetailMessage(err.response?.data);
+  if (detailMessage) return detailMessage;
 
   if (status === 401 || status === 403) {
-    return "Invalid email or password.";
-  }
-  if (
-    typeof data === "object" &&
-    data !== null &&
-    "detail" in data &&
-    Array.isArray((data as HTTPValidationError).detail)
-  ) {
-    const detail = (data as HTTPValidationError).detail!;
-    const first = detail[0]?.msg ?? detail[0]?.type;
-    if (typeof first === "string" && first.length > 0) return first;
+    return unauthorizedFallback;
   }
   if (typeof err.message === "string" && err.message.length > 0)
     return err.message;
@@ -147,5 +159,38 @@ export async function loginWithEmailPassword(
     return body;
   } catch (err: unknown) {
     throw new Error(normalizeLoginErrorMessage(err));
+  }
+}
+
+/** Completes Okta SSO after redirect to `/login?token=…`. */
+export async function loginWithSsoExchangeToken(
+  exchangeToken: string,
+  coordinates: { lat: number; lng: number },
+): Promise<LoginResponse> {
+  const token = exchangeToken.trim();
+  if (token.length < SSO_EXCHANGE_TOKEN_MIN_LENGTH) {
+    throw new Error("Invalid or expired sign-in link. Please use Okta SSO again.");
+  }
+  if (!Number.isFinite(coordinates.lat) || !Number.isFinite(coordinates.lng)) {
+    throw new Error("A valid device location is required to sign in.");
+  }
+
+  const device = await buildLoginDeviceInfo({ coordinates });
+
+  try {
+    const auth = getAuth();
+    const body = await auth.loginTokenAuthLoginTokenPost({
+      access_token: token,
+      device,
+    });
+    persistAuthenticatedSession(body);
+    return body;
+  } catch (err: unknown) {
+    throw new Error(
+      normalizeLoginErrorMessage(
+        err,
+        "Invalid or expired sign-in link. Please use Okta SSO again.",
+      ),
+    );
   }
 }

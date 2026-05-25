@@ -1,4 +1,4 @@
-import { getPush } from "@/api/generated/push/push";
+import { getPushNotification } from "@/api/generated/push-notification/push-notification";
 import type {
   BrowserPushSubscription,
   PushSubscriptionCreate,
@@ -104,7 +104,8 @@ async function resolveVapidPublicKey(): Promise<string> {
   const envKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
   if (envKey) return envKey;
 
-  const response = await getPush().getVapidPublicKeyApiPushVapidPublicKeyGet();
+  const response =
+    await getPushNotification().getVapidPublicKeyApiPushVapidPublicKeyGet();
   return normalizeVapidPublicKeyResponse(response);
 }
 
@@ -161,10 +162,12 @@ export async function subscribeCurrentDeviceToPush(): Promise<void> {
     existing ??
     (await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(await resolveVapidPublicKey()),
+      applicationServerKey: urlBase64ToUint8Array(
+        await resolveVapidPublicKey(),
+      ),
     }));
 
-  await getPush().savePushSubscriptionApiPushSubscriptionsPost(
+  await getPushNotification().savePushSubscriptionApiPushSubscriptionsPost(
     buildPushSubscriptionPayload(subscription),
   );
   markPushNotificationsEnabled();
@@ -188,5 +191,5 @@ export async function sendTestPushNotificationToUser(
     },
   };
 
-  await getPush().sendUserNotificationApiPushSendUserPost(payload);
+  await getPushNotification().sendUserNotificationApiPushSendUserPost(payload);
 }

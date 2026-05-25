@@ -5063,7 +5063,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Id"
           },
           "value": {
@@ -7946,7 +7946,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -8137,7 +8137,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -8992,13 +8992,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -9088,7 +9088,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10.0,
+            "minimum": 10,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9147,13 +9147,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -9243,7 +9243,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9670,7 +9670,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -9861,7 +9861,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {

@@ -135,6 +135,7 @@ export * from './userResponse';
 export * from './userUpdateRequest';
 export * from './validationError';
 export * from './validationErrorCtx';
+export * from './versionResponse';
 export * from './warehouseCreateRequest';
 export * from './warehouseListResponse';
 export * from './warehouseResponse';
