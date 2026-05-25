@@ -257,7 +257,7 @@ Send payload example:
 
 ## Inbound / outbound inspection ready for review
 
-When `POST /api/inspections/inbound` or `POST /api/inspections/outbound` creates an inspection with `review_status` `IN_REVIEW`, the API notifies warehouse-scoped **operators** (excluding the submitting inspector) via `notify_warehouse_operators_inspection_ready_for_review` in `mod/api/inspection/helper.py`.
+When `POST /api/inspections/inbound` or `POST /api/inspections/outbound` creates an inspection with `review_status` `IN_REVIEW`, the API notifies warehouse-scoped **managers** (who approve or reject inspections; excluding the submitting inspector if they are a manager) via `notify_warehouse_managers_inspection_ready_for_review` in `mod/api/inspection/helper.py`.
 
 Notification tap URL:
 

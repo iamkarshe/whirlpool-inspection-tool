@@ -1708,7 +1708,7 @@ def create_inspection(
             )
 
         if loaded.review_status == InspectionReviewStatus.IN_REVIEW:
-            notify_warehouse_operators_inspection_ready_for_review(
+            notify_warehouse_managers_inspection_ready_for_review(
                 db,
                 loaded,
                 exclude_inspector_id=int(request.state.user_id),
@@ -1729,7 +1729,7 @@ def inspection_review_detail_url(inspection_uuid: uuid.UUID) -> str:
     return f"{INSPECTION_REVIEW_PUSH_URL_PREFIX}{inspection_uuid}"
 
 
-def list_warehouse_operator_user_ids(
+def list_warehouse_manager_user_ids(
     db: Session,
     warehouse_code: str,
     *,
@@ -1741,7 +1741,7 @@ def list_warehouse_operator_user_ids(
         .join(User.warehouses_scope)
         .filter(
             User.is_active.is_(True),
-            Role.role == "operator",
+            Role.role == "manager",
             Role.is_active.is_(True),
             Warehouse.warehouse_code == warehouse_code,
             Warehouse.is_active.is_(True),
@@ -1764,7 +1764,7 @@ def build_inspection_ready_for_review_payload(
     )
     type_label = inspection_type.capitalize()
     warehouse = (inspection.warehouse_code or "").strip()
-    who = (inspector_name or "An operator").strip()
+    who = (inspector_name or "An inspector").strip()
     title = f"{type_label} inspection ready for review"
     body = (
         f"{who} submitted a {inspection_type} inspection"
@@ -1783,7 +1783,7 @@ def build_inspection_ready_for_review_payload(
     )
 
 
-def notify_warehouse_operators_inspection_ready_for_review(
+def notify_warehouse_managers_inspection_ready_for_review(
     db: Session,
     inspection: Inspection,
     *,
@@ -1792,7 +1792,7 @@ def notify_warehouse_operators_inspection_ready_for_review(
     vapid = vapid_send_credentials_optional()
     if vapid is None:
         logger.debug("Skipping inspection review push: VAPID is not configured")
-        return {"operators_notified": 0, "skipped": 1}
+        return {"managers_notified": 0, "skipped": 1}
 
     warehouse_code = (inspection.warehouse_code or "").strip()
     if not warehouse_code:
@@ -1800,15 +1800,15 @@ def notify_warehouse_operators_inspection_ready_for_review(
             "Skipping inspection review push: inspection %s has no warehouse_code",
             inspection.uuid,
         )
-        return {"operators_notified": 0, "skipped": 1}
+        return {"managers_notified": 0, "skipped": 1}
 
-    operator_ids = list_warehouse_operator_user_ids(
+    manager_ids = list_warehouse_manager_user_ids(
         db,
         warehouse_code,
         exclude_user_id=exclude_inspector_id,
     )
-    if not operator_ids:
-        return {"operators_notified": 0, "skipped": 0}
+    if not manager_ids:
+        return {"managers_notified": 0, "skipped": 0}
 
     inspector_name: str | None = None
     if exclude_inspector_id is not None:
@@ -1821,7 +1821,7 @@ def notify_warehouse_operators_inspection_ready_for_review(
     )
     private_path, subject = vapid
     notified = 0
-    for user_id in operator_ids:
+    for user_id in manager_ids:
         try:
             summary = send_user_push_notifications(
                 db,
@@ -1847,9 +1847,9 @@ def notify_warehouse_operators_inspection_ready_for_review(
             "Failed to commit inspection review push records for inspection=%s",
             inspection.uuid,
         )
-        return {"operators_notified": 0, "skipped": 0, "commit_failed": 1}
+        return {"managers_notified": 0, "skipped": 0, "commit_failed": 1}
 
-    return {"operators_notified": notified, "target_operators": len(operator_ids)}
+    return {"managers_notified": notified, "target_managers": len(manager_ids)}
 
 
 def create_inbound_inspection(
