@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { LoginResponse } from "@/api/generated/model/loginResponse";
 import type { VersionResponse } from "@/api/generated/model/versionResponse";
 import { DeviceSelectionDialog } from "@/components/auth/device-selection-dialog";
+import { RevokedSessionDialog } from "@/components/auth/revoked-session-dialog";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { PAGES } from "@/endpoints";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import AuthLayout from "@/pages/auth/layout";
@@ -73,6 +75,12 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingLogin, setPendingLogin] = useState<LoginResponse | null>(null);
   const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
+
+  const isRevokedSession = searchParams.get("revoked") === "true";
+
+  const acknowledgeRevokedSession = useCallback(() => {
+    navigate(PAGES.LOGIN, { replace: true });
+  }, [navigate]);
 
   const finishLoginNavigation = useCallback(
     (login: LoginResponse) => {
@@ -261,10 +269,18 @@ export default function LoginPage() {
     />
   );
 
+  const revokedSessionDialog = (
+    <RevokedSessionDialog
+      open={isRevokedSession}
+      onAcknowledge={acknowledgeRevokedSession}
+    />
+  );
+
   if (accessGate === "checking") {
     return (
       <>
         {deviceSelectionDialog}
+        {revokedSessionDialog}
         <AuthLayout title="Login">
         <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
           <Loader2 className="size-8 animate-spin" aria-hidden />
@@ -283,6 +299,7 @@ export default function LoginPage() {
     return (
       <>
         {deviceSelectionDialog}
+        {revokedSessionDialog}
         <AuthLayout title="Access restricted">
         <VpnAccessLock
           appName={versionInfo?.message}
@@ -301,6 +318,7 @@ export default function LoginPage() {
     return (
       <>
         {deviceSelectionDialog}
+        {revokedSessionDialog}
         <AuthLayout title="Login">
         <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
           <Loader2 className="size-8 animate-spin" aria-hidden />
@@ -315,6 +333,7 @@ export default function LoginPage() {
     return (
       <>
         {deviceSelectionDialog}
+        {revokedSessionDialog}
         <AuthLayout title="Login">
         <Card className="mx-auto w-full max-w-md">
           <CardHeader>
@@ -357,9 +376,10 @@ export default function LoginPage() {
   return (
     <>
       {deviceSelectionDialog}
+      {revokedSessionDialog}
       <AuthLayout title="Login">
-      <div className={cardLockClass}>
-        <Card className="mx-auto w-full max-w-96 sm:w-96">
+      <div className={cn("mx-auto w-full max-w-96 sm:w-96", cardLockClass)}>
+        <Card className="w-full">
           <CardHeader>
             <BrandLogo />
             <CardTitle className="text-2xl">Login</CardTitle>

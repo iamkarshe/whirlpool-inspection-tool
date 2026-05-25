@@ -7,17 +7,16 @@ import type { ResolveDevicesResponse } from "@/api/generated/model/resolveDevice
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import { buildLoginDeviceInfo } from "@/lib/device-fingerprint";
 import {
-  clearServerDeviceUuid,
-  setServerDeviceUuidFromLogin,
-} from "@/lib/session-device-uuid";
-import { PAGES } from "@/endpoints";
+  clearAuthenticatedSessionStorage,
+  SESSION_ACCESS_TOKEN_KEY,
+  SESSION_ROLE_LEGACY_KEY,
+  SESSION_TOKEN_TYPE_KEY,
+  SESSION_USER_PAYLOAD_KEY,
+} from "@/lib/clear-authenticated-session-storage";
+import { setServerDeviceUuidFromLogin } from "@/lib/session-device-uuid";
 import { WHIRLPOOL_SESSION_CHANGED_EVENT } from "@/lib/session-events";
+import { PAGES } from "@/endpoints";
 import { isAxiosError } from "axios";
-
-const SESSION_ACCESS_TOKEN_KEY = "whirlpool.access_token";
-const SESSION_TOKEN_TYPE_KEY = "whirlpool.token_type";
-const SESSION_USER_PAYLOAD_KEY = "whirlpool.user";
-const SESSION_ROLE_LEGACY_KEY = "whirlpool.role";
 
 export const LOGIN_PASSWORD_MIN_LENGTH = 6;
 export const LOGIN_PASSWORD_MAX_LENGTH = 128;
@@ -94,21 +93,11 @@ export function resolvePostLoginHref(roleRaw: string): string {
   return PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS;
 }
 
-function notifySessionChanged(): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(WHIRLPOOL_SESSION_CHANGED_EVENT));
-}
-
 /** Clears persisted auth and Axios bearer header (logout). */
 export function clearAuthenticatedSession(): void {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(SESSION_ACCESS_TOKEN_KEY);
-  window.localStorage.removeItem(SESSION_TOKEN_TYPE_KEY);
-  window.localStorage.removeItem(SESSION_USER_PAYLOAD_KEY);
-  window.localStorage.removeItem(SESSION_ROLE_LEGACY_KEY);
-  clearServerDeviceUuid();
+  clearAuthenticatedSessionStorage();
   Reflect.deleteProperty(apiClient.defaults.headers.common, "Authorization");
-  notifySessionChanged();
 }
 
 /** Persists bearer token and primes axios for subsequent `/api/*` calls. */
@@ -141,7 +130,7 @@ export function persistAuthenticatedSession(login: LoginResponse): void {
     SESSION_ROLE_LEGACY_KEY,
     target === PAGES.OPS_HOME ? "ops" : "admin",
   );
-  notifySessionChanged();
+  window.dispatchEvent(new Event(WHIRLPOOL_SESSION_CHANGED_EVENT));
 }
 
 export async function resolveLoginDevices(
