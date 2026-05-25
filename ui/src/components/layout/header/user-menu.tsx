@@ -22,8 +22,16 @@ import {
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { clearAuthenticatedSession } from "@/services/login-service";
+import { getApiDocumentationUrl } from "@/lib/api-documentation-url";
 import { getAvatarImage } from "@/lib/utils";
-import { Activity, BadgeCheck, Bell, Info, LogOut } from "lucide-react";
+import {
+  Activity,
+  BadgeCheck,
+  Bell,
+  FileText,
+  Info,
+  LogOut,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function UserMenu() {
@@ -31,6 +39,7 @@ export default function UserMenu() {
   const sessionUser = useSessionUser();
   const displayName = sessionUser?.name || "User";
   const displayEmail = sessionUser?.email || "user@whirlpool.com";
+  const apiDocUrl = getApiDocumentationUrl();
 
   return (
     <DropdownMenu>
@@ -64,23 +73,24 @@ export default function UserMenu() {
             <BadgeCheck />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              navigate(PAGES.DASHBOARD_NOTIFICATIONS);
-            }}
-          >
+          <DropdownMenuItem disabled>
             <Activity />
             Activity Log
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              navigate(PAGES.DASHBOARD_NOTIFICATIONS);
-            }}
-          >
+          <DropdownMenuItem disabled>
             <Bell />
             Notifications
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!apiDocUrl}
+            onSelect={(event) => {
+              event.preventDefault();
+              if (!apiDocUrl) return;
+              window.open(apiDocUrl, "_blank", "noopener,noreferrer");
+            }}
+          >
+            <FileText />
+            API Documentation
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(event) => {
