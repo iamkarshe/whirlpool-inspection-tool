@@ -293,6 +293,10 @@ class User(TimestampSoftDeleteMixin, Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    sessions: Mapped[list["UserSession"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     barcode_locks: Mapped[list["BarcodeLock"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
@@ -356,6 +360,40 @@ class Device(TimestampSoftDeleteMixin, Base):
     push_notifications: Mapped[list["PushNotification"]] = relationship(
         back_populates="device"
     )
+    sessions: Mapped[list["UserSession"]] = relationship(back_populates="device")
+
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    __table_args__ = (
+        Index("ix_user_sessions_user_active", "user_id", "is_active"),
+        Index("ix_user_sessions_device_active", "device_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    jti: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    device_id: Mapped[int | None] = mapped_column(
+        ForeignKey("devices.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="true"
+    )
+    expires_at: Mapped[Any] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="sessions")
+    device: Mapped["Device | None"] = relationship(back_populates="sessions")
 
 
 class PushSubscription(TimestampSoftDeleteMixin, Base):

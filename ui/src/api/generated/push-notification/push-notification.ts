@@ -16,7 +16,7 @@ import { customInstance } from '../../axios-instance';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
-  export const getPush = () => {
+  export const getPushNotification = () => {
 /**
  * @summary Get Vapid Public Key
  */
@@ -55,6 +55,6 @@ const sendUserNotificationApiPushSendUserPost = (
       options);
     }
   return {getVapidPublicKeyApiPushVapidPublicKeyGet,savePushSubscriptionApiPushSubscriptionsPost,sendUserNotificationApiPushSendUserPost}};
-export type GetVapidPublicKeyApiPushVapidPublicKeyGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPush>['getVapidPublicKeyApiPushVapidPublicKeyGet']>>>
-export type SavePushSubscriptionApiPushSubscriptionsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPush>['savePushSubscriptionApiPushSubscriptionsPost']>>>
-export type SendUserNotificationApiPushSendUserPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPush>['sendUserNotificationApiPushSendUserPost']>>>
+export type GetVapidPublicKeyApiPushVapidPublicKeyGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPushNotification>['getVapidPublicKeyApiPushVapidPublicKeyGet']>>>
+export type SavePushSubscriptionApiPushSubscriptionsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPushNotification>['savePushSubscriptionApiPushSubscriptionsPost']>>>
+export type SendUserNotificationApiPushSendUserPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPushNotification>['sendUserNotificationApiPushSendUserPost']>>>

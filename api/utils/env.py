@@ -25,3 +25,8 @@ def get_env_optional(key: str, default: str | None = None) -> str | None:
 def get_media_base_url() -> str | None:
     """Base URL for inspection media (``build_url``). ``MEDIA_BASE_URL`` wins, else ``CDN_BASE_URL``."""
     return get_env_optional("MEDIA_BASE_URL") or get_env_optional("CDN_BASE_URL")
+
+
+def get_allow_multi_login() -> bool:
+    raw = (get_env_optional("ALLOW_MULTI_LOGIN", "false") or "false").strip().lower()
+    return raw in {"1", "true", "yes", "on"}

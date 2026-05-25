@@ -13,6 +13,7 @@ from mod.model import (
     PushSubscription,
     User,
 )
+from mod.auth.session import deactivate_push_subscriptions_for_user_except_device
 from mod.push_notification.request import PushSendPayload, PushSubscriptionCreate
 
 
@@ -93,6 +94,12 @@ def upsert_push_subscription(
     push_subscription.is_active = True
 
     db.flush()
+    except_device_id = device.id if device is not None else None
+    deactivate_push_subscriptions_for_user_except_device(
+        db,
+        user_id,
+        except_device_id=except_device_id,
+    )
     return push_subscription
 
 

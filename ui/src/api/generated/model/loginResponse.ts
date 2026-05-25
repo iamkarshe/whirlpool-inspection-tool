@@ -5,6 +5,7 @@
  * Whirlpool Inspection Tool API APIs developed by Scopt Analytics.
  * OpenAPI spec version: 1.0.3
  */
+import type { ActiveDeviceResponse } from './activeDeviceResponse';
 
 export interface LoginResponse {
   id: number;
@@ -19,4 +20,7 @@ export interface LoginResponse {
   device_uuid?: string | null;
   /** Warehouse codes the user may access; null for superadmin. */
   allowed_warehouses?: string[] | null;
+  allow_multi_login?: boolean;
+  requires_device_selection?: boolean;
+  active_devices?: ActiveDeviceResponse[];
 }

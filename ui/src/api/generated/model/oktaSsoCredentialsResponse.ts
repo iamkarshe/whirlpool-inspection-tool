@@ -7,8 +7,24 @@
  */
 
 export interface OktaSsoCredentialsResponse {
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
   okta_domain: string;
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
   client_id: string;
+  /**
+     * @minLength 1
+     * @maxLength 1024
+     */
   redirect_uri: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     */
   client_secret: string;
 }

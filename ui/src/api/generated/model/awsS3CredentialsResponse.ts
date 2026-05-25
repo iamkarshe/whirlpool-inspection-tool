@@ -7,8 +7,24 @@
  */
 
 export interface AwsS3CredentialsResponse {
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
   bucket_name: string;
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
   region: string;
+  /**
+     * @minLength 1
+     * @maxLength 512
+     */
   access_key_id: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     */
   secret_access_key: string;
 }

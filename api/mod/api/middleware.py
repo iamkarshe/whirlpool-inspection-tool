@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from mod.auth.session import verify_request_access_token
 from mod.model import User
 from utils.db import get_db
-from utils.jwt import verify_access_token
 
 
 async def auth_dependency(
@@ -11,7 +11,7 @@ async def auth_dependency(
     db: Session = Depends(get_db),
 ):
     """Dependency to authenticate the current user and attach it to request.state."""
-    user_id = verify_access_token(request)
+    user_id = verify_request_access_token(db, request)
 
     try:
         user = (

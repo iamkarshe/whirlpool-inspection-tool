@@ -1,4 +1,6 @@
 import datetime
+import uuid
+from typing import Any
 
 import jwt
 from fastapi import HTTPException, Query, Request, Security, status
@@ -9,26 +11,63 @@ from utils.log import debug_rich_console
 
 SECRET_KEY = str(get_env("JWT_SECRET"))
 ALGORITHM = "HS256"
+JWT_EXPIRY_HOURS = 24
 
 security = HTTPBearer()
 
 
-def create_access_token(user_id: int) -> str:
-    """Generate JWT token for a user with 24 hours validity."""
-    jwt_expiry_hours = 24
+def _jwt_expiry() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+        hours=JWT_EXPIRY_HOURS
+    )
 
-    payload = {
+
+def create_access_token(
+    user_id: int,
+    *,
+    device_id: int | None = None,
+) -> tuple[str, str, datetime.datetime]:
+    """Generate JWT with jti for server-side session revocation."""
+    jti = uuid.uuid4().hex
+    expires_at = _jwt_expiry()
+    payload: dict[str, Any] = {
         "sub": str(user_id),
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(hours=jwt_expiry_hours),
+        "jti": jti,
+        "exp": expires_at,
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    if device_id is not None:
+        payload["device_id"] = device_id
+
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return token, jti, expires_at
+
+
+def decode_access_token_payload(token: str) -> dict[str, Any]:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired, please login again",
+        )
+    except jwt.InvalidTokenError:
+        debug_rich_console()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token, authentication failed",
+        )
+    if not isinstance(payload, dict):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+    return payload
 
 
 def verify_access_token(request: Request = Security(security)) -> int:
-    """Verify JWT token and return user ID."""
+    """Verify JWT token and return user ID (legacy; prefer auth_dependency)."""
     token = request.headers.get("Authorization")
-    token = token[7:] if token.lower().startswith("bearer ") else token
+    token = token[7:] if token and token.lower().startswith("bearer ") else token
 
     if not token:
         raise HTTPException(
@@ -36,27 +75,14 @@ def verify_access_token(request: Request = Security(security)) -> int:
             detail="[verify_access_token] Missing token",
         )
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="[verify_access_token] Invalid token: No user ID found",
-            )
-        return user_id
-
-    except jwt.ExpiredSignatureError:
+    payload = decode_access_token_payload(token)
+    user_id = payload.get("sub")
+    if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="[verify_access_token] Token expired, please login again",
+            detail="[verify_access_token] Invalid token: No user ID found",
         )
-    except jwt.InvalidTokenError:
-        debug_rich_console()
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="[verify_access_token] Invalid token, authentication failed",
-        )
+    return int(user_id)
 
 
 def verify_access_token_http(

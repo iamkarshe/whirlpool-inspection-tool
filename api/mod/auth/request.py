@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, Dict
 
 from pydantic import BaseModel, EmailStr, Field
@@ -26,6 +27,13 @@ class LoginTokenRequest(BaseModel):
         description="Short-lived SSO exchange token from the Okta callback redirect",
     )
     device: LoginDeviceInfo | None = None
+
+
+class ResolveDevicesRequest(BaseModel):
+    keep_device_uuids: list[uuid.UUID] = Field(
+        min_length=1,
+        description="Device UUIDs to keep active; all other active devices are deregistered.",
+    )
 
 
 class ForgotPasswordRequest(BaseModel):

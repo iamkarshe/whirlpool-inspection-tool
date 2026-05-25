@@ -17,6 +17,7 @@ from mod.api.reports.router import router as reports_router
 from mod.api.sku.router import router as sku_router
 from mod.api.user.router import router as user_router
 from mod.api.warehouse.router import router as warehouse_router
+from mod.auth.device_router import router as auth_device_router
 from mod.auth.router import router as auth_router
 from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
@@ -58,6 +59,7 @@ app.add_middleware(
 
 # API routes
 app.include_router(auth_router)
+app.include_router(auth_device_router)
 app.include_router(user_router)
 app.include_router(device_router)
 app.include_router(login_router)

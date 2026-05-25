@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
-    "api:generate": "pnpm exec orval --config orval.config.ts"
+    "api:export": "cd ../api && uv run python scripts/export_openapi.py",
+    "api:generate": "pnpm exec orval --config orval.config.ts",
+    "api:sync": "pnpm api:export && pnpm api:generate"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

@@ -6,10 +6,15 @@
  * OpenAPI spec version: 1.0.3
  */
 import type {
+  ActiveDeviceListResponse,
+  DeregisterDeviceResponse,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginRequest,
-  LoginResponse
+  LoginResponse,
+  LoginTokenRequest,
+  ResolveDevicesRequest,
+  ResolveDevicesResponse
 } from '../model';
 
 import { customInstance } from '../../axios-instance';
@@ -33,6 +38,19 @@ const loginAuthLoginPost = (
       options);
     }
   /**
+ * @summary Complete login using SSO exchange token from Okta callback
+ */
+const loginTokenAuthLoginTokenPost = (
+    loginTokenRequest: LoginTokenRequest,
+ options?: SecondParameter<typeof customInstance<LoginResponse>>,) => {
+      return customInstance<LoginResponse>(
+      {url: `/auth/login-token`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: loginTokenRequest
+    },
+      options);
+    }
+  /**
  * @summary Forgot Password
  */
 const forgotPasswordAuthForgotPasswordPost = (
@@ -45,6 +63,45 @@ const forgotPasswordAuthForgotPasswordPost = (
     },
       options);
     }
-  return {loginAuthLoginPost,forgotPasswordAuthForgotPasswordPost}};
+  /**
+ * @summary List active devices for the current user
+ */
+const listActiveAuthDevicesAuthDevicesActiveGet = (
+
+ options?: SecondParameter<typeof customInstance<ActiveDeviceListResponse>>,) => {
+      return customInstance<ActiveDeviceListResponse>(
+      {url: `/auth/devices/active`, method: 'GET'
+    },
+      options);
+    }
+  /**
+ * @summary Keep selected devices and deregister the rest (single-login mode)
+ */
+const resolveAuthDevicesAuthDevicesResolvePost = (
+    resolveDevicesRequest: ResolveDevicesRequest,
+ options?: SecondParameter<typeof customInstance<ResolveDevicesResponse>>,) => {
+      return customInstance<ResolveDevicesResponse>(
+      {url: `/auth/devices/resolve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resolveDevicesRequest
+    },
+      options);
+    }
+  /**
+ * @summary Deregister a device and revoke its sessions
+ */
+const deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost = (
+    deviceUuid: string,
+ options?: SecondParameter<typeof customInstance<DeregisterDeviceResponse>>,) => {
+      return customInstance<DeregisterDeviceResponse>(
+      {url: `/auth/devices/${deviceUuid}/deregister`, method: 'POST'
+    },
+      options);
+    }
+  return {loginAuthLoginPost,loginTokenAuthLoginTokenPost,forgotPasswordAuthForgotPasswordPost,listActiveAuthDevicesAuthDevicesActiveGet,resolveAuthDevicesAuthDevicesResolvePost,deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost}};
 export type LoginAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginAuthLoginPost']>>>
+export type LoginTokenAuthLoginTokenPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginTokenAuthLoginTokenPost']>>>
 export type ForgotPasswordAuthForgotPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['forgotPasswordAuthForgotPasswordPost']>>>
+export type ListActiveAuthDevicesAuthDevicesActiveGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listActiveAuthDevicesAuthDevicesActiveGet']>>>
+export type ResolveAuthDevicesAuthDevicesResolvePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resolveAuthDevicesAuthDevicesResolvePost']>>>
+export type DeregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost']>>>

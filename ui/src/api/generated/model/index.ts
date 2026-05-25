@@ -7,6 +7,8 @@
  */
 
 export * from './activeChecklistGroupedResponse';
+export * from './activeDeviceListResponse';
+export * from './activeDeviceResponse';
 export * from './awsS3CredentialsResponse';
 export * from './awsS3UpdateRequest';
 export * from './barcodeLockAcquireRequest';
@@ -29,6 +31,7 @@ export * from './damageGrading';
 export * from './damageLikelyCause';
 export * from './damageSeverity';
 export * from './damageType';
+export * from './deregisterDeviceResponse';
 export * from './deviceInspectionListResponse';
 export * from './deviceInspectionResponse';
 export * from './deviceKpiResponse';
@@ -85,10 +88,12 @@ export * from './loginListItemResponse';
 export * from './loginListResponse';
 export * from './loginRequest';
 export * from './loginResponse';
+export * from './loginTokenRequest';
 export * from './managerInspectionTeamKpisResponse';
 export * from './managerInspectionTeamKpisResponsePeriod';
 export * from './managerTeamInspectionAllKpis';
 export * from './managerTeamInspectionDirectionKpis';
+export * from './oktaSsoCallbackAuthorizationCodeCallbackGetParams';
 export * from './oktaSsoCredentialsResponse';
 export * from './oktaSsoUpdateRequest';
 export * from './operationsAnalyticsResponse';
@@ -117,6 +122,8 @@ export * from './pushSendPayload';
 export * from './pushSendPayloadData';
 export * from './pushSubscriptionCreate';
 export * from './pushUserSendRequest';
+export * from './resolveDevicesRequest';
+export * from './resolveDevicesResponse';
 export * from './skuListResponse';
 export * from './skuResponse';
 export * from './startInboundInspectionRequest';

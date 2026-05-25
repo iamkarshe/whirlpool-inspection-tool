@@ -4,6 +4,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from mod.auth.request import LoginDeviceInfo
+from mod.auth.session import deactivate_push_subscriptions_for_user_except_device
 from mod.model import Device, DeviceType, Log, LogLevel, User
 
 
@@ -52,7 +53,13 @@ def upsert_device_action(
         device.ip_address = client_ip
         device.proxy_ip_address = proxy_ip
 
+    device.is_active = True
     db.flush()
+    deactivate_push_subscriptions_for_user_except_device(
+        db,
+        user.id,
+        except_device_id=device.id,
+    )
     return device
 
 
@@ -117,4 +124,3 @@ def log_login_failure_action(
         log_value=json.dumps(payload),
     )
     db.add(log)
-

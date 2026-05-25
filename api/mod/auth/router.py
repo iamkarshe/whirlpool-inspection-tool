@@ -51,7 +51,12 @@ def login(
     return complete_login(db, user, ctx, device_payload=payload.device)
 
 
-@router.post("/login-token", response_model=LoginResponse)
+@router.post(
+    "/login-token",
+    response_model=LoginResponse,
+    name="login_token",
+    summary="Complete login using SSO exchange token from Okta callback",
+)
 def login_token(
     request: Request,
     payload: LoginTokenRequest,

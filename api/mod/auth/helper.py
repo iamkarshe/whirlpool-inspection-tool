@@ -10,9 +10,15 @@ from mod.auth.actions import (
     log_login_failure_action,
     upsert_device_action,
 )
+from mod.auth.device_helper import (
+    count_other_active_devices,
+    list_active_devices_for_user,
+)
 from mod.auth.request import LoginDeviceInfo
-from mod.auth.response import LoginResponse
+from mod.auth.response import ActiveDeviceResponse, LoginResponse
+from mod.auth.session import create_user_session
 from mod.model import Role, User
+from utils.env import get_allow_multi_login
 from utils.jwt import ALGORITHM, SECRET_KEY, create_access_token
 
 SSO_LOGIN_TOKEN_TYPE = "sso_login"
@@ -34,9 +40,7 @@ def get_request_client_context(request: Request) -> RequestClientContext:
     )
 
 
-def resolve_role_context(
-    db: Session, user: User
-) -> tuple[str, list[str] | None]:
+def resolve_role_context(db: Session, user: User) -> tuple[str, list[str] | None]:
     role: Role | None = db.query(Role).filter(Role.id == user.role_id).first()
     role_name = role.role if role is not None else ""
     is_superadmin = (role_name or "").lower() == "superadmin"
@@ -53,6 +57,9 @@ def build_login_response(
     allowed_warehouses: list[str] | None,
     access_token: str,
     device_uuid,
+    allow_multi_login: bool,
+    requires_device_selection: bool,
+    active_devices: list[ActiveDeviceResponse],
 ) -> LoginResponse:
     return LoginResponse(
         id=user.id,
@@ -65,6 +72,9 @@ def build_login_response(
         access_token=access_token,
         device_uuid=device_uuid,
         allowed_warehouses=allowed_warehouses,
+        allow_multi_login=allow_multi_login,
+        requires_device_selection=requires_device_selection,
+        active_devices=active_devices,
     )
 
 
@@ -123,7 +133,7 @@ def complete_login(
     device_payload: LoginDeviceInfo | None = None,
 ) -> LoginResponse:
     role_name, allowed_warehouses = resolve_role_context(db, user)
-    access_token = create_access_token(user_id=user.id)
+    allow_multi_login = get_allow_multi_login()
 
     device = upsert_device_action(
         db=db,
@@ -131,6 +141,18 @@ def complete_login(
         device_payload=device_payload,
         client_ip=ctx.client_ip,
         proxy_ip=ctx.proxy_ip,
+    )
+    device_id = device.id if device is not None else None
+    access_token, jti, expires_at = create_access_token(
+        user.id,
+        device_id=device_id,
+    )
+    create_user_session(
+        db,
+        user_id=user.id,
+        jti=jti,
+        device_id=device_id,
+        expires_at=expires_at,
     )
     log_login_action(
         db=db,
@@ -141,6 +163,24 @@ def complete_login(
         proxy_ip=ctx.proxy_ip,
         user_agent=ctx.user_agent,
     )
+    db.flush()
+
+    current_device_uuid = device.uuid if device is not None else None
+    active_devices = list_active_devices_for_user(
+        db,
+        user.id,
+        current_device_uuid=current_device_uuid,
+    )
+    requires_device_selection = (
+        not allow_multi_login
+        and count_other_active_devices(
+            db,
+            user.id,
+            except_device_id=device_id,
+        )
+        > 0
+    )
+
     db.commit()
 
     return build_login_response(
@@ -148,7 +188,10 @@ def complete_login(
         role_name=role_name,
         allowed_warehouses=allowed_warehouses,
         access_token=access_token,
-        device_uuid=device.uuid if device is not None else None,
+        device_uuid=current_device_uuid,
+        allow_multi_login=allow_multi_login,
+        requires_device_selection=requires_device_selection,
+        active_devices=active_devices,
     )
 
 
