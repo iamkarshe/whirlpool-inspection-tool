@@ -23,7 +23,7 @@ export default function IntegrationsLayout() {
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        <aside className="lg:w-56 shrink-0">
+        <aside className="shrink-0 lg:sticky lg:top-[calc(var(--header-height)+var(--content-padding))] lg:w-56 lg:self-start">
           <TabbedNav
             variant="sidebar"
             items={services.map(({ title, href, icon }) => ({
