@@ -29,7 +29,8 @@ router = APIRouter(
     "/active",
     response_model=ActiveDeviceListResponse,
     name="list_active_auth_devices",
-    summary="List active devices for the current user",
+    summary="Active Devices",
+    description="List active devices for the current user",
 )
 def list_active_devices(
     request: Request,
@@ -52,7 +53,8 @@ def list_active_devices(
     "/resolve",
     response_model=ResolveDevicesResponse,
     name="resolve_auth_devices",
-    summary="Keep selected devices and deregister the rest (single-login mode)",
+    summary="Resolve Active Device",
+    description="Keep selected devices and deregister the rest of the active devices",
 )
 def resolve_active_devices(
     request: Request,
@@ -72,7 +74,8 @@ def resolve_active_devices(
     "/{device_uuid}/deregister",
     response_model=DeregisterDeviceResponse,
     name="deregister_auth_device",
-    summary="Deregister a device and revoke its sessions",
+    summary="Deregister Device",
+    description="Deregister a device and revoke all its sessions",
 )
 def deregister_user_device(
     request: Request,

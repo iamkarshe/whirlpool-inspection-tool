@@ -73,7 +73,8 @@ def login(
     "/login-token",
     response_model=LoginResponse,
     name="login_token",
-    summary="Complete login using SSO exchange token from Okta callback",
+    summary="Login via Token",
+    description="Login using SSO exchange token (Okta)",
 )
 def login_token(
     request: Request,
