@@ -1,6 +1,8 @@
 from pathlib import Path
+from urllib.parse import quote
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Query, Request
+from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,9 +23,11 @@ from mod.auth.device_router import router as auth_device_router
 from mod.auth.router import router as auth_router
 from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
+from mod.app.helper import require_superadmin_for_api_docs
 from mod.app.response import VersionResponse
+from utils.db import get_db
 from mod.tagmetadata import tags_metadata
-from utils.env import get_allow_multi_login
+from utils.env import get_allow_multi_login, get_env, get_env_optional
 from utils.log import setup_logging
 from utils.auth_rate_limit import (
     AUTH_ATTEMPT_REMAINING_HEADER,
@@ -49,24 +53,30 @@ app = FastAPI(
         "name": "Proprietary - Internal Use Only",
         "url": "https://scoptanalytics.com/terms",
     },
-    docs_url="/docs",
+    docs_url=None,
     redoc_url=None,
-    openapi_url="/openapi.json",
+    openapi_url=None,
     openapi_tags=tags_metadata,
 )
+
+# Allowed origins for CORS middleware
+app_env = (get_env_optional("APP_ENV", "dev") or "dev").strip().lower()
+cors_allowed_origins = ["*"] if app_env == "dev" else [get_env("APP_ORIGIN").strip()]
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=[AUTH_ATTEMPT_REMAINING_HEADER],
 )
 
-# When LOGIN_VPN_IP is set, /auth, /api, and Okta SSO routes require VPN client IP.
+# VPN access middleware
 app.add_middleware(VpnAccessMiddleware)
+
+# Auth rate limit middleware
 app.add_middleware(AuthAttemptRemainingMiddleware)
 
 # API routes
@@ -86,6 +96,7 @@ app.include_router(sku_router)
 app.include_router(push_notification_router)
 app.include_router(okta_sso_router)
 
+# Uploads directory
 uploads_dir = Path(__file__).resolve().parent / "uploads"
 uploads_dir.mkdir(parents=True, exist_ok=True)
 app.mount(
@@ -115,12 +126,20 @@ def version(request: Request) -> VersionResponse:
     )
 
 
-# API Docs.
+# API Docs
 @app.get("/api-docs", include_in_schema=False)
 async def api_docs(
     request: Request,
+    token: str | None = Query(
+        None,
+        description="Authorization bearer.",
+    ),
+    db: Session = Depends(get_db),
 ):
-    api_spec_url = "/openapi.json"
+    require_superadmin_for_api_docs(request, db, token)
+    api_spec_url = "/api-spec"
+    if token and token.strip():
+        api_spec_url = f"/api-spec?token={quote(token.strip(), safe='')}"
     return templates.TemplateResponse(
         "api-docs/index.html",
         {
@@ -129,6 +148,20 @@ async def api_docs(
             "api_title": app_name,
         },
     )
+
+
+# API Specs [OpenAPI]
+@app.get("/api-spec", include_in_schema=False)
+async def api_spec(
+    request: Request,
+    token: str | None = Query(
+        None,
+        description="Authorization bearer.",
+    ),
+    db: Session = Depends(get_db),
+):
+    require_superadmin_for_api_docs(request, db, token)
+    return JSONResponse(content=app.openapi())
 
 
 # ReactJS build
