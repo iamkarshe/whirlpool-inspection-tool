@@ -21,9 +21,11 @@ from mod.auth.device_router import router as auth_device_router
 from mod.auth.router import router as auth_router
 from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
+from mod.app.response import VersionResponse
 from mod.tagmetadata import tags_metadata
+from utils.env import get_allow_multi_login
 from utils.log import setup_logging
-from utils.vpn_access import VpnAccessMiddleware
+from utils.vpn_access import VpnAccessMiddleware, client_can_access_app
 
 setup_logging()
 
@@ -97,9 +99,14 @@ def health():
 
 
 # API Version
-@app.get("/version")
-def version():
-    return {"message": app_name, "version": app_version}
+@app.get("/version", response_model=VersionResponse)
+def version(request: Request) -> VersionResponse:
+    return VersionResponse(
+        message=app_name,
+        version=app_version,
+        can_access_app=client_can_access_app(request),
+        can_login_multiple_devices=get_allow_multi_login(),
+    )
 
 
 # API Docs.

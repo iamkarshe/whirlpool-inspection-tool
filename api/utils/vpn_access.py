@@ -45,6 +45,14 @@ def is_request_from_vpn(request: Request, allowed_ips: frozenset[str]) -> bool:
     return any(ip in allowed_ips for ip in observed_client_ips(request))
 
 
+def client_can_access_app(request: Request) -> bool:
+    """True when VPN allowlist is unset or the client IP matches LOGIN_VPN_IP."""
+    allowed_ips = get_login_vpn_allowed_ips()
+    if allowed_ips is None:
+        return True
+    return is_request_from_vpn(request, allowed_ips)
+
+
 class VpnAccessMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         allowed_ips = get_login_vpn_allowed_ips()

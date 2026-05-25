@@ -4600,7 +4600,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
               }
             }
           }
@@ -9599,6 +9601,38 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VersionResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Application display name."
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "API semantic version."
+          },
+          "can_access_app": {
+            "type": "boolean",
+            "title": "Can Access App",
+            "description": "Whether this client may use the application. False when VPN IP allowlisting is configured and the request IP is not allowed."
+          },
+          "can_login_multiple_devices": {
+            "type": "boolean",
+            "title": "Can Login Multiple Devices",
+            "description": "Whether the API allows multiple active device sessions per user. When false, login may require device selection via requires_device_selection."
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "version",
+          "can_access_app",
+          "can_login_multiple_devices"
+        ],
+        "title": "VersionResponse"
       },
       "WarehouseCreateRequest": {
         "properties": {
