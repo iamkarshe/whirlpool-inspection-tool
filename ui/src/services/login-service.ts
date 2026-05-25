@@ -1,6 +1,9 @@
 import { apiClient } from "@/api/axios-instance";
 import { getAuth } from "@/api/generated/auth/auth";
+import type { ActiveDeviceListResponse } from "@/api/generated/model/activeDeviceListResponse";
+import type { ActiveDeviceResponse } from "@/api/generated/model/activeDeviceResponse";
 import type { LoginResponse } from "@/api/generated/model/loginResponse";
+import type { ResolveDevicesResponse } from "@/api/generated/model/resolveDevicesResponse";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import { buildLoginDeviceInfo } from "@/lib/device-fingerprint";
 import {
@@ -40,6 +43,24 @@ function extractApiDetailMessage(data: unknown): string | null {
     if (typeof first === "string" && first.length > 0) return first;
   }
   return null;
+}
+
+export function shouldShowDeviceSelection(login: LoginResponse): boolean {
+  return login.requires_device_selection === true;
+}
+
+export function canCallDeviceResolve(allowMultiLogin: boolean): boolean {
+  return allowMultiLogin === false;
+}
+
+/** UUID for the device that just completed login (this browser). */
+export function getCurrentDeviceUuidFromLogin(
+  login: LoginResponse,
+): string | null {
+  const fromSession = login.device_uuid?.trim();
+  if (fromSession) return fromSession;
+  const marked = login.active_devices?.find((d) => d.is_current)?.uuid?.trim();
+  return marked || null;
 }
 
 function normalizeLoginErrorMessage(
@@ -123,7 +144,46 @@ export function persistAuthenticatedSession(login: LoginResponse): void {
   notifySessionChanged();
 }
 
-export async function loginWithEmailPassword(
+export async function resolveLoginDevices(
+  keepDeviceUuids: string[],
+): Promise<ResolveDevicesResponse> {
+  const unique = [...new Set(keepDeviceUuids.map((id) => id.trim()).filter(Boolean))];
+  if (unique.length === 0) {
+    throw new Error("Select at least one device to keep signed in.");
+  }
+
+  try {
+    const auth = getAuth();
+    return await auth.resolveAuthDevicesAuthDevicesResolvePost({
+      keep_device_uuids: unique,
+    });
+  } catch (err: unknown) {
+    throw new Error(normalizeLoginErrorMessage(err, "Could not update devices."));
+  }
+}
+
+export async function fetchActiveAuthDevices(): Promise<ActiveDeviceListResponse> {
+  try {
+    const auth = getAuth();
+    return await auth.listActiveAuthDevicesAuthDevicesActiveGet();
+  } catch (err: unknown) {
+    throw new Error(normalizeLoginErrorMessage(err, "Could not load devices."));
+  }
+}
+
+export async function deregisterAuthDevice(deviceUuid: string): Promise<void> {
+  const id = deviceUuid.trim();
+  if (!id) throw new Error("Device id is required.");
+
+  try {
+    const auth = getAuth();
+    await auth.deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost(id);
+  } catch (err: unknown) {
+    throw new Error(normalizeLoginErrorMessage(err, "Could not sign out that device."));
+  }
+}
+
+export async function authenticateWithEmailPassword(
   email: string,
   password: string,
   coordinates: { lat: number; lng: number },
@@ -150,20 +210,29 @@ export async function loginWithEmailPassword(
 
   try {
     const auth = getAuth();
-    const body = await auth.loginAuthLoginPost({
+    return await auth.loginAuthLoginPost({
       email: trimmedEmail,
       password,
       device,
     });
-    persistAuthenticatedSession(body);
-    return body;
   } catch (err: unknown) {
     throw new Error(normalizeLoginErrorMessage(err));
   }
 }
 
+/** @deprecated Prefer authenticate + persist + device selection flow. */
+export async function loginWithEmailPassword(
+  email: string,
+  password: string,
+  coordinates: { lat: number; lng: number },
+): Promise<LoginResponse> {
+  const body = await authenticateWithEmailPassword(email, password, coordinates);
+  persistAuthenticatedSession(body);
+  return body;
+}
+
 /** Completes Okta SSO after redirect to `/login?token=…`. */
-export async function loginWithSsoExchangeToken(
+export async function authenticateWithSsoExchangeToken(
   exchangeToken: string,
   coordinates: { lat: number; lng: number },
 ): Promise<LoginResponse> {
@@ -179,12 +248,10 @@ export async function loginWithSsoExchangeToken(
 
   try {
     const auth = getAuth();
-    const body = await auth.loginTokenAuthLoginTokenPost({
+    return await auth.loginTokenAuthLoginTokenPost({
       access_token: token,
       device,
     });
-    persistAuthenticatedSession(body);
-    return body;
   } catch (err: unknown) {
     throw new Error(
       normalizeLoginErrorMessage(
@@ -193,4 +260,18 @@ export async function loginWithSsoExchangeToken(
       ),
     );
   }
+}
+
+/** @deprecated Prefer authenticate + persist + device selection flow. */
+export async function loginWithSsoExchangeToken(
+  exchangeToken: string,
+  coordinates: { lat: number; lng: number },
+): Promise<LoginResponse> {
+  const body = await authenticateWithSsoExchangeToken(exchangeToken, coordinates);
+  persistAuthenticatedSession(body);
+  return body;
+}
+
+export function getLoginActiveDevices(login: LoginResponse): ActiveDeviceResponse[] {
+  return login.active_devices ?? [];
 }

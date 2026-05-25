@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { OpsActiveDevicesSection } from "@/components/ops/ops-active-devices-section";
 import { OpsSettingsContent } from "@/components/ops/ops-settings-content";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -408,6 +409,8 @@ export default function OpsAccountPage() {
           </button>
         ) : null}
       </section>
+
+      <OpsActiveDevicesSection />
 
       <OpsSettingsContent />
 

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import type { LoginResponse } from "@/api/generated/model/loginResponse";
 import type { VersionResponse } from "@/api/generated/model/versionResponse";
+import { DeviceSelectionDialog } from "@/components/auth/device-selection-dialog";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,10 +29,12 @@ import {
 import {
   LOGIN_PASSWORD_MAX_LENGTH,
   LOGIN_PASSWORD_MIN_LENGTH,
+  authenticateWithEmailPassword,
+  authenticateWithSsoExchangeToken,
   clearAuthenticatedSession,
-  loginWithEmailPassword,
-  loginWithSsoExchangeToken,
+  persistAuthenticatedSession,
   resolvePostLoginHref,
+  shouldShowDeviceSelection,
 } from "@/services/login-service";
 
 const ALLOW_FORGOT_PASSWORD = false;
@@ -43,12 +46,18 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const { isLocationReady, coordinatesRef, acquireLocation } = useGeolocation();
 
-  const ssoExchangeToken = useMemo(
-    () => searchParams.get("token")?.trim() || null,
-    [searchParams],
-  );
+  const ssoTokenCapturedRef = useRef<string | null>(null);
   const ssoAttemptRef = useRef<string | null>(null);
+  const [ssoFlowActive, setSsoFlowActive] = useState(false);
   const [isCompletingSso, setIsCompletingSso] = useState(false);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("token")?.trim();
+    if (!fromUrl) return;
+    ssoTokenCapturedRef.current = fromUrl;
+    setSsoFlowActive(true);
+    navigate(PAGES.LOGIN, { replace: true });
+  }, [searchParams, navigate]);
 
   const [accessGate, setAccessGate] = useState<AccessGateState>("checking");
   const [versionInfo, setVersionInfo] = useState<VersionResponse | null>(null);
@@ -62,6 +71,46 @@ export default function LoginPage() {
     import.meta.env.DEV ? import.meta.env.VITE_DEFAULT_PASSWORD : "",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingLogin, setPendingLogin] = useState<LoginResponse | null>(null);
+  const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
+
+  const finishLoginNavigation = useCallback(
+    (login: LoginResponse) => {
+      toast.success(`Welcome back, ${login.name}.`);
+      navigate(resolvePostLoginHref(login.role), { replace: true });
+    },
+    [navigate],
+  );
+
+  const handlePostAuthenticate = useCallback(
+    (login: LoginResponse) => {
+      persistAuthenticatedSession(login);
+
+      if (shouldShowDeviceSelection(login)) {
+        setPendingLogin(login);
+        setDeviceDialogOpen(true);
+        return;
+      }
+
+      finishLoginNavigation(login);
+    },
+    [finishLoginNavigation],
+  );
+
+  const handleDeviceSelectionResolved = useCallback(() => {
+    if (!pendingLogin) return;
+    const login = pendingLogin;
+    setPendingLogin(null);
+    setDeviceDialogOpen(false);
+    finishLoginNavigation(login);
+  }, [pendingLogin, finishLoginNavigation]);
+
+  const handleDeviceSelectionCancel = useCallback(() => {
+    clearAuthenticatedSession();
+    setPendingLogin(null);
+    setDeviceDialogOpen(false);
+    toast.info("Sign-in cancelled.");
+  }, []);
 
   const runAccessCheck = useCallback(async (force = false) => {
     setAccessCheckError(null);
@@ -92,9 +141,10 @@ export default function LoginPage() {
   }, [accessGate, acquireLocation]);
 
   useEffect(() => {
-    if (accessGate !== "allowed" || !ssoExchangeToken) return;
-    if (ssoAttemptRef.current === ssoExchangeToken) return;
-    ssoAttemptRef.current = ssoExchangeToken;
+    const token = ssoTokenCapturedRef.current;
+    if (accessGate !== "allowed" || !token) return;
+    if (ssoAttemptRef.current === token) return;
+    ssoAttemptRef.current = token;
 
     let cancelled = false;
 
@@ -106,23 +156,22 @@ export default function LoginPage() {
           throw new Error("Allow location access to complete Okta sign-in.");
         }
 
-        const session = await loginWithSsoExchangeToken(
-          ssoExchangeToken,
-          coords,
-        );
+        const session = await authenticateWithSsoExchangeToken(token, coords);
         if (cancelled) return;
 
-        toast.success(`Welcome back, ${session.name}.`);
-        navigate(resolvePostLoginHref(session.role), { replace: true });
+        ssoTokenCapturedRef.current = null;
+        setSsoFlowActive(false);
+        handlePostAuthenticate(session);
       } catch (err: unknown) {
         if (cancelled) return;
         ssoAttemptRef.current = null;
+        ssoTokenCapturedRef.current = null;
+        setSsoFlowActive(false);
         const message =
           err instanceof Error
             ? err.message
             : "Okta sign-in failed. Try again.";
         toast.error(message);
-        navigate(PAGES.LOGIN, { replace: true });
       } finally {
         if (!cancelled) setIsCompletingSso(false);
       }
@@ -133,7 +182,7 @@ export default function LoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [accessGate, ssoExchangeToken, acquireLocation, coordinatesRef, navigate]);
+  }, [accessGate, acquireLocation, coordinatesRef, handlePostAuthenticate]);
 
   const handleRetryAccessCheck = async () => {
     setIsRecheckingAccess(true);
@@ -174,13 +223,12 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const session: LoginResponse = await loginWithEmailPassword(
+      const session: LoginResponse = await authenticateWithEmailPassword(
         trimmedEmail,
         password,
         coords,
       );
-      toast.success(`Welcome back, ${session.name}.`);
-      navigate(resolvePostLoginHref(session.role));
+      handlePostAuthenticate(session);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Login failed. Try again.";
@@ -204,20 +252,38 @@ export default function LoginPage() {
     return (window.location.href = url);
   };
 
+  const deviceSelectionDialog = (
+    <DeviceSelectionDialog
+      open={deviceDialogOpen}
+      login={pendingLogin}
+      onResolved={handleDeviceSelectionResolved}
+      onCancel={handleDeviceSelectionCancel}
+    />
+  );
+
   if (accessGate === "checking") {
     return (
-      <AuthLayout title="Login">
+      <>
+        {deviceSelectionDialog}
+        <AuthLayout title="Login">
         <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
           <Loader2 className="size-8 animate-spin" aria-hidden />
-          <p className="text-sm">Verifying network access…</p>
+          <p className="text-sm">
+            {ssoFlowActive
+              ? "Preparing Okta sign-in…"
+              : "Verifying network access…"}
+          </p>
         </div>
       </AuthLayout>
+      </>
     );
   }
 
   if (accessGate === "blocked") {
     return (
-      <AuthLayout title="Access restricted">
+      <>
+        {deviceSelectionDialog}
+        <AuthLayout title="Access restricted">
         <VpnAccessLock
           appName={versionInfo?.message}
           apiVersion={versionInfo?.version}
@@ -227,23 +293,29 @@ export default function LoginPage() {
           }}
         />
       </AuthLayout>
+      </>
     );
   }
 
-  if (isCompletingSso && ssoExchangeToken) {
+  if (isCompletingSso || ssoFlowActive) {
     return (
-      <AuthLayout title="Login">
+      <>
+        {deviceSelectionDialog}
+        <AuthLayout title="Login">
         <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
           <Loader2 className="size-8 animate-spin" aria-hidden />
           <p className="text-sm">Completing Okta sign-in…</p>
         </div>
       </AuthLayout>
+      </>
     );
   }
 
   if (accessGate === "error") {
     return (
-      <AuthLayout title="Login">
+      <>
+        {deviceSelectionDialog}
+        <AuthLayout title="Login">
         <Card className="mx-auto w-full max-w-md">
           <CardHeader>
             <BrandLogo />
@@ -278,22 +350,14 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </AuthLayout>
-    );
-  }
-
-  if (ssoExchangeToken) {
-    return (
-      <AuthLayout title="Login">
-        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 text-muted-foreground">
-          <Loader2 className="size-8 animate-spin" aria-hidden />
-          <p className="text-sm">Preparing Okta sign-in…</p>
-        </div>
-      </AuthLayout>
+      </>
     );
   }
 
   return (
-    <AuthLayout title="Login">
+    <>
+      {deviceSelectionDialog}
+      <AuthLayout title="Login">
       <div className={cardLockClass}>
         <Card className="mx-auto w-full max-w-96 sm:w-96">
           <CardHeader>
@@ -379,5 +443,6 @@ export default function LoginPage() {
         </Card>
       </div>
     </AuthLayout>
+    </>
   );
 }
