@@ -24,25 +24,26 @@ import {
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
-import { getServerAssignedDeviceUuid } from "@/lib/session-device-uuid";
 import {
   formatOpsRoleBadgeLabel,
   userInitialsFromName,
 } from "@/lib/ops-user-display";
+import { getServerAssignedDeviceUuid } from "@/lib/session-device-uuid";
+import { hardReload } from "@/services/app-update";
 import { clearAuthenticatedSession } from "@/services/login-service";
-import {
-  initPwaInstallPromptCapture,
-  installPwaApp,
-  isPwaInstallPromptAvailable,
-  isStandaloneDisplay,
-  getPwaInstallHelp,
-  subscribePwaInstallState,
-} from "@/services/pwa-install";
 import {
   isPushNotificationSupported,
   sendTestPushNotificationToUser,
   subscribeCurrentDeviceToPush,
 } from "@/services/push-notifications";
+import {
+  getPwaInstallHelp,
+  initPwaInstallPromptCapture,
+  installPwaApp,
+  isPwaInstallPromptAvailable,
+  isStandaloneDisplay,
+  subscribePwaInstallState,
+} from "@/services/pwa-install";
 
 type ConfirmAction = "logout" | null;
 type NotificationSupportState = NotificationPermission | "unsupported";
@@ -288,6 +289,19 @@ export default function OpsAccountPage() {
                   className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-500" : "bg-amber-500"}`}
                 />
                 {online ? "Online" : "Offline"}
+              </span>
+            </dd>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">Application Version</dt>
+            <dd
+              onClick={() => {
+                void hardReload();
+              }}
+            >
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-200">
+                <span className={`h-1.5 w-1.5 rounded-full bg-amber-500`} />
+                {import.meta.env["VITE_APP_BUILD"]}
               </span>
             </dd>
           </div>

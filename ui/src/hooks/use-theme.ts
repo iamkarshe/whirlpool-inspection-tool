@@ -20,11 +20,9 @@ export function useTheme() {
   const [theme, setTheme] = useState<AppTheme>(() => readInitialTheme());
 
   useLayoutEffect(() => {
-    // Keep Tailwind/ShadCN theme styles in sync via the `dark` class on <html>.
     document.documentElement.classList.toggle("dark", theme === "dark");
     window.localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
   return { theme, setTheme };
 }
-

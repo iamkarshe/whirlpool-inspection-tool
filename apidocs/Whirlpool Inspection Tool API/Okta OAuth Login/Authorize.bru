@@ -7,7 +7,7 @@ meta {
 get {
   url: {{okta_server}}/oauth2/default/v1/authorize?client_id={{okta_client}}&response_type=code&response_mode=query&scope=openid profile email&redirect_uri=http://localhost:8000/authorization-code/callback&nonce=UBGW&state={{$randomUUID}}
   body: none
-  auth: inherit
+  auth: none
 }
 
 params:query {

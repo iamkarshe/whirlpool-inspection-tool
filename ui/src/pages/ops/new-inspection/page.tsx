@@ -121,7 +121,7 @@ export default function OpsNewInspectionPage() {
             }`}
           >
             <Barcode className="h-5 w-5 text-muted-foreground" />
-            {scannerEnabled
+            {scannerEnabled && allowManualCode
               ? "Stop scan for manual entry"
               : "Scan QR / barcode"}
           </button>

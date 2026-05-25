@@ -1,3 +1,4 @@
+import { AlertCircle, Loader2 } from "lucide-react";
 import type { ChangeEvent, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,7 +20,6 @@ import {
   integrationsApiErrorMessage,
   updateAwsS3Integration,
 } from "@/services/integrations-api";
-import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function IntegrationsAwsS3Page() {
   const [loading, setLoading] = useState(true);
@@ -117,8 +117,7 @@ export default function IntegrationsAwsS3Page() {
       <CardHeader>
         <CardTitle>AWS S3</CardTitle>
         <CardDescription>
-          Configure AWS S3 for inspection attachments and exports. There is no
-          separate connectivity probe; saving persists credentials via the API.
+          Configure AWS S3 for inspection attachments and exports.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -175,22 +174,24 @@ export default function IntegrationsAwsS3Page() {
               />
             </div>
           </div>
-          {saveError ?
+          {saveError ? (
             <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Save failed</AlertTitle>
               <AlertDescription>{saveError}</AlertDescription>
             </Alert>
-          : null}
+          ) : null}
         </CardContent>
         <CardFooter className="mt-5 flex justify-end">
           <Button type="submit" disabled={saving}>
-            {saving ?
+            {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving…
               </>
-            : "Save configuration"}
+            ) : (
+              "Save configuration"
+            )}
           </Button>
         </CardFooter>
       </form>
