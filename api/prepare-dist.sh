@@ -14,14 +14,11 @@ ZIP_NAME="www.zip"
 
 zip -r -q "$ZIP_NAME" \
   mod \
-  sample \
   template \
   utils \
   main.py \
-  contextmanager.py \
   pyproject.toml \
   requirements.txt \
-  uv.lock \
   -x "*.DS_Store" "__MACOSX/*"
 
 echo "Created: $SCRIPT_DIR/$ZIP_NAME"
