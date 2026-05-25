@@ -73,6 +73,7 @@ export default function LoginPage() {
     import.meta.env.DEV ? import.meta.env.VITE_DEFAULT_PASSWORD : "",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirectingToOkta, setIsRedirectingToOkta] = useState(false);
   const [pendingLogin, setPendingLogin] = useState<LoginResponse | null>(null);
   const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
 
@@ -255,9 +256,10 @@ export default function LoginPage() {
   );
 
   const redirectOktaSSO = () => {
-    if (accessGate !== "allowed") return;
+    if (accessGate !== "allowed" || isRedirectingToOkta) return;
+    setIsRedirectingToOkta(true);
     const url = String(import.meta.env["VITE_API_BASE_URL"]).concat("/sso");
-    return (window.location.href = url);
+    window.location.href = url;
   };
 
   const deviceSelectionDialog = (
@@ -452,10 +454,19 @@ export default function LoginPage() {
                   variant="outline"
                   className="w-full"
                   type="button"
-                  disabled={!isLocationReady}
+                  disabled={
+                    !isLocationReady || isSubmitting || isRedirectingToOkta
+                  }
                   onClick={redirectOktaSSO}
                 >
-                  Okta SSO Login
+                  {isRedirectingToOkta ? (
+                    <>
+                      <Loader2 className="animate-spin" />
+                      Connecting…
+                    </>
+                  ) : (
+                    "Okta SSO Login"
+                  )}
                 </Button>
               </div>
             </form>
