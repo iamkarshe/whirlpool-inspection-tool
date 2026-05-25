@@ -10,7 +10,34 @@
     <meta name="application-name" content="%VITE_APP_TITLE%" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <!-- Light default; updated to "black" when user picks dark theme (see theme-init script). -->
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="default"
+      id="apple-status-bar-meta"
+    />
+    <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
+    <meta name="color-scheme" content="light" id="color-scheme-meta" />
+
+    <script>
+      (function () {
+        var key = "whirlpool.theme";
+        var stored = localStorage.getItem(key);
+        var theme = stored === "dark" ? "dark" : "light";
+        var root = document.documentElement;
+        root.classList.toggle("dark", theme === "dark");
+        root.style.colorScheme = theme;
+        var themeColor = theme === "dark" ? "#0a0a0a" : "#ffffff";
+        var statusBar = theme === "dark" ? "black" : "default";
+        var scheme = theme === "dark" ? "dark" : "light";
+        var tc = document.getElementById("theme-color-meta");
+        if (tc) tc.setAttribute("content", themeColor);
+        var apple = document.getElementById("apple-status-bar-meta");
+        if (apple) apple.setAttribute("content", statusBar);
+        var cs = document.getElementById("color-scheme-meta");
+        if (cs) cs.setAttribute("content", scheme);
+      })();
+    </script>
 
     <link rel="manifest" href="/manifest.json?v=1.1" />
 

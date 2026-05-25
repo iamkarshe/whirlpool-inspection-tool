@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import type { LoginResponse } from "@/api/generated/model/loginResponse";
 import type { VersionResponse } from "@/api/generated/model/versionResponse";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,10 +63,10 @@ export default function LoginPage() {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const runAccessCheck = useCallback(async () => {
+  const runAccessCheck = useCallback(async (force = false) => {
     setAccessCheckError(null);
     try {
-      const version = await fetchAppVersion();
+      const version = await fetchAppVersion(force ? { force: true } : undefined);
       setVersionInfo(version);
 
       if (!version.can_access_app) {
@@ -132,18 +133,12 @@ export default function LoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [
-    accessGate,
-    ssoExchangeToken,
-    acquireLocation,
-    coordinatesRef,
-    navigate,
-  ]);
+  }, [accessGate, ssoExchangeToken, acquireLocation, coordinatesRef, navigate]);
 
   const handleRetryAccessCheck = async () => {
     setIsRecheckingAccess(true);
     setAccessGate("checking");
-    await runAccessCheck();
+    await runAccessCheck(true);
     setIsRecheckingAccess(false);
   };
 
@@ -251,7 +246,7 @@ export default function LoginPage() {
       <AuthLayout title="Login">
         <Card className="mx-auto w-full max-w-md">
           <CardHeader>
-            <img src="/logo.svg" alt="Whirlpool" />
+            <BrandLogo />
             <CardTitle className="text-2xl">Cannot verify access</CardTitle>
             <CardDescription>
               {accessCheckError ??
@@ -302,7 +297,7 @@ export default function LoginPage() {
       <div className={cardLockClass}>
         <Card className="mx-auto w-full max-w-96 sm:w-96">
           <CardHeader>
-            <img src="/logo.svg" alt="Whirlpool" />
+            <BrandLogo />
             <CardTitle className="text-2xl">Login</CardTitle>
             <CardDescription>
               Enter your email below to login to your account.

@@ -8,9 +8,9 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: light;
+  color: oklch(0.145 0 0);
+  background-color: oklch(1 0 0);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -60,13 +60,6 @@ nav {
   padding-top: env(safe-area-inset-top);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-}
-
 @theme inline {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, monospace;
@@ -112,6 +105,7 @@ nav {
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

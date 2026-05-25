@@ -25,7 +25,8 @@ export function OpsSettingsContent() {
           <div>
             <p className="text-sm font-semibold">Appearance</p>
             <p className="text-xs text-muted-foreground">
-              Switch between light and dark to match your environment.
+              Light is the default. Choose dark only when you want it on this
+              device.
             </p>
           </div>
         </div>

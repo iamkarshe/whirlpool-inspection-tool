@@ -1,27 +1,20 @@
 import { useLayoutEffect, useState } from "react";
 
-type AppTheme = "light" | "dark";
-
-const STORAGE_KEY = "whirlpool.theme";
-
-function readInitialTheme(): AppTheme {
-  if (typeof window === "undefined") return "light";
-
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-
-  // If user never picked, default to system preference.
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
+import {
+  APP_THEME_STORAGE_KEY,
+  applyAppTheme,
+  getAppTheme,
+  type AppTheme,
+} from "@/lib/app-theme";
 
 export function useTheme() {
-  const [theme, setTheme] = useState<AppTheme>(() => readInitialTheme());
+  const [theme, setTheme] = useState<AppTheme>(() => getAppTheme());
 
   useLayoutEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    window.localStorage.setItem(STORAGE_KEY, theme);
+    applyAppTheme(theme);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(APP_THEME_STORAGE_KEY, theme);
+    }
   }, [theme]);
 
   return { theme, setTheme };

@@ -1,3 +1,6 @@
+import { Loader2, Lock, RefreshCcw, ShieldAlert } from "lucide-react";
+
+import { BrandLogo } from "@/components/brand-logo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Lock, RefreshCcw, ShieldAlert } from "lucide-react";
 
 type VpnAccessLockProps = {
   appName?: string;
@@ -25,7 +27,7 @@ export function VpnAccessLock({
   return (
     <Card className="mx-auto w-full max-w-md">
       <CardHeader className="text-center">
-        <img src="/logo.svg" alt="Whirlpool" className="mx-auto h-10 w-auto" />
+        <BrandLogo />
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
           <Lock className="size-7" aria-hidden />
         </div>
