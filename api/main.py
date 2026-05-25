@@ -25,6 +25,10 @@ from mod.app.response import VersionResponse
 from mod.tagmetadata import tags_metadata
 from utils.env import get_allow_multi_login
 from utils.log import setup_logging
+from utils.auth_rate_limit import (
+    AUTH_ATTEMPT_REMAINING_HEADER,
+    AuthAttemptRemainingMiddleware,
+)
 from utils.vpn_access import VpnAccessMiddleware, client_can_access_app
 
 setup_logging()
@@ -58,10 +62,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[AUTH_ATTEMPT_REMAINING_HEADER],
 )
 
 # When LOGIN_VPN_IP is set, /auth, /api, and Okta SSO routes require VPN client IP.
 app.add_middleware(VpnAccessMiddleware)
+app.add_middleware(AuthAttemptRemainingMiddleware)
 
 # API routes
 app.include_router(auth_router)

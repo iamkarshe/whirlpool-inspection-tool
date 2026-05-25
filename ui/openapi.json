@@ -43,6 +43,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -84,6 +87,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -124,6 +130,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           },
           "422": {
             "description": "Validation Error",
@@ -5063,7 +5072,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Id"
           },
           "value": {
@@ -7946,7 +7955,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -8137,7 +8146,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -8992,13 +9001,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -9088,7 +9097,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10,
+            "minimum": 10.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9147,13 +9156,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -9243,7 +9252,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9670,7 +9679,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -9861,7 +9870,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {

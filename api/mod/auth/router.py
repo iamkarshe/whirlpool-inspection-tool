@@ -1,4 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+
+from utils.auth_rate_limit import (
+    require_auth_rate_limit,
+    reset_auth_rate_limit_after_successful_login,
+)
 from sqlalchemy.orm import Session
 
 from mod.auth.actions import log_login_failure_action
@@ -16,12 +21,22 @@ from mod.model import User
 from utils.db import get_db
 from utils.password import verify_password
 
-router = APIRouter(tags=["Auth"], prefix="/auth")
+router = APIRouter(
+    tags=["Auth"],
+    prefix="/auth",
+    dependencies=[Depends(require_auth_rate_limit)],
+    responses={
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "description": "Too many authentication attempts from this IP.",
+        },
+    },
+)
 
 
 @router.post("/login", response_model=LoginResponse)
 def login(
     request: Request,
+    response: Response,
     payload: LoginRequest,
     db: Session = Depends(get_db),
 ) -> LoginResponse:
@@ -49,7 +64,9 @@ def login(
             detail="Invalid email or password",
         )
 
-    return complete_login(db, user, ctx, device_payload=payload.device)
+    login_response = complete_login(db, user, ctx, device_payload=payload.device)
+    reset_auth_rate_limit_after_successful_login(request, response)
+    return login_response
 
 
 @router.post(
@@ -60,6 +77,7 @@ def login(
 )
 def login_token(
     request: Request,
+    response: Response,
     payload: LoginTokenRequest,
     db: Session = Depends(get_db),
 ) -> LoginResponse:
@@ -78,7 +96,9 @@ def login_token(
 
     ensure_user_is_active(db, user, ctx, failure_reason="sso_inactive_user")
 
-    return complete_login(db, user, ctx, device_payload=payload.device)
+    login_response = complete_login(db, user, ctx, device_payload=payload.device)
+    reset_auth_rate_limit_after_successful_login(request, response)
+    return login_response
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
