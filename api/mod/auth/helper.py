@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from dataclasses import dataclass
 
 import jwt
@@ -14,10 +15,16 @@ from mod.auth.device_helper import (
     count_other_active_devices,
     list_active_devices_for_user,
 )
-from mod.auth.request import LoginDeviceInfo
-from mod.auth.response import ActiveDeviceResponse, LoginResponse
-from mod.auth.session import create_user_session
-from mod.model import Role, User
+from mod.auth.request import LoginDeviceInfo, ResolveDevicesRequest
+from mod.auth.response import (
+    ActiveDeviceListResponse,
+    ActiveDeviceResponse,
+    DeregisterDeviceResponse,
+    LoginResponse,
+    ResolveDevicesResponse,
+)
+from mod.auth.session import create_user_session, deregister_device
+from mod.model import Device, Role, User
 from utils.env import get_allow_multi_login
 from utils.jwt import ALGORITHM, SECRET_KEY, create_access_token
 
@@ -235,3 +242,98 @@ def verify_sso_login_token(token: str) -> str:
         )
 
     return email.strip().lower()
+
+
+def get_user_device_by_uuid_or_404(
+    db: Session,
+    user_id: int,
+    device_uuid: uuid.UUID,
+) -> Device:
+    device = (
+        db.query(Device)
+        .filter(
+            Device.uuid == device_uuid,
+            Device.user_id == user_id,
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+    return device
+
+
+def build_active_device_list_response(
+    db: Session,
+    user_id: int,
+    *,
+    current_device_uuid: uuid.UUID | None = None,
+) -> ActiveDeviceListResponse:
+    return ActiveDeviceListResponse(
+        allow_multi_login=get_allow_multi_login(),
+        devices=list_active_devices_for_user(
+            db,
+            user_id,
+            current_device_uuid=current_device_uuid,
+        ),
+    )
+
+
+def resolve_active_devices_for_user(
+    db: Session,
+    user_id: int,
+    payload: ResolveDevicesRequest,
+) -> ResolveDevicesResponse:
+    if get_allow_multi_login():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Device selection is not required when multi-login is enabled",
+        )
+
+    keep_uuids = list(dict.fromkeys(payload.keep_device_uuids))
+    active_devices = (
+        db.query(Device)
+        .filter(
+            Device.user_id == user_id,
+            Device.is_active.is_(True),
+        )
+        .all()
+    )
+    active_by_uuid = {device.uuid: device for device in active_devices}
+
+    unknown = [value for value in keep_uuids if value not in active_by_uuid]
+    if unknown:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="One or more devices are not active for this account",
+        )
+
+    kept: list[uuid.UUID] = []
+    deregistered: list[uuid.UUID] = []
+    keep_set = set(keep_uuids)
+
+    for device in active_devices:
+        if device.uuid in keep_set:
+            kept.append(device.uuid)
+            continue
+        deregister_device(db, device)
+        deregistered.append(device.uuid)
+
+    return ResolveDevicesResponse(
+        kept_device_uuids=kept,
+        deregistered_device_uuids=deregistered,
+    )
+
+
+def deregister_user_device_by_uuid(
+    db: Session,
+    user_id: int,
+    device_uuid: uuid.UUID,
+) -> DeregisterDeviceResponse:
+    device = get_user_device_by_uuid_or_404(db, user_id, device_uuid)
+    if not device.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Device is already deregistered",
+        )
+    deregister_device(db, device)
+    return DeregisterDeviceResponse(device_uuid=device.uuid)

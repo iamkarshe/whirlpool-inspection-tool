@@ -13,15 +13,15 @@ from mod.push_notification.request import (
     PushSubscriptionCreate,
     PushUserSendRequest,
 )
+from mod.push_notification.config import (
+    VAPID_PRIVATE_KEY_PATH,
+    VAPID_PUBLIC_KEY,
+    VAPID_SUBJECT,
+)
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
-from utils.env import get_env
 
 router = APIRouter(prefix="/api/push", tags=["Push Notification"])
-
-VAPID_PUBLIC_KEY = get_env("VAPID_PUBLIC_KEY")
-VAPID_PRIVATE_KEY_PATH = get_env("VAPID_PRIVATE_KEY_PATH")
-VAPID_SUBJECT = get_env("VAPID_SUBJECT")
 
 
 def current_user_is_superadmin(request: Request) -> bool:

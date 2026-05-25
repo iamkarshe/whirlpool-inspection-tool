@@ -124,20 +124,28 @@ class PushSendPayload(BaseModel):
     tag: str = "whirlpool-insights"
 ```
 
+## VAPID configuration (API)
+
+Load credentials from `mod/push_notification/config.py` (do not duplicate env reads in feature code):
+
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY_PATH`, `VAPID_SUBJECT` — push HTTP routes
+- `vapid_send_credentials_optional()` — background sends when VAPID may be unset (skips gracefully)
+
 ## FastAPI Routes
 
 ```python
 import json
-import os
 
 from fastapi import APIRouter, Depends, status
 from pywebpush import WebPushException, webpush
 
-router = APIRouter(prefix="/api/push", tags=["push"])
+from mod.push_notification.config import (
+    VAPID_PRIVATE_KEY_PATH,
+    VAPID_PUBLIC_KEY,
+    VAPID_SUBJECT,
+)
 
-VAPID_PUBLIC_KEY = os.environ["VAPID_PUBLIC_KEY"]
-VAPID_PRIVATE_KEY_PATH = os.environ["VAPID_PRIVATE_KEY_PATH"]
-VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:support@yourdomain.com")
+router = APIRouter(prefix="/api/push", tags=["push"])
 
 
 @router.get("/vapid-public-key")
@@ -246,6 +254,18 @@ Send payload example:
   }
 }
 ```
+
+## Inbound / outbound inspection ready for review
+
+When `POST /api/inspections/inbound` or `POST /api/inspections/outbound` creates an inspection with `review_status` `IN_REVIEW`, the API notifies warehouse-scoped **operators** (excluding the submitting inspector) via `notify_warehouse_operators_inspection_ready_for_review` in `mod/api/inspection/helper.py`.
+
+Notification tap URL:
+
+```text
+/ops/inspections/{inspection_uuid}
+```
+
+Push failures are logged only; inspection creation still succeeds. Requires active push subscriptions and VAPID env vars.
 
 Recommended notification storage:
 
