@@ -131,13 +131,37 @@ def analytics_scope_from_request(
     db: Session,
     body: OperationsAnalyticsRequest,
 ) -> dict:
+    inspection_type = body.inspection_type
+    if body.plant and inspection_type == InspectionType.outbound:
+        raise HTTPException(
+            status_code=422,
+            detail="Plant filter applies to inbound inspections only",
+        )
+    plant_codes = resolve_plant_codes(db, body.plant) or None
+    if plant_codes and inspection_type is None:
+        inspection_type = InspectionType.inbound
     return {
         "warehouse_codes": resolve_warehouse_codes(db, body.warehouse) or None,
+        "plant_codes": plant_codes,
         "product_category_ids": resolve_product_category_ids(db, body.product_category)
         or None,
-        "inspection_type": body.inspection_type,
+        "inspection_type": inspection_type,
         "damage_grading": body.grading,
     }
+
+
+def resolve_plant_codes(db: Session, plant_ids: list[int]) -> list[str]:
+    if not plant_ids:
+        return []
+    unique_ids = list(dict.fromkeys(plant_ids))
+    rows = (
+        db.query(Plant.plant_code)
+        .filter(Plant.id.in_(unique_ids), Plant.is_active.is_(True))
+        .all()
+    )
+    if len(rows) != len(unique_ids):
+        raise HTTPException(status_code=422, detail="Unknown plant id(s)")
+    return [row.plant_code for row in rows]
 
 
 def resolve_warehouse_codes(db: Session, warehouse_ids: list[int]) -> list[str]:
@@ -183,6 +207,7 @@ def inspection_analytics_filters(
     if warehouse_codes:
         filters.append(Inspection.warehouse_code.in_(warehouse_codes))
     if plant_codes:
+        filters.append(Inspection.inspection_type == InspectionType.inbound)
         filters.append(Inspection.supplier_plant_code.in_(plant_codes))
     if product_category_ids:
         filters.append(Inspection.product_category_id.in_(product_category_ids))

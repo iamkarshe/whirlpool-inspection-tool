@@ -1,11 +1,11 @@
 meta {
-  name: KPI [Inbound]
+  name: Defect Mix [Inbound]
   type: http
-  seq: 1
+  seq: 4
 }
 
 post {
-  url: {{baseUrl}}/api/reports/executive-analytics
+  url: {{baseUrl}}/api/reports/executive-analytics/defects-mix
   body: json
   auth: inherit
 }
@@ -16,7 +16,7 @@ body:json {
     "date_to": "2026-05-07",
     "type": "inbound",
     "warehouse": [1, 2],
-    "product_category": [1, 2],
-    "grading": "DGR"
+    "plant": [1, 2],
+    "product_category": [1, 2]
   }
 }

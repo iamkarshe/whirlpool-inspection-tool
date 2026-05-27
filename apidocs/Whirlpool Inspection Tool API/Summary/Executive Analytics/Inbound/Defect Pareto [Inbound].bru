@@ -1,11 +1,11 @@
 meta {
-  name: KPI
+  name: Defect Pareto [Inbound]
   type: http
-  seq: 1
+  seq: 2
 }
 
 post {
-  url: {{baseUrl}}/api/reports/operations-analytics
+  url: {{baseUrl}}/api/reports/executive-analytics/defects-pareto-chart
   body: json
   auth: inherit
 }

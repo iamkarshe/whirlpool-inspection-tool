@@ -66,7 +66,6 @@ def post_executive_analytics(
         is_active=is_active,
         date_from=body.date_from,
         date_to=body.date_to,
-        plant_codes=None,
         **scope,
     )
     return ExecutiveAnalyticsResponse(
@@ -96,7 +95,6 @@ def post_executive_analytics_defects_pareto_chart(
         is_active=is_active,
         date_from=body.date_from,
         date_to=body.date_to,
-        plant_codes=None,
         **scope,
     )
 
@@ -121,7 +119,6 @@ def post_operations_analytics(
         is_active=is_active,
         date_from=body.date_from,
         date_to=body.date_to,
-        plant_codes=None,
         **scope,
     )
     return OperationsAnalyticsResponse(

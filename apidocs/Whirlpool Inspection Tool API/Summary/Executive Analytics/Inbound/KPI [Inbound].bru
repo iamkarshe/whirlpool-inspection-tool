@@ -1,7 +1,7 @@
 meta {
-  name: KPI [Outbound]
+  name: KPI [Inbound]
   type: http
-  seq: 3
+  seq: 1
 }
 
 post {
@@ -14,8 +14,9 @@ body:json {
   {
     "date_from": "2026-05-01",
     "date_to": "2026-05-07",
-    "type": "outbound",
+    "type": "inbound",
     "warehouse": [1, 2],
+    "plant": [1, 2],
     "product_category": [1, 2],
     "grading": "DGR"
   }
