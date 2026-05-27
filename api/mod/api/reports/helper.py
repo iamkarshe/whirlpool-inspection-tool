@@ -11,6 +11,8 @@ from mod.api.reports.response import (
     DefectsMixResponse,
     DefectsParetoChartItem,
     DefectsParetoChartResponse,
+    DefectsPlantItem,
+    DefectsPlantResponse,
     DefectsWarehouseItem,
     DefectsWarehouseResponse,
     KpiParametersResponse,
@@ -509,6 +511,87 @@ def executive_defects_warehouse(
             )
         )
     return DefectsWarehouseResponse(
+        date_from=date_from,
+        date_to=date_to,
+        items=items,
+    )
+
+
+def executive_defects_plant(
+    db: Session,
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_ids: list[int] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
+) -> DefectsPlantResponse:
+    inspection_filters = inspection_analytics_filters(
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=None,
+        product_category_ids=product_category_ids,
+        inspection_type=inspection_type,
+        damage_grading=None,
+    )
+    damaged = damaged_inspection_condition()
+    plant_filters = [Plant.is_active.is_(True)]
+    if plant_codes:
+        plant_filters.append(Plant.plant_code.in_(plant_codes))
+    inspection_join = and_(
+        Inspection.supplier_plant_code == Plant.plant_code,
+        *inspection_filters,
+    )
+    rows = (
+        db.query(
+            Plant.id.label("plant_id"),
+            Plant.plant_code.label("plant_code"),
+            Plant.name.label("plant_name"),
+            func.count(Inspection.id).label("total"),
+            func.sum(case((damaged, 1), else_=0)).label("defective"),
+            func.sum(
+                case((Inspection.damage_grading == DamageGrading.DGR, 1), else_=0)
+            ).label("dgr"),
+            func.sum(
+                case((Inspection.damage_grading == DamageGrading.LDGR, 1), else_=0)
+            ).label("ldgr"),
+            func.sum(
+                case((Inspection.damage_grading == DamageGrading.SCRAP, 1), else_=0)
+            ).label("scrap"),
+        )
+        .select_from(Plant)
+        .outerjoin(Inspection, inspection_join)
+        .filter(*plant_filters)
+        .group_by(Plant.id, Plant.plant_code, Plant.name)
+        .order_by(Plant.plant_code.asc())
+        .all()
+    )
+    items = []
+    for row in rows:
+        total = int(row.total or 0)
+        defective = int(row.defective or 0)
+        defective_pct = round(defective / total * 100.0, 1) if total > 0 else 0.0
+        items.append(
+            DefectsPlantItem(
+                plant_id=row.plant_id,
+                plant_code=row.plant_code,
+                plant_name=row.plant_name,
+                total_inspections=total,
+                defective_inspections=defective,
+                defective_pct=defective_pct,
+                grading_defects=WarehouseGradingDefects(
+                    dgr=int(row.dgr or 0),
+                    ldgr=int(row.ldgr or 0),
+                    scrap=int(row.scrap or 0),
+                ),
+            )
+        )
+    return DefectsPlantResponse(
         date_from=date_from,
         date_to=date_to,
         items=items,

@@ -95,6 +95,24 @@ class DefectsWarehouseResponse(BaseModel):
     )
 
 
+class DefectsPlantItem(BaseModel):
+    plant_id: int = Field(..., description="Plant id.")
+    plant_code: str = Field(..., description="Plant code.")
+    plant_name: str = Field(..., description="Plant name.")
+    total_inspections: int = Field(..., description="Total inspections.")
+    defective_inspections: int = Field(..., description="Defective inspections.")
+    defective_pct: float = Field(..., description="Defective percent.")
+    grading_defects: WarehouseGradingDefects = Field(
+        ..., description="Defects by grading."
+    )
+
+
+class DefectsPlantResponse(BaseModel):
+    date_from: date | None = None
+    date_to: date | None = None
+    items: list[DefectsPlantItem] = Field(..., description="Defect stats per plant.")
+
+
 class DefectsMixResponse(BaseModel):
     date_from: date | None = None
     date_to: date | None = None

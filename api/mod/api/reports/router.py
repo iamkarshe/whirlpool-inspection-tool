@@ -10,6 +10,7 @@ from mod.api.reports.helper import (
     executive_analytics_counts,
     executive_defects_mix,
     executive_defects_pareto_chart,
+    executive_defects_plant,
     executive_defects_warehouse,
     operations_analytics_counts,
     operations_trend_data,
@@ -17,9 +18,11 @@ from mod.api.reports.helper import (
     validate_analytics_date_range,
 )
 from mod.api.reports.request import OperationsAnalyticsRequest
+from mod.model import InspectionType
 from mod.api.reports.response import (
     DefectsMixResponse,
     DefectsParetoChartResponse,
+    DefectsPlantResponse,
     DefectsWarehouseResponse,
     ExecutiveAnalyticsResponse,
     KpiParametersResponse,
@@ -145,6 +148,33 @@ def post_executive_analytics_defects_warehouse(
     scope = analytics_scope_from_request(db, body)
     scope["damage_grading"] = None
     return executive_defects_warehouse(
+        db,
+        is_active=is_active,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        **scope,
+    )
+
+
+@router.post(
+    "/reports/executive-analytics/defects-plant",
+    name="post_executive_analytics_defects_plant",
+    response_model=DefectsPlantResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_executive_analytics_defects_plant(
+    request: Request,
+    body: OperationsAnalyticsRequest,
+    is_active: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    validate_analytics_date_range(body.date_from, body.date_to)
+    scope = analytics_scope_from_request(db, body)
+    scope["damage_grading"] = None
+    if scope.get("inspection_type") is None:
+        scope["inspection_type"] = InspectionType.inbound
+    return executive_defects_plant(
         db,
         is_active=is_active,
         date_from=body.date_from,
