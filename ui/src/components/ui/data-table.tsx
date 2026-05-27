@@ -136,6 +136,8 @@ export interface DataTableProps<TData> {
    * The table body shows skeleton rows while empty, or a light overlay over rows while re-fetching.
    */
   isLoading?: boolean;
+  /** When true, shows every row at once and hides pagination controls. */
+  showAllRows?: boolean;
 }
 
 function formatColumnLabel(input: string) {
@@ -165,6 +167,7 @@ export function DataTable<TData>({
   downloadCsv,
   serverSide,
   isLoading = false,
+  showAllRows = false,
 }: DataTableProps<TData>) {
   const columnsStorageKey = React.useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -263,7 +266,7 @@ export function DataTable<TData>({
           rowCount: serverSide!.totalRowCount,
         }
       : {
-          getPaginationRowModel: getPaginationRowModel(),
+          ...(showAllRows ? {} : { getPaginationRowModel: getPaginationRowModel() }),
           getSortedRowModel: getSortedRowModel(),
           getFilteredRowModel: getFilteredRowModel(),
         }),
@@ -316,12 +319,15 @@ export function DataTable<TData>({
     }
     const total = table.getFilteredRowModel().rows.length;
     if (total === 0) return `Showing 0 ${rangeLabel ?? "row(s)"}`;
+    if (showAllRows) {
+      return `Showing all ${total} ${rangeLabel ?? "row(s)"}`;
+    }
 
     const { pageIndex, pageSize } = table.getState().pagination;
     const start = pageIndex * pageSize + 1;
     const end = Math.min(total, (pageIndex + 1) * pageSize);
     return `Showing ${start}–${end} of ${total} ${rangeLabel ?? "row(s)"}`;
-  }, [rangeLabel, serverSide, table]);
+  }, [rangeLabel, serverSide, showAllRows, table]);
 
   return (
     <div className="rounded-lg border bg-background px-4 py-2 text-sm text-muted-foreground my-3">
@@ -547,24 +553,26 @@ export function DataTable<TData>({
               {pageRangeText}
             </div>
           )}
-          <div className="space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage() || serverLoading}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage() || serverLoading}
-            >
-              Next
-            </Button>
-          </div>
+          {!showAllRows && !isServerSide ? (
+            <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage() || serverLoading}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage() || serverLoading}
+              >
+                Next
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
