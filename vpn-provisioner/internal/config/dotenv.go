@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-// loadDotEnvIfPresent loads KEY=VALUE pairs from ".env" into the process env
-// only when a key is not already set in the environment.
-//
-// It intentionally supports unquoted values with spaces (e.g. "a, b") by
-// treating everything after the first '=' as the value.
 func loadDotEnvIfPresent(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

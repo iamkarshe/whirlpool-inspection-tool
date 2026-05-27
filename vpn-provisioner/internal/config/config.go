@@ -30,8 +30,6 @@ type Config struct {
 }
 
 func LoadFromEnv() (Config, error) {
-	// For local developer convenience (e.g. when running via Air), load .env if present.
-	// This is a no-op if .env doesn't exist.
 	_ = loadDotEnvIfPresent(".env")
 
 	c := Config{
@@ -48,10 +46,10 @@ func LoadFromEnv() (Config, error) {
 		WGServerVPNIP:    getenv("WG_SERVER_VPN_IP", "10.44.0.1"),
 
 		WGClientDNS:        getenv("WG_CLIENT_DNS", "10.44.0.1"),
-		WGClientAllowedIPs: getenv("WG_CLIENT_ALLOWED_IPS", "10.20.0.0/16, 10.44.0.0/24"),
+		WGClientAllowedIPs: getenv("WG_CLIENT_ALLOWED_IPS", "10.20.0.0/16, 10.44.0.0/22"),
 
 		WGDeviceStartIP: getenv("WG_DEVICE_START_IP", "10.44.0.11"),
-		WGDeviceEndIP:   getenv("WG_DEVICE_END_IP", "10.44.0.200"),
+		WGDeviceEndIP:   getenv("WG_DEVICE_END_IP", "10.44.3.254"),
 	}
 
 	if c.AdminKey == "" {
