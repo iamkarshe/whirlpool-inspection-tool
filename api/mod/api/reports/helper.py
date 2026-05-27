@@ -1,8 +1,8 @@
 from datetime import date, timedelta
 
 from fastapi import HTTPException
-from sqlalchemy import and_, case, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy.orm import Session, aliased
 
 from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.api.reports.response import (
@@ -500,6 +500,68 @@ def executive_defects_mix(
     )
 
 
+def warehouse_induced_defect_rate_by_code(
+    db: Session,
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
+) -> dict[str, float]:
+    inbound_filters = inspection_analytics_filters(
+        db,
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+        inspection_type=InspectionType.inbound,
+        damage_grading=None,
+    )
+    inbound_filters.extend(
+        [
+            Inspection.review_status == InspectionReviewStatus.APPROVED,
+            Inspection.serial_number.isnot(None),
+            Inspection.warehouse_code.isnot(None),
+        ]
+    )
+    outbound = aliased(Inspection)
+    outbound_failed_match = (
+        select(1)
+        .select_from(outbound)
+        .where(
+            outbound.is_active.is_(is_active),
+            outbound.inspection_type == InspectionType.outbound,
+            outbound.review_status == InspectionReviewStatus.REJECTED,
+            outbound.serial_number.isnot(None),
+            outbound.serial_number == Inspection.serial_number,
+        )
+        .correlate(Inspection)
+        .exists()
+    )
+    rows = (
+        db.query(
+            Inspection.warehouse_code.label("warehouse_code"),
+            func.count(Inspection.id).label("inbound_passed"),
+            func.sum(case((outbound_failed_match, 1), else_=0)).label("induced"),
+        )
+        .filter(*inbound_filters)
+        .group_by(Inspection.warehouse_code)
+        .all()
+    )
+    rates: dict[str, float] = {}
+    for row in rows:
+        inbound_passed = int(row.inbound_passed or 0)
+        induced = int(row.induced or 0)
+        rates[row.warehouse_code] = (
+            round(induced / inbound_passed * 100.0, 1) if inbound_passed > 0 else 0.0
+        )
+    return rates
+
+
 def executive_defects_warehouse(
     db: Session,
     *,
@@ -555,6 +617,15 @@ def executive_defects_warehouse(
         .order_by(Warehouse.warehouse_code.asc())
         .all()
     )
+    induced_rates = warehouse_induced_defect_rate_by_code(
+        db,
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+    )
     items = []
     for row in rows:
         total = int(row.total or 0)
@@ -568,6 +639,7 @@ def executive_defects_warehouse(
                 total_inspections=total,
                 defective_inspections=defective,
                 defective_pct=defective_pct,
+                warehouse_induced_defect_pct=induced_rates.get(row.warehouse_code, 0.0),
                 grading_defects=WarehouseGradingDefects(
                     dgr=int(row.dgr or 0),
                     ldgr=int(row.ldgr or 0),

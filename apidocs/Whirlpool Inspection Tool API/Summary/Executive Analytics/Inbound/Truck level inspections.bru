@@ -1,0 +1,20 @@
+meta {
+  name: Truck level inspections
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/reports/executive-analytics/defects-truck
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "date_from": "2026-05-01",
+    "date_to": "2026-05-07",
+    "type": "inbound",
+    "product_category": [1, 2]
+  }
+}

@@ -167,6 +167,13 @@ class DefectsWarehouseItem(BaseModel):
         ...,
         description="Defective inspections divided by total inspections (percent).",
     )
+    warehouse_induced_defect_pct: float = Field(
+        ...,
+        description=(
+            "Inbound approved inspections that later failed outbound for the same "
+            "serial number, divided by inbound approved count (percent)."
+        ),
+    )
     grading_defects: WarehouseGradingDefects = Field(
         ..., description="Defect counts split by damage grading."
     )
