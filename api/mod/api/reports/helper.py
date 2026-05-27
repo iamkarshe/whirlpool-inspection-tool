@@ -34,6 +34,53 @@ from mod.model import (
 )
 from utils.common import YES_NO_FAIL_VALUES, utc_end_exclusive_day_range
 
+PRODUCT_CATEGORY_PAIR_SEP = "|"
+
+productCategoryPairsCache: list[tuple[str, str]] | None = None
+
+
+def clear_product_category_pairs_cache() -> None:
+    global productCategoryPairsCache
+    productCategoryPairsCache = None
+
+
+def product_category_pair_value(category_type: str, sub_category_type: str) -> str:
+    return f"{category_type}{PRODUCT_CATEGORY_PAIR_SEP}{sub_category_type}"
+
+
+def product_category_pair_label(category_type: str, sub_category_type: str) -> str:
+    return f"{category_type} - {sub_category_type}"
+
+
+def parse_product_category_pair(value: str) -> tuple[str, str]:
+    parts = value.split(PRODUCT_CATEGORY_PAIR_SEP, 1)
+    if len(parts) != 2 or not parts[0].strip() or not parts[1].strip():
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid product category pair: {value}",
+        )
+    return parts[0].strip(), parts[1].strip()
+
+
+def load_product_category_pairs(db: Session) -> list[tuple[str, str]]:
+    global productCategoryPairsCache
+    if productCategoryPairsCache is not None:
+        return productCategoryPairsCache
+    rows = (
+        db.query(ProductCategory.category_type, ProductCategory.sub_category_type)
+        .filter(ProductCategory.is_active.is_(True))
+        .distinct()
+        .order_by(
+            ProductCategory.category_type.asc(),
+            ProductCategory.sub_category_type.asc(),
+        )
+        .all()
+    )
+    productCategoryPairsCache = [
+        (row.category_type, row.sub_category_type) for row in rows
+    ]
+    return productCategoryPairsCache
+
 
 def build_kpi_parameters(db: Session) -> KpiParametersResponse:
     warehouse_rows = (
@@ -48,19 +95,7 @@ def build_kpi_parameters(db: Session) -> KpiParametersResponse:
         .order_by(Plant.plant_code.asc())
         .all()
     )
-    category_rows = (
-        db.query(
-            ProductCategory.id,
-            ProductCategory.category_type,
-            ProductCategory.sub_category_type,
-        )
-        .filter(ProductCategory.is_active.is_(True))
-        .order_by(
-            ProductCategory.category_type.asc(),
-            ProductCategory.sub_category_type.asc(),
-        )
-        .all()
-    )
+    category_pairs = load_product_category_pairs(db)
     return KpiParametersResponse(
         warehouses=[
             InspectionDropdownOption(
@@ -78,10 +113,10 @@ def build_kpi_parameters(db: Session) -> KpiParametersResponse:
         ],
         product_category=[
             InspectionDropdownOption(
-                value=str(row.id),
-                label=f"{row.category_type} - {row.sub_category_type}",
+                value=product_category_pair_value(category_type, sub_category_type),
+                label=product_category_pair_label(category_type, sub_category_type),
             )
-            for row in category_rows
+            for category_type, sub_category_type in category_pairs
         ],
         gradings=[
             InspectionDropdownOption(value=e.value, label=e.value)
@@ -150,8 +185,9 @@ def analytics_scope_from_request(
     return {
         "warehouse_codes": resolve_warehouse_codes(db, body.warehouse) or None,
         "plant_codes": plant_codes,
-        "product_category_ids": resolve_product_category_ids(db, body.product_category)
-        or None,
+        "product_category_pairs": resolve_product_category_pairs(
+            db, body.product_category
+        ),
         "inspection_type": inspection_type,
         "damage_grading": body.grading,
     }
@@ -185,28 +221,38 @@ def resolve_warehouse_codes(db: Session, warehouse_ids: list[int]) -> list[str]:
     return [row.warehouse_code for row in rows]
 
 
-def resolve_product_category_ids(db: Session, category_ids: list[int]) -> list[int]:
-    if not category_ids:
-        return []
-    unique_ids = list(dict.fromkeys(category_ids))
-    found = (
-        db.query(ProductCategory.id)
-        .filter(ProductCategory.id.in_(unique_ids), ProductCategory.is_active.is_(True))
-        .count()
-    )
-    if found != len(unique_ids):
-        raise HTTPException(status_code=422, detail="Unknown product category id(s)")
-    return unique_ids
+def resolve_product_category_pairs(
+    db: Session,
+    pair_values: list[str],
+) -> list[tuple[str, str]] | None:
+    if not pair_values:
+        return None
+    known = {
+        product_category_pair_value(category_type, sub_category_type): (
+            category_type,
+            sub_category_type,
+        )
+        for category_type, sub_category_type in load_product_category_pairs(db)
+    }
+    unique_values = list(dict.fromkeys(pair_values))
+    missing = [value for value in unique_values if value not in known]
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown product category pair(s): {missing}",
+        )
+    return [known[value] for value in unique_values]
 
 
 def inspection_analytics_filters(
+    db: Session,
     *,
     is_active: bool,
     date_from: date | None,
     date_to: date | None,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
-    product_category_ids: list[int] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
     inspection_type: InspectionType | None,
     damage_grading: DamageGrading | None,
 ) -> list:
@@ -216,8 +262,19 @@ def inspection_analytics_filters(
     if plant_codes:
         filters.append(Inspection.inspection_type == InspectionType.inbound)
         filters.append(Inspection.supplier_plant_code.in_(plant_codes))
-    if product_category_ids:
-        filters.append(Inspection.product_category_id.in_(product_category_ids))
+    if product_category_pairs:
+        pair_filters = [
+            and_(
+                ProductCategory.category_type == category_type,
+                ProductCategory.sub_category_type == sub_category_type,
+            )
+            for category_type, sub_category_type in product_category_pairs
+        ]
+        category_id_query = db.query(ProductCategory.id).filter(
+            ProductCategory.is_active.is_(True),
+            or_(*pair_filters),
+        )
+        filters.append(Inspection.product_category_id.in_(category_id_query))
     if inspection_type is not None:
         filters.append(Inspection.inspection_type == inspection_type)
     if damage_grading is not None:
@@ -246,17 +303,18 @@ def executive_analytics_counts(
     date_to: date | None,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
-    product_category_ids: list[int] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
     inspection_type: InspectionType | None,
     damage_grading: DamageGrading | None,
 ) -> dict[str, int | float]:
     inspection_filters = inspection_analytics_filters(
+        db,
         is_active=is_active,
         date_from=date_from,
         date_to=date_to,
         warehouse_codes=warehouse_codes,
         plant_codes=plant_codes,
-        product_category_ids=product_category_ids,
+        product_category_pairs=product_category_pairs,
         inspection_type=inspection_type,
         damage_grading=damage_grading,
     )
@@ -310,17 +368,18 @@ def executive_defects_pareto_chart(
     date_to: date | None,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
-    product_category_ids: list[int] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
     inspection_type: InspectionType | None,
     damage_grading: DamageGrading | None,
 ) -> DefectsParetoChartResponse:
     inspection_filters = inspection_analytics_filters(
+        db,
         is_active=is_active,
         date_from=date_from,
         date_to=date_to,
         warehouse_codes=warehouse_codes,
         plant_codes=plant_codes,
-        product_category_ids=product_category_ids,
+        product_category_pairs=product_category_pairs,
         inspection_type=inspection_type,
         damage_grading=damage_grading,
     )
@@ -387,17 +446,18 @@ def executive_defects_mix(
     date_to: date | None,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
-    product_category_ids: list[int] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
     inspection_type: InspectionType | None,
     damage_grading: DamageGrading | None,
 ) -> DefectsMixResponse:
     inspection_filters = inspection_analytics_filters(
+        db,
         is_active=is_active,
         date_from=date_from,
         date_to=date_to,
         warehouse_codes=warehouse_codes,
         plant_codes=plant_codes,
-        product_category_ids=product_category_ids,
+        product_category_pairs=product_category_pairs,
         inspection_type=inspection_type,
         damage_grading=None,
     )
@@ -444,17 +504,18 @@ def executive_defects_warehouse(
     date_to: date | None,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
-    product_category_ids: list[int] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
     inspection_type: InspectionType | None,
     damage_grading: DamageGrading | None,
 ) -> DefectsWarehouseResponse:
     inspection_filters = inspection_analytics_filters(
+        db,
         is_active=is_active,
         date_from=date_from,
         date_to=date_to,
         warehouse_codes=warehouse_codes,
         plant_codes=plant_codes,
-        product_category_ids=product_category_ids,
+        product_category_pairs=product_category_pairs,
         inspection_type=inspection_type,
         damage_grading=None,
     )
@@ -525,17 +586,18 @@ def executive_defects_plant(
     date_to: date | None,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
-    product_category_ids: list[int] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
     inspection_type: InspectionType | None,
     damage_grading: DamageGrading | None,
 ) -> DefectsPlantResponse:
     inspection_filters = inspection_analytics_filters(
+        db,
         is_active=is_active,
         date_from=date_from,
         date_to=date_to,
         warehouse_codes=warehouse_codes,
         plant_codes=None,
-        product_category_ids=product_category_ids,
+        product_category_pairs=product_category_pairs,
         inspection_type=inspection_type,
         damage_grading=None,
     )
@@ -606,17 +668,18 @@ def operations_analytics_counts(
     date_to: date | None,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
-    product_category_ids: list[int] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
     inspection_type: InspectionType | None,
     damage_grading: DamageGrading | None,
 ) -> dict[str, int | float]:
     inspection_filters = inspection_analytics_filters(
+        db,
         is_active=is_active,
         date_from=date_from,
         date_to=date_to,
         warehouse_codes=warehouse_codes,
         plant_codes=plant_codes,
-        product_category_ids=product_category_ids,
+        product_category_pairs=product_category_pairs,
         inspection_type=inspection_type,
         damage_grading=damage_grading,
     )

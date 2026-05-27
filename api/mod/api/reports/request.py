@@ -13,5 +13,5 @@ class OperationsAnalyticsRequest(BaseModel):
     inspection_type: InspectionType | None = Field(None, alias="type")
     warehouse: list[int] = Field(default_factory=list)
     plant: list[int] = Field(default_factory=list)
-    product_category: list[int] = Field(default_factory=list)
+    product_category: list[str] = Field(default_factory=list)
     grading: DamageGrading | None = None

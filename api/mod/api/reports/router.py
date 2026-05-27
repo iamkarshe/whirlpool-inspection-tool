@@ -7,6 +7,7 @@ from mod.api.middleware import auth_dependency
 from mod.api.reports.helper import (
     analytics_scope_from_request,
     build_kpi_parameters,
+    clear_product_category_pairs_cache,
     executive_analytics_counts,
     executive_defects_mix,
     executive_defects_pareto_chart,
@@ -51,6 +52,17 @@ def get_kpi_parameters(
     db: Session = Depends(get_db),
 ):
     return build_kpi_parameters(db)
+
+
+@router.post(
+    "/reports/product-category-pairs/cache/clear",
+    name="clear_product_category_pairs_cache",
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_clear_product_category_pairs_cache(request: Request):
+    clear_product_category_pairs_cache()
+    return {"cleared": True}
 
 
 @router.post(
