@@ -8,33 +8,26 @@ Think of it like a **school ID office**: you sign up a student (device), they ge
 
 ## What problem does this solve? (PRD in one page)
 
-| Need | What this service does |
-|------|------------------------|
+| Need                          | What this service does                                                  |
+| ----------------------------- | ----------------------------------------------------------------------- |
 | Add a new phone/laptop to VPN | `POST /v1/devices` — creates record, assigns IP, adds peer on WireGuard |
-| Download VPN settings | `GET /v1/devices/{uuid}/config` — returns WireGuard `.conf` text |
-| Scan QR on phone | `GET /v1/devices/{uuid}/qr` — PNG QR of the full config |
-| Remove access | `POST /v1/devices/{uuid}/revoke` — removes peer, marks device inactive |
-| New keys, same IP | `POST /v1/devices/{uuid}/rotate` — new keypair, same assigned IP |
-| See who is on VPN right now | `GET /v1/wireguard/peers` — live peers from WireGuard |
-| Audit trail | Every important action is logged in SQLite (`audit_logs`) |
-
-**Out of scope for MVP:** admin UI, SSO, encrypted private keys at rest, one-time QR links.
+| Download VPN settings         | `GET /v1/devices/{uuid}/config` — returns WireGuard `.conf` text        |
+| Scan QR on phone              | `GET /v1/devices/{uuid}/qr` — PNG QR of the full config                 |
+| Remove access                 | `POST /v1/devices/{uuid}/revoke` — removes peer, marks device inactive  |
+| New keys, same IP             | `POST /v1/devices/{uuid}/rotate` — new keypair, same assigned IP        |
+| See who is on VPN right now   | `GET /v1/wireguard/peers` — live peers from WireGuard                   |
+| Audit trail                   | Every important action is logged in SQLite (`audit_logs`)               |
 
 ---
 
 ## How it works (simple picture)
 
-```
-Admin (curl / future UI)
-        │
-        ▼
-   Go HTTP API  ──►  SQLite (devices + audit)
-        │
-        ▼
- WireGuard Backend  ──►  either Docker mock (dev) or host scripts (prod)
-        │
-        ▼
-   wg0 on VPN server
+```mermaid
+flowchart TD
+    A[Admin client<br/>(curl / future UI)] --> B[Go HTTP API<br/>(chi router)]
+    B --> C[SQLite database<br/>(devices + audit_logs)]
+    B --> D[WireGuard Backend<br/>(docker / host / fake)]
+    D --> E[WireGuard wg0<br/>on VPN server or mock]
 ```
 
 ### Create device — step by step
@@ -54,12 +47,12 @@ Config and QR endpoints read the stored keys and build the client file when aske
 
 ## Two run modes (dev vs production)
 
-| | **Development (`WG_BACKEND=docker`)** | **Production (`WG_BACKEND=host`)** |
-|---|--------------------------------------|-------------------------------------|
-| Where WireGuard runs | Inside Docker container `whirlpool-wireguard-mock` | On the VPN server (`wg0`) |
-| Host machine needs WireGuard? | **No** | Yes (already on VPN EC2) |
-| How API talks to WireGuard | `docker exec … wg …` | Fixed scripts in `/usr/local/bin/vpn-*` via `sudo` |
-| Why | Safe local testing without installing VPN tools | Locked-down production; API never runs raw `wg` commands |
+|                               | **Development (`WG_BACKEND=docker`)**              | **Production (`WG_BACKEND=host`)**                       |
+| ----------------------------- | -------------------------------------------------- | -------------------------------------------------------- |
+| Where WireGuard runs          | Inside Docker container `whirlpool-wireguard-mock` | On the VPN server (`wg0`)                                |
+| Host machine needs WireGuard? | **No**                                             | Yes (already on VPN EC2)                                 |
+| How API talks to WireGuard    | `docker exec … wg …`                               | Fixed scripts in `/usr/local/bin/vpn-*` via `sudo`       |
+| Why                           | Safe local testing without installing VPN tools    | Locked-down production; API never runs raw `wg` commands |
 
 The **same HTTP API** works in both modes. Only the backend behind the scenes changes.
 
@@ -78,23 +71,23 @@ When `APP_DEBUG=true`, errors may also include `"debug": { "cause": "...", "stac
 
 ### Public (no auth)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/` | Hello + **binary version** (stamped at build time) |
-| `GET` | `/health` | Health check + **binary version** |
+| Method | Path      | Purpose                                            |
+| ------ | --------- | -------------------------------------------------- |
+| `GET`  | `/`       | Hello + **binary version** (stamped at build time) |
+| `GET`  | `/health` | Health check + **binary version**                  |
 
 ### Admin (`Authorization: Bearer <APP_ADMIN_API_KEY>`)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/v1/devices` | List all devices |
-| `POST` | `/v1/devices` | Create / provision device |
-| `GET` | `/v1/devices/{uuid}` | Get one device |
-| `GET` | `/v1/devices/{uuid}/config` | WireGuard client config (plain text) |
-| `GET` | `/v1/devices/{uuid}/qr` | QR PNG of config |
+| Method | Path                        | Purpose                                    |
+| ------ | --------------------------- | ------------------------------------------ |
+| `GET`  | `/v1/devices`               | List all devices                           |
+| `POST` | `/v1/devices`               | Create / provision device                  |
+| `GET`  | `/v1/devices/{uuid}`        | Get one device                             |
+| `GET`  | `/v1/devices/{uuid}/config` | WireGuard client config (plain text)       |
+| `GET`  | `/v1/devices/{uuid}/qr`     | QR PNG of config                           |
 | `POST` | `/v1/devices/{uuid}/revoke` | Revoke device (keeps DB row, removes peer) |
-| `POST` | `/v1/devices/{uuid}/rotate` | New keys, same IP |
-| `GET` | `/v1/wireguard/peers` | Live peers from WireGuard backend |
+| `POST` | `/v1/devices/{uuid}/rotate` | New keys, same IP                          |
+| `GET`  | `/v1/wireguard/peers`       | Live peers from WireGuard backend          |
 
 ### Example — create device
 
@@ -146,23 +139,25 @@ Handlers stay thin. Business rules live in **service**. SQL lives in **repositor
 
 ---
 
-## Go features used (and why)
+## Go features used (and how to learn from them)
 
-| Go feature | Where | Why we use it |
-|------------|-------|----------------|
-| **Packages** | `internal/devices`, `internal/wireguard`, … | Split code by responsibility; `internal/` means “only this app may import this.” |
-| **Interfaces** | `wireguard.Backend` | Same device code works with Docker, host scripts, or fake test backend — swap without rewriting service logic. |
-| **Structs + methods** | `Device`, `Service`, `Repository` | Group data and behavior; `func (s *Service) Create(...)` keeps related logic together. |
-| **Error handling** | `if err != nil { return ..., err }` | Go has no exceptions; errors are values you check and return. |
-| **`context.Context`** | Passed into service/repo calls | Standard way to carry deadlines/cancellation through the call chain. |
-| **`database/sql`** | `repository.go` | Official Go database API; works with SQLite driver. |
-| **`net/http` + chi router** | `httpapi/router.go` | Built-in HTTP server; chi adds clean route groups and middleware. |
-| **Middleware** | `AdminAPIKeyAuth` | Reusable function that wraps handlers to check Bearer token before `/v1/*`. |
-| **`exec.Command`** | docker/host backends | Run external commands safely with argument lists (no shell string拼接). |
-| **`slog`** | `main.go` | Structured JSON logs (`version`, `addr`, `env`). |
-| **Build tags / `-ldflags -X`** | `cmd/api/version.go` + `VERSION` file | Version is **burned into the binary** at compile time so you know exactly which build is running. |
-| **Table-driven tests** | `host_backend_test.go` | Test parsers with input/output pairs — easy to read and extend. |
-| **Blank import `_ "modernc.org/sqlite"`** | `main.go` | Registers SQLite driver as side effect without calling it directly. |
+Think of this repo as a **mini Go textbook** with real code. Here’s what to look for when you read it.
+
+| Go feature                                  | Where                                        | Why we use it / what to learn                                                                                                                                                                                                                                                                  |
+| ------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Packages**                                | `internal/devices`, `internal/wireguard`, …  | Packages are folders that group related code. `internal/` means “only this module can import these,” which keeps boundaries clean. When you see `package devices` at the top of a file, that file belongs to the `devices` building block.                                                     |
+| **Structs + methods**                       | `Device`, `Service`, `Repository`            | A `struct` is like a simple class with fields; methods (e.g. `func (s *Service) Create`) attach behavior. Reading `devices/service.go` is a great way to see how structs + methods model **business logic** (create, revoke, rotate) without mixing in HTTP or SQL.                            |
+| **Interfaces**                              | `wireguard.Backend`                          | An interface is a **promise of behavior** (methods) without saying _how_ it’s done. `Backend` lets the same device code talk to Docker, host scripts, or a fake in tests. This is classic **dependency inversion**: high‑level logic depends on an interface, not on Docker or `wg` commands.  |
+| **Error handling**                          | `if err != nil { ... }` everywhere           | Go does not use exceptions. Functions return `(value, error)` and callers must check `if err != nil`. Reading through `devices/service.go` shows how we bubble errors up, wrap them with context (`fmt.Errorf(\"wireguard add peer: %w\", err)`), and convert them to HTTP errors in handlers. |
+| **`context.Context`**                       | Service and repository methods               | `context.Context` is Go’s way to carry cancellation and deadlines. Even though we don’t cancel much yet, we still pass `ctx` through service and repo layers so future timeouts/logging are easy to add.                                                                                       |
+| **`database/sql` + driver**                 | `internal/database`, `devices/repository.go` | `database/sql` is the standard DB layer. We open a SQLite connection once and pass it into repositories. When you read `Create`, `List`, `Revoke`, you see prepared SQL + scanning rows into a `Device` struct — this is the common Go pattern for talking to databases.                       |
+| **`net/http` + chi router**                 | `httpapi/router.go`, `devices/handler.go`    | `net/http` gives a basic HTTP server; chi builds on it with routers and middleware. Notice how handlers are just `func(w http.ResponseWriter, r *http.Request)` — once you’re comfortable with that signature, you can read almost any Go web service.                                         |
+| **Middleware**                              | `AdminAPIKeyAuth`                            | Middleware is just a function that **wraps** another handler. Here it checks the Bearer token before letting the request reach `/v1/*`. When you understand this pattern, you can add logging, rate limits, or tracing the same way.                                                           |
+| **Command execution (`exec.Command`)**      | `docker_backend.go`, `host_backend.go`       | We call external tools (`docker`, `wg`, wrapper scripts) safely using argument lists instead of shell strings. This teaches you how Go integrates with the OS while staying safe from shell injection.                                                                                         |
+| **Logging with `slog`**                     | `cmd/api/main.go`                            | `slog` writes structured JSON logs (key‑value pairs). Reading the startup log call shows how to emit machine‑friendly logs with fields like `\"version\"`, `\"env\"`, and `\"debug\"`.                                                                                                         |
+| **Build-time variables (`-ldflags -X`)**    | `cmd/api/version.go`, `build-*.sh`           | We inject the `version` string into the binary at compile time. This is a common Go trick to track builds without reading env or files at runtime. Inspect `version.go` and the build scripts to see how it’s wired.                                                                           |
+| **Tests (table style)**                     | `host_backend_test.go`                       | Tests feed sample text from `wg show wg0 allowed-ips` into the parser and check the result. This is a small but clear example of how to write fast, focused Go tests around a pure function.                                                                                                   |
+| **Blank import `_ \"modernc.org/sqlite\"`** | `main.go`                                    | The `_` import runs the driver’s `init()` so SQLite registers itself with `database/sql`. This pattern appears a lot when using drivers or side‑effect packages.                                                                                                                               |
 
 ### The Backend interface (most important design choice)
 
@@ -183,15 +178,15 @@ type Backend interface {
 
 ### `vpn_devices`
 
-| Field | Meaning |
-|-------|---------|
-| `uuid` | Public ID for API URLs |
-| `user_name`, `user_email`, `device_name`, `device_type` | Who / what |
-| `assigned_ip` | VPN IP (unique) |
-| `public_key` | WireGuard public key |
-| `private_key_encrypted` | Private key (**plain text in MVP** — encrypt before real prod) |
-| `is_active` | `false` after revoke |
-| `revoked_at` | When revoked |
+| Field                                                   | Meaning                                                        |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| `uuid`                                                  | Public ID for API URLs                                         |
+| `user_name`, `user_email`, `device_name`, `device_type` | Who / what                                                     |
+| `assigned_ip`                                           | VPN IP (unique)                                                |
+| `public_key`                                            | WireGuard public key                                           |
+| `private_key_encrypted`                                 | Private key (**plain text in MVP** — encrypt before real prod) |
+| `is_active`                                             | `false` after revoke                                           |
+| `revoked_at`                                            | When revoked                                                   |
 
 **IP pool size** = `(WG_DEVICE_END_IP - WG_DEVICE_START_IP) + 1`.  
 Example: `10.44.0.11` → `10.44.3.254` = **1012** possible devices.  
@@ -207,14 +202,14 @@ Records actions like `device.create`, `device.revoke`, `device.rotate`, `device.
 
 Copy `.env.example` → `.env` for local dev.
 
-| Variable | Meaning |
-|----------|---------|
-| `APP_ADMIN_API_KEY` | Bearer token for `/v1/*` |
-| `APP_DEBUG` | If true, API errors include cause + stack trace |
-| `WG_BACKEND` | `docker` (dev) \| `host` (prod) \| `fake` (tests) |
-| `WG_DEVICE_START_IP` / `WG_DEVICE_END_IP` | IP allocation range |
-| `WG_SERVER_ENDPOINT` | Client config: VPN server host:port |
-| `WG_CLIENT_ALLOWED_IPS` | Client config: routes through VPN |
+| Variable                                  | Meaning                                           |
+| ----------------------------------------- | ------------------------------------------------- |
+| `APP_ADMIN_API_KEY`                       | Bearer token for `/v1/*`                          |
+| `APP_DEBUG`                               | If true, API errors include cause + stack trace   |
+| `WG_BACKEND`                              | `docker` (dev) \| `host` (prod) \| `fake` (tests) |
+| `WG_DEVICE_START_IP` / `WG_DEVICE_END_IP` | IP allocation range                               |
+| `WG_SERVER_ENDPOINT`                      | Client config: VPN server host:port               |
+| `WG_CLIENT_ALLOWED_IPS`                   | Client config: routes through VPN                 |
 
 **Version is not from env.** Bump `VERSION` file and rebuild — version is embedded in the binary via `-ldflags "-X main.version=..."`.
 
@@ -284,10 +279,3 @@ vpn-provisioner/
 - Use a strong `APP_ADMIN_API_KEY`; keep prod env file mode `640`.
 - Host mode uses **fixed scripts only** — never give the API open `sudo wg`.
 - Set `APP_DEBUG=false` in production unless actively troubleshooting.
-
----
-
-## Related docs
-
-- **`docs/feature.md`** — full PRD, acceptance criteria, production checklist
-- **`.env.example`** — all environment variables
