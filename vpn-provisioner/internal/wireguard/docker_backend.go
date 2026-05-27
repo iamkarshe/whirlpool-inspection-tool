@@ -22,6 +22,7 @@ func NewDockerBackend(container, iface string) *DockerBackend {
 }
 
 func (d *DockerBackend) AddPeer(publicKey string, allowedIP string) error {
+	// Always enforce a /32 peer route on the server side.
 	cidr := strings.TrimSpace(allowedIP)
 	if !strings.Contains(cidr, "/") {
 		cidr = cidr + "/32"
@@ -69,6 +70,7 @@ func (d *DockerBackend) ServerPublicKey() (string, error) {
 }
 
 func parseWGShowDump(out string) ([]Peer, error) {
+	// Parse the `wg show <iface> dump` tab-separated format.
 	lines := strings.Split(strings.TrimSpace(out), "\n")
 	var peers []Peer
 	for i, line := range lines {

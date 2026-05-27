@@ -40,6 +40,7 @@ func (r *Repository) listAssignedIPsTx(ctx context.Context, tx *sql.Tx) (map[str
 }
 
 func nextAvailableIP(cfg config.Config, used map[string]struct{}) (string, error) {
+	// nextAvailableIP scans the configured range and picks the first free IP.
 	start := config.IpToUint32(cfg.WGDeviceStartIP)
 	end := config.IpToUint32(cfg.WGDeviceEndIP)
 	if start == 0 || end == 0 {
@@ -55,6 +56,7 @@ func nextAvailableIP(cfg config.Config, used map[string]struct{}) (string, error
 }
 
 func (r *Repository) Create(ctx context.Context, cfg config.Config, d *Device) error {
+	// Create allocates an IP and inserts the device atomically.
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

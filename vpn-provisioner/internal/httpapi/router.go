@@ -19,6 +19,7 @@ type RouterDeps struct {
 }
 
 func NewRouter(d RouterDeps) http.Handler {
+	// NewRouter wires public + admin routes.
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)

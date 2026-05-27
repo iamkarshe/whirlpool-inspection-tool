@@ -33,6 +33,7 @@ func NewService(cfg config.Config, repo *Repository, wg wgp.Backend, aud *audit.
 }
 
 func (s *Service) Create(ctx context.Context, in CreateDeviceInput) (Summary, error) {
+	// Create provisions keys, allocates IP, adds peer, then persists state.
 	if err := s.v.Struct(in); err != nil {
 		return Summary{}, err
 	}
@@ -106,6 +107,7 @@ func (s *Service) ClientConfig(ctx context.Context, uuid string) (string, error)
 }
 
 func (s *Service) Revoke(ctx context.Context, uuid string) (Summary, error) {
+	// Revoke removes the peer and marks the device inactive (keeps the record).
 	d, err := s.repo.GetByUUID(ctx, uuid)
 	if err != nil {
 		return Summary{}, err
@@ -129,6 +131,7 @@ func (s *Service) Revoke(ctx context.Context, uuid string) (Summary, error) {
 }
 
 func (s *Service) Rotate(ctx context.Context, uuid string) (Summary, error) {
+	// Rotate swaps keys while keeping the assigned IP stable.
 	d, err := s.repo.GetByUUID(ctx, uuid)
 	if err != nil {
 		return Summary{}, err

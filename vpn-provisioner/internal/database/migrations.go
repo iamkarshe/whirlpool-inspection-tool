@@ -12,6 +12,7 @@ import (
 )
 
 func RunMigrations(db *sql.DB, migrationsDir string) error {
+	// RunMigrations applies *.sql files in lexical order.
 	entries, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return fmt.Errorf("read migrations dir: %w", err)

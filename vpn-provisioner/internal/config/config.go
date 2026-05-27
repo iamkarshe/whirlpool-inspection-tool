@@ -30,6 +30,7 @@ type Config struct {
 }
 
 func LoadFromEnv() (Config, error) {
+	// Load .env for local runs (Air), without overriding real env vars.
 	_ = loadDotEnvIfPresent(".env")
 
 	c := Config{
@@ -78,6 +79,7 @@ func LoadFromEnv() (Config, error) {
 }
 
 func getenv(key, def string) string {
+	// getenv returns def when env var is unset/blank.
 	v := strings.TrimSpace(os.Getenv(key))
 	if v == "" {
 		return def
@@ -86,6 +88,7 @@ func getenv(key, def string) string {
 }
 
 func validateIP(v string) error {
+	// validateIP enforces IPv4 strings.
 	ip := net.ParseIP(strings.TrimSpace(v))
 	if ip == nil {
 		return errors.New("not an ip")
@@ -98,6 +101,7 @@ func validateIP(v string) error {
 }
 
 func ipToUint32(s string) uint32 {
+	// ipToUint32 maps IPv4 dotted-quad to uint32 for range iteration.
 	ip := net.ParseIP(strings.TrimSpace(s)).To4()
 	if ip == nil {
 		return 0
@@ -109,6 +113,7 @@ func ipToUint32(s string) uint32 {
 func IpToUint32(s string) uint32 { return ipToUint32(s) }
 
 func Uint32ToIP(v uint32) string {
+	// Uint32ToIP maps a uint32 back to an IPv4 dotted-quad string.
 	b0 := byte(v >> 24)
 	b1 := byte(v >> 16)
 	b2 := byte(v >> 8)
@@ -117,6 +122,7 @@ func Uint32ToIP(v uint32) string {
 }
 
 func ParsePortFromAddr(addr string) (int, error) {
+	// ParsePortFromAddr extracts the port from common listen addr formats.
 	// Supports ":8080" and "0.0.0.0:8080"
 	_, portStr, err := net.SplitHostPort(addr)
 	if err != nil {

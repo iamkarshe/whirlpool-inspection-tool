@@ -12,12 +12,14 @@ type Envelope struct {
 }
 
 func JSON(w http.ResponseWriter, status int, data interface{}) {
+	// JSON writes the standard success envelope.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(Envelope{Success: true, Data: data})
 }
 
 func Error(w http.ResponseWriter, status int, msg string) {
+	// Error writes the standard error envelope.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(Envelope{Success: false, Error: msg})

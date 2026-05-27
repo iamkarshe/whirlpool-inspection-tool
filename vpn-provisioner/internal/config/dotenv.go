@@ -7,6 +7,7 @@ import (
 )
 
 func loadDotEnvIfPresent(path string) error {
+	// Minimal .env parser (supports spaces after '=').
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {

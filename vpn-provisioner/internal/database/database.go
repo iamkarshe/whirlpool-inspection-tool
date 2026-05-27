@@ -11,6 +11,7 @@ type DB struct {
 }
 
 func Open(path string) (*DB, error) {
+	// Open returns a single-connection SQLite handle (safe for embedded use).
 	db, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, err

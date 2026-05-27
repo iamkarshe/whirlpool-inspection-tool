@@ -18,6 +18,7 @@ import (
 )
 
 func main() {
+	// main wires config, db, backend selection, and HTTP routes.
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
