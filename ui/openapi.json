@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Whirlpool Inspection Tool API",
-    "description": "Whirlpool Inspection Tool API APIs developed by Scopt Analytics.",
+    "title": "Whirlpool PDI Tool API",
+    "description": "Whirlpool PDI Tool API APIs developed by Scopt Analytics.",
     "contact": {
       "name": "Scopt Analytics",
       "url": "https://scoptanalytics.com/",
@@ -12,7 +12,7 @@
       "name": "Proprietary - Internal Use Only",
       "url": "https://scoptanalytics.com/terms"
     },
-    "version": "1.0.3"
+    "version": "1.5.1"
   },
   "paths": {
     "/auth/login": {
@@ -43,9 +43,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -55,6 +52,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -64,7 +64,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Complete login using SSO exchange token from Okta callback",
+        "summary": "Login via Token",
+        "description": "Login using SSO exchange token (Okta)",
         "operationId": "login_token_auth_login_token_post",
         "requestBody": {
           "content": {
@@ -87,9 +88,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -99,6 +97,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -131,9 +132,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -143,6 +141,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -152,7 +153,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "List active devices for the current user",
+        "summary": "Active Devices",
+        "description": "List active devices for the current user",
         "operationId": "list_active_auth_devices_auth_devices_active_get",
         "responses": {
           "200": {
@@ -173,7 +175,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Keep selected devices and deregister the rest (single-login mode)",
+        "summary": "Resolve Active Device",
+        "description": "Keep selected devices and deregister the rest of the active devices",
         "operationId": "resolve_auth_devices_auth_devices_resolve_post",
         "requestBody": {
           "content": {
@@ -214,7 +217,8 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Deregister a device and revoke its sessions",
+        "summary": "Deregister Device",
+        "description": "Deregister a device and revoke all its sessions",
         "operationId": "deregister_auth_device_auth_devices__device_uuid__deregister_post",
         "parameters": [
           {
@@ -3896,86 +3900,54 @@
         }
       }
     },
-    "/api/reports/operations-analytics": {
+    "/api/reports/kpi-parameters": {
       "get": {
         "tags": [
           "Reports"
         ],
-        "summary": "Get Operations Analytics",
-        "operationId": "get_operations_analytics_api_reports_operations_analytics_get",
+        "summary": "Get Kpi Parameters",
+        "operationId": "get_kpi_parameters_api_reports_kpi_parameters_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KpiParametersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/product-category-pairs/cache/clear": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Clear Product Category Pairs Cache",
+        "operationId": "clear_product_category_pairs_cache_api_reports_product_category_pairs_cache_clear_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/executive-analytics": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Post Executive Analytics",
+        "operationId": "post_executive_analytics_api_reports_executive_analytics_post",
         "parameters": [
-          {
-            "name": "date_from",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Range start date (UTC)",
-              "title": "Date From"
-            },
-            "description": "Range start date (UTC)"
-          },
-          {
-            "name": "date_to",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Range end date (UTC, inclusive)",
-              "title": "Date To"
-            },
-            "description": "Range end date (UTC, inclusive)"
-          },
-          {
-            "name": "warehouse_uuid",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Warehouse Uuid"
-            }
-          },
-          {
-            "name": "plant_uuid",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Plant Uuid"
-            }
-          },
           {
             "name": "is_active",
             "in": "query",
@@ -3987,6 +3959,281 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationsAnalyticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/executive-analytics/defects-pareto-chart": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Post Executive Analytics Defects Pareto Chart",
+        "operationId": "post_executive_analytics_defects_pareto_chart_api_reports_executive_analytics_defects_pareto_chart_post",
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationsAnalyticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefectsParetoChartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/executive-analytics/defects-mix": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Post Executive Analytics Defects Mix",
+        "operationId": "post_executive_analytics_defects_mix_api_reports_executive_analytics_defects_mix_post",
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationsAnalyticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefectsMixResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/executive-analytics/defects-warehouse": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Post Executive Analytics Defects Warehouse",
+        "operationId": "post_executive_analytics_defects_warehouse_api_reports_executive_analytics_defects_warehouse_post",
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationsAnalyticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefectsWarehouseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/executive-analytics/defects-plant": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Post Executive Analytics Defects Plant",
+        "operationId": "post_executive_analytics_defects_plant_api_reports_executive_analytics_defects_plant_post",
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationsAnalyticsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefectsPlantResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/operations-analytics": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Post Operations Analytics",
+        "operationId": "post_operations_analytics_api_reports_operations_analytics_post",
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Active"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationsAnalyticsRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -4044,37 +4291,35 @@
             "description": "Range end date (UTC, inclusive)"
           },
           {
-            "name": "warehouse_uuid",
+            "name": "warehouse_id",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Warehouse Uuid"
+              "title": "Warehouse Id"
             }
           },
           {
-            "name": "plant_uuid",
+            "name": "plant_id",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Plant Uuid"
+              "title": "Plant Id"
             }
           },
           {
@@ -5072,7 +5317,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Id"
           },
           "value": {
@@ -5264,6 +5509,364 @@
           "accessories"
         ],
         "title": "DamageType"
+      },
+      "DefectsMixItem": {
+        "properties": {
+          "grading": {
+            "type": "string",
+            "title": "Grading",
+            "description": "Damage grading code.",
+            "examples": [
+              "DGR",
+              "LDGR",
+              "SCRAP"
+            ]
+          },
+          "defect_count": {
+            "type": "integer",
+            "title": "Defect Count",
+            "description": "Inspections with this damage grading in scope."
+          },
+          "pct_contribution": {
+            "type": "number",
+            "title": "Pct Contribution",
+            "description": "Share of graded defects for this grading (percent)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "grading",
+          "defect_count",
+          "pct_contribution"
+        ],
+        "title": "DefectsMixItem"
+      },
+      "DefectsMixResponse": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Applied range start date."
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Applied range end date."
+          },
+          "total_defects": {
+            "type": "integer",
+            "title": "Total Defects",
+            "description": "Inspections with any damage grading in scope."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DefectsMixItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "One row per grading (DGR, LDGR, SCRAP)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_defects",
+          "items"
+        ],
+        "title": "DefectsMixResponse",
+        "description": "Defect distribution by damage grading."
+      },
+      "DefectsParetoChartItem": {
+        "properties": {
+          "section": {
+            "type": "string",
+            "title": "Section",
+            "description": "Checklist section name (defect type).",
+            "examples": [
+              "Scratch Marks"
+            ]
+          },
+          "defect_count": {
+            "type": "integer",
+            "title": "Defect Count",
+            "description": "Count of checklist answers marked NO in this section."
+          },
+          "pct_contribution": {
+            "type": "number",
+            "title": "Pct Contribution",
+            "description": "Share of total defects for this section (percent)."
+          },
+          "cumulative_pct": {
+            "type": "number",
+            "title": "Cumulative Pct",
+            "description": "Running cumulative defect share (percent)."
+          },
+          "within_pareto_80": {
+            "type": "boolean",
+            "title": "Within Pareto 80",
+            "description": "True when this section is part of the vital few near 80% of defects."
+          }
+        },
+        "type": "object",
+        "required": [
+          "section",
+          "defect_count",
+          "pct_contribution",
+          "cumulative_pct",
+          "within_pareto_80"
+        ],
+        "title": "DefectsParetoChartItem"
+      },
+      "DefectsParetoChartResponse": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Applied range start date."
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Applied range end date."
+          },
+          "total_defects": {
+            "type": "integer",
+            "title": "Total Defects",
+            "description": "Total checklist NO responses across all sections."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DefectsParetoChartItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Sections sorted by defect count descending."
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_defects",
+          "items"
+        ],
+        "title": "DefectsParetoChartResponse",
+        "description": "Defect pareto chart by checklist section."
+      },
+      "DefectsPlantItem": {
+        "properties": {
+          "plant_id": {
+            "type": "integer",
+            "title": "Plant Id",
+            "description": "Plant id."
+          },
+          "plant_code": {
+            "type": "string",
+            "title": "Plant Code",
+            "description": "Plant code."
+          },
+          "plant_name": {
+            "type": "string",
+            "title": "Plant Name",
+            "description": "Plant name."
+          },
+          "total_inspections": {
+            "type": "integer",
+            "title": "Total Inspections",
+            "description": "Inbound inspections for this plant in scope."
+          },
+          "defective_inspections": {
+            "type": "integer",
+            "title": "Defective Inspections",
+            "description": "Inspections with any recorded damage."
+          },
+          "defective_pct": {
+            "type": "number",
+            "title": "Defective Pct",
+            "description": "Defective inspections divided by total inspections (percent)."
+          },
+          "grading_defects": {
+            "$ref": "#/components/schemas/WarehouseGradingDefects",
+            "description": "Defect counts split by damage grading."
+          }
+        },
+        "type": "object",
+        "required": [
+          "plant_id",
+          "plant_code",
+          "plant_name",
+          "total_inspections",
+          "defective_inspections",
+          "defective_pct",
+          "grading_defects"
+        ],
+        "title": "DefectsPlantItem"
+      },
+      "DefectsPlantResponse": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Applied range start date."
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Applied range end date."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DefectsPlantItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "All active plants, including rows with zero inspections."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DefectsPlantResponse",
+        "description": "Defect table rows for every active plant."
+      },
+      "DefectsWarehouseItem": {
+        "properties": {
+          "warehouse_id": {
+            "type": "integer",
+            "title": "Warehouse Id",
+            "description": "Warehouse id."
+          },
+          "warehouse_code": {
+            "type": "string",
+            "title": "Warehouse Code",
+            "description": "Warehouse code."
+          },
+          "warehouse_name": {
+            "type": "string",
+            "title": "Warehouse Name",
+            "description": "Warehouse name."
+          },
+          "total_inspections": {
+            "type": "integer",
+            "title": "Total Inspections",
+            "description": "Inspections for this warehouse in scope."
+          },
+          "defective_inspections": {
+            "type": "integer",
+            "title": "Defective Inspections",
+            "description": "Inspections with any recorded damage."
+          },
+          "defective_pct": {
+            "type": "number",
+            "title": "Defective Pct",
+            "description": "Defective inspections divided by total inspections (percent)."
+          },
+          "grading_defects": {
+            "$ref": "#/components/schemas/WarehouseGradingDefects",
+            "description": "Defect counts split by damage grading."
+          }
+        },
+        "type": "object",
+        "required": [
+          "warehouse_id",
+          "warehouse_code",
+          "warehouse_name",
+          "total_inspections",
+          "defective_inspections",
+          "defective_pct",
+          "grading_defects"
+        ],
+        "title": "DefectsWarehouseItem"
+      },
+      "DefectsWarehouseResponse": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Applied range start date."
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Applied range end date."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DefectsWarehouseItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "All active warehouses, including rows with zero inspections."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DefectsWarehouseResponse",
+        "description": "Defect table rows for every active warehouse."
       },
       "DeregisterDeviceResponse": {
         "properties": {
@@ -5603,6 +6206,71 @@
           "updated_at"
         ],
         "title": "DeviceResponse"
+      },
+      "ExecutiveAnalyticsResponse": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Applied range start date."
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Applied range end date."
+          },
+          "inspection_volume": {
+            "type": "integer",
+            "title": "Inspection Volume",
+            "description": "Total inspections matching filters and inspection type."
+          },
+          "damaged_inspections": {
+            "type": "integer",
+            "title": "Damaged Inspections",
+            "description": "Inspections with any recorded damage fields."
+          },
+          "defect_rate_pct": {
+            "type": "number",
+            "title": "Defect Rate Pct",
+            "description": "Damaged inspections divided by inspection volume (percent)."
+          },
+          "avg_inspection_time_min": {
+            "type": "number",
+            "title": "Avg Inspection Time Min",
+            "description": "Average device_time_taken in minutes."
+          },
+          "pending_approvals": {
+            "type": "integer",
+            "title": "Pending Approvals",
+            "description": "Inspections in PENDING or IN_REVIEW status."
+          }
+        },
+        "type": "object",
+        "required": [
+          "inspection_volume",
+          "damaged_inspections",
+          "defect_rate_pct",
+          "avg_inspection_time_min",
+          "pending_approvals"
+        ],
+        "title": "ExecutiveAnalyticsResponse",
+        "description": "Executive summary KPI cards."
       },
       "FacilityStatsResponse": {
         "properties": {
@@ -6939,6 +7607,79 @@
         ],
         "title": "IntegrationCredentialsResponse"
       },
+      "KpiParametersResponse": {
+        "properties": {
+          "warehouses": {
+            "items": {
+              "$ref": "#/components/schemas/ReportsDropdownOption"
+            },
+            "type": "array",
+            "title": "Warehouses",
+            "description": "Active warehouses (value is warehouse id)."
+          },
+          "plants": {
+            "items": {
+              "$ref": "#/components/schemas/ReportsDropdownOption"
+            },
+            "type": "array",
+            "title": "Plants",
+            "description": "Active plants (value is plant id)."
+          },
+          "product_category": {
+            "items": {
+              "$ref": "#/components/schemas/ReportsDropdownOption"
+            },
+            "type": "array",
+            "title": "Product Category",
+            "description": "Distinct category pairs (value is category_type|sub_category_type)."
+          },
+          "gradings": {
+            "items": {
+              "$ref": "#/components/schemas/ReportsDropdownOption"
+            },
+            "type": "array",
+            "title": "Gradings",
+            "description": "Damage grading options (value equals label)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "warehouses",
+          "plants",
+          "product_category",
+          "gradings"
+        ],
+        "title": "KpiParametersResponse",
+        "description": "Filter dropdown options for report screens.",
+        "examples": [
+          {
+            "gradings": [
+              {
+                "label": "DGR",
+                "value": "DGR"
+              }
+            ],
+            "plants": [
+              {
+                "label": "P01 - Plant North",
+                "value": "1"
+              }
+            ],
+            "product_category": [
+              {
+                "label": "AC - SPLIT",
+                "value": "AC|SPLIT"
+              }
+            ],
+            "warehouses": [
+              {
+                "label": "WH01 - Mumbai DC",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      },
       "LoginDetailResponse": {
         "properties": {
           "id": {
@@ -7607,6 +8348,135 @@
         ],
         "title": "OktaSsoUpdateRequest"
       },
+      "OperationsAnalyticsRequest": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Inclusive UTC start date for the reporting window.",
+            "examples": [
+              "2026-05-01"
+            ]
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Inclusive UTC end date for the reporting window.",
+            "examples": [
+              "2026-05-07"
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Master inspection direction filter. Use inbound or outbound.",
+            "examples": [
+              "inbound"
+            ]
+          },
+          "warehouse": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Warehouse",
+            "description": "Warehouse ids from GET /api/reports/kpi-parameters. Empty array means all warehouses.",
+            "examples": [
+              [
+                1,
+                2
+              ]
+            ]
+          },
+          "plant": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Plant",
+            "description": "Plant ids from GET /api/reports/kpi-parameters. Inbound only. Empty array means all plants.",
+            "examples": [
+              [
+                1,
+                2
+              ]
+            ]
+          },
+          "product_category": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Product Category",
+            "description": "Product category pair keys as \"category_type|sub_category_type\" (same as KPI parameters value). Empty array means all categories.",
+            "examples": [
+              [
+                "AC|SPLIT",
+                "AC|WINDOW"
+              ]
+            ]
+          },
+          "grading": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DamageGrading"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional damage grading filter (DGR, LDGR, SCRAP).",
+            "examples": [
+              "DGR"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "OperationsAnalyticsRequest",
+        "description": "Shared filter body for report analytics POST endpoints.",
+        "examples": [
+          {
+            "date_from": "2026-05-01",
+            "date_to": "2026-05-07",
+            "grading": "DGR",
+            "plant": [
+              1,
+              2
+            ],
+            "product_category": [
+              "AC|SPLIT",
+              "AC|WINDOW"
+            ],
+            "type": "inbound",
+            "warehouse": [
+              1,
+              2
+            ]
+          }
+        ]
+      },
       "OperationsAnalyticsResponse": {
         "properties": {
           "date_from": {
@@ -7619,7 +8489,8 @@
                 "type": "null"
               }
             ],
-            "title": "Date From"
+            "title": "Date From",
+            "description": "Applied range start date."
           },
           "date_to": {
             "anyOf": [
@@ -7631,89 +8502,107 @@
                 "type": "null"
               }
             ],
-            "title": "Date To"
+            "title": "Date To",
+            "description": "Applied range end date."
           },
           "total": {
             "type": "integer",
-            "title": "Total"
+            "title": "Total",
+            "description": "Total inspections in scope."
           },
           "total_inbound": {
             "type": "integer",
-            "title": "Total Inbound"
+            "title": "Total Inbound",
+            "description": "Inbound inspections in scope."
           },
           "total_outbound": {
             "type": "integer",
-            "title": "Total Outbound"
+            "title": "Total Outbound",
+            "description": "Outbound inspections in scope."
           },
           "total_approved": {
             "type": "integer",
-            "title": "Total Approved"
+            "title": "Total Approved",
+            "description": "Approved inspections."
           },
           "total_failed": {
             "type": "integer",
-            "title": "Total Failed"
+            "title": "Total Failed",
+            "description": "Rejected inspections."
           },
           "total_pending": {
             "type": "integer",
-            "title": "Total Pending"
+            "title": "Total Pending",
+            "description": "Pending or in-review inspections."
           },
           "inbound_approved": {
             "type": "integer",
-            "title": "Inbound Approved"
+            "title": "Inbound Approved",
+            "description": "Inbound approved count."
           },
           "inbound_failed": {
             "type": "integer",
-            "title": "Inbound Failed"
+            "title": "Inbound Failed",
+            "description": "Inbound rejected count."
           },
           "inbound_pending": {
             "type": "integer",
-            "title": "Inbound Pending"
+            "title": "Inbound Pending",
+            "description": "Inbound pending or in-review count."
           },
           "outbound_approved": {
             "type": "integer",
-            "title": "Outbound Approved"
+            "title": "Outbound Approved",
+            "description": "Outbound approved count."
           },
           "outbound_failed": {
             "type": "integer",
-            "title": "Outbound Failed"
+            "title": "Outbound Failed",
+            "description": "Outbound rejected count."
           },
           "outbound_pending": {
             "type": "integer",
-            "title": "Outbound Pending"
+            "title": "Outbound Pending",
+            "description": "Outbound pending or in-review count."
           },
           "success_ratio": {
             "type": "number",
-            "title": "Success Ratio"
+            "title": "Success Ratio",
+            "description": "Approved divided by total inspections (0–1)."
           },
           "failure_ratio": {
             "type": "number",
-            "title": "Failure Ratio"
+            "title": "Failure Ratio",
+            "description": "Rejected divided by total inspections (0–1)."
           },
           "passed": {
             "type": "integer",
-            "title": "Passed"
+            "title": "Passed",
+            "description": "Alias of total_approved."
           },
           "in_review": {
             "type": "integer",
-            "title": "In Review"
+            "title": "In Review",
+            "description": "Alias of total_pending."
           },
           "flagged": {
             "type": "integer",
-            "title": "Flagged"
+            "title": "Flagged",
+            "description": "Inspections with flagged checklist inputs."
           },
           "logins": {
             "type": "integer",
-            "title": "Logins"
+            "title": "Logins",
+            "description": "Login events in the date window."
           },
           "unique_login_users": {
             "type": "integer",
-            "title": "Unique Login Users"
+            "title": "Unique Login Users",
+            "description": "Distinct users with login events in the date window."
           }
         },
         "type": "object",
         "required": [
-          "date_from",
-          "date_to",
           "total",
           "total_inbound",
           "total_outbound",
@@ -7734,35 +8623,42 @@
           "logins",
           "unique_login_users"
         ],
-        "title": "OperationsAnalyticsResponse"
+        "title": "OperationsAnalyticsResponse",
+        "description": "Operations analytics KPI totals for the selected window and filters."
       },
       "OperationsTrendBucketItem": {
         "properties": {
           "label": {
             "type": "string",
-            "title": "Label"
+            "title": "Label",
+            "description": "Bucket label (for example W1)."
           },
           "date_from": {
             "type": "string",
             "format": "date",
-            "title": "Date From"
+            "title": "Date From",
+            "description": "Bucket start date."
           },
           "date_to": {
             "type": "string",
             "format": "date",
-            "title": "Date To"
+            "title": "Date To",
+            "description": "Bucket end date."
           },
           "inspections": {
             "type": "integer",
-            "title": "Inspections"
+            "title": "Inspections",
+            "description": "Inspection count in the bucket."
           },
           "logins": {
             "type": "integer",
-            "title": "Logins"
+            "title": "Logins",
+            "description": "Login count in the bucket."
           },
           "success_ratio": {
             "type": "number",
-            "title": "Success Ratio"
+            "title": "Success Ratio",
+            "description": "Approval ratio in the bucket (0–1)."
           }
         },
         "type": "object",
@@ -7781,26 +8677,30 @@
           "date_from": {
             "type": "string",
             "format": "date",
-            "title": "Date From"
+            "title": "Date From",
+            "description": "Applied range start date."
           },
           "date_to": {
             "type": "string",
             "format": "date",
-            "title": "Date To"
+            "title": "Date To",
+            "description": "Applied range end date."
           },
           "by_warehouse": {
             "items": {
               "$ref": "#/components/schemas/OperationsTrendWarehouseItem"
             },
             "type": "array",
-            "title": "By Warehouse"
+            "title": "By Warehouse",
+            "description": "Per-warehouse breakdown for the window."
           },
           "weekly_trend": {
             "items": {
               "$ref": "#/components/schemas/OperationsTrendBucketItem"
             },
             "type": "array",
-            "title": "Weekly Trend"
+            "title": "Weekly Trend",
+            "description": "Weekly buckets across the window."
           }
         },
         "type": "object",
@@ -7810,29 +8710,35 @@
           "by_warehouse",
           "weekly_trend"
         ],
-        "title": "OperationsTrendResponse"
+        "title": "OperationsTrendResponse",
+        "description": "Weekly operations trend series."
       },
       "OperationsTrendWarehouseItem": {
         "properties": {
           "warehouse_code": {
             "type": "string",
-            "title": "Warehouse Code"
+            "title": "Warehouse Code",
+            "description": "Warehouse code."
           },
           "warehouse_name": {
             "type": "string",
-            "title": "Warehouse Name"
+            "title": "Warehouse Name",
+            "description": "Warehouse display name."
           },
           "inspections": {
             "type": "integer",
-            "title": "Inspections"
+            "title": "Inspections",
+            "description": "Inspection count for this warehouse."
           },
           "logins": {
             "type": "integer",
-            "title": "Logins"
+            "title": "Logins",
+            "description": "Login count attributed to this warehouse."
           },
           "success_ratio": {
             "type": "number",
-            "title": "Success Ratio"
+            "title": "Success Ratio",
+            "description": "Approval ratio for this warehouse (0–1)."
           }
         },
         "type": "object",
@@ -7955,7 +8861,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -8146,7 +9052,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -8829,6 +9735,35 @@
         ],
         "title": "PushUserSendRequest"
       },
+      "ReportsDropdownOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Filter value sent back on analytics requests. Warehouses and plants use numeric id strings. Product categories use \"category_type|sub_category_type\".",
+            "examples": [
+              "1",
+              "AC|SPLIT"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "Human-readable label shown in the UI.",
+            "examples": [
+              "WH01 - Mumbai DC",
+              "AC - SPLIT"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "ReportsDropdownOption",
+        "description": "Dropdown option for report filter controls."
+      },
       "ResolveDevicesRequest": {
         "properties": {
           "keep_device_uuids": {
@@ -9001,13 +9936,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -9097,7 +10032,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10.0,
+            "minimum": 10,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9156,13 +10091,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -9252,7 +10187,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9679,7 +10614,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -9694,6 +10629,30 @@
           "postal_code"
         ],
         "title": "WarehouseCreateRequest"
+      },
+      "WarehouseGradingDefects": {
+        "properties": {
+          "dgr": {
+            "type": "integer",
+            "title": "Dgr",
+            "description": "Inspections graded DGR.",
+            "default": 0
+          },
+          "ldgr": {
+            "type": "integer",
+            "title": "Ldgr",
+            "description": "Inspections graded LDGR.",
+            "default": 0
+          },
+          "scrap": {
+            "type": "integer",
+            "title": "Scrap",
+            "description": "Inspections graded SCRAP.",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "WarehouseGradingDefects"
       },
       "WarehouseListResponse": {
         "properties": {
@@ -9870,7 +10829,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {

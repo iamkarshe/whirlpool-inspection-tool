@@ -29,14 +29,14 @@ export const navItems: NavGroup[] = [
     title: "Menu",
     items: [
       {
-        title: "Operations Analytics",
-        href: PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS,
-        icon: GaugeIcon,
-      },
-      {
         title: "Executive Analytics",
         href: PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS,
         icon: ChartBarDecreasingIcon,
+      },
+      {
+        title: "Operations Analytics",
+        href: PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS,
+        icon: GaugeIcon,
       },
       {
         title: "Masters",
