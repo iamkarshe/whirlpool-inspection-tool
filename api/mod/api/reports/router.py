@@ -10,6 +10,7 @@ from mod.api.reports.helper import (
     executive_analytics_counts,
     executive_defects_mix,
     executive_defects_pareto_chart,
+    executive_defects_warehouse,
     operations_analytics_counts,
     operations_trend_data,
     resolve_scope_codes,
@@ -19,6 +20,7 @@ from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.api.reports.response import (
     DefectsMixResponse,
     DefectsParetoChartResponse,
+    DefectsWarehouseResponse,
     ExecutiveAnalyticsResponse,
     KpiParametersResponse,
     OperationsAnalyticsResponse,
@@ -118,6 +120,31 @@ def post_executive_analytics_defects_mix(
     scope = analytics_scope_from_request(db, body)
     scope["damage_grading"] = None
     return executive_defects_mix(
+        db,
+        is_active=is_active,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        **scope,
+    )
+
+
+@router.post(
+    "/reports/executive-analytics/defects-warehouse",
+    name="post_executive_analytics_defects_warehouse",
+    response_model=DefectsWarehouseResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_executive_analytics_defects_warehouse(
+    request: Request,
+    body: OperationsAnalyticsRequest,
+    is_active: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    validate_analytics_date_range(body.date_from, body.date_to)
+    scope = analytics_scope_from_request(db, body)
+    scope["damage_grading"] = None
+    return executive_defects_warehouse(
         db,
         is_active=is_active,
         date_from=body.date_from,

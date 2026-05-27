@@ -1,11 +1,11 @@
 meta {
-  name: Defect per Warehouse [Inbound]
+  name: Defect per Plant [Inbound]
   type: http
-  seq: 4
+  seq: 5
 }
 
 post {
-  url: {{baseUrl}}/api/reports/executive-analytics/defects-warehouse
+  url: {{baseUrl}}/api/reports/executive-analytics/defects-plant
   body: json
   auth: inherit
 }
@@ -15,7 +15,6 @@ body:json {
     "date_from": "2026-05-01",
     "date_to": "2026-05-07",
     "type": "inbound",
-    "plant": [1, 2],
     "product_category": [1, 2]
   }
 }

@@ -11,7 +11,10 @@ from mod.api.reports.response import (
     DefectsMixResponse,
     DefectsParetoChartItem,
     DefectsParetoChartResponse,
+    DefectsWarehouseItem,
+    DefectsWarehouseResponse,
     KpiParametersResponse,
+    WarehouseGradingDefects,
 )
 from mod.model import (
     Checklist,
@@ -427,6 +430,87 @@ def executive_defects_mix(
         date_from=date_from,
         date_to=date_to,
         total_defects=total_defects,
+        items=items,
+    )
+
+
+def executive_defects_warehouse(
+    db: Session,
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_ids: list[int] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
+) -> DefectsWarehouseResponse:
+    inspection_filters = inspection_analytics_filters(
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_ids=product_category_ids,
+        inspection_type=inspection_type,
+        damage_grading=None,
+    )
+    damaged = damaged_inspection_condition()
+    warehouse_filters = [Warehouse.is_active.is_(True)]
+    if warehouse_codes:
+        warehouse_filters.append(Warehouse.warehouse_code.in_(warehouse_codes))
+    inspection_join = and_(
+        Inspection.warehouse_code == Warehouse.warehouse_code,
+        *inspection_filters,
+    )
+    rows = (
+        db.query(
+            Warehouse.id.label("warehouse_id"),
+            Warehouse.warehouse_code.label("warehouse_code"),
+            Warehouse.name.label("warehouse_name"),
+            func.count(Inspection.id).label("total"),
+            func.sum(case((damaged, 1), else_=0)).label("defective"),
+            func.sum(
+                case((Inspection.damage_grading == DamageGrading.DGR, 1), else_=0)
+            ).label("dgr"),
+            func.sum(
+                case((Inspection.damage_grading == DamageGrading.LDGR, 1), else_=0)
+            ).label("ldgr"),
+            func.sum(
+                case((Inspection.damage_grading == DamageGrading.SCRAP, 1), else_=0)
+            ).label("scrap"),
+        )
+        .select_from(Warehouse)
+        .outerjoin(Inspection, inspection_join)
+        .filter(*warehouse_filters)
+        .group_by(Warehouse.id, Warehouse.warehouse_code, Warehouse.name)
+        .order_by(Warehouse.warehouse_code.asc())
+        .all()
+    )
+    items = []
+    for row in rows:
+        total = int(row.total or 0)
+        defective = int(row.defective or 0)
+        defective_pct = round(defective / total * 100.0, 1) if total > 0 else 0.0
+        items.append(
+            DefectsWarehouseItem(
+                warehouse_id=row.warehouse_id,
+                warehouse_code=row.warehouse_code,
+                warehouse_name=row.warehouse_name,
+                total_inspections=total,
+                defective_inspections=defective,
+                defective_pct=defective_pct,
+                grading_defects=WarehouseGradingDefects(
+                    dgr=int(row.dgr or 0),
+                    ldgr=int(row.ldgr or 0),
+                    scrap=int(row.scrap or 0),
+                ),
+            )
+        )
+    return DefectsWarehouseResponse(
+        date_from=date_from,
+        date_to=date_to,
         items=items,
     )
 
