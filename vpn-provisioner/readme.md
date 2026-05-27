@@ -24,10 +24,10 @@ Think of it like a **school ID office**: you sign up a student (device), they ge
 
 ```mermaid
 flowchart TD
-    A[Admin client (curl / future UI)] --> B[Go HTTP API (chi router)]
-    B --> C[SQLite database (devices + audit_logs)]
-    B --> D[WireGuard Backend (docker / host / fake)]
-    D --> E[WireGuard wg0 on VPN server or mock]
+    A["Admin client (curl / future UI)"] --> B["Go HTTP API (chi router)"]
+    B --> C["SQLite database (devices + audit_logs)"]
+    B --> D["WireGuard Backend (docker / host / fake)"]
+    D --> E["WireGuard wg0 on VPN server or mock"]
 ```
 
 ### Create device — step by step
