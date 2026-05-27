@@ -9,19 +9,17 @@ import type {
   DefectsMixResponse,
   DefectsParetoChartResponse,
   DefectsPlantResponse,
+  DefectsTruckResponse,
   DefectsWarehouseResponse,
   ExecutiveAnalyticsResponse,
-  GetOperationsTrendApiReportsOperationsTrendGetParams,
   KpiParametersResponse,
   OperationsAnalyticsRequest,
-  OperationsAnalyticsResponse,
-  OperationsTrendResponse,
   PostExecutiveAnalyticsApiReportsExecutiveAnalyticsPostParams,
   PostExecutiveAnalyticsDefectsMixApiReportsExecutiveAnalyticsDefectsMixPostParams,
   PostExecutiveAnalyticsDefectsParetoChartApiReportsExecutiveAnalyticsDefectsParetoChartPostParams,
   PostExecutiveAnalyticsDefectsPlantApiReportsExecutiveAnalyticsDefectsPlantPostParams,
-  PostExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePostParams,
-  PostOperationsAnalyticsApiReportsOperationsAnalyticsPostParams
+  PostExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPostParams,
+  PostExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePostParams
 } from '../model';
 
 import { customInstance } from '../../axios-instance';
@@ -129,33 +127,21 @@ const postExecutiveAnalyticsDefectsPlantApiReportsExecutiveAnalyticsDefectsPlant
       options);
     }
   /**
- * @summary Post Operations Analytics
+ * @summary Post Executive Analytics Defects Truck
  */
-const postOperationsAnalyticsApiReportsOperationsAnalyticsPost = (
+const postExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPost = (
     operationsAnalyticsRequest: OperationsAnalyticsRequest,
-    params?: PostOperationsAnalyticsApiReportsOperationsAnalyticsPostParams,
- options?: SecondParameter<typeof customInstance<OperationsAnalyticsResponse>>,) => {
-      return customInstance<OperationsAnalyticsResponse>(
-      {url: `/api/reports/operations-analytics`, method: 'POST',
+    params?: PostExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPostParams,
+ options?: SecondParameter<typeof customInstance<DefectsTruckResponse>>,) => {
+      return customInstance<DefectsTruckResponse>(
+      {url: `/api/reports/executive-analytics/defects-truck`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: operationsAnalyticsRequest,
         params
     },
       options);
     }
-  /**
- * @summary Get Operations Trend
- */
-const getOperationsTrendApiReportsOperationsTrendGet = (
-    params: GetOperationsTrendApiReportsOperationsTrendGetParams,
- options?: SecondParameter<typeof customInstance<OperationsTrendResponse>>,) => {
-      return customInstance<OperationsTrendResponse>(
-      {url: `/api/reports/operations-trend`, method: 'GET',
-        params
-    },
-      options);
-    }
-  return {getKpiParametersApiReportsKpiParametersGet,clearProductCategoryPairsCacheApiReportsProductCategoryPairsCacheClearPost,postExecutiveAnalyticsApiReportsExecutiveAnalyticsPost,postExecutiveAnalyticsDefectsParetoChartApiReportsExecutiveAnalyticsDefectsParetoChartPost,postExecutiveAnalyticsDefectsMixApiReportsExecutiveAnalyticsDefectsMixPost,postExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePost,postExecutiveAnalyticsDefectsPlantApiReportsExecutiveAnalyticsDefectsPlantPost,postOperationsAnalyticsApiReportsOperationsAnalyticsPost,getOperationsTrendApiReportsOperationsTrendGet}};
+  return {getKpiParametersApiReportsKpiParametersGet,clearProductCategoryPairsCacheApiReportsProductCategoryPairsCacheClearPost,postExecutiveAnalyticsApiReportsExecutiveAnalyticsPost,postExecutiveAnalyticsDefectsParetoChartApiReportsExecutiveAnalyticsDefectsParetoChartPost,postExecutiveAnalyticsDefectsMixApiReportsExecutiveAnalyticsDefectsMixPost,postExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePost,postExecutiveAnalyticsDefectsPlantApiReportsExecutiveAnalyticsDefectsPlantPost,postExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPost}};
 export type GetKpiParametersApiReportsKpiParametersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['getKpiParametersApiReportsKpiParametersGet']>>>
 export type ClearProductCategoryPairsCacheApiReportsProductCategoryPairsCacheClearPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['clearProductCategoryPairsCacheApiReportsProductCategoryPairsCacheClearPost']>>>
 export type PostExecutiveAnalyticsApiReportsExecutiveAnalyticsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['postExecutiveAnalyticsApiReportsExecutiveAnalyticsPost']>>>
@@ -163,5 +149,4 @@ export type PostExecutiveAnalyticsDefectsParetoChartApiReportsExecutiveAnalytics
 export type PostExecutiveAnalyticsDefectsMixApiReportsExecutiveAnalyticsDefectsMixPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['postExecutiveAnalyticsDefectsMixApiReportsExecutiveAnalyticsDefectsMixPost']>>>
 export type PostExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['postExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePost']>>>
 export type PostExecutiveAnalyticsDefectsPlantApiReportsExecutiveAnalyticsDefectsPlantPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['postExecutiveAnalyticsDefectsPlantApiReportsExecutiveAnalyticsDefectsPlantPost']>>>
-export type PostOperationsAnalyticsApiReportsOperationsAnalyticsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['postOperationsAnalyticsApiReportsOperationsAnalyticsPost']>>>
-export type GetOperationsTrendApiReportsOperationsTrendGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['getOperationsTrendApiReportsOperationsTrendGet']>>>
+export type PostExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getReports>['postExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPost']>>>

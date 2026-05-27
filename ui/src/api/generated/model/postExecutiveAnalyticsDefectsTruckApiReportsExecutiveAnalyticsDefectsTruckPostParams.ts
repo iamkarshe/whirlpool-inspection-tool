@@ -6,6 +6,6 @@
  * OpenAPI spec version: 1.5.1
  */
 
-export type PostOperationsAnalyticsApiReportsOperationsAnalyticsPostParams = {
+export type PostExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPostParams = {
 is_active?: boolean;
 };

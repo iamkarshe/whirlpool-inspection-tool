@@ -5,7 +5,7 @@
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
  * OpenAPI spec version: 1.5.1
  */
-import type { WarehouseGradingDefects } from './warehouseGradingDefects';
+import type { WarehouseGradingDefects } from "./warehouseGradingDefects";
 
 export interface DefectsWarehouseItem {
   /** Warehouse id. */
@@ -20,6 +20,8 @@ export interface DefectsWarehouseItem {
   defective_inspections: number;
   /** Defective inspections divided by total inspections (percent). */
   defective_pct: number;
+  /** Inbound approved inspections that later failed outbound for the same serial number, divided by inbound approved count (percent). */
+  warehouse_induced_defect_pct: number;
   /** Defect counts split by damage grading. */
   grading_defects: WarehouseGradingDefects;
 }

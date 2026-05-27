@@ -4,6 +4,12 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 function formatCount(value: number) {
@@ -15,10 +21,15 @@ function formatPct(value: number) {
 }
 
 /** Warehouses at or above this defect % are highlighted in the table. */
-const HIGH_DEFECT_RATE_PCT = 5;
+const HIGH_DEFECT_RATE_PCT = 1;
+
+const ALIGN_RIGHT = { align: "right" as const };
 
 function warehouseRowClassName(row: DefectsWarehouseItem) {
-  if (row.defective_pct < HIGH_DEFECT_RATE_PCT) return undefined;
+  const highlight =
+    row.defective_pct >= HIGH_DEFECT_RATE_PCT ||
+    row.warehouse_induced_defect_pct >= HIGH_DEFECT_RATE_PCT;
+  if (!highlight) return undefined;
   return "bg-red-50/70 hover:bg-red-50/90 dark:bg-red-950/40 dark:hover:bg-red-950/55";
 }
 
@@ -26,20 +37,24 @@ function SortableHeader({
   column,
   label,
   align = "left",
+  tooltip,
 }: {
   column: Column<DefectsWarehouseItem, unknown>;
   label: string;
   align?: "left" | "right";
+  tooltip?: string;
 }) {
   const sorted = column.getIsSorted();
 
-  return (
+  const headerButton = (
     <Button
       variant="ghost"
       size="sm"
       className={cn(
         "h-8 px-2 font-medium",
-        align === "left" ? "-ml-3" : "ml-auto -mr-3",
+        align === "right"
+          ? "-mr-3 flex w-full justify-end"
+          : "-ml-3 justify-start",
       )}
       onClick={() => column.toggleSorting(sorted === "asc")}
     >
@@ -57,6 +72,15 @@ function SortableHeader({
         />
       )}
     </Button>
+  );
+
+  if (!tooltip) return headerButton;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{headerButton}</TooltipTrigger>
+      <TooltipContent side="top">{tooltip}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -79,6 +103,7 @@ const columns: ColumnDef<DefectsWarehouseItem>[] = [
   },
   {
     accessorKey: "total_inspections",
+    meta: ALIGN_RIGHT,
     header: ({ column }) => (
       <SortableHeader column={column} label="Total" align="right" />
     ),
@@ -90,6 +115,7 @@ const columns: ColumnDef<DefectsWarehouseItem>[] = [
   },
   {
     accessorKey: "defective_inspections",
+    meta: ALIGN_RIGHT,
     header: ({ column }) => (
       <SortableHeader column={column} label="Defective" align="right" />
     ),
@@ -101,6 +127,7 @@ const columns: ColumnDef<DefectsWarehouseItem>[] = [
   },
   {
     accessorKey: "defective_pct",
+    meta: ALIGN_RIGHT,
     header: ({ column }) => (
       <SortableHeader column={column} label="Defect %" align="right" />
     ),
@@ -119,6 +146,7 @@ const columns: ColumnDef<DefectsWarehouseItem>[] = [
   {
     id: "dgr",
     accessorFn: (row) => row.grading_defects.dgr ?? 0,
+    meta: ALIGN_RIGHT,
     header: ({ column }) => (
       <SortableHeader column={column} label="DGR" align="right" />
     ),
@@ -131,6 +159,7 @@ const columns: ColumnDef<DefectsWarehouseItem>[] = [
   {
     id: "ldgr",
     accessorFn: (row) => row.grading_defects.ldgr ?? 0,
+    meta: ALIGN_RIGHT,
     header: ({ column }) => (
       <SortableHeader column={column} label="LDGR" align="right" />
     ),
@@ -143,12 +172,36 @@ const columns: ColumnDef<DefectsWarehouseItem>[] = [
   {
     id: "scrap",
     accessorFn: (row) => row.grading_defects.scrap ?? 0,
+    meta: ALIGN_RIGHT,
     header: ({ column }) => (
       <SortableHeader column={column} label="SCRAP" align="right" />
     ),
     cell: ({ row }) => (
       <span className="block text-right tabular-nums">
         {formatCount(row.original.grading_defects.scrap ?? 0)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "warehouse_induced_defect_pct",
+    meta: ALIGN_RIGHT,
+    header: ({ column }) => (
+      <SortableHeader
+        column={column}
+        label="WID %"
+        align="right"
+        tooltip="Warehouse Induced Defect"
+      />
+    ),
+    cell: ({ row }) => (
+      <span
+        className={cn(
+          "block text-right tabular-nums",
+          row.original.warehouse_induced_defect_pct >= HIGH_DEFECT_RATE_PCT &&
+            "font-semibold text-red-700 dark:text-red-400",
+        )}
+      >
+        {formatPct(row.original.warehouse_induced_defect_pct)}
       </span>
     ),
   },
@@ -162,38 +215,42 @@ export function ExecutiveWarehouseDefectsTable({
   isLoading?: boolean;
 }) {
   return (
-    <DataTable
-      columns={columns}
-      data={data}
-      searchKey="warehouse_name"
-      showDateRangePicker={false}
-      showAllRows
-      rangeLabel="warehouses"
-      isLoading={isLoading}
-      getRowClassName={warehouseRowClassName}
-      downloadCsvFileName="executive-warehouse-defects.csv"
-      downloadCsv={(rows) => ({
-        headers: [
-          "Warehouse code",
-          "Warehouse name",
-          "Total inspections",
-          "Defective inspections",
-          "Defect %",
-          "DGR",
-          "LDGR",
-          "SCRAP",
-        ],
-        rows: rows.map((row) => ({
-          "Warehouse code": row.warehouse_code,
-          "Warehouse name": row.warehouse_name,
-          "Total inspections": row.total_inspections,
-          "Defective inspections": row.defective_inspections,
-          "Defect %": row.defective_pct,
-          DGR: row.grading_defects.dgr ?? 0,
-          LDGR: row.grading_defects.ldgr ?? 0,
-          SCRAP: row.grading_defects.scrap ?? 0,
-        })),
-      })}
-    />
+    <TooltipProvider>
+      <DataTable
+        columns={columns}
+        data={data}
+        searchKey="warehouse_name"
+        showDateRangePicker={false}
+        showAllRows
+        rangeLabel="warehouses"
+        isLoading={isLoading}
+        getRowClassName={warehouseRowClassName}
+        downloadCsvFileName="executive-warehouse-defects.csv"
+        downloadCsv={(rows) => ({
+          headers: [
+            "Warehouse code",
+            "Warehouse name",
+            "Total inspections",
+            "Defective inspections",
+            "Defect %",
+            "DGR",
+            "LDGR",
+            "SCRAP",
+            "WID %",
+          ],
+          rows: rows.map((row) => ({
+            "Warehouse code": row.warehouse_code,
+            "Warehouse name": row.warehouse_name,
+            "Total inspections": row.total_inspections,
+            "Defective inspections": row.defective_inspections,
+            "Defect %": row.defective_pct,
+            DGR: row.grading_defects.dgr ?? 0,
+            LDGR: row.grading_defects.ldgr ?? 0,
+            SCRAP: row.grading_defects.scrap ?? 0,
+            "WID %": row.warehouse_induced_defect_pct,
+          })),
+        })}
+      />
+    </TooltipProvider>
   );
 }

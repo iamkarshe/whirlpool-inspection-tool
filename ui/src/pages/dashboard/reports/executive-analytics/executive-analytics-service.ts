@@ -6,6 +6,7 @@ import { getReports } from "@/api/generated/reports/reports";
 import type { DefectsMixItem } from "@/api/generated/model/defectsMixItem";
 import type { DefectsParetoChartItem } from "@/api/generated/model/defectsParetoChartItem";
 import type { DefectsPlantItem } from "@/api/generated/model/defectsPlantItem";
+import type { DefectsTruckItem } from "@/api/generated/model/defectsTruckItem";
 import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
 import type { InspectionType } from "@/api/generated/model/inspectionType";
 import {
@@ -155,6 +156,27 @@ export async function fetchExecutiveDefectsPlant(
   const reports = getReports();
   const res =
     await reports.postExecutiveAnalyticsDefectsPlantApiReportsExecutiveAnalyticsDefectsPlantPost(
+      body,
+      undefined,
+      signal ? { signal } : undefined,
+    );
+  return res.items;
+}
+
+export async function fetchExecutiveDefectsTruck(
+  filters: ExecutiveAnalyticsFilters,
+  dateRange: DateRange | undefined,
+  inspectionType: InspectionType,
+  signal?: AbortSignal,
+): Promise<DefectsTruckItem[]> {
+  const body = executiveAnalyticsRequestBody(
+    filters,
+    dateRange,
+    inspectionType,
+  );
+  const reports = getReports();
+  const res =
+    await reports.postExecutiveAnalyticsDefectsTruckApiReportsExecutiveAnalyticsDefectsTruckPost(
       body,
       undefined,
       signal ? { signal } : undefined,

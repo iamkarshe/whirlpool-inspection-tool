@@ -1,7 +1,7 @@
 import type { Column, ColumnDef } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
-import type { DefectsPlantItem } from "@/api/generated/model/defectsPlantItem";
+import type { DefectsTruckItem } from "@/api/generated/model/defectsTruckItem";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,12 +14,12 @@ function formatPct(value: number) {
   return `${value.toFixed(1)}%`;
 }
 
-/** Plants at or above this defect % are highlighted in the table. */
-const HIGH_DEFECT_RATE_PCT = 5;
+/** Trucks at or above this defect % are highlighted in the table. */
+const HIGH_DEFECT_RATE_PCT = 1;
 
 const ALIGN_RIGHT = { align: "right" as const };
 
-function plantRowClassName(row: DefectsPlantItem) {
+function truckRowClassName(row: DefectsTruckItem) {
   if (row.defective_pct < HIGH_DEFECT_RATE_PCT) return undefined;
   return "bg-red-50/70 hover:bg-red-50/90 dark:bg-red-950/40 dark:hover:bg-red-950/55";
 }
@@ -29,7 +29,7 @@ function SortableHeader({
   label,
   align = "left",
 }: {
-  column: Column<DefectsPlantItem, unknown>;
+  column: Column<DefectsTruckItem, unknown>;
   label: string;
   align?: "left" | "right";
 }) {
@@ -64,21 +64,14 @@ function SortableHeader({
   );
 }
 
-const columns: ColumnDef<DefectsPlantItem>[] = [
+const columns: ColumnDef<DefectsTruckItem>[] = [
   {
-    id: "plant",
-    accessorFn: (row) => row.plant_code,
+    accessorKey: "truck_number",
     header: ({ column }) => (
-      <SortableHeader column={column} label="Plant" align="left" />
+      <SortableHeader column={column} label="Truck number" align="left" />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[140px]">
-        <span className="font-medium">{row.original.plant_code}</span>
-        <span className="text-muted-foreground">
-          {" "}
-          — {row.original.plant_name}
-        </span>
-      </div>
+      <span className="font-medium tabular-nums">{row.original.truck_number}</span>
     ),
   },
   {
@@ -123,85 +116,38 @@ const columns: ColumnDef<DefectsPlantItem>[] = [
       </span>
     ),
   },
-  {
-    id: "dgr",
-    accessorFn: (row) => row.grading_defects.dgr ?? 0,
-    meta: ALIGN_RIGHT,
-    header: ({ column }) => (
-      <SortableHeader column={column} label="DGR" align="right" />
-    ),
-    cell: ({ row }) => (
-      <span className="block text-right tabular-nums">
-        {formatCount(row.original.grading_defects.dgr ?? 0)}
-      </span>
-    ),
-  },
-  {
-    id: "ldgr",
-    accessorFn: (row) => row.grading_defects.ldgr ?? 0,
-    meta: ALIGN_RIGHT,
-    header: ({ column }) => (
-      <SortableHeader column={column} label="LDGR" align="right" />
-    ),
-    cell: ({ row }) => (
-      <span className="block text-right tabular-nums">
-        {formatCount(row.original.grading_defects.ldgr ?? 0)}
-      </span>
-    ),
-  },
-  {
-    id: "scrap",
-    accessorFn: (row) => row.grading_defects.scrap ?? 0,
-    meta: ALIGN_RIGHT,
-    header: ({ column }) => (
-      <SortableHeader column={column} label="SCRAP" align="right" />
-    ),
-    cell: ({ row }) => (
-      <span className="block text-right tabular-nums">
-        {formatCount(row.original.grading_defects.scrap ?? 0)}
-      </span>
-    ),
-  },
 ];
 
-export function ExecutivePlantDefectsTable({
+export function ExecutiveTruckDefectsTable({
   data,
   isLoading,
 }: {
-  data: DefectsPlantItem[];
+  data: DefectsTruckItem[];
   isLoading?: boolean;
 }) {
   return (
     <DataTable
       columns={columns}
       data={data}
-      searchKey="plant_name"
+      searchKey="truck_number"
       showDateRangePicker={false}
       showAllRows
-      rangeLabel="plants"
+      rangeLabel="trucks"
       isLoading={isLoading}
-      getRowClassName={plantRowClassName}
-      downloadCsvFileName="executive-plant-defects.csv"
+      getRowClassName={truckRowClassName}
+      downloadCsvFileName="executive-truck-defects.csv"
       downloadCsv={(rows) => ({
         headers: [
-          "Plant code",
-          "Plant name",
+          "Truck number",
           "Total inspections",
           "Defective inspections",
           "Defect %",
-          "DGR",
-          "LDGR",
-          "SCRAP",
         ],
         rows: rows.map((row) => ({
-          "Plant code": row.plant_code,
-          "Plant name": row.plant_name,
+          "Truck number": row.truck_number,
           "Total inspections": row.total_inspections,
           "Defective inspections": row.defective_inspections,
           "Defect %": row.defective_pct,
-          DGR: row.grading_defects.dgr ?? 0,
-          LDGR: row.grading_defects.ldgr ?? 0,
-          SCRAP: row.grading_defects.scrap ?? 0,
         })),
       })}
     />

@@ -3,7 +3,6 @@ import {
   ChartBarDecreasingIcon,
   ClipboardCheckIcon,
   FolderIcon,
-  GaugeIcon,
   SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -32,11 +31,6 @@ export const navItems: NavGroup[] = [
         title: "Executive Analytics",
         href: PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS,
         icon: ChartBarDecreasingIcon,
-      },
-      {
-        title: "Operations Analytics",
-        href: PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS,
-        icon: GaugeIcon,
       },
       {
         title: "Masters",

@@ -4205,13 +4205,13 @@
         }
       }
     },
-    "/api/reports/operations-analytics": {
+    "/api/reports/executive-analytics/defects-truck": {
       "post": {
         "tags": [
           "Reports"
         ],
-        "summary": "Post Operations Analytics",
-        "operationId": "post_operations_analytics_api_reports_operations_analytics_post",
+        "summary": "Post Executive Analytics Defects Truck",
+        "operationId": "post_executive_analytics_defects_truck_api_reports_executive_analytics_defects_truck_post",
         "parameters": [
           {
             "name": "is_active",
@@ -4240,106 +4240,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperationsAnalyticsResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/reports/operations-trend": {
-      "get": {
-        "tags": [
-          "Reports"
-        ],
-        "summary": "Get Operations Trend",
-        "operationId": "get_operations_trend_api_reports_operations_trend_get",
-        "parameters": [
-          {
-            "name": "date_from",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "description": "Range start date (UTC)",
-              "title": "Date From"
-            },
-            "description": "Range start date (UTC)"
-          },
-          {
-            "name": "date_to",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date",
-              "description": "Range end date (UTC, inclusive)",
-              "title": "Date To"
-            },
-            "description": "Range end date (UTC, inclusive)"
-          },
-          {
-            "name": "warehouse_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Warehouse Id"
-            }
-          },
-          {
-            "name": "plant_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Plant Id"
-            }
-          },
-          {
-            "name": "is_active",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": true,
-              "title": "Is Active"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationsTrendResponse"
+                  "$ref": "#/components/schemas/DefectsTruckResponse"
                 }
               }
             }
@@ -5775,6 +5676,82 @@
         "title": "DefectsPlantResponse",
         "description": "Defect table rows for every active plant."
       },
+      "DefectsTruckItem": {
+        "properties": {
+          "truck_number": {
+            "type": "string",
+            "title": "Truck Number",
+            "description": "Vehicle registration number."
+          },
+          "total_inspections": {
+            "type": "integer",
+            "title": "Total Inspections",
+            "description": "Inspections for this truck in scope."
+          },
+          "defective_inspections": {
+            "type": "integer",
+            "title": "Defective Inspections",
+            "description": "Inspections with any recorded damage."
+          },
+          "defective_pct": {
+            "type": "number",
+            "title": "Defective Pct",
+            "description": "Defective inspections divided by total inspections (percent)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "truck_number",
+          "total_inspections",
+          "defective_inspections",
+          "defective_pct"
+        ],
+        "title": "DefectsTruckItem"
+      },
+      "DefectsTruckResponse": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "Applied range start date."
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To",
+            "description": "Applied range end date."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DefectsTruckItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "One row per truck number with inspections in scope."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DefectsTruckResponse",
+        "description": "Defect stats grouped by truck number."
+      },
       "DefectsWarehouseItem": {
         "properties": {
           "warehouse_id": {
@@ -5807,6 +5784,11 @@
             "title": "Defective Pct",
             "description": "Defective inspections divided by total inspections (percent)."
           },
+          "warehouse_induced_defect_pct": {
+            "type": "number",
+            "title": "Warehouse Induced Defect Pct",
+            "description": "Inbound approved inspections that later failed outbound for the same serial number, divided by inbound approved count (percent)."
+          },
           "grading_defects": {
             "$ref": "#/components/schemas/WarehouseGradingDefects",
             "description": "Defect counts split by damage grading."
@@ -5820,6 +5802,7 @@
           "total_inspections",
           "defective_inspections",
           "defective_pct",
+          "warehouse_induced_defect_pct",
           "grading_defects"
         ],
         "title": "DefectsWarehouseItem"
@@ -8476,280 +8459,6 @@
             ]
           }
         ]
-      },
-      "OperationsAnalyticsResponse": {
-        "properties": {
-          "date_from": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date From",
-            "description": "Applied range start date."
-          },
-          "date_to": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date To",
-            "description": "Applied range end date."
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "description": "Total inspections in scope."
-          },
-          "total_inbound": {
-            "type": "integer",
-            "title": "Total Inbound",
-            "description": "Inbound inspections in scope."
-          },
-          "total_outbound": {
-            "type": "integer",
-            "title": "Total Outbound",
-            "description": "Outbound inspections in scope."
-          },
-          "total_approved": {
-            "type": "integer",
-            "title": "Total Approved",
-            "description": "Approved inspections."
-          },
-          "total_failed": {
-            "type": "integer",
-            "title": "Total Failed",
-            "description": "Rejected inspections."
-          },
-          "total_pending": {
-            "type": "integer",
-            "title": "Total Pending",
-            "description": "Pending or in-review inspections."
-          },
-          "inbound_approved": {
-            "type": "integer",
-            "title": "Inbound Approved",
-            "description": "Inbound approved count."
-          },
-          "inbound_failed": {
-            "type": "integer",
-            "title": "Inbound Failed",
-            "description": "Inbound rejected count."
-          },
-          "inbound_pending": {
-            "type": "integer",
-            "title": "Inbound Pending",
-            "description": "Inbound pending or in-review count."
-          },
-          "outbound_approved": {
-            "type": "integer",
-            "title": "Outbound Approved",
-            "description": "Outbound approved count."
-          },
-          "outbound_failed": {
-            "type": "integer",
-            "title": "Outbound Failed",
-            "description": "Outbound rejected count."
-          },
-          "outbound_pending": {
-            "type": "integer",
-            "title": "Outbound Pending",
-            "description": "Outbound pending or in-review count."
-          },
-          "success_ratio": {
-            "type": "number",
-            "title": "Success Ratio",
-            "description": "Approved divided by total inspections (0–1)."
-          },
-          "failure_ratio": {
-            "type": "number",
-            "title": "Failure Ratio",
-            "description": "Rejected divided by total inspections (0–1)."
-          },
-          "passed": {
-            "type": "integer",
-            "title": "Passed",
-            "description": "Alias of total_approved."
-          },
-          "in_review": {
-            "type": "integer",
-            "title": "In Review",
-            "description": "Alias of total_pending."
-          },
-          "flagged": {
-            "type": "integer",
-            "title": "Flagged",
-            "description": "Inspections with flagged checklist inputs."
-          },
-          "logins": {
-            "type": "integer",
-            "title": "Logins",
-            "description": "Login events in the date window."
-          },
-          "unique_login_users": {
-            "type": "integer",
-            "title": "Unique Login Users",
-            "description": "Distinct users with login events in the date window."
-          }
-        },
-        "type": "object",
-        "required": [
-          "total",
-          "total_inbound",
-          "total_outbound",
-          "total_approved",
-          "total_failed",
-          "total_pending",
-          "inbound_approved",
-          "inbound_failed",
-          "inbound_pending",
-          "outbound_approved",
-          "outbound_failed",
-          "outbound_pending",
-          "success_ratio",
-          "failure_ratio",
-          "passed",
-          "in_review",
-          "flagged",
-          "logins",
-          "unique_login_users"
-        ],
-        "title": "OperationsAnalyticsResponse",
-        "description": "Operations analytics KPI totals for the selected window and filters."
-      },
-      "OperationsTrendBucketItem": {
-        "properties": {
-          "label": {
-            "type": "string",
-            "title": "Label",
-            "description": "Bucket label (for example W1)."
-          },
-          "date_from": {
-            "type": "string",
-            "format": "date",
-            "title": "Date From",
-            "description": "Bucket start date."
-          },
-          "date_to": {
-            "type": "string",
-            "format": "date",
-            "title": "Date To",
-            "description": "Bucket end date."
-          },
-          "inspections": {
-            "type": "integer",
-            "title": "Inspections",
-            "description": "Inspection count in the bucket."
-          },
-          "logins": {
-            "type": "integer",
-            "title": "Logins",
-            "description": "Login count in the bucket."
-          },
-          "success_ratio": {
-            "type": "number",
-            "title": "Success Ratio",
-            "description": "Approval ratio in the bucket (0–1)."
-          }
-        },
-        "type": "object",
-        "required": [
-          "label",
-          "date_from",
-          "date_to",
-          "inspections",
-          "logins",
-          "success_ratio"
-        ],
-        "title": "OperationsTrendBucketItem"
-      },
-      "OperationsTrendResponse": {
-        "properties": {
-          "date_from": {
-            "type": "string",
-            "format": "date",
-            "title": "Date From",
-            "description": "Applied range start date."
-          },
-          "date_to": {
-            "type": "string",
-            "format": "date",
-            "title": "Date To",
-            "description": "Applied range end date."
-          },
-          "by_warehouse": {
-            "items": {
-              "$ref": "#/components/schemas/OperationsTrendWarehouseItem"
-            },
-            "type": "array",
-            "title": "By Warehouse",
-            "description": "Per-warehouse breakdown for the window."
-          },
-          "weekly_trend": {
-            "items": {
-              "$ref": "#/components/schemas/OperationsTrendBucketItem"
-            },
-            "type": "array",
-            "title": "Weekly Trend",
-            "description": "Weekly buckets across the window."
-          }
-        },
-        "type": "object",
-        "required": [
-          "date_from",
-          "date_to",
-          "by_warehouse",
-          "weekly_trend"
-        ],
-        "title": "OperationsTrendResponse",
-        "description": "Weekly operations trend series."
-      },
-      "OperationsTrendWarehouseItem": {
-        "properties": {
-          "warehouse_code": {
-            "type": "string",
-            "title": "Warehouse Code",
-            "description": "Warehouse code."
-          },
-          "warehouse_name": {
-            "type": "string",
-            "title": "Warehouse Name",
-            "description": "Warehouse display name."
-          },
-          "inspections": {
-            "type": "integer",
-            "title": "Inspections",
-            "description": "Inspection count for this warehouse."
-          },
-          "logins": {
-            "type": "integer",
-            "title": "Logins",
-            "description": "Login count attributed to this warehouse."
-          },
-          "success_ratio": {
-            "type": "number",
-            "title": "Success Ratio",
-            "description": "Approval ratio for this warehouse (0–1)."
-          }
-        },
-        "type": "object",
-        "required": [
-          "warehouse_code",
-          "warehouse_name",
-          "inspections",
-          "logins",
-          "success_ratio"
-        ],
-        "title": "OperationsTrendWarehouseItem"
       },
       "OperatorInspectionDirectionKpis": {
         "properties": {

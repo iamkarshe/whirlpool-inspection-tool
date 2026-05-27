@@ -54,6 +54,10 @@ import { filterByCalendarDateRange } from "@/lib/date-range-filter";
 import { downloadCsv as downloadCsvFile, toCsv } from "@/lib/csv";
 import { cn } from "@/lib/utils";
 
+function columnTextAlignClass(align: "left" | "right" | undefined) {
+  return align === "right" ? "text-right" : undefined;
+}
+
 export type DataTableFilterOption = {
   label: string;
   value: string;
@@ -484,7 +488,12 @@ export function DataTable<TData>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className={columnTextAlignClass(
+                        header.column.columnDef.meta?.align,
+                      )}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -505,8 +514,19 @@ export function DataTable<TData>({
                     <TableRow key={`loading-${i}`}>
                       {headers.length > 0
                         ? headers.map((header) => (
-                            <TableCell key={header.id}>
-                              <Skeleton className="h-5 max-w-[160px]" />
+                            <TableCell
+                              key={header.id}
+                              className={columnTextAlignClass(
+                                header.column.columnDef.meta?.align,
+                              )}
+                            >
+                              <Skeleton
+                                className={cn(
+                                  "h-5 max-w-[160px]",
+                                  header.column.columnDef.meta?.align ===
+                                    "right" && "ml-auto",
+                                )}
+                              />
                             </TableCell>
                           ))
                         : columns.map((col, j) => (
@@ -525,7 +545,12 @@ export function DataTable<TData>({
                     className={cn(getRowClassName?.(row.original))}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell
+                        key={cell.id}
+                        className={columnTextAlignClass(
+                          cell.column.columnDef.meta?.align,
+                        )}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),

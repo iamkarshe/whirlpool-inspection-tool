@@ -11,6 +11,7 @@ import {
   fetchExecutiveDefectsMix,
   fetchExecutiveDefectsPareto,
   fetchExecutiveDefectsPlant,
+  fetchExecutiveDefectsTruck,
   fetchExecutiveDefectsWarehouse,
   type ExecutiveAnalyticsKpis,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
@@ -18,9 +19,11 @@ import { ExecutiveDefectMixChart } from "@/pages/dashboard/reports/executive-ana
 import { ExecutiveDefectsParetoChart } from "@/pages/dashboard/reports/executive-analytics/executive-defects-pareto-chart";
 import type { DefectsParetoChartItem } from "@/api/generated/model/defectsParetoChartItem";
 import { ExecutivePlantDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-plant-defects-table";
+import { ExecutiveTruckDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-truck-defects-table";
 import { ExecutiveWarehouseDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-warehouse-defects-table";
 import type { DefectsMixItem } from "@/api/generated/model/defectsMixItem";
 import type { DefectsPlantItem } from "@/api/generated/model/defectsPlantItem";
+import type { DefectsTruckItem } from "@/api/generated/model/defectsTruckItem";
 import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
 import { InspectionType } from "@/api/generated/model/inspectionType";
 import {
@@ -88,6 +91,8 @@ export default function ExecutiveAnalyticsPage() {
   const [warehouseLoading, setWarehouseLoading] = useState(true);
   const [plantDefects, setPlantDefects] = useState<DefectsPlantItem[]>([]);
   const [plantLoading, setPlantLoading] = useState(true);
+  const [truckDefects, setTruckDefects] = useState<DefectsTruckItem[]>([]);
+  const [truckLoading, setTruckLoading] = useState(true);
   const [defectMixItems, setDefectMixItems] = useState<DefectsMixItem[]>([]);
   const [defectMixTotal, setDefectMixTotal] = useState(0);
   const [defectMixLoading, setDefectMixLoading] = useState(true);
@@ -287,6 +292,38 @@ export default function ExecutiveAnalyticsPage() {
   const showPlantDefects = inspectionType === InspectionType.inbound;
 
   useEffect(() => {
+    const controller = new AbortController();
+    setTruckLoading(true);
+    setTruckDefects([]);
+
+    fetchExecutiveDefectsTruck(
+      filters,
+      dateRange,
+      inspectionType,
+      controller.signal,
+    )
+      .then((items) => {
+        if (controller.signal.aborted) return;
+        setTruckDefects(items);
+      })
+      .catch((e: unknown) => {
+        if (controller.signal.aborted) return;
+        if (isAxiosError(e) && e.code === "ERR_CANCELED") return;
+        const message =
+          e instanceof Error ? e.message : "Failed to load truck defect data.";
+        toast.error(message);
+        setTruckDefects([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setTruckLoading(false);
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [dateRange, filters, inspectionType]);
+
+  useEffect(() => {
     let cancelled = false;
     queueMicrotask(() => setDefectMixLoading(true));
     fetchExecutiveDefectsMix(filters, dateRange, inspectionType)
@@ -420,10 +457,7 @@ export default function ExecutiveAnalyticsPage() {
         />
 
         <div
-          className={cn(
-            "lg:col-span-12",
-            !showPlantDefects && "xl:col-span-8",
-          )}
+          className={cn("lg:col-span-12", !showPlantDefects && "xl:col-span-8")}
         >
           <ChartCard
             title="Warehouse defects"
@@ -460,6 +494,20 @@ export default function ExecutiveAnalyticsPage() {
             totalDefects={defectMixTotal}
             isLoading={defectMixLoading}
           />
+        </div>
+
+        <div className="lg:col-span-12">
+          <ChartCard
+            title="Truck defects"
+            description="Inspection and defect rate by vehicle registration number"
+            contentClassName="pt-0"
+          >
+            <ExecutiveTruckDefectsTable
+              key={inspectionType}
+              data={truckDefects}
+              isLoading={truckLoading}
+            />
+          </ChartCard>
         </div>
       </div>
     </div>
