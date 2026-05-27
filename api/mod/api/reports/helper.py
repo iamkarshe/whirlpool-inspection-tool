@@ -4,7 +4,6 @@ from fastapi import HTTPException
 from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session
 
-from mod.api.inspection.response import InspectionDropdownOption
 from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.api.reports.response import (
     DefectsMixItem,
@@ -16,6 +15,7 @@ from mod.api.reports.response import (
     DefectsWarehouseItem,
     DefectsWarehouseResponse,
     KpiParametersResponse,
+    ReportsDropdownOption,
     WarehouseGradingDefects,
 )
 from mod.model import (
@@ -98,28 +98,28 @@ def build_kpi_parameters(db: Session) -> KpiParametersResponse:
     category_pairs = load_product_category_pairs(db)
     return KpiParametersResponse(
         warehouses=[
-            InspectionDropdownOption(
+            ReportsDropdownOption(
                 value=str(row.id),
                 label=f"{row.warehouse_code} - {row.name}",
             )
             for row in warehouse_rows
         ],
         plants=[
-            InspectionDropdownOption(
+            ReportsDropdownOption(
                 value=str(row.id),
                 label=f"{row.plant_code} - {row.name}",
             )
             for row in plant_rows
         ],
         product_category=[
-            InspectionDropdownOption(
+            ReportsDropdownOption(
                 value=product_category_pair_value(category_type, sub_category_type),
                 label=product_category_pair_label(category_type, sub_category_type),
             )
             for category_type, sub_category_type in category_pairs
         ],
         gradings=[
-            InspectionDropdownOption(value=e.value, label=e.value)
+            ReportsDropdownOption(value=e.value, label=e.value)
             for e in DamageGrading
         ],
     )

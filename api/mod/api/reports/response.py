@@ -1,97 +1,185 @@
 from datetime import date
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from mod.api.inspection.response import InspectionDropdownOption
+
+class ReportsDropdownOption(BaseModel):
+    """Dropdown option for report filter controls."""
+
+    value: str = Field(
+        ...,
+        description=(
+            "Filter value sent back on analytics requests. "
+            "Warehouses and plants use numeric id strings. "
+            'Product categories use "category_type|sub_category_type".'
+        ),
+        examples=["1", "AC|SPLIT"],
+    )
+    label: str = Field(
+        ...,
+        description="Human-readable label shown in the UI.",
+        examples=["WH01 - Mumbai DC", "AC - SPLIT"],
+    )
 
 
 class OperationsAnalyticsResponse(BaseModel):
-    date_from: date | None
-    date_to: date | None
-    total: int
-    total_inbound: int
-    total_outbound: int
-    total_approved: int
-    total_failed: int
-    total_pending: int
-    inbound_approved: int
-    inbound_failed: int
-    inbound_pending: int
-    outbound_approved: int
-    outbound_failed: int
-    outbound_pending: int
-    success_ratio: float
-    failure_ratio: float
-    passed: int
-    in_review: int
-    flagged: int
-    logins: int
-    unique_login_users: int
+    """Operations analytics KPI totals for the selected window and filters."""
+
+    date_from: date | None = Field(None, description="Applied range start date.")
+    date_to: date | None = Field(None, description="Applied range end date.")
+    total: int = Field(..., description="Total inspections in scope.")
+    total_inbound: int = Field(..., description="Inbound inspections in scope.")
+    total_outbound: int = Field(..., description="Outbound inspections in scope.")
+    total_approved: int = Field(..., description="Approved inspections.")
+    total_failed: int = Field(..., description="Rejected inspections.")
+    total_pending: int = Field(..., description="Pending or in-review inspections.")
+    inbound_approved: int = Field(..., description="Inbound approved count.")
+    inbound_failed: int = Field(..., description="Inbound rejected count.")
+    inbound_pending: int = Field(..., description="Inbound pending or in-review count.")
+    outbound_approved: int = Field(..., description="Outbound approved count.")
+    outbound_failed: int = Field(..., description="Outbound rejected count.")
+    outbound_pending: int = Field(..., description="Outbound pending or in-review count.")
+    success_ratio: float = Field(
+        ..., description="Approved divided by total inspections (0–1)."
+    )
+    failure_ratio: float = Field(
+        ..., description="Rejected divided by total inspections (0–1)."
+    )
+    passed: int = Field(..., description="Alias of total_approved.")
+    in_review: int = Field(..., description="Alias of total_pending.")
+    flagged: int = Field(..., description="Inspections with flagged checklist inputs.")
+    logins: int = Field(..., description="Login events in the date window.")
+    unique_login_users: int = Field(
+        ..., description="Distinct users with login events in the date window."
+    )
 
 
 class OperationsTrendWarehouseItem(BaseModel):
-    warehouse_code: str
-    warehouse_name: str
-    inspections: int
-    logins: int
-    success_ratio: float
+    warehouse_code: str = Field(..., description="Warehouse code.")
+    warehouse_name: str = Field(..., description="Warehouse display name.")
+    inspections: int = Field(..., description="Inspection count for this warehouse.")
+    logins: int = Field(..., description="Login count attributed to this warehouse.")
+    success_ratio: float = Field(
+        ..., description="Approval ratio for this warehouse (0–1)."
+    )
 
 
 class OperationsTrendBucketItem(BaseModel):
-    label: str
-    date_from: date
-    date_to: date
-    inspections: int
-    logins: int
-    success_ratio: float
+    label: str = Field(..., description="Bucket label (for example W1).")
+    date_from: date = Field(..., description="Bucket start date.")
+    date_to: date = Field(..., description="Bucket end date.")
+    inspections: int = Field(..., description="Inspection count in the bucket.")
+    logins: int = Field(..., description="Login count in the bucket.")
+    success_ratio: float = Field(..., description="Approval ratio in the bucket (0–1).")
 
 
 class OperationsTrendResponse(BaseModel):
-    date_from: date
-    date_to: date
-    by_warehouse: list[OperationsTrendWarehouseItem]
-    weekly_trend: list[OperationsTrendBucketItem]
+    """Weekly operations trend series."""
+
+    date_from: date = Field(..., description="Applied range start date.")
+    date_to: date = Field(..., description="Applied range end date.")
+    by_warehouse: list[OperationsTrendWarehouseItem] = Field(
+        ..., description="Per-warehouse breakdown for the window."
+    )
+    weekly_trend: list[OperationsTrendBucketItem] = Field(
+        ..., description="Weekly buckets across the window."
+    )
 
 
 class DefectsParetoChartItem(BaseModel):
-    section: str = Field(..., description="Defect type.")
-    defect_count: int = Field(..., description="Checklist NO count.")
-    pct_contribution: float = Field(..., description="Share of total defects.")
-    cumulative_pct: float = Field(..., description="Running cumulative percent.")
+    section: str = Field(
+        ...,
+        description="Checklist section name (defect type).",
+        examples=["Scratch Marks"],
+    )
+    defect_count: int = Field(
+        ..., description="Count of checklist answers marked NO in this section."
+    )
+    pct_contribution: float = Field(
+        ..., description="Share of total defects for this section (percent)."
+    )
+    cumulative_pct: float = Field(
+        ..., description="Running cumulative defect share (percent)."
+    )
     within_pareto_80: bool = Field(
-        ..., description="Included in the vital few near 80% of defects."
+        ...,
+        description="True when this section is part of the vital few near 80% of defects.",
+    )
+
+
+class DefectsParetoChartResponse(BaseModel):
+    """Defect pareto chart by checklist section."""
+
+    date_from: date | None = Field(None, description="Applied range start date.")
+    date_to: date | None = Field(None, description="Applied range end date.")
+    total_defects: int = Field(
+        ..., description="Total checklist NO responses across all sections."
+    )
+    items: list[DefectsParetoChartItem] = Field(
+        ..., description="Sections sorted by defect count descending."
     )
 
 
 class DefectsMixItem(BaseModel):
-    grading: str = Field(..., description="Damage grading.")
-    defect_count: int = Field(..., description="Inspection count.")
-    pct_contribution: float = Field(..., description="Share of graded defects.")
+    grading: str = Field(
+        ...,
+        description="Damage grading code.",
+        examples=["DGR", "LDGR", "SCRAP"],
+    )
+    defect_count: int = Field(
+        ..., description="Inspections with this damage grading in scope."
+    )
+    pct_contribution: float = Field(
+        ..., description="Share of graded defects for this grading (percent)."
+    )
+
+
+class DefectsMixResponse(BaseModel):
+    """Defect distribution by damage grading."""
+
+    date_from: date | None = Field(None, description="Applied range start date.")
+    date_to: date | None = Field(None, description="Applied range end date.")
+    total_defects: int = Field(
+        ..., description="Inspections with any damage grading in scope."
+    )
+    items: list[DefectsMixItem] = Field(
+        ..., description="One row per grading (DGR, LDGR, SCRAP)."
+    )
 
 
 class WarehouseGradingDefects(BaseModel):
-    dgr: int = Field(0, description="DGR count.")
-    ldgr: int = Field(0, description="LDGR count.")
-    scrap: int = Field(0, description="SCRAP count.")
+    dgr: int = Field(0, description="Inspections graded DGR.")
+    ldgr: int = Field(0, description="Inspections graded LDGR.")
+    scrap: int = Field(0, description="Inspections graded SCRAP.")
 
 
 class DefectsWarehouseItem(BaseModel):
     warehouse_id: int = Field(..., description="Warehouse id.")
     warehouse_code: str = Field(..., description="Warehouse code.")
     warehouse_name: str = Field(..., description="Warehouse name.")
-    total_inspections: int = Field(..., description="Total inspections.")
-    defective_inspections: int = Field(..., description="Defective inspections.")
-    defective_pct: float = Field(..., description="Defective percent.")
+    total_inspections: int = Field(
+        ..., description="Inspections for this warehouse in scope."
+    )
+    defective_inspections: int = Field(
+        ..., description="Inspections with any recorded damage."
+    )
+    defective_pct: float = Field(
+        ...,
+        description="Defective inspections divided by total inspections (percent).",
+    )
     grading_defects: WarehouseGradingDefects = Field(
-        ..., description="Defects by grading."
+        ..., description="Defect counts split by damage grading."
     )
 
 
 class DefectsWarehouseResponse(BaseModel):
-    date_from: date | None = None
-    date_to: date | None = None
+    """Defect table rows for every active warehouse."""
+
+    date_from: date | None = Field(None, description="Applied range start date.")
+    date_to: date | None = Field(None, description="Applied range end date.")
     items: list[DefectsWarehouseItem] = Field(
-        ..., description="Defect stats per warehouse."
+        ...,
+        description="All active warehouses, including rows with zero inspections.",
     )
 
 
@@ -99,56 +187,87 @@ class DefectsPlantItem(BaseModel):
     plant_id: int = Field(..., description="Plant id.")
     plant_code: str = Field(..., description="Plant code.")
     plant_name: str = Field(..., description="Plant name.")
-    total_inspections: int = Field(..., description="Total inspections.")
-    defective_inspections: int = Field(..., description="Defective inspections.")
-    defective_pct: float = Field(..., description="Defective percent.")
+    total_inspections: int = Field(
+        ..., description="Inbound inspections for this plant in scope."
+    )
+    defective_inspections: int = Field(
+        ..., description="Inspections with any recorded damage."
+    )
+    defective_pct: float = Field(
+        ...,
+        description="Defective inspections divided by total inspections (percent).",
+    )
     grading_defects: WarehouseGradingDefects = Field(
-        ..., description="Defects by grading."
+        ..., description="Defect counts split by damage grading."
     )
 
 
 class DefectsPlantResponse(BaseModel):
-    date_from: date | None = None
-    date_to: date | None = None
-    items: list[DefectsPlantItem] = Field(..., description="Defect stats per plant.")
+    """Defect table rows for every active plant."""
 
-
-class DefectsMixResponse(BaseModel):
-    date_from: date | None = None
-    date_to: date | None = None
-    total_defects: int = Field(..., description="Inspections with damage grading.")
-    items: list[DefectsMixItem] = Field(..., description="Defect mix by grading.")
-
-
-class DefectsParetoChartResponse(BaseModel):
-    date_from: date | None = None
-    date_to: date | None = None
-    total_defects: int = Field(..., description="Total checklist NO responses.")
-    items: list[DefectsParetoChartItem] = Field(
-        ..., description="Defect counts by checklist section."
+    date_from: date | None = Field(None, description="Applied range start date.")
+    date_to: date | None = Field(None, description="Applied range end date.")
+    items: list[DefectsPlantItem] = Field(
+        ...,
+        description="All active plants, including rows with zero inspections.",
     )
 
 
 class ExecutiveAnalyticsResponse(BaseModel):
-    date_from: date | None = None
-    date_to: date | None = None
-    inspection_volume: int = Field(..., description="Total inspections.")
-    damaged_inspections: int = Field(..., description="Damaged inspections.")
-    defect_rate_pct: float = Field(..., description="Defect rate percent.")
-    avg_inspection_time_min: float = Field(..., description="Average inspection time.")
-    pending_approvals: int = Field(..., description="Pending approvals.")
+    """Executive summary KPI cards."""
+
+    date_from: date | None = Field(None, description="Applied range start date.")
+    date_to: date | None = Field(None, description="Applied range end date.")
+    inspection_volume: int = Field(
+        ..., description="Total inspections matching filters and inspection type."
+    )
+    damaged_inspections: int = Field(
+        ..., description="Inspections with any recorded damage fields."
+    )
+    defect_rate_pct: float = Field(
+        ...,
+        description="Damaged inspections divided by inspection volume (percent).",
+    )
+    avg_inspection_time_min: float = Field(
+        ..., description="Average device_time_taken in minutes."
+    )
+    pending_approvals: int = Field(
+        ..., description="Inspections in PENDING or IN_REVIEW status."
+    )
 
 
 class KpiParametersResponse(BaseModel):
-    """Filter dropdown options for reports."""
+    """Filter dropdown options for report screens."""
 
-    warehouses: list[InspectionDropdownOption] = Field(
-        ..., description="Active warehouses."
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "warehouses": [
+                        {"value": "1", "label": "WH01 - Mumbai DC"},
+                    ],
+                    "plants": [{"value": "1", "label": "P01 - Plant North"}],
+                    "product_category": [
+                        {"value": "AC|SPLIT", "label": "AC - SPLIT"},
+                    ],
+                    "gradings": [{"value": "DGR", "label": "DGR"}],
+                }
+            ]
+        }
     )
-    plants: list[InspectionDropdownOption] = Field(..., description="Active plants.")
-    product_category: list[InspectionDropdownOption] = Field(
-        ..., description="Product categories."
+
+    warehouses: list[ReportsDropdownOption] = Field(
+        ..., description="Active warehouses (value is warehouse id)."
     )
-    gradings: list[InspectionDropdownOption] = Field(
-        ..., description="Damage gradings."
+    plants: list[ReportsDropdownOption] = Field(
+        ..., description="Active plants (value is plant id)."
+    )
+    product_category: list[ReportsDropdownOption] = Field(
+        ...,
+        description=(
+            "Distinct category pairs (value is category_type|sub_category_type)."
+        ),
+    )
+    gradings: list[ReportsDropdownOption] = Field(
+        ..., description="Damage grading options (value equals label)."
     )
