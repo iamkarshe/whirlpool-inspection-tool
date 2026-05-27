@@ -15,6 +15,7 @@ type Handlers struct {
 
 type RouterDeps struct {
 	AdminAPIKey string
+	Version     string
 	Handlers    Handlers
 }
 
@@ -27,7 +28,10 @@ func NewRouter(d RouterDeps) http.Handler {
 	r.Use(middleware.NoCache)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		JSON(w, http.StatusOK, map[string]string{"message": "vpn-provisioner api"})
+		JSON(w, http.StatusOK, map[string]string{
+			"message": "vpn-provisioner api",
+			"version": d.Version,
+		})
 	})
 	r.Get("/health", d.Handlers.Health)
 

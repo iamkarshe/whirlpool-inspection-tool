@@ -1,0 +1,24 @@
+[Unit]
+Description=Whirlpool VPN Provisioning Service
+After=network-online.target wg-quick@wg0.service
+Wants=network-online.target
+Requires=wg-quick@wg0.service
+
+[Service]
+Type=simple
+User=vpnapi
+Group=vpnapi
+WorkingDirectory=/opt/vpn-provisioner
+EnvironmentFile=/etc/vpn-provisioner/vpn-provisioner.env
+ExecStart=/opt/vpn-provisioner/vpn-provisioner
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/lib/vpn-provisioner /var/log/vpn-provisioner
+
+[Install]
+WantedBy=multi-user.target

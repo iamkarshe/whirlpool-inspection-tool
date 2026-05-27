@@ -23,7 +23,7 @@ func NewHostBackend(_ string) *HostBackend {
 
 func (h *HostBackend) AddPeer(publicKey string, allowedIP string) error {
 	ip := strings.TrimSpace(allowedIP)
-	cmd := exec.Command(hostScriptAddPeer, strings.TrimSpace(publicKey), ip)
+	cmd := exec.Command("sudo", hostScriptAddPeer, strings.TrimSpace(publicKey), ip)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
@@ -33,7 +33,7 @@ func (h *HostBackend) AddPeer(publicKey string, allowedIP string) error {
 }
 
 func (h *HostBackend) RemovePeer(publicKey string) error {
-	cmd := exec.Command(hostScriptRemovePeer, strings.TrimSpace(publicKey))
+	cmd := exec.Command("sudo", hostScriptRemovePeer, strings.TrimSpace(publicKey))
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
@@ -43,7 +43,7 @@ func (h *HostBackend) RemovePeer(publicKey string) error {
 }
 
 func (h *HostBackend) ShowPeers() ([]Peer, error) {
-	cmd := exec.Command(hostScriptShowPeers)
+	cmd := exec.Command("sudo", hostScriptShowPeers)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -55,7 +55,7 @@ func (h *HostBackend) ShowPeers() ([]Peer, error) {
 }
 
 func (h *HostBackend) ServerPublicKey() (string, error) {
-	cmd := exec.Command(hostScriptServerPub)
+	cmd := exec.Command("sudo", hostScriptServerPub)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

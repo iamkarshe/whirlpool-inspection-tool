@@ -29,6 +29,7 @@ func main() {
 		slog.Error("config load failed", "error", err)
 		os.Exit(1)
 	}
+	httpapi.SetDebug(cfg.Debug)
 
 	if err := os.MkdirAll(filepath.Dir(cfg.DBPath), 0o755); err != nil {
 		slog.Error("create db directory failed", "error", err)
@@ -60,9 +61,13 @@ func main() {
 
 	router := httpapi.NewRouter(httpapi.RouterDeps{
 		AdminAPIKey: cfg.AdminKey,
+		Version:     version,
 		Handlers: httpapi.Handlers{
 			Health: func(w http.ResponseWriter, r *http.Request) {
-				httpapi.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
+				httpapi.JSON(w, http.StatusOK, map[string]string{
+					"status":  "ok",
+					"version": version,
+				})
 			},
 			Devices:        devices.NewHandler(devSvc),
 			WireGuardPeers: httpapi.WireGuardPeers(wgBackend),
@@ -75,7 +80,7 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	slog.Info("api starting", "addr", cfg.Addr, "env", cfg.Env)
+	slog.Info("api starting", "version", version, "addr", cfg.Addr, "env", cfg.Env, "debug", cfg.Debug)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		slog.Error("server error", "error", err)
 		os.Exit(1)

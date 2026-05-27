@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PUBLIC_KEY="$1"
+ALLOWED_IP="$2"
+
+wg set wg0 peer "$PUBLIC_KEY" allowed-ips "$ALLOWED_IP/32"
+wg-quick save wg0

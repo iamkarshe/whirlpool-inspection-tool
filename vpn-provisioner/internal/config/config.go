@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	Env       string
+	Debug     bool
 	Addr      string
 	DBPath    string
 	AdminKey  string
@@ -35,6 +36,7 @@ func LoadFromEnv() (Config, error) {
 
 	c := Config{
 		Env:       getenv("APP_ENV", "local"),
+		Debug:     parseBoolEnv("APP_DEBUG", false),
 		Addr:      getenv("APP_ADDR", ":8080"),
 		DBPath:    getenv("APP_DB_PATH", "./data/vpn_provisioner.sqlite"),
 		AdminKey:  os.Getenv("APP_ADMIN_API_KEY"),
@@ -85,6 +87,21 @@ func getenv(key, def string) string {
 		return def
 	}
 	return v
+}
+
+func parseBoolEnv(key string, def bool) bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if v == "" {
+		return def
+	}
+	switch v {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		return def
+	}
 }
 
 func validateIP(v string) error {

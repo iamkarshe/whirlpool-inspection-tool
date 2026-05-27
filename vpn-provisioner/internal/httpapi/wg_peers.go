@@ -15,7 +15,7 @@ func WireGuardPeers(backend wireguard.Backend) http.HandlerFunc {
 		}
 		peers, err := backend.ShowPeers()
 		if err != nil {
-			Error(w, http.StatusBadGateway, "WireGuard operation failed")
+			ErrorCause(w, http.StatusBadGateway, "WireGuard operation failed", err)
 			return
 		}
 		JSON(w, http.StatusOK, map[string]any{"peers": peers})

@@ -43,3 +43,6 @@ wireguard-mock-data/*
 
 # Air hot-reload
 build-errors.log
+
+# Build artifacts
+vpn-provisioner

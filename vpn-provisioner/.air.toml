@@ -2,7 +2,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-cmd = "go build -o ./tmp/vpn-provisioner ./cmd/api"
+cmd = "sh -c 'V=$(tr -d \"[:space:]\" < VERSION); go build -ldflags \"-X main.version=$V\" -o ./tmp/vpn-provisioner ./cmd/api'"
 bin = "./tmp/vpn-provisioner"
 include_ext = ["go", "tpl", "tmpl", "html"]
 exclude_dir = ["data", "tmp", "vendor", "wireguard-mock-data"]
