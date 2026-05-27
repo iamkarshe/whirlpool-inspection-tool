@@ -6,20 +6,15 @@ import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { ChartConfig } from "@/components/ui/chart";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
 import {
   fetchExecutiveAnalyticsKpis,
+  fetchExecutiveDefectsMix,
   fetchExecutiveDefectsWarehouse,
-  getDefectRateByType,
-  type DefectRateByType,
   type ExecutiveAnalyticsKpis,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
+import { ExecutiveDefectMixChart } from "@/pages/dashboard/reports/executive-analytics/executive-defect-mix-chart";
 import { ExecutiveWarehouseDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-warehouse-defects-table";
+import type { DefectsMixItem } from "@/api/generated/model/defectsMixItem";
 import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
 import { InspectionType } from "@/api/generated/model/inspectionType";
 import {
@@ -29,7 +24,6 @@ import {
   mapKpiParametersToFilterSections,
   type ExecutiveAnalyticsFilters,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-filters";
-import { ExecutiveTooltipContent } from "@/pages/dashboard/reports/executive-analytics/executive-tooltip-content";
 import type { KpiParametersResponse } from "@/api/generated/model/kpiParametersResponse";
 import {
   AlertTriangle,
@@ -41,20 +35,9 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
-
-const defectChartConfig = {
-  rate: {
-    label: "Defect %",
-    color: "var(--chart-2)",
-  },
-  critical: { label: "Critical", color: "var(--chart-1)" },
-  major: { label: "Major", color: "var(--chart-2)" },
-  minor: { label: "Minor", color: "var(--chart-3)" },
-} satisfies ChartConfig;
 
 function buildKpiCards(kpis: ExecutiveAnalyticsKpis): KpiCardProps[] {
   return [
@@ -91,11 +74,13 @@ export default function ExecutiveAnalyticsPage() {
   const navigate = useNavigate();
 
   const [kpis, setKpis] = useState<ExecutiveAnalyticsKpis | null>(null);
-  const [warehouseDefects, setWarehouseDefects] = useState<DefectsWarehouseItem[]>(
-    [],
-  );
+  const [warehouseDefects, setWarehouseDefects] = useState<
+    DefectsWarehouseItem[]
+  >([]);
   const [warehouseLoading, setWarehouseLoading] = useState(true);
-  const [defectByType, setDefectByType] = useState<DefectRateByType[]>([]);
+  const [defectMixItems, setDefectMixItems] = useState<DefectsMixItem[]>([]);
+  const [defectMixTotal, setDefectMixTotal] = useState(0);
+  const [defectMixLoading, setDefectMixLoading] = useState(true);
   const [kpiLoading, setKpiLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [inspectionType, setInspectionType] = useState<InspectionType>(
@@ -240,13 +225,29 @@ export default function ExecutiveAnalyticsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    getDefectRateByType(dateRange).then((def) => {
-      if (!cancelled) setDefectByType(def);
-    });
+    queueMicrotask(() => setDefectMixLoading(true));
+    fetchExecutiveDefectsMix(filters, dateRange, inspectionType)
+      .then(({ items, totalDefects }) => {
+        if (!cancelled) {
+          setDefectMixItems(items);
+          setDefectMixTotal(totalDefects);
+        }
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const message =
+          e instanceof Error ? e.message : "Failed to load defect mix.";
+        toast.error(message);
+        setDefectMixItems([]);
+        setDefectMixTotal(0);
+      })
+      .finally(() => {
+        if (!cancelled) setDefectMixLoading(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [dateRange]);
+  }, [dateRange, filters, inspectionType]);
 
   return (
     <div
@@ -314,7 +315,7 @@ export default function ExecutiveAnalyticsPage() {
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12">
           {kpiLoading ? (
-            <KpiLoader count={5} />
+            <KpiLoader count={4} />
           ) : kpis ? (
             <KpiCardGrid
               cards={buildKpiCards(kpis)}
@@ -337,57 +338,11 @@ export default function ExecutiveAnalyticsPage() {
         </div>
 
         <div className="lg:col-span-12 xl:col-span-4">
-          <ChartCard
-            title="Defect rate by type (Whirlpool)"
-            description="Critical, Major, Minor"
-          >
-            <ChartContainer
-              config={defectChartConfig}
-              className="aspect-auto h-[280px] w-full"
-            >
-              <BarChart
-                data={defectByType}
-                layout="vertical"
-                margin={{ top: 8, right: 8, left: 40, bottom: 8 }}
-              >
-                <XAxis
-                  type="number"
-                  unit="%"
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="type"
-                  tickLine={false}
-                  axisLine={false}
-                  width={56}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      hideLabel
-                      className="min-w-[220px] gap-2 border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-                      formatter={(v, _name, item, _index, payload) => (
-                        <ExecutiveTooltipContent
-                          label={String(payload?.payload?.type || "Rate")}
-                          value={Number(v)}
-                          suffix="%"
-                          color={item.payload?.fill || item.color}
-                        />
-                      )}
-                    />
-                  }
-                />
-                <Bar
-                  dataKey="rate"
-                  fill="var(--color-rate)"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-          </ChartCard>
+          <ExecutiveDefectMixChart
+            items={defectMixItems}
+            totalDefects={defectMixTotal}
+            isLoading={defectMixLoading}
+          />
         </div>
       </div>
     </div>

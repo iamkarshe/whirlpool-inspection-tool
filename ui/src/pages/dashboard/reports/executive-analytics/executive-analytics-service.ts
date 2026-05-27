@@ -3,6 +3,7 @@
  */
 
 import { getReports } from "@/api/generated/reports/reports";
+import type { DefectsMixItem } from "@/api/generated/model/defectsMixItem";
 import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
 import type { InspectionType } from "@/api/generated/model/inspectionType";
 import {
@@ -133,6 +134,32 @@ export async function fetchExecutiveDefectsWarehouse(
       body,
     );
   return res.items;
+}
+
+export type ExecutiveDefectsMix = {
+  totalDefects: number;
+  items: DefectsMixItem[];
+};
+
+export async function fetchExecutiveDefectsMix(
+  filters: ExecutiveAnalyticsFilters,
+  dateRange: DateRange | undefined,
+  inspectionType: InspectionType,
+): Promise<ExecutiveDefectsMix> {
+  const body = executiveAnalyticsRequestBody(
+    filters,
+    dateRange,
+    inspectionType,
+  );
+  const reports = getReports();
+  const res =
+    await reports.postExecutiveAnalyticsDefectsMixApiReportsExecutiveAnalyticsDefectsMixPost(
+      body,
+    );
+  return {
+    totalDefects: res.total_defects,
+    items: res.items,
+  };
 }
 
 export async function getInspectionVolumeByLocation(
