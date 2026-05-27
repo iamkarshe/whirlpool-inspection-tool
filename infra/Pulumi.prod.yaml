@@ -12,5 +12,6 @@ config:
   whirlpool-pdi-infra:db_password:
     secure: v1:ST4CeBJTb4tFER/R:qvR5zBBtp6vdRflwMgUxyBppsnR5isB+UfjUJSdkuhY=
   whirlpool-pdi-infra:app_instance_type: t4g.small
-  whirlpool-pdi-infra:vpn_instance_type: t4g.nano
-  whirlpool-pdi-infra:rds_instance_class: db.t4g.micro
+  whirlpool-pdi-infra:vpn_instance_type: t4g.micro
+  whirlpool-pdi-infra:rds_instance_class: db.t4g.medium
+  whirlpool-pdi-infra:ssh_public_key_path: /home/karshe/.ssh/whirlpool_pdi_infra_ed25519.pub
