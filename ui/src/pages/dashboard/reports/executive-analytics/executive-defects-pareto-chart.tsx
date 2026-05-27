@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Target } from "lucide-react";
 import {
   Bar,
@@ -47,6 +47,19 @@ const paretoChartConfig = {
 } satisfies ChartConfig;
 
 const PARETO_THRESHOLD_PCT = 80;
+const PARETO_LINE_STROKE = "hsl(0 72% 51%)";
+const CUMULATIVE_AXIS_TICKS = [0, 25, 50, 75, 100];
+
+function clampPct(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, value));
+}
+
+/** Pareto cumulative must reach 100% on the last category (API rounding may leave 99.9). */
+function displayCumulativePct(value: number, isLastRow: boolean): number {
+  if (isLastRow) return 100;
+  return clampPct(value);
+}
 
 /** Swatch colors for tooltip (inline styles). */
 const SWATCH_BAR_COLOR = "hsl(217 91% 55%)";
@@ -76,6 +89,18 @@ const AXIS_TICK_LINE = {
 
 const FONT_MONO =
   'var(--font-mono, "DM Mono"), ui-monospace, SFMono-Regular, Menlo, monospace';
+
+const FONT_SANS =
+  'var(--font-sans, "Outfit"), ui-sans-serif, system-ui, sans-serif';
+
+const X_AXIS_LINE_HEIGHT = 13;
+const X_AXIS_MAX_WORD_LINES = 4;
+
+const X_AXIS_TICK_STYLE = {
+  fontSize: 11,
+  fill: "hsl(var(--muted-foreground))",
+  fontFamily: FONT_SANS,
+};
 
 const AXIS_TICK_STYLE = {
   fontSize: 11,
@@ -130,20 +155,71 @@ function DefectCountLabel(props: LabelProps) {
   );
 }
 
-/** Cumulative % — offset higher so it does not overlap the bar count label. */
+/** Split category name into one word per line (centered under each bar). */
+function splitCategoryWords(text: string): string[] {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [""];
+  if (words.length <= X_AXIS_MAX_WORD_LINES) return words;
+
+  const head = words.slice(0, X_AXIS_MAX_WORD_LINES - 1);
+  const remainder = words.slice(X_AXIS_MAX_WORD_LINES - 1).join(" ");
+  const last =
+    remainder.length > 14 ? `${remainder.slice(0, 13)}…` : remainder;
+  return [...head, last];
+}
+
+function CategoryAxisTick({
+  x,
+  y,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value?: string };
+}) {
+  if (x == null || y == null || payload?.value == null) return null;
+
+  const lines = splitCategoryWords(String(payload.value));
+  const centerX = Number(x);
+  const baseY = Number(y) + 10;
+
+  return (
+    <text
+      x={centerX}
+      y={baseY}
+      textAnchor="middle"
+      dominantBaseline="hanging"
+      style={X_AXIS_TICK_STYLE}
+    >
+      {lines.map((line, index) => (
+        <tspan key={`${line}-${index}`} x={centerX} dy={index === 0 ? 0 : X_AXIS_LINE_HEIGHT}>
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
+}
+
+/** Cumulative % — offset above the line point, within the chart top margin. */
 function CumulativePctLabel(props: LabelProps) {
   const { x, y, value, width } = props;
   if (x == null || y == null || value == null) return null;
   const barWidth = width != null ? Number(width) : 0;
   const centerX = barWidth > 0 ? Number(x) + barWidth / 2 : Number(x);
+  const pct = clampPct(Number(value));
+  /** Near 100% the line hugs the top — place label below the point instead. */
+  const placeBelow = pct >= 94;
+  const offsetY = placeBelow ? 18 : pct >= 80 ? 36 : 30;
+
   return (
     <text
       x={centerX}
-      y={Number(y) - 30}
+      y={placeBelow ? Number(y) + offsetY : Number(y) - offsetY}
       textAnchor="middle"
+      dominantBaseline={placeBelow ? "hanging" : "auto"}
       style={PCT_VALUE_LABEL_STYLE}
     >
-      {`${Number(value).toFixed(1)}%`}
+      {`${pct.toFixed(1)}%`}
     </text>
   );
 }
@@ -202,17 +278,13 @@ type ParetoChartRow = {
   within_pareto_80: boolean;
 };
 
-function truncateLabel(value: string, max: number) {
-  if (value.length <= max) return value;
-  return `${value.slice(0, max - 1)}…`;
-}
-
 function buildChartRows(items: DefectsParetoChartItem[]): ParetoChartRow[] {
-  return items.map((item) => ({
+  const lastIndex = items.length - 1;
+  return items.map((item, index) => ({
     type: item.section,
     defect_count: item.defect_count,
     pct_contribution: item.pct_contribution,
-    cumulative_pct: item.cumulative_pct,
+    cumulative_pct: displayCumulativePct(item.cumulative_pct, index === lastIndex),
     within_pareto_80: item.within_pareto_80,
   }));
 }
@@ -236,36 +308,88 @@ function buildKeyInsight(items: DefectsParetoChartItem[]) {
   return { count, names, cumulativePct };
 }
 
-function ParetoChartLegend() {
+function ParetoChartLegend({
+  showCumulative,
+  showParetoTarget,
+  onToggleCumulative,
+  onToggleParetoTarget,
+}: {
+  showCumulative: boolean;
+  showParetoTarget: boolean;
+  onToggleCumulative: () => void;
+  onToggleParetoTarget: () => void;
+}) {
   return (
-    <div className="mb-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-1 text-xs">
-      <span className="text-muted-foreground flex items-center gap-2">
+    <div className="mb-3 flex flex-wrap items-center justify-center gap-2 px-1">
+      <Badge
+        variant="secondary"
+        className="cursor-default gap-1.5 rounded-full px-2.5 py-1 font-normal"
+      >
         <span
-          className={cn("h-2.5 w-2.5 shrink-0 rounded-sm", SWATCH_BAR_CLASS)}
+          className={cn("h-2 w-2 shrink-0 rounded-sm", SWATCH_BAR_CLASS)}
           aria-hidden
         />
-        <span>Defect count</span>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
-          (left)
+        <span className="text-xs">Defect count</span>
+        <span className="font-mono text-[10px] uppercase tracking-wider opacity-70">
+          left
         </span>
-      </span>
-      <span className="text-muted-foreground flex items-center gap-2">
-        <span
-          className={cn("h-0.5 w-5 shrink-0 rounded-full", SWATCH_LINE_CLASS)}
-          aria-hidden
-        />
-        <span>Cumulative %</span>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
-          (right)
-        </span>
-      </span>
-      <span className="text-muted-foreground flex items-center gap-2">
-        <span
-          className="h-0 w-5 shrink-0 border-t-2 border-dashed border-destructive/80 dark:border-destructive"
-          aria-hidden
-        />
-        <span>80% Pareto target</span>
-      </span>
+      </Badge>
+
+      <button
+        type="button"
+        onClick={onToggleCumulative}
+        aria-pressed={showCumulative}
+        aria-label={`${showCumulative ? "Hide" : "Show"} cumulative percentage line`}
+        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        <Badge
+          variant={showCumulative ? "secondary" : "outline"}
+          className={cn(
+            "gap-1.5 rounded-full px-2.5 py-1 font-normal transition-opacity",
+            !showCumulative && "opacity-55",
+          )}
+        >
+          <span
+            className={cn(
+              "h-0.5 w-4 shrink-0 rounded-full",
+              SWATCH_LINE_CLASS,
+              !showCumulative && "opacity-40",
+            )}
+            aria-hidden
+          />
+          <span className="text-xs">Cumulative %</span>
+          <span className="font-mono text-[10px] uppercase tracking-wider opacity-70">
+            right
+          </span>
+        </Badge>
+      </button>
+
+      <button
+        type="button"
+        onClick={onToggleParetoTarget}
+        aria-pressed={showParetoTarget}
+        aria-label={`${showParetoTarget ? "Hide" : "Show"} 80% Pareto target line`}
+        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        <Badge
+          variant={showParetoTarget ? "secondary" : "outline"}
+          className={cn(
+            "gap-1.5 rounded-full px-2.5 py-1 font-normal transition-opacity",
+            !showParetoTarget && "opacity-55",
+          )}
+        >
+          <span
+            className={cn(
+              "h-0 w-4 shrink-0 border-t-2 border-dashed",
+              showParetoTarget
+                ? "border-[hsl(0_72%_51%)]"
+                : "border-muted-foreground/50",
+            )}
+            aria-hidden
+          />
+          <span className="text-xs">80% Pareto target</span>
+        </Badge>
+      </button>
     </div>
   );
 }
@@ -279,6 +403,9 @@ export function ExecutiveDefectsParetoChart({
   totalDefects: number;
   isLoading?: boolean;
 }) {
+  const [showCumulative, setShowCumulative] = useState(true);
+  const [showParetoTarget, setShowParetoTarget] = useState(true);
+
   const chartData = useMemo(() => buildChartRows(items), [items]);
   const keyInsight = useMemo(() => buildKeyInsight(items), [items]);
   const categoryCount = chartData.length;
@@ -291,21 +418,25 @@ export function ExecutiveDefectsParetoChart({
 
   const barSize = useMemo(() => {
     if (categoryCount <= 1) return 88;
-    if (categoryCount <= 3) return 64;
-    if (categoryCount <= 6) return 48;
-    return 36;
+    if (categoryCount <= 3) return 72;
+    if (categoryCount <= 6) return 56;
+    return 48;
   }, [categoryCount]);
 
-  const xAxisAngle = categoryCount > 5 ? -32 : 0;
-  const xAxisHeight = categoryCount > 5 ? 64 : 36;
-  const labelMax = categoryCount > 8 ? 10 : categoryCount > 4 ? 14 : 24;
+  const xAxisHeight = useMemo(() => {
+    const maxLines = Math.max(
+      1,
+      ...chartData.map((row) => splitCategoryWords(row.type).length),
+    );
+    return Math.min(12 + maxLines * X_AXIS_LINE_HEIGHT, 80);
+  }, [chartData]);
 
   const chartMargins = useMemo(
     () => ({
-      top: 20,
-      right: 4,
+      top: 52,
+      right: 8,
       left: 4,
-      bottom: xAxisHeight - 4,
+      bottom: xAxisHeight + 4,
     }),
     [xAxisHeight],
   );
@@ -318,7 +449,7 @@ export function ExecutiveDefectsParetoChart({
       contentClassName="space-y-5"
     >
       {isLoading ? (
-        <Skeleton className="h-[380px] w-full rounded-lg" />
+        <Skeleton className="h-[460px] w-full rounded-lg" />
       ) : chartData.length === 0 ? (
         <p className="text-muted-foreground py-16 text-center text-sm">
           No defect data for the selected filters and period.
@@ -326,11 +457,31 @@ export function ExecutiveDefectsParetoChart({
       ) : (
         <>
           <div className="rounded-xl border border-border/80 bg-muted/25 p-4 pt-3 shadow-sm dark:bg-card/40 dark:shadow-none dark:ring-1 dark:ring-border/60">
-            <ParetoChartLegend />
+            <ParetoChartLegend
+              showCumulative={showCumulative}
+              showParetoTarget={showParetoTarget}
+              onToggleCumulative={() => setShowCumulative((v) => !v)}
+              onToggleParetoTarget={() => setShowParetoTarget((v) => !v)}
+            />
+            <div className="relative overflow-hidden rounded-lg border border-border/60 bg-background/80">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.45] dark:opacity-[0.28]"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, hsl(var(--border) / 0.55) 1px, transparent 1px),
+                    linear-gradient(to bottom, hsl(var(--border) / 0.55) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "20px 20px",
+                }}
+                aria-hidden
+              />
             <ChartContainer
               config={paretoChartConfig}
               className={cn(
-                "aspect-auto h-[min(360px,50vh)] w-full min-h-[280px] pl-8 pr-10",
+                "relative z-[1] aspect-auto h-[min(460px,60vh)] w-full min-h-[420px] bg-transparent pl-8 pr-10",
+                "[&_.recharts-wrapper]:overflow-visible",
+                "[&_.recharts-surface]:overflow-visible",
+                "[&_.recharts-cartesian-grid]:opacity-90",
                 "[&_.recharts-cartesian-axis-line]:stroke-border",
                 "[&_.recharts-cartesian-axis-tick_line]:stroke-border",
                 "[&_.recharts-dot]:hidden",
@@ -341,28 +492,24 @@ export function ExecutiveDefectsParetoChart({
               <ComposedChart
                 data={chartData}
                 margin={chartMargins}
-                barCategoryGap={categoryCount <= 2 ? "28%" : "18%"}
-                barGap={4}
+                barCategoryGap={categoryCount <= 2 ? "18%" : "8%"}
+                barGap={2}
               >
                 <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
+                  strokeDasharray="0"
+                  vertical
+                  horizontal
                   stroke="hsl(var(--border))"
-                  strokeOpacity={0.55}
+                  strokeOpacity={0.65}
                 />
                 <XAxis
                   dataKey="type"
                   tickLine={AXIS_TICK_LINE}
                   axisLine={AXIS_LINE}
-                  tickMargin={10}
+                  tickMargin={4}
                   interval={0}
-                  angle={xAxisAngle}
-                  textAnchor={xAxisAngle ? "end" : "middle"}
                   height={xAxisHeight}
-                  tick={AXIS_TICK_STYLE}
-                  tickFormatter={(value) =>
-                    truncateLabel(String(value), labelMax)
-                  }
+                  tick={<CategoryAxisTick />}
                 />
                 <YAxis
                   yAxisId="left"
@@ -387,6 +534,8 @@ export function ExecutiveDefectsParetoChart({
                   axisLine={AXIS_LINE}
                   width={48}
                   domain={[0, 100]}
+                  allowDataOverflow={false}
+                  ticks={CUMULATIVE_AXIS_TICKS}
                   tick={AXIS_TICK_STYLE}
                   tickFormatter={(v) => `${v}%`}
                   label={{
@@ -404,35 +553,19 @@ export function ExecutiveDefectsParetoChart({
                   }}
                   content={<ParetoChartTooltip />}
                 />
-                <ReferenceLine
-                  yAxisId="right"
-                  y={PARETO_THRESHOLD_PCT}
-                  stroke="hsl(var(--destructive))"
-                  strokeDasharray="5 5"
-                  strokeWidth={2}
-                  strokeOpacity={0.9}
-                  label={{
-                    value: "80%",
-                    position: "insideTopRight",
-                    fill: "hsl(var(--destructive))",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    fontFamily: FONT_MONO,
-                  }}
-                />
                 <Bar
                   yAxisId="left"
                   dataKey="defect_count"
                   name="defect_count"
                   fill={CHART_BAR_FILL}
-                  fillOpacity={0.9}
+                  fillOpacity={0.82}
                   radius={[6, 6, 0, 0]}
                   barSize={barSize}
                   isAnimationActive={categoryCount <= 12}
                 >
                   <LabelList dataKey="defect_count" content={DefectCountLabel} />
                 </Bar>
-                {categoryCount >= 2 ? (
+                {showCumulative && categoryCount >= 2 ? (
                   <Line
                     yAxisId="right"
                     type="monotone"
@@ -452,8 +585,27 @@ export function ExecutiveDefectsParetoChart({
                     ) : null}
                   </Line>
                 ) : null}
+                {showParetoTarget ? (
+                  <ReferenceLine
+                    yAxisId="right"
+                    y={PARETO_THRESHOLD_PCT}
+                    stroke={PARETO_LINE_STROKE}
+                    strokeDasharray="6 4"
+                    strokeWidth={2.5}
+                    ifOverflow="visible"
+                    label={{
+                      value: "80%",
+                      position: "insideTopRight",
+                      fill: PARETO_LINE_STROKE,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      fontFamily: FONT_MONO,
+                    }}
+                  />
+                ) : null}
               </ComposedChart>
             </ChartContainer>
+            </div>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1fr_minmax(240px,300px)]">
@@ -478,7 +630,7 @@ export function ExecutiveDefectsParetoChart({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((row, index) => (
+                  {items.map((row, index, rows) => (
                     <TableRow
                       key={row.section}
                       className={cn(
@@ -504,7 +656,11 @@ export function ExecutiveDefectsParetoChart({
                           TABLE_LINE_TEXT,
                         )}
                       >
-                        {row.cumulative_pct.toFixed(1)}%
+                        {displayCumulativePct(
+                          row.cumulative_pct,
+                          index === rows.length - 1,
+                        ).toFixed(1)}
+                        %
                       </TableCell>
                     </TableRow>
                   ))}

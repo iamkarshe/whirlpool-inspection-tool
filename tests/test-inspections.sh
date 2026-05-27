@@ -93,6 +93,63 @@ TRUCK_NUMBERS=(
   "CG04LM5296"
 )
 
+# Checklist ids 1–17 (sort_order) — Outer Packaging, Inner Packaging, Product sections.
+DEFECT_CHECKLIST_IDS=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17)
+
+declare -A DEFECT_REMARKS=(
+  [1]="carton crushed on corner during unloading"
+  [2]="forklift handling marks on outer carton"
+  [3]="signs of re-taping on outer carton"
+  [4]="one strap loose on outer packaging"
+  [5]="MRP label torn and not fully legible"
+  [6]="serial number label missing"
+  [7]="energy rating label not present"
+  [8]="EPS foam cracked at corner"
+  [9]="machine protective cover torn"
+  [10]="dent and scratch on product body"
+  [11]="lid tray cracked inside unit"
+  [12]="gasket seal broken"
+  [13]="inlet hose missing from accessories"
+  [14]="outlet hose missing from accessories"
+  [15]="user manual not included"
+  [16]="warranty card missing"
+  [17]="installation kit incomplete"
+)
+
+declare -A DEFECT_CHECKLIST_LABELS=(
+  [1]="Outer Packaging / Carton — condition"
+  [2]="Outer Packaging / Carton — forklift marks"
+  [3]="Outer Packaging / Carton — re-taping"
+  [4]="Outer Packaging / Straps"
+  [5]="Outer Packaging / Labels — MRP"
+  [6]="Outer Packaging / Labels — serial"
+  [7]="Outer Packaging / Labels — energy rating"
+  [8]="Inner Packaging — EPS foam"
+  [9]="Inner Packaging — protective cover"
+  [10]="Product / Body outside"
+  [11]="Product / Internal"
+  [12]="Product / Seals"
+  [13]="Product / Accessories — inlet hose"
+  [14]="Product / Accessories — outlet hose"
+  [15]="Product / Accessories — user manual"
+  [16]="Product / Accessories — warranty card"
+  [17]="Product / Accessories — installation kit"
+)
+
+damage_type_for_checklist_id() {
+  local checklist_id="$1"
+
+  if [[ "$checklist_id" -le 12 ]]; then
+    if [[ "$checklist_id" -le 9 ]]; then
+      echo "packaging"
+    else
+      echo "cosmetic"
+    fi
+  else
+    echo "accessories"
+  fi
+}
+
 require_command() {
   local command_name="$1"
 
@@ -141,10 +198,6 @@ else
   plant_code=""
 fi
 
-damage_type="$(pick_random DAMAGE_TYPES)"
-damage_severity="$(pick_random DAMAGE_SEVERITIES)"
-damage_cause="$(pick_random DAMAGE_CAUSES)"
-damage_grade="$(pick_random DAMAGE_GRADES)"
 truck_number="$(pick_random TRUCK_NUMBERS)"
 device_time_taken=$((90 + RANDOM % 211))
 
@@ -153,6 +206,13 @@ random_chance=$((RANDOM % 100))
 if [[ "$random_chance" -lt 60 ]]; then
   selected_payload_file="$DEFECT_PAYLOAD_FILE"
   is_defective="true"
+  defect_checklist_id="$(pick_random DEFECT_CHECKLIST_IDS)"
+  defect_remarks="${DEFECT_REMARKS[$defect_checklist_id]}"
+  defect_checklist_label="${DEFECT_CHECKLIST_LABELS[$defect_checklist_id]}"
+  damage_type="$(damage_type_for_checklist_id "$defect_checklist_id")"
+  damage_severity="$(pick_random DAMAGE_SEVERITIES)"
+  damage_cause="$(pick_random DAMAGE_CAUSES)"
+  damage_grade="$(pick_random DAMAGE_GRADES)"
 else
   selected_payload_file="$GOOD_PAYLOAD_FILE"
   is_defective="false"
@@ -168,10 +228,14 @@ else
 fi
 echo "Selected payload: $selected_payload_file"
 echo "Defective: $is_defective"
-echo "Damage type: $damage_type"
-echo "Damage severity: $damage_severity"
-echo "Damage cause: $damage_cause"
-echo "Damage grade: $damage_grade"
+if [[ "$is_defective" == "true" ]]; then
+  echo "Defect checklist id: $defect_checklist_id ($defect_checklist_label)"
+  echo "Defect remarks: $defect_remarks"
+  echo "Damage type: $damage_type"
+  echo "Damage severity: $damage_severity"
+  echo "Damage cause: $damage_cause"
+  echo "Damage grade: $damage_grade"
+fi
 echo "Truck number: $truck_number"
 echo "Device time taken: ${device_time_taken}s"
 
@@ -220,6 +284,8 @@ apply_runtime_fields() {
 if [[ "$is_defective" == "true" ]]; then
   apply_runtime_fields "$selected_payload_file" \
     | jq \
+      --argjson defect_checklist_id "$defect_checklist_id" \
+      --arg defect_remarks "$defect_remarks" \
       --arg damage_type "$damage_type" \
       --arg damage_severity "$damage_severity" \
       --arg damage_cause "$damage_cause" \
@@ -229,6 +295,30 @@ if [[ "$is_defective" == "true" ]]; then
       | .damage_severity = $damage_severity
       | .damage_cause = $damage_cause
       | .damage_grade = $damage_grade
+      | . as $root
+      | .checklist_answers = (
+          .checklist_answers
+          | map(
+              if .id == $defect_checklist_id then
+                {
+                  id: .id,
+                  value: "no",
+                  remarks: $defect_remarks,
+                  image_path: [
+                    if $defect_checklist_id <= 7 then
+                      $root.outer_packaging_side_images[0]
+                    elif $defect_checklist_id <= 9 then
+                      $root.inner_packaging_side_images[0]
+                    else
+                      $root.product_side_images[0]
+                    end
+                  ]
+                }
+              else
+                { id: .id, value: "yes" }
+              end
+            )
+        )
       ' >"$RUNTIME_PAYLOAD_FILE"
 else
   apply_runtime_fields "$selected_payload_file" \

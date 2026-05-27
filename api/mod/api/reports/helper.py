@@ -430,6 +430,10 @@ def executive_defects_pareto_chart(
             )
         )
 
+    if items:
+        last = items[-1]
+        items[-1] = last.model_copy(update={"cumulative_pct": 100.0})
+
     return DefectsParetoChartResponse(
         date_from=date_from,
         date_to=date_to,
