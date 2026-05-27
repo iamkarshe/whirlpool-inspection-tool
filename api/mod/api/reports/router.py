@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -6,11 +5,18 @@ from sqlalchemy.orm import Session
 
 from mod.api.middleware import auth_dependency
 from mod.api.reports.helper import (
+    analytics_scope_from_request,
+    build_kpi_parameters,
+    executive_analytics_counts,
     operations_analytics_counts,
     operations_trend_data,
     resolve_scope_codes,
+    validate_analytics_date_range,
 )
+from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.api.reports.response import (
+    ExecutiveAnalyticsResponse,
+    KpiParametersResponse,
     OperationsAnalyticsResponse,
     OperationsTrendResponse,
 )
@@ -25,43 +31,75 @@ router = APIRouter(
 
 
 @router.get(
+    "/reports/kpi-parameters",
+    name="get_kpi_parameters",
+    response_model=KpiParametersResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def get_kpi_parameters(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    return build_kpi_parameters(db)
+
+
+@router.post(
+    "/reports/executive-analytics",
+    name="post_executive_analytics",
+    response_model=ExecutiveAnalyticsResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_executive_analytics(
+    request: Request,
+    body: OperationsAnalyticsRequest,
+    is_active: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    validate_analytics_date_range(body.date_from, body.date_to)
+    scope = analytics_scope_from_request(db, body)
+    counts = executive_analytics_counts(
+        db,
+        is_active=is_active,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        plant_codes=None,
+        **scope,
+    )
+    return ExecutiveAnalyticsResponse(
+        date_from=body.date_from,
+        date_to=body.date_to,
+        **counts,
+    )
+
+
+@router.post(
     "/reports/operations-analytics",
-    name="get_operations_analytics",
+    name="post_operations_analytics",
     response_model=OperationsAnalyticsResponse,
 )
 @exception_handler_decorator
 @check_api_role(["superadmin", "manager"])
-def get_operations_analytics(
+def post_operations_analytics(
     request: Request,
-    date_from: date | None = Query(None, description="Range start date (UTC)"),
-    date_to: date | None = Query(None, description="Range end date (UTC, inclusive)"),
-    warehouse_uuid: uuid.UUID | None = Query(None),
-    plant_uuid: uuid.UUID | None = Query(None),
+    body: OperationsAnalyticsRequest,
     is_active: bool = Query(True),
     db: Session = Depends(get_db),
 ):
-    if (date_from is None) ^ (date_to is None):
-        raise HTTPException(
-            status_code=400,
-            detail="date_from and date_to must both be set or both omitted",
-        )
-    if date_from is not None and date_to is not None and date_to < date_from:
-        raise HTTPException(
-            status_code=400, detail="date_to must be on or after date_from"
-        )
-
-    warehouse_code, plant_code = resolve_scope_codes(db, warehouse_uuid, plant_uuid)
+    validate_analytics_date_range(body.date_from, body.date_to)
+    scope = analytics_scope_from_request(db, body)
     counts = operations_analytics_counts(
         db,
         is_active=is_active,
-        date_from=date_from,
-        date_to=date_to,
-        warehouse_code=warehouse_code,
-        plant_code=plant_code,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        plant_codes=None,
+        **scope,
     )
     return OperationsAnalyticsResponse(
-        date_from=date_from,
-        date_to=date_to,
+        date_from=body.date_from,
+        date_to=body.date_to,
         **counts,
     )
 
@@ -77,8 +115,8 @@ def get_operations_trend(
     request: Request,
     date_from: date = Query(..., description="Range start date (UTC)"),
     date_to: date = Query(..., description="Range end date (UTC, inclusive)"),
-    warehouse_uuid: uuid.UUID | None = Query(None),
-    plant_uuid: uuid.UUID | None = Query(None),
+    warehouse_id: int | None = Query(None),
+    plant_id: int | None = Query(None),
     is_active: bool = Query(True),
     db: Session = Depends(get_db),
 ):
@@ -86,7 +124,7 @@ def get_operations_trend(
         raise HTTPException(
             status_code=400, detail="date_to must be on or after date_from"
         )
-    warehouse_code, plant_code = resolve_scope_codes(db, warehouse_uuid, plant_uuid)
+    warehouse_code, plant_code = resolve_scope_codes(db, warehouse_id, plant_id)
     payload = operations_trend_data(
         db,
         date_from=date_from,

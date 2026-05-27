@@ -1,6 +1,8 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from mod.api.inspection.response import InspectionDropdownOption
 
 
 class OperationsAnalyticsResponse(BaseModel):
@@ -49,3 +51,28 @@ class OperationsTrendResponse(BaseModel):
     date_to: date
     by_warehouse: list[OperationsTrendWarehouseItem]
     weekly_trend: list[OperationsTrendBucketItem]
+
+
+class ExecutiveAnalyticsResponse(BaseModel):
+    date_from: date | None = None
+    date_to: date | None = None
+    inspection_volume: int = Field(..., description="Total inspections.")
+    damaged_inspections: int = Field(..., description="Damaged inspections.")
+    defect_rate_pct: float = Field(..., description="Defect rate percent.")
+    avg_inspection_time_min: float = Field(..., description="Average inspection time.")
+    pending_approvals: int = Field(..., description="Pending approvals.")
+
+
+class KpiParametersResponse(BaseModel):
+    """Filter dropdown options for reports."""
+
+    warehouses: list[InspectionDropdownOption] = Field(
+        ..., description="Active warehouses."
+    )
+    plants: list[InspectionDropdownOption] = Field(..., description="Active plants.")
+    product_category: list[InspectionDropdownOption] = Field(
+        ..., description="Product categories."
+    )
+    gradings: list[InspectionDropdownOption] = Field(
+        ..., description="Damage gradings."
+    )

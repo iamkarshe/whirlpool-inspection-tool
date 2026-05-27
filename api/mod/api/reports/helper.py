@@ -1,10 +1,14 @@
 from datetime import date, timedelta
 
 from fastapi import HTTPException
-from sqlalchemy import and_, case, func
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session
 
+from mod.api.inspection.response import InspectionDropdownOption
+from mod.api.reports.request import OperationsAnalyticsRequest
+from mod.api.reports.response import KpiParametersResponse
 from mod.model import (
+    DamageGrading,
     Inspection,
     InspectionInput,
     InspectionInputReviewStatus,
@@ -12,40 +16,252 @@ from mod.model import (
     InspectionType,
     Log,
     Plant,
+    ProductCategory,
     Warehouse,
 )
 from utils.common import utc_end_exclusive_day_range
 
 
+def build_kpi_parameters(db: Session) -> KpiParametersResponse:
+    warehouse_rows = (
+        db.query(Warehouse.id, Warehouse.warehouse_code, Warehouse.name)
+        .filter(Warehouse.is_active.is_(True))
+        .order_by(Warehouse.warehouse_code.asc())
+        .all()
+    )
+    plant_rows = (
+        db.query(Plant.id, Plant.plant_code, Plant.name)
+        .filter(Plant.is_active.is_(True))
+        .order_by(Plant.plant_code.asc())
+        .all()
+    )
+    category_rows = (
+        db.query(
+            ProductCategory.id,
+            ProductCategory.category_type,
+            ProductCategory.sub_category_type,
+        )
+        .filter(ProductCategory.is_active.is_(True))
+        .order_by(
+            ProductCategory.category_type.asc(),
+            ProductCategory.sub_category_type.asc(),
+        )
+        .all()
+    )
+    return KpiParametersResponse(
+        warehouses=[
+            InspectionDropdownOption(
+                value=str(row.id),
+                label=f"{row.warehouse_code} - {row.name}",
+            )
+            for row in warehouse_rows
+        ],
+        plants=[
+            InspectionDropdownOption(
+                value=str(row.id),
+                label=f"{row.plant_code} - {row.name}",
+            )
+            for row in plant_rows
+        ],
+        product_category=[
+            InspectionDropdownOption(
+                value=str(row.id),
+                label=f"{row.category_type} - {row.sub_category_type}",
+            )
+            for row in category_rows
+        ],
+        gradings=[
+            InspectionDropdownOption(value=e.value, label=e.value)
+            for e in DamageGrading
+        ],
+    )
+
+
 def resolve_scope_codes(
     db: Session,
-    warehouse_uuid,
-    plant_uuid,
+    warehouse_id: int | None,
+    plant_id: int | None,
 ) -> tuple[str | None, str | None]:
     warehouse_code = None
     plant_code = None
 
-    if warehouse_uuid is not None:
-        warehouse = (
-            db.query(Warehouse)
-            .filter(Warehouse.uuid == warehouse_uuid, Warehouse.is_active.is_(True))
-            .first()
+    if warehouse_id is not None:
+        warehouse_code = (
+            db.query(Warehouse.warehouse_code)
+            .filter(Warehouse.id == warehouse_id, Warehouse.is_active.is_(True))
+            .scalar()
         )
-        if warehouse is None:
+        if warehouse_code is None:
             raise HTTPException(status_code=404, detail="Warehouse not found")
-        warehouse_code = warehouse.warehouse_code
 
-    if plant_uuid is not None:
-        plant = (
-            db.query(Plant)
-            .filter(Plant.uuid == plant_uuid, Plant.is_active.is_(True))
-            .first()
+    if plant_id is not None:
+        plant_code = (
+            db.query(Plant.plant_code)
+            .filter(Plant.id == plant_id, Plant.is_active.is_(True))
+            .scalar()
         )
-        if plant is None:
+        if plant_code is None:
             raise HTTPException(status_code=404, detail="Plant not found")
-        plant_code = plant.plant_code
 
     return warehouse_code, plant_code
+
+
+def validate_analytics_date_range(
+    date_from: date | None,
+    date_to: date | None,
+) -> None:
+    if (date_from is None) ^ (date_to is None):
+        raise HTTPException(
+            status_code=400,
+            detail="date_from and date_to must both be set or both omitted",
+        )
+    if date_from is not None and date_to is not None and date_to < date_from:
+        raise HTTPException(
+            status_code=400, detail="date_to must be on or after date_from"
+        )
+
+
+def analytics_scope_from_request(
+    db: Session,
+    body: OperationsAnalyticsRequest,
+) -> dict:
+    return {
+        "warehouse_codes": resolve_warehouse_codes(db, body.warehouse) or None,
+        "product_category_ids": resolve_product_category_ids(db, body.product_category)
+        or None,
+        "inspection_type": body.inspection_type,
+        "damage_grading": body.grading,
+    }
+
+
+def resolve_warehouse_codes(db: Session, warehouse_ids: list[int]) -> list[str]:
+    if not warehouse_ids:
+        return []
+    unique_ids = list(dict.fromkeys(warehouse_ids))
+    rows = (
+        db.query(Warehouse.warehouse_code)
+        .filter(Warehouse.id.in_(unique_ids), Warehouse.is_active.is_(True))
+        .all()
+    )
+    if len(rows) != len(unique_ids):
+        raise HTTPException(status_code=422, detail="Unknown warehouse id(s)")
+    return [row.warehouse_code for row in rows]
+
+
+def resolve_product_category_ids(db: Session, category_ids: list[int]) -> list[int]:
+    if not category_ids:
+        return []
+    unique_ids = list(dict.fromkeys(category_ids))
+    found = (
+        db.query(ProductCategory.id)
+        .filter(ProductCategory.id.in_(unique_ids), ProductCategory.is_active.is_(True))
+        .count()
+    )
+    if found != len(unique_ids):
+        raise HTTPException(status_code=422, detail="Unknown product category id(s)")
+    return unique_ids
+
+
+def inspection_analytics_filters(
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_ids: list[int] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
+) -> list:
+    filters = [Inspection.is_active.is_(is_active)]
+    if warehouse_codes:
+        filters.append(Inspection.warehouse_code.in_(warehouse_codes))
+    if plant_codes:
+        filters.append(Inspection.supplier_plant_code.in_(plant_codes))
+    if product_category_ids:
+        filters.append(Inspection.product_category_id.in_(product_category_ids))
+    if inspection_type is not None:
+        filters.append(Inspection.inspection_type == inspection_type)
+    if damage_grading is not None:
+        filters.append(Inspection.damage_grading == damage_grading)
+    if date_from is not None and date_to is not None:
+        start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
+        filters.extend(
+            [Inspection.created_at >= start, Inspection.created_at < end_exclusive]
+        )
+    return filters
+
+
+def damaged_inspection_condition():
+    return or_(
+        Inspection.damage_type.isnot(None),
+        Inspection.damage_severity.isnot(None),
+        Inspection.damage_grading.isnot(None),
+    )
+
+
+def executive_analytics_counts(
+    db: Session,
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_ids: list[int] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
+) -> dict[str, int | float]:
+    inspection_filters = inspection_analytics_filters(
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_ids=product_category_ids,
+        inspection_type=inspection_type,
+        damage_grading=damage_grading,
+    )
+    damaged = damaged_inspection_condition()
+    row = (
+        db.query(
+            func.count(Inspection.id).label("total"),
+            func.sum(case((damaged, 1), else_=0)).label("damaged"),
+            func.avg(
+                case(
+                    (Inspection.device_time_taken > 0, Inspection.device_time_taken),
+                    else_=None,
+                )
+            ).label("avg_time_sec"),
+            func.sum(
+                case(
+                    (
+                        Inspection.review_status.in_(
+                            [
+                                InspectionReviewStatus.PENDING,
+                                InspectionReviewStatus.IN_REVIEW,
+                            ]
+                        ),
+                        1,
+                    ),
+                    else_=0,
+                )
+            ).label("pending"),
+        )
+        .filter(*inspection_filters)
+        .one()
+    )
+    total = int(row.total or 0)
+    damaged_count = int(row.damaged or 0)
+    defect_rate_pct = (damaged_count / total * 100.0) if total > 0 else 0.0
+    avg_sec = float(row.avg_time_sec or 0)
+    return {
+        "inspection_volume": total,
+        "damaged_inspections": damaged_count,
+        "defect_rate_pct": round(defect_rate_pct, 1),
+        "avg_inspection_time_min": round(avg_sec / 60.0, 1),
+        "pending_approvals": int(row.pending or 0),
+    }
 
 
 def operations_analytics_counts(
@@ -54,19 +270,22 @@ def operations_analytics_counts(
     is_active: bool,
     date_from: date | None,
     date_to: date | None,
-    warehouse_code: str | None,
-    plant_code: str | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_ids: list[int] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
 ) -> dict[str, int | float]:
-    inspection_filters = [Inspection.is_active.is_(is_active)]
-    if warehouse_code is not None:
-        inspection_filters.append(Inspection.warehouse_code == warehouse_code)
-    if plant_code is not None:
-        inspection_filters.append(Inspection.supplier_plant_code == plant_code)
-    if date_from is not None and date_to is not None:
-        start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
-        inspection_filters.extend(
-            [Inspection.created_at >= start, Inspection.created_at < end_exclusive]
-        )
+    inspection_filters = inspection_analytics_filters(
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_ids=product_category_ids,
+        inspection_type=inspection_type,
+        damage_grading=damage_grading,
+    )
 
     inspection_agg = db.query(
         func.count(Inspection.id).label("total"),
@@ -92,7 +311,10 @@ def operations_analytics_counts(
             case(
                 (
                     Inspection.review_status.in_(
-                        [InspectionReviewStatus.PENDING, InspectionReviewStatus.IN_REVIEW]
+                        [
+                            InspectionReviewStatus.PENDING,
+                            InspectionReviewStatus.IN_REVIEW,
+                        ]
                     ),
                     1,
                 ),
@@ -202,21 +424,11 @@ def operations_analytics_counts(
         db.query(InspectionInput.inspection_id)
         .join(Inspection, Inspection.id == InspectionInput.inspection_id)
         .filter(
-            Inspection.is_active.is_(is_active),
             InspectionInput.is_active.is_(is_active),
             InspectionInput.input_review_status == InspectionInputReviewStatus.FLAGGED,
+            *inspection_filters,
         )
     )
-    if warehouse_code is not None:
-        flagged = flagged.filter(Inspection.warehouse_code == warehouse_code)
-    if plant_code is not None:
-        flagged = flagged.filter(Inspection.supplier_plant_code == plant_code)
-    if date_from is not None and date_to is not None:
-        start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
-        flagged = flagged.filter(
-            Inspection.created_at >= start,
-            Inspection.created_at < end_exclusive,
-        )
     flagged_count = flagged.distinct().count()
 
     login_query = db.query(Log).filter(
@@ -277,9 +489,13 @@ def operations_trend_data(
         Inspection.created_at < end_exclusive,
     )
     if warehouse_code is not None:
-        inspections_base = inspections_base.filter(Inspection.warehouse_code == warehouse_code)
+        inspections_base = inspections_base.filter(
+            Inspection.warehouse_code == warehouse_code
+        )
     if plant_code is not None:
-        inspections_base = inspections_base.filter(Inspection.supplier_plant_code == plant_code)
+        inspections_base = inspections_base.filter(
+            Inspection.supplier_plant_code == plant_code
+        )
 
     warehouses = (
         db.query(Warehouse)
@@ -310,9 +526,13 @@ def operations_trend_data(
         .group_by(Inspection.warehouse_code)
     )
     if warehouse_code is not None:
-        inspection_rows = inspection_rows.filter(Inspection.warehouse_code == warehouse_code)
+        inspection_rows = inspection_rows.filter(
+            Inspection.warehouse_code == warehouse_code
+        )
     if plant_code is not None:
-        inspection_rows = inspection_rows.filter(Inspection.supplier_plant_code == plant_code)
+        inspection_rows = inspection_rows.filter(
+            Inspection.supplier_plant_code == plant_code
+        )
     inspection_stats = {
         row.warehouse_code: {
             "total": int(row.total or 0),
