@@ -63,6 +63,19 @@ class DefectsParetoChartItem(BaseModel):
     )
 
 
+class DefectsMixItem(BaseModel):
+    grading: str = Field(..., description="Damage grading.")
+    defect_count: int = Field(..., description="Inspection count.")
+    pct_contribution: float = Field(..., description="Share of graded defects.")
+
+
+class DefectsMixResponse(BaseModel):
+    date_from: date | None = None
+    date_to: date | None = None
+    total_defects: int = Field(..., description="Inspections with damage grading.")
+    items: list[DefectsMixItem] = Field(..., description="Defect mix by grading.")
+
+
 class DefectsParetoChartResponse(BaseModel):
     date_from: date | None = None
     date_to: date | None = None

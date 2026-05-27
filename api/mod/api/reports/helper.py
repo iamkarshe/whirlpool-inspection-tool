@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from mod.api.inspection.response import InspectionDropdownOption
 from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.api.reports.response import (
+    DefectsMixItem,
+    DefectsMixResponse,
     DefectsParetoChartItem,
     DefectsParetoChartResponse,
     KpiParametersResponse,
@@ -365,6 +367,63 @@ def executive_defects_pareto_chart(
         )
 
     return DefectsParetoChartResponse(
+        date_from=date_from,
+        date_to=date_to,
+        total_defects=total_defects,
+        items=items,
+    )
+
+
+def executive_defects_mix(
+    db: Session,
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_ids: list[int] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
+) -> DefectsMixResponse:
+    inspection_filters = inspection_analytics_filters(
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_ids=product_category_ids,
+        inspection_type=inspection_type,
+        damage_grading=None,
+    )
+    rows = (
+        db.query(
+            Inspection.damage_grading.label("grading"),
+            func.count(Inspection.id).label("defect_count"),
+        )
+        .filter(
+            *inspection_filters,
+            Inspection.damage_grading.isnot(None),
+        )
+        .group_by(Inspection.damage_grading)
+        .all()
+    )
+    counts_by_grading = {
+        row.grading: int(row.defect_count or 0) for row in rows if row.grading is not None
+    }
+    total_defects = sum(counts_by_grading.values())
+    items = []
+    for grading in DamageGrading:
+        count = counts_by_grading.get(grading, 0)
+        pct = round(count / total_defects * 100.0, 1) if total_defects > 0 else 0.0
+        items.append(
+            DefectsMixItem(
+                grading=grading.value,
+                defect_count=count,
+                pct_contribution=pct,
+            )
+        )
+    return DefectsMixResponse(
         date_from=date_from,
         date_to=date_to,
         total_defects=total_defects,

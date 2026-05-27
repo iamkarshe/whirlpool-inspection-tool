@@ -8,6 +8,7 @@ from mod.api.reports.helper import (
     analytics_scope_from_request,
     build_kpi_parameters,
     executive_analytics_counts,
+    executive_defects_mix,
     executive_defects_pareto_chart,
     operations_analytics_counts,
     operations_trend_data,
@@ -16,6 +17,7 @@ from mod.api.reports.helper import (
 )
 from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.api.reports.response import (
+    DefectsMixResponse,
     DefectsParetoChartResponse,
     ExecutiveAnalyticsResponse,
     KpiParametersResponse,
@@ -91,6 +93,31 @@ def post_executive_analytics_defects_pareto_chart(
     validate_analytics_date_range(body.date_from, body.date_to)
     scope = analytics_scope_from_request(db, body)
     return executive_defects_pareto_chart(
+        db,
+        is_active=is_active,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        **scope,
+    )
+
+
+@router.post(
+    "/reports/executive-analytics/defects-mix",
+    name="post_executive_analytics_defects_mix",
+    response_model=DefectsMixResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_executive_analytics_defects_mix(
+    request: Request,
+    body: OperationsAnalyticsRequest,
+    is_active: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    validate_analytics_date_range(body.date_from, body.date_to)
+    scope = analytics_scope_from_request(db, body)
+    scope["damage_grading"] = None
+    return executive_defects_mix(
         db,
         is_active=is_active,
         date_from=body.date_from,

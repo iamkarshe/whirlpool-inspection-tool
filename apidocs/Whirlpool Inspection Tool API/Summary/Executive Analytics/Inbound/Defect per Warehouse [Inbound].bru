@@ -1,0 +1,22 @@
+meta {
+  name: Defect per Warehouse [Inbound]
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/reports/executive-analytics/defects-warehouse
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "date_from": "2026-05-01",
+    "date_to": "2026-05-07",
+    "type": "inbound",
+    "plant": [1, 2],
+    "product_category": [1, 2],
+    "grading": "DGR"
+  }
+}
