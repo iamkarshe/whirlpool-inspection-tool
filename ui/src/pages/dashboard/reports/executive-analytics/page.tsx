@@ -45,6 +45,7 @@ import type { DateRange } from "react-day-picker";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 function buildKpiCards(kpis: ExecutiveAnalyticsKpis): KpiCardProps[] {
   return [
@@ -246,6 +247,12 @@ export default function ExecutiveAnalyticsPage() {
   }, [dateRange, filters, inspectionType]);
 
   useEffect(() => {
+    if (inspectionType !== InspectionType.inbound) {
+      setPlantDefects([]);
+      setPlantLoading(false);
+      return;
+    }
+
     const controller = new AbortController();
     setPlantLoading(true);
     setPlantDefects([]);
@@ -276,6 +283,8 @@ export default function ExecutiveAnalyticsPage() {
       controller.abort();
     };
   }, [dateRange, filters, inspectionType]);
+
+  const showPlantDefects = inspectionType === InspectionType.inbound;
 
   useEffect(() => {
     let cancelled = false;
@@ -410,7 +419,12 @@ export default function ExecutiveAnalyticsPage() {
           isLoading={paretoLoading}
         />
 
-        <div className="lg:col-span-12">
+        <div
+          className={cn(
+            "lg:col-span-12",
+            !showPlantDefects && "xl:col-span-8",
+          )}
+        >
           <ChartCard
             title="Warehouse defects"
             description="Inspection and grading breakdown by warehouse"
@@ -424,19 +438,21 @@ export default function ExecutiveAnalyticsPage() {
           </ChartCard>
         </div>
 
-        <div className="lg:col-span-12 xl:col-span-8">
-          <ChartCard
-            title="Plant defects"
-            description="Inspection and grading breakdown by plant"
-            contentClassName="pt-0"
-          >
-            <ExecutivePlantDefectsTable
-              key={inspectionType}
-              data={plantDefects}
-              isLoading={plantLoading}
-            />
-          </ChartCard>
-        </div>
+        {showPlantDefects ? (
+          <div className="lg:col-span-12 xl:col-span-8">
+            <ChartCard
+              title="Plant defects"
+              description="Inspection and grading breakdown by plant"
+              contentClassName="pt-0"
+            >
+              <ExecutivePlantDefectsTable
+                key={inspectionType}
+                data={plantDefects}
+                isLoading={plantLoading}
+              />
+            </ChartCard>
+          </div>
+        ) : null}
 
         <div className="lg:col-span-12 xl:col-span-4">
           <ExecutiveDefectMixChart
