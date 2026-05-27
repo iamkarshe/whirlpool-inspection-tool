@@ -20,7 +20,7 @@ Think of it like a **school ID office**: you sign up a student (device), they ge
 
 ---
 
-## How it works (simple picture)
+## How it works
 
 ```mermaid
 flowchart TD
