@@ -1,0 +1,16 @@
+encryptionsalt: v1:aIkoK2rQUEU=:v1:U153B4lUPxwg8Sdk:glZGF4Ipm+Qif2AvaQDVIwCptn4+xA==
+config:
+  aws:profile: whirlpool-pdi-infra
+  aws:region: ap-south-1
+  whirlpool-pdi-infra:project_name: whirlpool-pdi
+  whirlpool-pdi-infra:environment: prod
+  whirlpool-pdi-infra:customer: whirlpool
+  whirlpool-pdi-infra:owner: scoptanalytics
+  whirlpool-pdi-infra:domain_name: whirlpool-pdi-prod.scoptanalytics.in
+  whirlpool-pdi-infra:db_name: whirlpool_pdi
+  whirlpool-pdi-infra:db_username: pdi_admin
+  whirlpool-pdi-infra:db_password:
+    secure: v1:ST4CeBJTb4tFER/R:qvR5zBBtp6vdRflwMgUxyBppsnR5isB+UfjUJSdkuhY=
+  whirlpool-pdi-infra:app_instance_type: t4g.small
+  whirlpool-pdi-infra:vpn_instance_type: t4g.nano
+  whirlpool-pdi-infra:rds_instance_class: db.t4g.micro

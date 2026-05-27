@@ -1,0 +1,7 @@
+name: whirlpool-pdi-infra
+description: AWS infrastructure for Whirlpool PDI production deployment
+runtime:
+  name: python
+  options:
+    toolchain: uv
+    virtualenv: .venv
