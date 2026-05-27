@@ -38,8 +38,8 @@ set -e
 apt-get update
 apt-get install -y wireguard qrencode iptables-persistent
 
-sysctl -w net.ipv4.ip_forward=1
-sed -i 's/^#\\?net.ipv4.ip_forward=.*/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-wireguard.conf
+sysctl --system
 
 mkdir -p /etc/wireguard
 chmod 700 /etc/wireguard
@@ -50,6 +50,47 @@ fi
 
 chmod 600 /etc/wireguard/server_private.key
 
+cat > /usr/local/sbin/wg-setup-nat <<'SCRIPT'
+#!/bin/bash
+set -e
+
+VPN_CIDR="10.44.0.0/24"
+VPC_TEST_IP="10.20.1.206"
+OUT_IF="$(ip route get "$VPC_TEST_IP" | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1); exit}')"
+
+if [ -z "$OUT_IF" ]; then
+    OUT_IF="$(ip route show default | awk '{print $5; exit}')"
+fi
+
+iptables -C FORWARD -i wg0 -j ACCEPT 2>/dev/null || iptables -A FORWARD -i wg0 -j ACCEPT
+iptables -C FORWARD -o wg0 -j ACCEPT 2>/dev/null || iptables -A FORWARD -o wg0 -j ACCEPT
+iptables -t nat -C POSTROUTING -s "$VPN_CIDR" -o "$OUT_IF" -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -s "$VPN_CIDR" -o "$OUT_IF" -j MASQUERADE
+
+netfilter-persistent save || true
+SCRIPT
+
+cat > /usr/local/sbin/wg-cleanup-nat <<'SCRIPT'
+#!/bin/bash
+set -e
+
+VPN_CIDR="10.44.0.0/24"
+VPC_TEST_IP="10.20.1.206"
+OUT_IF="$(ip route get "$VPC_TEST_IP" | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1); exit}')"
+
+if [ -z "$OUT_IF" ]; then
+    OUT_IF="$(ip route show default | awk '{print $5; exit}')"
+fi
+
+iptables -D FORWARD -i wg0 -j ACCEPT 2>/dev/null || true
+iptables -D FORWARD -o wg0 -j ACCEPT 2>/dev/null || true
+iptables -t nat -D POSTROUTING -s "$VPN_CIDR" -o "$OUT_IF" -j MASQUERADE 2>/dev/null || true
+
+netfilter-persistent save || true
+SCRIPT
+
+chmod +x /usr/local/sbin/wg-setup-nat
+chmod +x /usr/local/sbin/wg-cleanup-nat
+
 SERVER_PRIVATE_KEY=$(cat /etc/wireguard/server_private.key)
 
 cat > /etc/wireguard/wg0.conf <<WG
@@ -58,8 +99,8 @@ Address = 10.44.0.1/24
 ListenPort = 51820
 PrivateKey = $SERVER_PRIVATE_KEY
 SaveConfig = false
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -s 10.44.0.0/24 -o eth0 -j MASQUERADE
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -s 10.44.0.0/24 -o eth0 -j MASQUERADE
+PostUp = /usr/local/sbin/wg-setup-nat
+PostDown = /usr/local/sbin/wg-cleanup-nat
 WG
 
 systemctl enable wg-quick@wg0
@@ -74,6 +115,7 @@ systemctl restart wg-quick@wg0
             vpc_security_group_ids=[vpn_security_group_id],
             key_name=self.key_pair.key_name,
             associate_public_ip_address=True,
+            source_dest_check=False,
             user_data=user_data,
             root_block_device=aws.ec2.InstanceRootBlockDeviceArgs(
                 volume_size=12,
