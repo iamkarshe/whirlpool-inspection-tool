@@ -10,14 +10,17 @@ import {
   fetchExecutiveAnalyticsKpis,
   fetchExecutiveDefectsMix,
   fetchExecutiveDefectsPareto,
+  fetchExecutiveDefectsPlant,
   fetchExecutiveDefectsWarehouse,
   type ExecutiveAnalyticsKpis,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
 import { ExecutiveDefectMixChart } from "@/pages/dashboard/reports/executive-analytics/executive-defect-mix-chart";
 import { ExecutiveDefectsParetoChart } from "@/pages/dashboard/reports/executive-analytics/executive-defects-pareto-chart";
 import type { DefectsParetoChartItem } from "@/api/generated/model/defectsParetoChartItem";
+import { ExecutivePlantDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-plant-defects-table";
 import { ExecutiveWarehouseDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-warehouse-defects-table";
 import type { DefectsMixItem } from "@/api/generated/model/defectsMixItem";
+import type { DefectsPlantItem } from "@/api/generated/model/defectsPlantItem";
 import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
 import { InspectionType } from "@/api/generated/model/inspectionType";
 import {
@@ -82,6 +85,8 @@ export default function ExecutiveAnalyticsPage() {
     DefectsWarehouseItem[]
   >([]);
   const [warehouseLoading, setWarehouseLoading] = useState(true);
+  const [plantDefects, setPlantDefects] = useState<DefectsPlantItem[]>([]);
+  const [plantLoading, setPlantLoading] = useState(true);
   const [defectMixItems, setDefectMixItems] = useState<DefectsMixItem[]>([]);
   const [defectMixTotal, setDefectMixTotal] = useState(0);
   const [defectMixLoading, setDefectMixLoading] = useState(true);
@@ -241,6 +246,38 @@ export default function ExecutiveAnalyticsPage() {
   }, [dateRange, filters, inspectionType]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    setPlantLoading(true);
+    setPlantDefects([]);
+
+    fetchExecutiveDefectsPlant(
+      filters,
+      dateRange,
+      inspectionType,
+      controller.signal,
+    )
+      .then((items) => {
+        if (controller.signal.aborted) return;
+        setPlantDefects(items);
+      })
+      .catch((e: unknown) => {
+        if (controller.signal.aborted) return;
+        if (isAxiosError(e) && e.code === "ERR_CANCELED") return;
+        const message =
+          e instanceof Error ? e.message : "Failed to load plant defect data.";
+        toast.error(message);
+        setPlantDefects([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPlantLoading(false);
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [dateRange, filters, inspectionType]);
+
+  useEffect(() => {
     let cancelled = false;
     queueMicrotask(() => setDefectMixLoading(true));
     fetchExecutiveDefectsMix(filters, dateRange, inspectionType)
@@ -373,7 +410,7 @@ export default function ExecutiveAnalyticsPage() {
           isLoading={paretoLoading}
         />
 
-        <div className="lg:col-span-12 xl:col-span-8">
+        <div className="lg:col-span-12">
           <ChartCard
             title="Warehouse defects"
             description="Inspection and grading breakdown by warehouse"
@@ -383,6 +420,20 @@ export default function ExecutiveAnalyticsPage() {
               key={inspectionType}
               data={warehouseDefects}
               isLoading={warehouseLoading}
+            />
+          </ChartCard>
+        </div>
+
+        <div className="lg:col-span-12 xl:col-span-8">
+          <ChartCard
+            title="Plant defects"
+            description="Inspection and grading breakdown by plant"
+            contentClassName="pt-0"
+          >
+            <ExecutivePlantDefectsTable
+              key={inspectionType}
+              data={plantDefects}
+              isLoading={plantLoading}
             />
           </ChartCard>
         </div>
