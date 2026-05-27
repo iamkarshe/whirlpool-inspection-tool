@@ -304,7 +304,9 @@ export function DataTable<TData>({
     },
   });
 
-  const serverLoading = isServerSide && isLoading;
+  const tableLoading = Boolean(isLoading);
+  const serverLoading = isServerSide && tableLoading;
+  const clientLoading = !isServerSide && tableLoading;
   const skeletonRowCount = serverSide
     ? Math.min(Math.max(1, serverSide.pagination.pageSize), 50)
     : 8;
@@ -465,9 +467,9 @@ export function DataTable<TData>({
 
         <div
           className="relative rounded-md border"
-          aria-busy={serverLoading || undefined}
+          aria-busy={tableLoading || undefined}
         >
-          {serverLoading && filteredData.length > 0 ? (
+          {(serverLoading || clientLoading) && filteredData.length > 0 ? (
             <div
               className="bg-background/45 pointer-events-auto absolute inset-0 z-[1] cursor-wait"
               aria-hidden
@@ -491,7 +493,7 @@ export function DataTable<TData>({
               ))}
             </TableHeader>
             <TableBody>
-              {serverLoading && !filteredData.length ? (
+              {(serverLoading || clientLoading) && !filteredData.length ? (
                 Array.from({ length: skeletonRowCount }, (_, i) => {
                   const headerGroup = table.getHeaderGroups()[0];
                   const headers = headerGroup?.headers ?? [];

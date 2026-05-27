@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
+import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -200,14 +201,23 @@ export default function ExecutiveAnalyticsPage() {
   }, [dateRange, filters, inspectionType]);
 
   useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => setWarehouseLoading(true));
-    fetchExecutiveDefectsWarehouse(filters, dateRange, inspectionType)
+    const controller = new AbortController();
+    setWarehouseLoading(true);
+    setWarehouseDefects([]);
+
+    fetchExecutiveDefectsWarehouse(
+      filters,
+      dateRange,
+      inspectionType,
+      controller.signal,
+    )
       .then((items) => {
-        if (!cancelled) setWarehouseDefects(items);
+        if (controller.signal.aborted) return;
+        setWarehouseDefects(items);
       })
       .catch((e: unknown) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
+        if (isAxiosError(e) && e.code === "ERR_CANCELED") return;
         const message =
           e instanceof Error
             ? e.message
@@ -216,10 +226,11 @@ export default function ExecutiveAnalyticsPage() {
         setWarehouseDefects([]);
       })
       .finally(() => {
-        if (!cancelled) setWarehouseLoading(false);
+        if (!controller.signal.aborted) setWarehouseLoading(false);
       });
+
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [dateRange, filters, inspectionType]);
 
@@ -331,6 +342,7 @@ export default function ExecutiveAnalyticsPage() {
             contentClassName="pt-0"
           >
             <ExecutiveWarehouseDefectsTable
+              key={inspectionType}
               data={warehouseDefects}
               isLoading={warehouseLoading}
             />

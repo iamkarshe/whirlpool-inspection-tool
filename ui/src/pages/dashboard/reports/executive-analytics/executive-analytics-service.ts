@@ -122,6 +122,7 @@ export async function fetchExecutiveDefectsWarehouse(
   filters: ExecutiveAnalyticsFilters,
   dateRange: DateRange | undefined,
   inspectionType: InspectionType,
+  signal?: AbortSignal,
 ): Promise<DefectsWarehouseItem[]> {
   const body = executiveAnalyticsRequestBody(
     filters,
@@ -132,6 +133,8 @@ export async function fetchExecutiveDefectsWarehouse(
   const res =
     await reports.postExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePost(
       body,
+      undefined,
+      signal ? { signal } : undefined,
     );
   return res.items;
 }

@@ -1,0 +1,19 @@
+curl 'http://localhost:8000/api/inspections/inbound' \
+  -H 'Accept: application/json, text/plain, */*' \
+  -H 'Accept-Language: en-US,en;q=0.9' \
+  -H 'Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwianRpIjoiOTEzZDQwNzY1N2M4NDhjNmJiZTg3ZjZiZDQyYmFhMmQiLCJleHAiOjE3ODAwMDA3OTYsImRldmljZV9pZCI6MTJ9.Gd4AUi2ILAlucj_ac5cVtMOuaF5KyEKts2mC-GCZhkM' \
+  -H 'Cache-Control: no-cache' \
+  -H 'Connection: keep-alive' \
+  -H 'Content-Type: application/json' \
+  -H 'DNT: 1' \
+  -H 'Origin: http://localhost:5173' \
+  -H 'Pragma: no-cache' \
+  -H 'Referer: http://localhost:5173/' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-site' \
+  -H 'User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1' \
+  -H 'sec-ch-ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"' \
+  -H 'sec-ch-ua-mobile: ?1' \
+  -H 'sec-ch-ua-platform: "iOS"' \
+  --data-raw '{"barcode":"31602012552BRQ12","device_uuid":"84f7997a-f9a7-49a8-bdd8-e94a4f41b0bd","warehouse_code":"FI13","supplier_plant_code":"PI11","lat":28.6448,"lng":77.216721,"truck_number":"CG01A1234","dock_number":"A","truck_docking_time":"2026-05-27T20:40:00.000Z","outer_packaging_side_images":["uploads/inspections/31602012552BRQ11/inbound/c7c2fe13-2f4b-4a80-b619-c541f9f88e59.jpg","uploads/inspections/31602012552BRQ11/inbound/cbd2669d-0338-4df2-9004-feb0e98d19c0.jpg","uploads/inspections/31602012552BRQ11/inbound/27bfb629-930f-4ce7-a61e-3b264a40e127.jpg","uploads/inspections/31602012552BRQ11/inbound/b6783ff7-d2e5-4971-9732-38b9254695c1.jpg","uploads/inspections/31602012552BRQ11/inbound/f0f78a9e-dedb-4d26-ad6d-b076bf084b84.jpg","uploads/inspections/31602012552BRQ11/inbound/21436a0a-06f3-4121-a2a9-13f59af7b835.jpg","uploads/inspections/31602012552BRQ11/inbound/7117e62f-8595-4e8c-a903-336d8f498b83.jpg","uploads/inspections/31602012552BRQ11/inbound/a48283ec-ef63-4d66-bb7a-1900c6bbf558.jpg"],"inner_packaging_side_images":["uploads/inspections/31602012552BRQ11/inbound/824fac9c-0e27-4bcc-9991-bdb7c24f7fa4.jpg","uploads/inspections/31602012552BRQ11/inbound/4603fff1-1f37-42f3-839a-6c46259ebd9e.jpg","uploads/inspections/31602012552BRQ11/inbound/52e0fcc5-6794-483d-b4f0-5237303023df.jpg","uploads/inspections/31602012552BRQ11/inbound/269b8e65-b642-421b-8c6b-fdc38a2cae3c.jpg"],"product_side_images":["uploads/inspections/31602012552BRQ11/inbound/9a9aeb14-88f6-46bf-9efa-a5934b609abf.jpg","uploads/inspections/31602012552BRQ11/inbound/58750492-41eb-4cdb-bd70-a95f8eb4907b.jpg","uploads/inspections/31602012552BRQ11/inbound/66c39af9-deb4-4859-a015-b59a77aee892.jpg","uploads/inspections/31602012552BRQ11/inbound/288d4434-2d6b-4a13-b103-e6a8fe59732f.jpg","uploads/inspections/31602012552BRQ11/inbound/9c56f83d-d025-4181-9cb3-e0e7a4a01463.jpg","uploads/inspections/31602012552BRQ11/inbound/6f11da5b-b308-4193-876c-788cac8a2e9b.jpg"],"device_time_taken":187,"checklist_answers":[{"id":1,"value":"yes"},{"id":2,"value":"yes"},{"id":3,"value":"no","image_path":["uploads/inspections/31602012552BRQ11/inbound/123c9ec5-c83f-4848-adf6-b44d1b44cdf2.jpg"]},{"id":4,"value":"yes"},{"id":5,"value":"yes"},{"id":6,"value":"yes"},{"id":7,"value":"yes"},{"id":8,"value":"yes"},{"id":9,"value":"yes"},{"id":10,"value":"yes"},{"id":11,"value":"yes"},{"id":12,"value":"yes"},{"id":13,"value":"yes"},{"id":14,"value":"yes"},{"id":15,"value":"yes"},{"id":16,"value":"yes"},{"id":17,"value":"yes"}],"damage_type":"packaging","damage_severity":"minor","damage_cause":"transit","damage_grade":"DGR"}'
