@@ -12,6 +12,8 @@ from mod.api.reports.response import (
     DefectsParetoChartResponse,
     DefectsPlantItem,
     DefectsPlantResponse,
+    DefectsTruckItem,
+    DefectsTruckResponse,
     DefectsWarehouseItem,
     DefectsWarehouseResponse,
     KpiParametersResponse,
@@ -648,6 +650,65 @@ def executive_defects_warehouse(
             )
         )
     return DefectsWarehouseResponse(
+        date_from=date_from,
+        date_to=date_to,
+        items=items,
+    )
+
+
+def executive_defects_truck(
+    db: Session,
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_pairs: list[tuple[str, str]] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
+) -> DefectsTruckResponse:
+    inspection_filters = inspection_analytics_filters(
+        db,
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+        inspection_type=inspection_type,
+        damage_grading=None,
+    )
+    damaged = damaged_inspection_condition()
+    rows = (
+        db.query(
+            Inspection.truck_number.label("truck_number"),
+            func.count(Inspection.id).label("total"),
+            func.sum(case((damaged, 1), else_=0)).label("defective"),
+        )
+        .filter(
+            *inspection_filters,
+            Inspection.truck_number.isnot(None),
+            Inspection.truck_number != "",
+        )
+        .group_by(Inspection.truck_number)
+        .order_by(Inspection.truck_number.asc())
+        .all()
+    )
+    items = []
+    for row in rows:
+        total = int(row.total or 0)
+        defective = int(row.defective or 0)
+        defective_pct = round(defective / total * 100.0, 1) if total > 0 else 0.0
+        items.append(
+            DefectsTruckItem(
+                truck_number=row.truck_number,
+                total_inspections=total,
+                defective_inspections=defective,
+                defective_pct=defective_pct,
+            )
+        )
+    return DefectsTruckResponse(
         date_from=date_from,
         date_to=date_to,
         items=items,

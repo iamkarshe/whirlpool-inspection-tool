@@ -12,6 +12,7 @@ from mod.api.reports.helper import (
     executive_defects_mix,
     executive_defects_pareto_chart,
     executive_defects_plant,
+    executive_defects_truck,
     executive_defects_warehouse,
     operations_analytics_counts,
     operations_trend_data,
@@ -24,6 +25,7 @@ from mod.api.reports.response import (
     DefectsMixResponse,
     DefectsParetoChartResponse,
     DefectsPlantResponse,
+    DefectsTruckResponse,
     DefectsWarehouseResponse,
     ExecutiveAnalyticsResponse,
     KpiParametersResponse,
@@ -187,6 +189,31 @@ def post_executive_analytics_defects_plant(
     if scope.get("inspection_type") is None:
         scope["inspection_type"] = InspectionType.inbound
     return executive_defects_plant(
+        db,
+        is_active=is_active,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        **scope,
+    )
+
+
+@router.post(
+    "/reports/executive-analytics/defects-truck",
+    name="post_executive_analytics_defects_truck",
+    response_model=DefectsTruckResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_executive_analytics_defects_truck(
+    request: Request,
+    body: OperationsAnalyticsRequest,
+    is_active: bool = Query(True),
+    db: Session = Depends(get_db),
+):
+    validate_analytics_date_range(body.date_from, body.date_to)
+    scope = analytics_scope_from_request(db, body)
+    scope["damage_grading"] = None
+    return executive_defects_truck(
         db,
         is_active=is_active,
         date_from=body.date_from,

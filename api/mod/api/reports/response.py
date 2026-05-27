@@ -220,6 +220,30 @@ class DefectsPlantResponse(BaseModel):
     )
 
 
+class DefectsTruckItem(BaseModel):
+    truck_number: str = Field(..., description="Vehicle registration number.")
+    total_inspections: int = Field(
+        ..., description="Inspections for this truck in scope."
+    )
+    defective_inspections: int = Field(
+        ..., description="Inspections with any recorded damage."
+    )
+    defective_pct: float = Field(
+        ...,
+        description="Defective inspections divided by total inspections (percent).",
+    )
+
+
+class DefectsTruckResponse(BaseModel):
+    """Defect stats grouped by truck number."""
+
+    date_from: date | None = Field(None, description="Applied range start date.")
+    date_to: date | None = Field(None, description="Applied range end date.")
+    items: list[DefectsTruckItem] = Field(
+        ..., description="One row per truck number with inspections in scope."
+    )
+
+
 class ExecutiveAnalyticsResponse(BaseModel):
     """Executive summary KPI cards."""
 
