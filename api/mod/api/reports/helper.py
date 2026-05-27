@@ -6,8 +6,14 @@ from sqlalchemy.orm import Session
 
 from mod.api.inspection.response import InspectionDropdownOption
 from mod.api.reports.request import OperationsAnalyticsRequest
-from mod.api.reports.response import KpiParametersResponse
+from mod.api.reports.response import (
+    DefectsParetoChartItem,
+    DefectsParetoChartResponse,
+    KpiParametersResponse,
+)
 from mod.model import (
+    Checklist,
+    ChecklistFieldType,
     DamageGrading,
     Inspection,
     InspectionInput,
@@ -19,7 +25,7 @@ from mod.model import (
     ProductCategory,
     Warehouse,
 )
-from utils.common import utc_end_exclusive_day_range
+from utils.common import YES_NO_FAIL_VALUES, utc_end_exclusive_day_range
 
 
 def build_kpi_parameters(db: Session) -> KpiParametersResponse:
@@ -262,6 +268,83 @@ def executive_analytics_counts(
         "avg_inspection_time_min": round(avg_sec / 60.0, 1),
         "pending_approvals": int(row.pending or 0),
     }
+
+
+def executive_defects_pareto_chart(
+    db: Session,
+    *,
+    is_active: bool,
+    date_from: date | None,
+    date_to: date | None,
+    warehouse_codes: list[str] | None,
+    plant_codes: list[str] | None,
+    product_category_ids: list[int] | None,
+    inspection_type: InspectionType | None,
+    damage_grading: DamageGrading | None,
+) -> DefectsParetoChartResponse:
+    inspection_filters = inspection_analytics_filters(
+        is_active=is_active,
+        date_from=date_from,
+        date_to=date_to,
+        warehouse_codes=warehouse_codes,
+        plant_codes=plant_codes,
+        product_category_ids=product_category_ids,
+        inspection_type=inspection_type,
+        damage_grading=damage_grading,
+    )
+    fail_values = tuple(YES_NO_FAIL_VALUES)
+    rows = (
+        db.query(
+            Checklist.section.label("section"),
+            func.count(InspectionInput.id).label("defect_count"),
+        )
+        .join(Checklist, InspectionInput.checklist_id == Checklist.id)
+        .join(Inspection, InspectionInput.inspection_id == Inspection.id)
+        .filter(
+            InspectionInput.is_active.is_(is_active),
+            Checklist.is_active.is_(True),
+            Checklist.field_type == ChecklistFieldType.yes_no,
+            func.lower(func.trim(InspectionInput.value)).in_(fail_values),
+            *inspection_filters,
+        )
+        .group_by(Checklist.section)
+        .order_by(func.count(InspectionInput.id).desc(), Checklist.section.asc())
+        .all()
+    )
+    total_defects = sum(int(row.defect_count or 0) for row in rows)
+    if total_defects == 0:
+        return DefectsParetoChartResponse(
+            date_from=date_from,
+            date_to=date_to,
+            total_defects=0,
+            items=[],
+        )
+
+    items = []
+    cumulative = 0.0
+    vital_limit = 80.0
+    for row in rows:
+        count = int(row.defect_count or 0)
+        pct = round(count / total_defects * 100.0, 1)
+        prev_cumulative = cumulative
+        cumulative = round(cumulative + pct, 1)
+        within_pareto_80 = prev_cumulative < vital_limit
+        items.append(
+            DefectsParetoChartItem(
+                section=row.section,
+                defect_count=count,
+                pct_contribution=pct,
+                cumulative_pct=cumulative,
+                within_pareto_80=within_pareto_80,
+            )
+        )
+
+    return DefectsParetoChartResponse(
+        date_from=date_from,
+        date_to=date_to,
+        total_defects=total_defects,
+        items=items,
+    )
 
 
 def operations_analytics_counts(

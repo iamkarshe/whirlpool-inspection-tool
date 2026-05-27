@@ -1,11 +1,11 @@
 meta {
-  name: KPI [Outbound]
+  name: Defect Pareto [Inbound]
   type: http
-  seq: 3
+  seq: 2
 }
 
 post {
-  url: {{baseUrl}}/api/reports/executive-analytics
+  url: {{baseUrl}}/api/reports/executive-analytics/defects-pareto-chart
   body: json
   auth: inherit
 }
@@ -14,7 +14,7 @@ body:json {
   {
     "date_from": "2026-05-01",
     "date_to": "2026-05-07",
-    "type": "outbound",
+    "type": "inbound",
     "warehouse": [1, 2],
     "product_category": [1, 2],
     "grading": "DGR"

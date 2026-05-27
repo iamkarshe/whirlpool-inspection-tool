@@ -53,6 +53,25 @@ class OperationsTrendResponse(BaseModel):
     weekly_trend: list[OperationsTrendBucketItem]
 
 
+class DefectsParetoChartItem(BaseModel):
+    section: str = Field(..., description="Defect type.")
+    defect_count: int = Field(..., description="Checklist NO count.")
+    pct_contribution: float = Field(..., description="Share of total defects.")
+    cumulative_pct: float = Field(..., description="Running cumulative percent.")
+    within_pareto_80: bool = Field(
+        ..., description="Included in the vital few near 80% of defects."
+    )
+
+
+class DefectsParetoChartResponse(BaseModel):
+    date_from: date | None = None
+    date_to: date | None = None
+    total_defects: int = Field(..., description="Total checklist NO responses.")
+    items: list[DefectsParetoChartItem] = Field(
+        ..., description="Defect counts by checklist section."
+    )
+
+
 class ExecutiveAnalyticsResponse(BaseModel):
     date_from: date | None = None
     date_to: date | None = None
