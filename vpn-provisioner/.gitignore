@@ -1,0 +1,45 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/tmp/
+tmp/
+
+# Test / coverage
+*.test
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+
+# Go workspace (optional local)
+go.work
+go.work.sum
+
+# Dependency directories (uncomment if you vendor locally and do not commit)
+# vendor/
+
+# Environment and secrets (keep .env.example tracked)
+.env
+.env.local
+.env.*.local
+
+# SQLite and runtime data (keep data/.gitkeep if present)
+data/*.sqlite
+data/*.sqlite3
+data/*.db
+wireguard-mock-data/*
+!wireguard-mock-data/.gitkeep
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Air hot-reload
+build-errors.log
