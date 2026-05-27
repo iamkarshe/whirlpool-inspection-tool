@@ -44,14 +44,56 @@ func (h *HostBackend) RemovePeer(publicKey string) error {
 
 func (h *HostBackend) ShowPeers() ([]Peer, error) {
 	cmd := exec.Command("sudo", hostScriptShowPeers)
-	var stdout, stderr bytes.Buffer
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("%s: %w: %s", hostScriptShowPeers, err, strings.TrimSpace(stderr.String()))
 	}
-	// Expect same dump format as `wg show <iface> dump` or parse as needed on host.
-	return parseWGShowDump(stdout.String())
+
+	return parseWGAllowedIPs(stdout.String()), nil
+}
+
+// parseWGAllowedIPs parses vpn-show-peers output: "<pubkey>\t<allowed-ip>/32" per line.
+func parseWGAllowedIPs(output string) []Peer {
+	peers := make([]Peer, 0)
+
+	output = strings.TrimSpace(output)
+	if output == "" {
+		return peers
+	}
+
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+
+		publicKey := fields[0]
+		allowedIP := fields[1]
+
+		if allowedIP == "(none)" {
+			allowedIP = ""
+		} else {
+			allowedIP = strings.TrimSuffix(allowedIP, "/32")
+		}
+
+		peers = append(peers, Peer{
+			PublicKey: publicKey,
+			AllowedIP: allowedIP,
+		})
+	}
+
+	return peers
 }
 
 func (h *HostBackend) ServerPublicKey() (string, error) {
