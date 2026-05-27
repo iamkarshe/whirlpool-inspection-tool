@@ -1,6 +1,4 @@
-from datetime import date
-
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from mod.api.middleware import auth_dependency
@@ -14,9 +12,6 @@ from mod.api.reports.helper import (
     executive_defects_plant,
     executive_defects_truck,
     executive_defects_warehouse,
-    operations_analytics_counts,
-    operations_trend_data,
-    resolve_scope_codes,
     validate_analytics_date_range,
 )
 from mod.api.reports.request import OperationsAnalyticsRequest
@@ -29,8 +24,6 @@ from mod.api.reports.response import (
     DefectsWarehouseResponse,
     ExecutiveAnalyticsResponse,
     KpiParametersResponse,
-    OperationsAnalyticsResponse,
-    OperationsTrendResponse,
 )
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
@@ -220,64 +213,3 @@ def post_executive_analytics_defects_truck(
         date_to=body.date_to,
         **scope,
     )
-
-
-@router.post(
-    "/reports/operations-analytics",
-    name="post_operations_analytics",
-    response_model=OperationsAnalyticsResponse,
-)
-@exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
-def post_operations_analytics(
-    request: Request,
-    body: OperationsAnalyticsRequest,
-    is_active: bool = Query(True),
-    db: Session = Depends(get_db),
-):
-    validate_analytics_date_range(body.date_from, body.date_to)
-    scope = analytics_scope_from_request(db, body)
-    counts = operations_analytics_counts(
-        db,
-        is_active=is_active,
-        date_from=body.date_from,
-        date_to=body.date_to,
-        **scope,
-    )
-    return OperationsAnalyticsResponse(
-        date_from=body.date_from,
-        date_to=body.date_to,
-        **counts,
-    )
-
-
-@router.get(
-    "/reports/operations-trend",
-    name="get_operations_trend",
-    response_model=OperationsTrendResponse,
-)
-@exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
-def get_operations_trend(
-    request: Request,
-    date_from: date = Query(..., description="Range start date (UTC)"),
-    date_to: date = Query(..., description="Range end date (UTC, inclusive)"),
-    warehouse_id: int | None = Query(None),
-    plant_id: int | None = Query(None),
-    is_active: bool = Query(True),
-    db: Session = Depends(get_db),
-):
-    if date_to < date_from:
-        raise HTTPException(
-            status_code=400, detail="date_to must be on or after date_from"
-        )
-    warehouse_code, plant_code = resolve_scope_codes(db, warehouse_id, plant_id)
-    payload = operations_trend_data(
-        db,
-        date_from=date_from,
-        date_to=date_to,
-        is_active=is_active,
-        warehouse_code=warehouse_code,
-        plant_code=plant_code,
-    )
-    return OperationsTrendResponse(**payload)
