@@ -1,11 +1,11 @@
 meta {
-  name: QR
+  name: QR code
   type: http
-  seq: 4
+  seq: 5
 }
 
 get {
-  url: {{vpn_provisioner_url}}/v1/devices/4af5028c-f5e1-4fa6-b94f-f18e9af26141/config
+  url: {{vpn_provisioner_url}}/v1/devices/4af5028c-f5e1-4fa6-b94f-f18e9af26141/qr
   body: json
   auth: bearer
 }
