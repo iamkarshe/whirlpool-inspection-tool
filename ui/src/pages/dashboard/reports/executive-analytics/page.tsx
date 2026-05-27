@@ -5,6 +5,7 @@ import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { ChartConfig } from "@/components/ui/chart";
 import {
   ChartContainer,
@@ -12,15 +13,15 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
+  fetchExecutiveAnalyticsKpis,
+  fetchExecutiveDefectsWarehouse,
   getDefectRateByType,
-  getExecutiveAnalyticsKpis,
-  getInspectionVolumeByLocation,
-  getInspectionVolumeTrend,
   type DefectRateByType,
   type ExecutiveAnalyticsKpis,
-  type VolumeByDimension,
-  type VolumeTrendPoint,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
+import { ExecutiveWarehouseDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-warehouse-defects-table";
+import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
+import { InspectionType } from "@/api/generated/model/inspectionType";
 import {
   dialogValueToExecutiveFilters,
   executiveFiltersToDialogValue,
@@ -30,19 +31,20 @@ import {
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-filters";
 import { ExecutiveTooltipContent } from "@/pages/dashboard/reports/executive-analytics/executive-tooltip-content";
 import type { KpiParametersResponse } from "@/api/generated/model/kpiParametersResponse";
-import { AlertTriangle, ClipboardCheck, Clock, Inbox } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ClipboardCheck,
+  Clock,
+  Inbox,
+  ShieldAlert,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
-
-const volumeChartConfig = {
-  volume: {
-    label: "Inspections",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
 
 const defectChartConfig = {
   rate: {
@@ -54,39 +56,31 @@ const defectChartConfig = {
   minor: { label: "Minor", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
-const trendChartConfig = {
-  volume: { label: "Volume", color: "var(--chart-1)" },
-  defects: { label: "Defects", color: "var(--chart-2)" },
-} satisfies ChartConfig;
-
 function buildKpiCards(kpis: ExecutiveAnalyticsKpis): KpiCardProps[] {
   return [
     {
       label: "Inspection volume",
       value: kpis.inspectionVolume.toLocaleString(),
-      change: kpis.inspectionVolumeChange,
-      changeType: kpis.inspectionVolumeChangeType,
       icon: ClipboardCheck,
     },
     {
+      label: "Damaged inspections",
+      value: kpis.damagedInspections.toLocaleString(),
+      icon: ShieldAlert,
+    },
+    {
       label: "Defect rate",
-      value: `${kpis.defectRatePct}%`,
-      change: kpis.defectRateChange,
-      changeType: kpis.defectRateChangeType,
+      value: `${kpis.defectRatePct.toFixed(1)}%`,
       icon: AlertTriangle,
     },
     {
       label: "Avg inspection time",
-      value: `${kpis.avgInspectionTimeMin} min`,
-      change: kpis.avgInspectionTimeChange,
-      changeType: kpis.avgInspectionTimeChangeType,
+      value: `${kpis.avgInspectionTimeMin.toFixed(1)} min`,
       icon: Clock,
     },
     {
       label: "Pending approvals",
       value: kpis.pendingApprovals.toLocaleString(),
-      change: kpis.pendingApprovalsChange,
-      changeType: kpis.pendingApprovalsChangeType,
       icon: Inbox,
     },
   ];
@@ -97,13 +91,16 @@ export default function ExecutiveAnalyticsPage() {
   const navigate = useNavigate();
 
   const [kpis, setKpis] = useState<ExecutiveAnalyticsKpis | null>(null);
-  const [volumeByLocation, setVolumeByLocation] = useState<VolumeByDimension[]>(
+  const [warehouseDefects, setWarehouseDefects] = useState<DefectsWarehouseItem[]>(
     [],
   );
+  const [warehouseLoading, setWarehouseLoading] = useState(true);
   const [defectByType, setDefectByType] = useState<DefectRateByType[]>([]);
-  const [volumeTrend, setVolumeTrend] = useState<VolumeTrendPoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [kpiLoading, setKpiLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [inspectionType, setInspectionType] = useState<InspectionType>(
+    InspectionType.inbound,
+  );
 
   const [kpiParameters, setKpiParameters] =
     useState<KpiParametersResponse | null>(null);
@@ -196,21 +193,60 @@ export default function ExecutiveAnalyticsPage() {
   }
 
   useEffect(() => {
-    queueMicrotask(() => setLoading(true));
-    Promise.all([
-      getExecutiveAnalyticsKpis(dateRange),
-      getInspectionVolumeByLocation(dateRange),
-      getDefectRateByType(dateRange),
-      getInspectionVolumeTrend(dateRange),
-    ])
-      .then(([k, loc, def, trend]) => {
-        setKpis(k);
-        setVolumeByLocation(loc);
-        setDefectByType(def);
-        setVolumeTrend(trend);
+    let cancelled = false;
+    queueMicrotask(() => setKpiLoading(true));
+    fetchExecutiveAnalyticsKpis(filters, dateRange, inspectionType)
+      .then((k) => {
+        if (!cancelled) setKpis(k);
       })
-      .finally(() => setLoading(false));
-  }, [dateRange, filters]);
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const message =
+          e instanceof Error ? e.message : "Failed to load executive KPIs.";
+        toast.error(message);
+        setKpis(null);
+      })
+      .finally(() => {
+        if (!cancelled) setKpiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange, filters, inspectionType]);
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => setWarehouseLoading(true));
+    fetchExecutiveDefectsWarehouse(filters, dateRange, inspectionType)
+      .then((items) => {
+        if (!cancelled) setWarehouseDefects(items);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const message =
+          e instanceof Error
+            ? e.message
+            : "Failed to load warehouse defect data.";
+        toast.error(message);
+        setWarehouseDefects([]);
+      })
+      .finally(() => {
+        if (!cancelled) setWarehouseLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange, filters, inspectionType]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getDefectRateByType(dateRange).then((def) => {
+      if (!cancelled) setDefectByType(def);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange]);
 
   return (
     <div
@@ -218,12 +254,46 @@ export default function ExecutiveAnalyticsPage() {
       data-testid="screen-dashboard-reports-executive-analytics"
       className="space-y-4"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageActionBar
-          title="Executive Analytics"
-          description="Inspection volume by location, operator, product, avg inspection time, approvals."
-        />
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-3">
+          <PageActionBar
+            title="Executive Analytics"
+            description="Inspection volume by location, operator, product, avg inspection time, approvals."
+          />
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={inspectionType}
+            onValueChange={(value) => {
+              if (
+                value === InspectionType.inbound ||
+                value === InspectionType.outbound
+              ) {
+                setInspectionType(value);
+              }
+            }}
+            aria-label="Inspection direction"
+          >
+            <ToggleGroupItem
+              value={InspectionType.inbound}
+              aria-label="Inbound"
+              className="gap-1.5 px-3"
+            >
+              <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden />
+              Inbound
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value={InspectionType.outbound}
+              aria-label="Outbound"
+              className="gap-1.5 px-3"
+            >
+              <ArrowUpFromLine className="h-3.5 w-3.5" aria-hidden />
+              Outbound
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
           <MultiSelectFiltersDialog
             title="Filters"
@@ -243,58 +313,26 @@ export default function ExecutiveAnalyticsPage() {
 
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12">
-          {loading ? (
-            <KpiLoader count={4} />
+          {kpiLoading ? (
+            <KpiLoader count={5} />
           ) : kpis ? (
-            <KpiCardGrid cards={buildKpiCards(kpis)} />
+            <KpiCardGrid
+              cards={buildKpiCards(kpis)}
+              className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+            />
           ) : null}
         </div>
 
         <div className="lg:col-span-12 xl:col-span-8">
           <ChartCard
-            title="Inspection volume by location"
-            description="Last 30 days"
+            title="Warehouse defects"
+            description="Inspection and grading breakdown by warehouse"
+            contentClassName="pt-0"
           >
-            <ChartContainer
-              config={volumeChartConfig}
-              className="aspect-auto h-[280px] w-full"
-            >
-              <BarChart
-                data={volumeByLocation}
-                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-              >
-                <XAxis
-                  dataKey="name"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                />
-                <YAxis hide />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      hideLabel
-                      className="min-w-[220px] gap-2 border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-                      formatter={(v, _name, item, _index, payload) => (
-                        <ExecutiveTooltipContent
-                          label={String(
-                            payload?.payload?.name || "Inspections",
-                          )}
-                          value={Number(v)}
-                          color={item.payload?.fill || item.color}
-                        />
-                      )}
-                    />
-                  }
-                />
-                <Bar
-                  dataKey="volume"
-                  fill="var(--color-volume)"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
+            <ExecutiveWarehouseDefectsTable
+              data={warehouseDefects}
+              isLoading={warehouseLoading}
+            />
           </ChartCard>
         </div>
 
@@ -346,59 +384,6 @@ export default function ExecutiveAnalyticsPage() {
                   dataKey="rate"
                   fill="var(--color-rate)"
                   radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-          </ChartCard>
-        </div>
-
-        <div className="lg:col-span-12">
-          <ChartCard
-            title="Inspection volume trend"
-            description="Weekly volume and defects"
-          >
-            <ChartContainer
-              config={trendChartConfig}
-              className="aspect-auto h-[260px] w-full"
-            >
-              <BarChart
-                data={volumeTrend}
-                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-              >
-                <XAxis
-                  dataKey="week"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                />
-                <YAxis hide />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      hideLabel
-                      className="min-w-[220px] gap-2 border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-                      formatter={(v, name, item) => (
-                        <ExecutiveTooltipContent
-                          label={name === "volume" ? "Volume" : "Defects"}
-                          value={Number(v)}
-                          color={item.payload?.fill || item.color}
-                        />
-                      )}
-                    />
-                  }
-                />
-                <Bar
-                  dataKey="volume"
-                  fill="var(--color-volume)"
-                  radius={[4, 4, 0, 0]}
-                  name="volume"
-                />
-                <Bar
-                  dataKey="defects"
-                  fill="var(--color-defects)"
-                  radius={[4, 4, 0, 0]}
-                  name="defects"
                 />
               </BarChart>
             </ChartContainer>

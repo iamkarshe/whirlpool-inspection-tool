@@ -1,30 +1,25 @@
 /**
- * Executive Analytics: inspection volume by dimension, defect rates (Whirlpool 3 types),
- * avg inspection time, pending approvals. Mock data for UI; replace with API.
+ * Executive Analytics: KPIs from API; charts still mock until wired.
  */
 
+import { getReports } from "@/api/generated/reports/reports";
+import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
+import type { InspectionType } from "@/api/generated/model/inspectionType";
+import {
+  buildExecutiveAnalyticsRequest,
+  type ExecutiveAnalyticsFilters,
+} from "@/pages/dashboard/reports/executive-analytics/executive-analytics-filters";
 import type { DateRange } from "react-day-picker";
 
 /** Whirlpool defect classification (3 types). */
 export type DefectType = "critical" | "major" | "minor";
 
 export interface ExecutiveAnalyticsKpis {
-  /** Inspection volume (total) */
   inspectionVolume: number;
-  inspectionVolumeChange: string;
-  inspectionVolumeChangeType: "positive" | "negative";
-  /** Defect rate % (overall) */
+  damagedInspections: number;
   defectRatePct: number;
-  defectRateChange: string;
-  defectRateChangeType: "positive" | "negative";
-  /** Avg inspection time in minutes */
   avgInspectionTimeMin: number;
-  avgInspectionTimeChange: string;
-  avgInspectionTimeChangeType: "positive" | "negative";
-  /** Pending for approvals count */
   pendingApprovals: number;
-  pendingApprovalsChange: string;
-  pendingApprovalsChangeType: "positive" | "negative";
 }
 
 /** For bar/line charts: inspection volume by dimension. */
@@ -88,29 +83,56 @@ const inspectionVolumeTrend: VolumeTrendPoint[] = [
   { week: "W6", volume: 980, defects: 27 },
 ];
 
-export async function getExecutiveAnalyticsKpis(
-  _range?: DateRange,
-): Promise<ExecutiveAnalyticsKpis> {
-  return new Promise((resolve) => {
-    setTimeout(
-      () =>
-        resolve({
-          inspectionVolume: 4068,
-          inspectionVolumeChange: "+8.2%",
-          inspectionVolumeChangeType: "positive",
-          defectRatePct: 7.4,
-          defectRateChange: "-0.3%",
-          defectRateChangeType: "positive",
-          avgInspectionTimeMin: 4.2,
-          avgInspectionTimeChange: "-12s",
-          avgInspectionTimeChangeType: "positive",
-          pendingApprovals: 18,
-          pendingApprovalsChange: "+3",
-          pendingApprovalsChangeType: "negative",
-        }),
-      600,
-    );
+function executiveAnalyticsRequestBody(
+  filters: ExecutiveAnalyticsFilters,
+  dateRange: DateRange | undefined,
+  inspectionType: InspectionType,
+) {
+  return buildExecutiveAnalyticsRequest(filters, {
+    dateRange,
+    inspectionType,
   });
+}
+
+export async function fetchExecutiveAnalyticsKpis(
+  filters: ExecutiveAnalyticsFilters,
+  dateRange: DateRange | undefined,
+  inspectionType: InspectionType,
+): Promise<ExecutiveAnalyticsKpis> {
+  const body = executiveAnalyticsRequestBody(
+    filters,
+    dateRange,
+    inspectionType,
+  );
+  const reports = getReports();
+  const res =
+    await reports.postExecutiveAnalyticsApiReportsExecutiveAnalyticsPost(body);
+
+  return {
+    inspectionVolume: res.inspection_volume,
+    damagedInspections: res.damaged_inspections,
+    defectRatePct: res.defect_rate_pct,
+    avgInspectionTimeMin: res.avg_inspection_time_min,
+    pendingApprovals: res.pending_approvals,
+  };
+}
+
+export async function fetchExecutiveDefectsWarehouse(
+  filters: ExecutiveAnalyticsFilters,
+  dateRange: DateRange | undefined,
+  inspectionType: InspectionType,
+): Promise<DefectsWarehouseItem[]> {
+  const body = executiveAnalyticsRequestBody(
+    filters,
+    dateRange,
+    inspectionType,
+  );
+  const reports = getReports();
+  const res =
+    await reports.postExecutiveAnalyticsDefectsWarehouseApiReportsExecutiveAnalyticsDefectsWarehousePost(
+      body,
+    );
+  return res.items;
 }
 
 export async function getInspectionVolumeByLocation(

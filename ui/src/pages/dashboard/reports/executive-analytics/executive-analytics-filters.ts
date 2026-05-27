@@ -1,5 +1,6 @@
 import { getReports } from "@/api/generated/reports/reports";
 import type { DamageGrading } from "@/api/generated/model/damageGrading";
+import type { InspectionType } from "@/api/generated/model/inspectionType";
 import type { KpiParametersResponse } from "@/api/generated/model/kpiParametersResponse";
 import type { OperationsAnalyticsRequest } from "@/api/generated/model/operationsAnalyticsRequest";
 import type { ReportsDropdownOption } from "@/api/generated/model/reportsDropdownOption";
@@ -7,6 +8,8 @@ import type {
   MultiSelectFilterSection,
   MultiSelectFiltersValue,
 } from "@/components/filters/multi-select-filters-dialog";
+import { formatCalendarDateForApi } from "@/services/inspections-api";
+import type { DateRange } from "react-day-picker";
 
 export type ExecutiveAnalyticsFilters = {
   warehouseIds?: string[];
@@ -92,9 +95,15 @@ export function dialogValueToExecutiveFilters(
   };
 }
 
+export type ExecutiveAnalyticsRequestOptions = {
+  dateRange?: DateRange;
+  inspectionType?: InspectionType;
+};
+
 /** Maps UI filter state to the shared report analytics request body. */
 export function buildExecutiveAnalyticsRequest(
   filters: ExecutiveAnalyticsFilters,
+  options?: ExecutiveAnalyticsRequestOptions,
 ): OperationsAnalyticsRequest {
   const warehouse = (filters.warehouseIds ?? [])
     .map((id) => Number.parseInt(id, 10))
@@ -107,10 +116,16 @@ export function buildExecutiveAnalyticsRequest(
     ? (filters.grading as DamageGrading)
     : null;
 
+  const from = options?.dateRange?.from;
+  const to = options?.dateRange?.to ?? from;
+
   return {
     warehouse,
     plant,
     product_category,
     grading,
+    type: options?.inspectionType ?? null,
+    date_from: from ? formatCalendarDateForApi(from) : null,
+    date_to: to ? formatCalendarDateForApi(to) : null,
   };
 }
