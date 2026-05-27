@@ -52,6 +52,7 @@ import {
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 import { filterByCalendarDateRange } from "@/lib/date-range-filter";
 import { downloadCsv as downloadCsvFile, toCsv } from "@/lib/csv";
+import { cn } from "@/lib/utils";
 
 export type DataTableFilterOption = {
   label: string;
@@ -138,6 +139,8 @@ export interface DataTableProps<TData> {
   isLoading?: boolean;
   /** When true, shows every row at once and hides pagination controls. */
   showAllRows?: boolean;
+  /** Optional per-row class names (e.g. conditional highlighting). */
+  getRowClassName?: (row: TData) => string | undefined;
 }
 
 function formatColumnLabel(input: string) {
@@ -168,6 +171,7 @@ export function DataTable<TData>({
   serverSide,
   isLoading = false,
   showAllRows = false,
+  getRowClassName,
 }: DataTableProps<TData>) {
   const columnsStorageKey = React.useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -518,6 +522,7 @@ export function DataTable<TData>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className={cn(getRowClassName?.(row.original))}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

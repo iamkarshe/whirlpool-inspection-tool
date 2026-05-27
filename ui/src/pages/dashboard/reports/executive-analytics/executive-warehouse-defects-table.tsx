@@ -14,6 +14,14 @@ function formatPct(value: number) {
   return `${value.toFixed(1)}%`;
 }
 
+/** Warehouses at or above this defect % are highlighted in the table. */
+const HIGH_DEFECT_RATE_PCT = 5;
+
+function warehouseRowClassName(row: DefectsWarehouseItem) {
+  if (row.defective_pct < HIGH_DEFECT_RATE_PCT) return undefined;
+  return "bg-red-50/70 hover:bg-red-50/90 dark:bg-red-950/40 dark:hover:bg-red-950/55";
+}
+
 function SortableHeader({
   column,
   label,
@@ -43,7 +51,10 @@ function SortableHeader({
       ) : sorted === "desc" ? (
         <ArrowDown className="ml-1 h-3.5 w-3.5 shrink-0" aria-hidden />
       ) : (
-        <ArrowUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden />
+        <ArrowUpDown
+          className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50"
+          aria-hidden
+        />
       )}
     </Button>
   );
@@ -94,7 +105,13 @@ const columns: ColumnDef<DefectsWarehouseItem>[] = [
       <SortableHeader column={column} label="Defect %" align="right" />
     ),
     cell: ({ row }) => (
-      <span className="block text-right tabular-nums">
+      <span
+        className={cn(
+          "block text-right tabular-nums",
+          row.original.defective_pct >= HIGH_DEFECT_RATE_PCT &&
+            "font-semibold text-red-700 dark:text-red-400",
+        )}
+      >
         {formatPct(row.original.defective_pct)}
       </span>
     ),
@@ -153,6 +170,7 @@ export function ExecutiveWarehouseDefectsTable({
       showAllRows
       rangeLabel="warehouses"
       isLoading={isLoading}
+      getRowClassName={warehouseRowClassName}
       downloadCsvFileName="executive-warehouse-defects.csv"
       downloadCsv={(rows) => ({
         headers: [

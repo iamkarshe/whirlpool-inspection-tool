@@ -9,10 +9,13 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   fetchExecutiveAnalyticsKpis,
   fetchExecutiveDefectsMix,
+  fetchExecutiveDefectsPareto,
   fetchExecutiveDefectsWarehouse,
   type ExecutiveAnalyticsKpis,
 } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-service";
 import { ExecutiveDefectMixChart } from "@/pages/dashboard/reports/executive-analytics/executive-defect-mix-chart";
+import { ExecutiveDefectsParetoChart } from "@/pages/dashboard/reports/executive-analytics/executive-defects-pareto-chart";
+import type { DefectsParetoChartItem } from "@/api/generated/model/defectsParetoChartItem";
 import { ExecutiveWarehouseDefectsTable } from "@/pages/dashboard/reports/executive-analytics/executive-warehouse-defects-table";
 import type { DefectsMixItem } from "@/api/generated/model/defectsMixItem";
 import type { DefectsWarehouseItem } from "@/api/generated/model/defectsWarehouseItem";
@@ -82,6 +85,9 @@ export default function ExecutiveAnalyticsPage() {
   const [defectMixItems, setDefectMixItems] = useState<DefectsMixItem[]>([]);
   const [defectMixTotal, setDefectMixTotal] = useState(0);
   const [defectMixLoading, setDefectMixLoading] = useState(true);
+  const [paretoItems, setParetoItems] = useState<DefectsParetoChartItem[]>([]);
+  const [paretoTotalDefects, setParetoTotalDefects] = useState(0);
+  const [paretoLoading, setParetoLoading] = useState(true);
   const [kpiLoading, setKpiLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [inspectionType, setInspectionType] = useState<InspectionType>(
@@ -260,6 +266,32 @@ export default function ExecutiveAnalyticsPage() {
     };
   }, [dateRange, filters, inspectionType]);
 
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => setParetoLoading(true));
+    fetchExecutiveDefectsPareto(filters, dateRange, inspectionType)
+      .then(({ items, totalDefects }) => {
+        if (!cancelled) {
+          setParetoItems(items);
+          setParetoTotalDefects(totalDefects);
+        }
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const message =
+          e instanceof Error ? e.message : "Failed to load defects pareto.";
+        toast.error(message);
+        setParetoItems([]);
+        setParetoTotalDefects(0);
+      })
+      .finally(() => {
+        if (!cancelled) setParetoLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange, filters, inspectionType]);
+
   return (
     <div
       data-containerid="dashboard-reports-executive-analytics"
@@ -334,6 +366,12 @@ export default function ExecutiveAnalyticsPage() {
             />
           ) : null}
         </div>
+
+        <ExecutiveDefectsParetoChart
+          items={paretoItems}
+          totalDefects={paretoTotalDefects}
+          isLoading={paretoLoading}
+        />
 
         <div className="lg:col-span-12 xl:col-span-8">
           <ChartCard
