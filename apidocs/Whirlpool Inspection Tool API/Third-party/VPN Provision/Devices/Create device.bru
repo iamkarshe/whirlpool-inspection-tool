@@ -1,0 +1,24 @@
+meta {
+  name: Create device
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{vpn_provisioner_url}}/v1/devices
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{vpn_provisioner_token}}
+}
+
+body:json {
+  {
+    "user_name": "Whirlpool User 01",
+    "user_email": "user01@whirlpool.com",
+    "device_name": "Android Phone",
+    "device_type": "android"
+  }
+}

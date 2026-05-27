@@ -1,0 +1,15 @@
+meta {
+  name: Config
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{vpn_provisioner_url}}/v1/devices
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{vpn_provisioner_token}}
+}

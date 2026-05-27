@@ -107,6 +107,9 @@ func ipToUint32(s string) uint32 {
 	return uint32(ip[0])<<24 | uint32(ip[1])<<16 | uint32(ip[2])<<8 | uint32(ip[3])
 }
 
+// IpToUint32 converts an IPv4 string to a uint32 (host order for range iteration).
+func IpToUint32(s string) uint32 { return ipToUint32(s) }
+
 func Uint32ToIP(v uint32) string {
 	b0 := byte(v >> 24)
 	b1 := byte(v >> 16)
