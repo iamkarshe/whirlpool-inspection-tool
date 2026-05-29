@@ -550,7 +550,8 @@ def start_outbound_inspection(
     description=(
         "Upload a compressed image before an inspection exists; "
         "barcode is always 16 alphanumeric characters (product unit barcode). "
-        "Returns a CDN-relative path under uploads/inspections/<barcode>/..."
+        "Returns a stored path under uploads/inspections/<barcode>/... "
+        "(local disk or S3 key depending on MEDIA_TYPE)."
     ),
     response_model=InspectionImageUploadResponse,
 )

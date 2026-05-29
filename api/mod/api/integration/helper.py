@@ -4,7 +4,7 @@ from typing import Any
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 from mod.api.integration.request import AwsS3UpdateRequest, OktaSsoUpdateRequest
 from mod.api.integration.response import (
@@ -159,6 +159,27 @@ def resolve_aws_s3_credentials(
         "access_key_id": stored["access_key_id"].strip(),
         "secret_access_key": stored["secret_access_key"].strip(),
     }
+
+
+def get_aws_s3_client_and_bucket() -> tuple[Any, str]:
+    credentials = resolve_aws_s3_credentials(None)
+    missing_fields = [field for field, value in credentials.items() if not value]
+    if missing_fields:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "AWS S3 is not configured: "
+                f"missing {', '.join(missing_fields)}"
+            ),
+        )
+
+    client = boto3.client(
+        "s3",
+        region_name=credentials["region"],
+        aws_access_key_id=credentials["access_key_id"],
+        aws_secret_access_key=credentials["secret_access_key"],
+    )
+    return client, credentials["bucket_name"]
 
 
 def format_s3_client_error(exc: ClientError) -> str:

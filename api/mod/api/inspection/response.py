@@ -285,9 +285,10 @@ class InspectionReviewStatusUpdateRequest(BaseModel):
 
 
 class InspectionImageUploadResponse(BaseModel):
-    """Relative storage path (prefix with CDN base URL on the client)."""
+    """Stored path for persistence plus an embeddable URL for immediate preview."""
 
     path: str
+    url: str
 
 
 class InspectionProductForPrint(BaseModel):

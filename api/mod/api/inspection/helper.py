@@ -736,8 +736,10 @@ def save_inspection_image_upload(
         path = upload_media(rel, jpeg_bytes)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException:
+        raise
 
-    return InspectionImageUploadResponse(path=path)
+    return InspectionImageUploadResponse(path=path, url=build_url(path))
 
 
 def map_inspection_product_for_print(inspection: Inspection) -> InspectionProductForPrint:
