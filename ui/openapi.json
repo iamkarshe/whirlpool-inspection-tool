@@ -606,6 +606,61 @@
         }
       }
     },
+    "/api/users/{user_uuid}/vpn/revoke": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Revoke VPN profile",
+        "description": "Revokes the user's VPN device on the provision server and clears stored VPN profile fields on the user record.",
+        "operationId": "revoke_user_vpn_api_users__user_uuid__vpn_revoke_get",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "User UUID.",
+              "title": "User Uuid"
+            },
+            "description": "User UUID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Target user is superadmin."
+          },
+          "404": {
+            "description": "User not found or no VPN profile."
+          },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users/{user_uuid}": {
       "put": {
         "tags": [

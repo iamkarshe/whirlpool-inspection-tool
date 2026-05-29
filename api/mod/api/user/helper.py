@@ -125,6 +125,32 @@ def generate_user_vpn_profile(
     return loaded
 
 
+def revoke_user_vpn_by_uuid(db: Session, user_uuid: uuid.UUID) -> User:
+    user = user_with_role_and_scope(db, user_uuid)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if (user.role.role or "").lower() == "superadmin":
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot revoke VPN profile for superadmin accounts",
+        )
+
+    if user.vpn_device_uuid is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User does not have a VPN profile",
+        )
+
+    revoke_user_vpn_profile(user)
+    db.commit()
+
+    loaded = user_with_role_and_scope(db, user_uuid)
+    if loaded is None:
+        raise HTTPException(status_code=500, detail="User reload failed")
+    return loaded
+
+
 def download_user_vpn_config(user: User) -> Response:
     device_uuid = require_user_vpn_device_uuid(user)
     return fetch_vpn_device_config(device_uuid)

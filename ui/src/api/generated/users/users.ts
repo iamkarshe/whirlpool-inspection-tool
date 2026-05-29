@@ -89,6 +89,18 @@ const downloadUserVpnQrApiUsersUserUuidVpnQrGet = (
       options);
     }
   /**
+ * Revokes the user's VPN device on the provision server and clears stored VPN profile fields on the user record.
+ * @summary Revoke VPN profile
+ */
+const revokeUserVpnApiUsersUserUuidVpnRevokeGet = (
+    userUuid: string,
+ options?: SecondParameter<typeof customInstance<UserResponse>>,) => {
+      return customInstance<UserResponse>(
+      {url: `/api/users/${userUuid}/vpn/revoke`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * Partial update: send only fields to change. Set is_active to false to deactivate; VPN is revoked automatically. Superadmin accounts cannot be edited.
  * @summary Update user
  */
@@ -103,10 +115,11 @@ const updateUserApiUsersUserUuidPut = (
     },
       options);
     }
-  return {getUsersApiUsersGet,createUserApiUsersPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,updateUserApiUsersUserUuidPut}};
+  return {getUsersApiUsersGet,createUserApiUsersPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,revokeUserVpnApiUsersUserUuidVpnRevokeGet,updateUserApiUsersUserUuidPut}};
 export type GetUsersApiUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['getUsersApiUsersGet']>>>
 export type CreateUserApiUsersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['createUserApiUsersPost']>>>
 export type GenerateUserVpnApiUsersGenerateVpnPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['generateUserVpnApiUsersGenerateVpnPost']>>>
 export type DownloadUserVpnConfigApiUsersUserUuidVpnConfigGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnConfigApiUsersUserUuidVpnConfigGet']>>>
 export type DownloadUserVpnQrApiUsersUserUuidVpnQrGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnQrApiUsersUserUuidVpnQrGet']>>>
+export type RevokeUserVpnApiUsersUserUuidVpnRevokeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['revokeUserVpnApiUsersUserUuidVpnRevokeGet']>>>
 export type UpdateUserApiUsersUserUuidPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['updateUserApiUsersUserUuidPut']>>>

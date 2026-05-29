@@ -27,6 +27,7 @@ import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import { DeactivateUserDialog } from "@/pages/dashboard/admin/users/deactivate-user-dialog";
 import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
+import { RevokeUserVpnDialog } from "@/pages/dashboard/admin/users/revoke-user-vpn-dialog";
 import { VpnInstallationDialog } from "@/pages/dashboard/admin/users/vpn-installation-dialog";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
@@ -35,7 +36,7 @@ import {
   downloadUserVpnQr,
   fetchUsersPage,
   generateUserVpn,
-  isUserVpnProvisioned,
+  revokeUserVpn,
   updateUser,
   userApiErrorMessage,
 } from "@/services/users-api";
@@ -269,9 +270,10 @@ export default function UsersPage() {
   const [togglingUserUuid, setTogglingUserUuid] = useState<string | null>(null);
   const [deactivateUser, setDeactivateUser] = useState<UserResponse | null>(null);
   const [vpnInstallUser, setVpnInstallUser] = useState<UserResponse | null>(null);
+  const [revokeVpnUser, setRevokeVpnUser] = useState<UserResponse | null>(null);
   const [vpnBusyUserUuid, setVpnBusyUserUuid] = useState<string | null>(null);
   const [vpnBusyAction, setVpnBusyAction] = useState<
-    "setup" | "config" | "qr" | null
+    "setup" | "config" | "qr" | "revoke" | null
   >(null);
   const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
 
@@ -341,11 +343,7 @@ export default function UsersPage() {
       const updated = await generateUserVpn(user.uuid, {
         deviceName: user.name,
       });
-      toast.success(
-        isUserVpnProvisioned(user) ?
-          "VPN profile replaced."
-        : "VPN profile created.",
-      );
+      toast.success("VPN profile created.");
       setReloadKey((v) => v + 1);
       setVpnInstallUser(updated);
     } catch (e: unknown) {
@@ -364,6 +362,32 @@ export default function UsersPage() {
   const onVpnDownloadQr = useCallback(
     (user: UserResponse) => void runVpnDownload(user, "qr"),
     [runVpnDownload],
+  );
+
+  const onVpnRevoke = useCallback((user: UserResponse) => {
+    setRevokeVpnUser(user);
+  }, []);
+
+  const applyVpnRevoke = useCallback(
+    async (user: UserResponse): Promise<boolean> => {
+      setVpnBusyUserUuid(user.uuid);
+      setVpnBusyAction("revoke");
+      try {
+        await revokeUserVpn(user.uuid);
+        toast.success("VPN profile revoked.");
+        setReloadKey((v) => v + 1);
+        setRevokeVpnUser(null);
+        if (vpnInstallUser?.uuid === user.uuid) setVpnInstallUser(null);
+        return true;
+      } catch (e: unknown) {
+        toast.error(userApiErrorMessage(e, "Could not revoke VPN profile."));
+        return false;
+      } finally {
+        setVpnBusyUserUuid(null);
+        setVpnBusyAction(null);
+      }
+    },
+    [vpnInstallUser],
   );
 
   const handleInstallDialogDownloadConfig = useCallback(async () => {
@@ -460,6 +484,7 @@ export default function UsersPage() {
         onVpnSetup={onVpnSetup}
         onVpnDownloadConfig={onVpnDownloadConfig}
         onVpnDownloadQr={onVpnDownloadQr}
+        onVpnRevoke={onVpnRevoke}
         vpnBusyUserUuid={vpnBusyUserUuid}
         vpnBusyAction={vpnBusyAction}
       />
@@ -507,6 +532,21 @@ export default function UsersPage() {
         }
         onDownloadConfig={handleInstallDialogDownloadConfig}
         onDownloadQr={handleInstallDialogDownloadQr}
+      />
+      <RevokeUserVpnDialog
+        open={revokeVpnUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setRevokeVpnUser(null);
+        }}
+        user={revokeVpnUser}
+        isLoading={
+          revokeVpnUser !== null && vpnBusyUserUuid === revokeVpnUser.uuid
+        }
+        onConfirm={() =>
+          revokeVpnUser ?
+            applyVpnRevoke(revokeVpnUser)
+          : Promise.resolve(false)
+        }
       />
     </div>
   );

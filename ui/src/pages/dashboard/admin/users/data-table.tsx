@@ -10,6 +10,7 @@ import {
   Pencil,
   QrCode,
   Settings2,
+  ShieldOff,
   Smartphone,
   UserCheck,
   UserX,
@@ -28,8 +29,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
 import {
@@ -45,8 +53,9 @@ function buildUserColumns(
   onVpnSetup: (user: UserResponse) => void,
   onVpnDownloadConfig: (user: UserResponse) => void,
   onVpnDownloadQr: (user: UserResponse) => void,
+  onVpnRevoke: (user: UserResponse) => void,
   vpnBusyUserUuid: string | null,
-  vpnBusyAction: "setup" | "config" | "qr" | null,
+  vpnBusyAction: "setup" | "config" | "qr" | "revoke" | null,
 ): ColumnDef<UserResponse>[] {
   return [
     {
@@ -139,54 +148,97 @@ function buildUserColumns(
         return (
           <div className="flex items-center justify-end gap-1">
             {!isSuperadminRoleName(user.role) ?
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={!user.is_active || (vpnBusy && vpnBusyAction === "setup")}
-                    aria-label="VPN provision"
-                  >
-                    <Network className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    disabled={!user.is_active || (vpnBusy && vpnBusyAction !== "setup")}
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      onVpnSetup(user);
-                    }}
-                  >
-                    <Settings2 className="mr-2 h-4 w-4" />
-                    {vpnBusy && vpnBusyAction === "setup" ? "Setting up…" : "Setup"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={!vpnProvisioned || (vpnBusy && vpnBusyAction !== "config")}
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      onVpnDownloadConfig(user);
-                    }}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {vpnBusy && vpnBusyAction === "config" ?
-                      "Downloading…"
-                    : "Download config"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={!vpnProvisioned || (vpnBusy && vpnBusyAction !== "qr")}
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      onVpnDownloadQr(user);
-                    }}
-                  >
-                    <QrCode className="mr-2 h-4 w-4" />
-                    {vpnBusy && vpnBusyAction === "qr" ?
-                      "Downloading…"
-                    : "Download QR"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <TooltipProvider delayDuration={300}>
+                <DropdownMenu>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={
+                            !user.is_active ||
+                            (vpnBusy &&
+                              (vpnBusyAction === "setup" ||
+                                vpnBusyAction === "revoke"))
+                          }
+                          aria-label="VPN Provision"
+                        >
+                          <Network className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>VPN Provision</TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent align="end">
+                      {!vpnProvisioned ?
+                        <DropdownMenuItem
+                          disabled={
+                            !user.is_active ||
+                            (vpnBusy && vpnBusyAction !== "setup")
+                          }
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            onVpnSetup(user);
+                          }}
+                        >
+                          <Settings2 className="mr-2 h-4 w-4" />
+                          {vpnBusy && vpnBusyAction === "setup" ?
+                            "Setting up…"
+                          : "Setup"}
+                        </DropdownMenuItem>
+                      : null}
+                      <DropdownMenuItem
+                        disabled={
+                          !vpnProvisioned ||
+                          (vpnBusy && vpnBusyAction !== "config")
+                        }
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          onVpnDownloadConfig(user);
+                        }}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        {vpnBusy && vpnBusyAction === "config" ?
+                          "Downloading…"
+                        : "Download config"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={
+                          !vpnProvisioned ||
+                          (vpnBusy && vpnBusyAction !== "qr")
+                        }
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          onVpnDownloadQr(user);
+                        }}
+                      >
+                        <QrCode className="mr-2 h-4 w-4" />
+                        {vpnBusy && vpnBusyAction === "qr" ?
+                          "Downloading…"
+                        : "Download QR"}
+                      </DropdownMenuItem>
+                      {vpnProvisioned ?
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            disabled={vpnBusy && vpnBusyAction !== "revoke"}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              onVpnRevoke(user);
+                            }}
+                          >
+                            <ShieldOff className="mr-2 h-4 w-4" />
+                            {vpnBusy && vpnBusyAction === "revoke" ?
+                              "Revoking…"
+                            : "Revoke"}
+                          </DropdownMenuItem>
+                        </>
+                      : null}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+              </TooltipProvider>
             : null}
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -298,8 +350,9 @@ interface UsersDataTableProps {
   onVpnSetup: (user: UserResponse) => void;
   onVpnDownloadConfig: (user: UserResponse) => void;
   onVpnDownloadQr: (user: UserResponse) => void;
+  onVpnRevoke: (user: UserResponse) => void;
   vpnBusyUserUuid?: string | null;
-  vpnBusyAction?: "setup" | "config" | "qr" | null;
+  vpnBusyAction?: "setup" | "config" | "qr" | "revoke" | null;
 }
 
 export default function UsersDataTable({
@@ -312,6 +365,7 @@ export default function UsersDataTable({
   onVpnSetup,
   onVpnDownloadConfig,
   onVpnDownloadQr,
+  onVpnRevoke,
   vpnBusyUserUuid = null,
   vpnBusyAction = null,
 }: UsersDataTableProps) {
@@ -324,6 +378,7 @@ export default function UsersDataTable({
         onVpnSetup,
         onVpnDownloadConfig,
         onVpnDownloadQr,
+        onVpnRevoke,
         vpnBusyUserUuid,
         vpnBusyAction,
       ),
@@ -334,6 +389,7 @@ export default function UsersDataTable({
       onVpnSetup,
       onVpnDownloadConfig,
       onVpnDownloadQr,
+      onVpnRevoke,
       vpnBusyUserUuid,
       vpnBusyAction,
     ],

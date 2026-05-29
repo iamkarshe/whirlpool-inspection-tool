@@ -14,6 +14,7 @@ from mod.api.user.helper import (
     forbid_superadmin_role_assignment,
     generate_user_vpn_profile,
     map_user_response,
+    revoke_user_vpn_by_uuid,
     revoke_user_vpn_profile,
     user_with_role_and_scope,
 )
@@ -260,6 +261,32 @@ def get_user_vpn_qr(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return download_user_vpn_qr(user)
+
+
+@router.get(
+    "/users/{user_uuid}/vpn/revoke",
+    name="revoke_user_vpn",
+    summary="Revoke VPN profile",
+    description=(
+        "Revokes the user's VPN device on the provision server and clears "
+        "stored VPN profile fields on the user record."
+    ),
+    response_model=UserResponse,
+    responses={
+        403: {"description": "Target user is superadmin."},
+        404: {"description": "User not found or no VPN profile."},
+        503: {"description": "VPN provision service not configured."},
+    },
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def revoke_user_vpn(
+    request: Request,
+    user_uuid: uuid.UUID = Path(..., description="User UUID."),
+    db: Session = Depends(get_db),
+):
+    user = revoke_user_vpn_by_uuid(db, user_uuid)
+    return map_user_response(user)
 
 
 @router.put(

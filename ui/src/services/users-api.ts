@@ -166,6 +166,17 @@ export async function generateUserVpn(
   );
 }
 
+export async function revokeUserVpn(
+  userUuid: string,
+  opts?: { signal?: AbortSignal },
+): Promise<UserResponse> {
+  const api = getUsers();
+  return api.revokeUserVpnApiUsersUserUuidVpnRevokeGet(
+    userUuid,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
 async function userVpnBlobErrorMessage(
   err: unknown,
   fallback: string,
