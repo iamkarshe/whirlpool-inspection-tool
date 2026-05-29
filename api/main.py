@@ -22,6 +22,7 @@ from mod.api.vpn.router import router as vpn_router
 from mod.api.warehouse.router import router as warehouse_router
 from mod.auth.device_router import router as auth_device_router
 from mod.auth.router import router as auth_router
+from mod.jobs.router import router as jobs_router
 from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
 from mod.app.helper import require_superadmin_for_api_docs
@@ -96,6 +97,7 @@ app.include_router(reports_router)
 app.include_router(sku_router)
 app.include_router(push_notification_router)
 app.include_router(vpn_router)
+app.include_router(jobs_router)
 app.include_router(okta_sso_router)
 
 # Uploads directory
@@ -174,7 +176,7 @@ app.mount("/", StaticFiles(directory="build/", html=True), name="build")
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc):
     # Check if the request is for an API route
-    api_routes = ("/api", "/auth", "/integration")
+    api_routes = ("/api", "/auth", "/integration", "/jobs")
 
     # API routes → JSON response
     if request.url.path.startswith(api_routes):

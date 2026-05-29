@@ -68,3 +68,20 @@ def is_vpn_provision_configured() -> bool:
     return (
         get_vpn_provision_server() is not None and get_vpn_provision_key() is not None
     )
+
+
+def get_job_execute_token() -> str | None:
+    return get_env_optional("JOB_EXECUTE_TOKEN")
+
+
+def get_auto_approve_inspection_hours() -> int:
+    raw = get_env_optional("AUTO_APPROVE_INSPECTION_HOURS", "6") or "6"
+    try:
+        hours = int(raw)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"Invalid AUTO_APPROVE_INSPECTION_HOURS: {raw!r}"
+        ) from exc
+    if hours < 1:
+        raise RuntimeError("AUTO_APPROVE_INSPECTION_HOURS must be at least 1")
+    return hours

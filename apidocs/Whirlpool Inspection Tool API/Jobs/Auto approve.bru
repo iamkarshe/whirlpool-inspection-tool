@@ -1,0 +1,44 @@
+meta {
+  name: Auto approve
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/jobs/auto-approve-inspections
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-job-execute-token: sk_live_sjXxi31W1AQSrTxIRhaTeka4qk1DqL9h
+}
+
+example {
+  name: 200 Response
+  description: Successful Response
+  
+  request: {
+    url: {{baseUrl}}/health
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+  
+      '''
+    }
+  }
+}

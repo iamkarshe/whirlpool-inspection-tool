@@ -835,6 +835,9 @@ class Inspection(TimestampSoftDeleteMixin, Base):
     is_under_review: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
+    is_auto_approved: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
     review_status: Mapped[InspectionReviewStatus] = mapped_column(
         REVIEW_STATUS_DB,
         nullable=False,
@@ -1149,3 +1152,31 @@ class BarcodeLock(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="barcode_locks")
+
+
+class JobLogStatus(str, enum.Enum):
+    success = "success"
+    failed = "failed"
+
+
+JOB_LOG_STATUS_DB = pg_str_enum(JobLogStatus, name="job_log_status", length=16)
+
+
+class JobLog(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "job_logs"
+    __table_args__ = (
+        Index("ix_job_logs_job_name", "job_name"),
+        Index("ix_job_logs_status", "status"),
+        Index("ix_job_logs_created_at", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[JobLogStatus] = mapped_column(
+        JOB_LOG_STATUS_DB,
+        nullable=False,
+    )
+    rows_updated: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
