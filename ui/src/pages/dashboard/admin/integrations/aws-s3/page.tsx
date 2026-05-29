@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import {
   fetchIntegrationsCredentials,
   integrationsApiErrorMessage,
+  testAwsS3Connection,
   updateAwsS3Integration,
 } from "@/services/integrations-api";
 
@@ -25,6 +26,7 @@ export default function IntegrationsAwsS3Page() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [bucketName, setBucketName] = useState("");
@@ -59,17 +61,41 @@ export default function IntegrationsAwsS3Page() {
     };
   }, []);
 
+  const buildPayload = () => ({
+    bucket_name: bucketName.trim(),
+    region: region.trim(),
+    access_key_id: accessKeyId.trim(),
+    secret_access_key: secretAccessKey.trim(),
+  });
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    try {
+      const res = await testAwsS3Connection();
+      if (res.success) {
+        const detail =
+          res.bucket_name && res.region
+            ? `${res.message} (${res.bucket_name}, ${res.region})`
+            : res.message;
+        toast.success(detail);
+      } else {
+        toast.error(res.message || "Connection test failed.");
+      }
+    } catch (e: unknown) {
+      toast.error(
+        integrationsApiErrorMessage(e, "Could not test AWS S3 connection."),
+      );
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaveError(null);
     setSaving(true);
     try {
-      const res = await updateAwsS3Integration({
-        bucket_name: bucketName.trim(),
-        region: region.trim(),
-        access_key_id: accessKeyId.trim(),
-        secret_access_key: secretAccessKey.trim(),
-      });
+      const res = await updateAwsS3Integration(buildPayload());
       const s = res.aws_s3;
       setBucketName(s.bucket_name ?? "");
       setRegion(s.region ?? "");
@@ -182,8 +208,23 @@ export default function IntegrationsAwsS3Page() {
             </Alert>
           ) : null}
         </CardContent>
-        <CardFooter className="mt-5 flex justify-end">
-          <Button type="submit" disabled={saving}>
+        <CardFooter className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={testing || saving}
+            onClick={() => void handleTestConnection()}
+          >
+            {testing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Testing…
+              </>
+            ) : (
+              "Test connection"
+            )}
+          </Button>
+          <Button type="submit" disabled={saving || testing}>
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

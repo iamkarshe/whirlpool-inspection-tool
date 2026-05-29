@@ -1,6 +1,8 @@
 import { isAxiosError } from "axios";
 
+import { customInstance } from "@/api/axios-instance";
 import { getAppIntegration } from "@/api/generated/app-integration/app-integration";
+import type { AwsS3TestConnectionResponse } from "@/api/generated/model/awsS3TestConnectionResponse";
 import type { AwsS3UpdateRequest } from "@/api/generated/model/awsS3UpdateRequest";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { IntegrationCredentialsResponse } from "@/api/generated/model/integrationCredentialsResponse";
@@ -33,6 +35,18 @@ export async function updateAwsS3Integration(
   const api = getAppIntegration();
   return api.putAwsS3IntegrationApiIntegrationsAwsS3Put(
     body,
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+export async function testAwsS3Connection(opts?: {
+  signal?: AbortSignal;
+}): Promise<AwsS3TestConnectionResponse> {
+  return customInstance<AwsS3TestConnectionResponse>(
+    {
+      url: "/api/integrations/aws-s3/test-connection",
+      method: "POST",
+    },
     opts?.signal ? { signal: opts.signal } : undefined,
   );
 }
