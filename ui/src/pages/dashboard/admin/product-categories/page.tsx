@@ -1,9 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 
 import type { ProductCategoryListItemResponse } from "@/api/generated/model/productCategoryListItemResponse";
 import CsvUploadDialog from "@/components/csv-upload-dialog";
-import ConfirmDeleteDialog from "@/components/dialog-confirm-delete";
 import PageActionBar from "@/components/page-action-bar";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
@@ -20,10 +19,6 @@ const PRODUCT_CATEGORY_LIST_SORT = {
 const PRODUCT_CATEGORY_INITIAL_SORTING = [{ id: "id", desc: true }] as const;
 
 export default function ProductCategoriesPage() {
-  const [categoryToDelete, setCategoryToDelete] =
-    useState<ProductCategoryListItemResponse | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   const loadProductCategories = useCallback(
     async ({
       signal,
@@ -52,10 +47,10 @@ export default function ProductCategoriesPage() {
 
   const { rows, isLoading, error: loadError, serverSide } =
     useControlledServerTable<ProductCategoryListItemResponse>({
-    initialSorting: [...PRODUCT_CATEGORY_INITIAL_SORTING],
-    errorMessage: "Failed to load product categories.",
-    load: loadProductCategories,
-  });
+      initialSorting: [...PRODUCT_CATEGORY_INITIAL_SORTING],
+      errorMessage: "Failed to load product categories.",
+      load: loadProductCategories,
+    });
 
   const handleCsvSubmit = async (file: File) => {
     try {
@@ -90,37 +85,6 @@ export default function ProductCategoriesPage() {
         data={rows}
         serverSide={serverSide}
         isLoading={isLoading}
-        onDeleteCategory={(category) => setCategoryToDelete(category)}
-      />
-
-      <ConfirmDeleteDialog
-        open={categoryToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCategoryToDelete(null);
-          }
-        }}
-        entityLabel="product category"
-        title="Delete product category?"
-        description={
-          categoryToDelete
-            ? `You are about to permanently delete the product category "${categoryToDelete.name}". This action cannot be undone.`
-            : undefined
-        }
-        confirmLabel="Delete category"
-        isLoading={isDeleting}
-        onConfirm={async () => {
-          if (!categoryToDelete) return;
-          try {
-            setIsDeleting(true);
-            toast.info(
-              "Delete product category API is not available in the client yet.",
-            );
-          } finally {
-            setIsDeleting(false);
-            setCategoryToDelete(null);
-          }
-        }}
       />
     </div>
   );

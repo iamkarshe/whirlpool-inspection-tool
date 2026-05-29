@@ -3,12 +3,6 @@ import type { DataTableServerSideConfig } from "@/components/ui/data-table";
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import { ProductCategoryProductsCountBadge } from "@/pages/dashboard/admin/product-categories/product-category-badge";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -16,11 +10,8 @@ import {
   ArrowDownToLine,
   ArrowUpDown,
   ArrowUpFromLine,
-  BarChart3,
   CheckCircle2,
   ClipboardList,
-  MoreHorizontal,
-  Trash2,
   XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -31,14 +22,12 @@ interface ProductCategoriesDataTableProps {
   data: ProductCategoryListItemResponse[];
   serverSide: DataTableServerSideConfig;
   isLoading?: boolean;
-  onDeleteCategory?: (category: ProductCategoryListItemResponse) => void;
 }
 
 export default function ProductCategoriesDataTable({
   data,
   serverSide,
   isLoading,
-  onDeleteCategory,
 }: ProductCategoriesDataTableProps) {
   const columns: ColumnDef<ProductCategoryListItemResponse>[] = [
     {
@@ -183,43 +172,6 @@ export default function ProductCategoriesDataTable({
               {c.inspection_outbound_rejected}
             </Badge>
           </Link>
-        );
-      },
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const category = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link
-                  to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.uuid}`}
-                  className="flex items-center"
-                >
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Executive analytics
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => {
-                  onDeleteCategory?.(category);
-                }}
-              >
-                <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                Delete category
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         );
       },
     },

@@ -585,7 +585,7 @@ export function DataTable<TData>({
               {pageRangeText}
             </div>
           )}
-          {!showAllRows && !isServerSide ? (
+          {!showAllRows ? (
             <div className="space-x-2">
               <Button
                 variant="outline"
