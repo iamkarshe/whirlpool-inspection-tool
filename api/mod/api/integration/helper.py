@@ -2,11 +2,14 @@ import json
 from pathlib import Path
 from typing import Any
 
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import HTTPException
 
 from mod.api.integration.request import AwsS3UpdateRequest, OktaSsoUpdateRequest
 from mod.api.integration.response import (
     AwsS3CredentialsResponse,
+    AwsS3TestConnectionResponse,
     IntegrationCredentialsResponse,
     OktaSsoCredentialsResponse,
 )
@@ -136,6 +139,84 @@ def update_aws_s3_credentials(
     }
     save_credentials_payload(payload)
     return map_masked_credentials_response(payload)
+
+
+def resolve_aws_s3_credentials(
+    override: AwsS3UpdateRequest | None,
+) -> dict[str, str]:
+    if override is not None:
+        return {
+            "bucket_name": override.bucket_name,
+            "region": override.region,
+            "access_key_id": override.access_key_id,
+            "secret_access_key": override.secret_access_key,
+        }
+
+    stored = load_credentials_payload()["aws_s3"]
+    return {
+        "bucket_name": stored["bucket_name"].strip(),
+        "region": stored["region"].strip(),
+        "access_key_id": stored["access_key_id"].strip(),
+        "secret_access_key": stored["secret_access_key"].strip(),
+    }
+
+
+def format_s3_client_error(exc: ClientError) -> str:
+    error = exc.response.get("Error", {})
+    code = str(error.get("Code", "Unknown") or "Unknown")
+    message = str(error.get("Message", str(exc)) or str(exc))
+    return f"{code}: {message}"
+
+
+def test_aws_s3_connection(
+    override: AwsS3UpdateRequest | None = None,
+) -> AwsS3TestConnectionResponse:
+    credentials = resolve_aws_s3_credentials(override)
+    bucket_name = credentials["bucket_name"]
+    region = credentials["region"]
+
+    missing_fields = [
+        field
+        for field, value in credentials.items()
+        if not value
+    ]
+    if missing_fields:
+        return AwsS3TestConnectionResponse(
+            success=False,
+            message=f"Missing AWS S3 configuration: {', '.join(missing_fields)}",
+            bucket_name=bucket_name or None,
+            region=region or None,
+        )
+
+    try:
+        client = boto3.client(
+            "s3",
+            region_name=region,
+            aws_access_key_id=credentials["access_key_id"],
+            aws_secret_access_key=credentials["secret_access_key"],
+        )
+        client.head_bucket(Bucket=bucket_name)
+    except ClientError as exc:
+        return AwsS3TestConnectionResponse(
+            success=False,
+            message=format_s3_client_error(exc),
+            bucket_name=bucket_name,
+            region=region,
+        )
+    except BotoCoreError as exc:
+        return AwsS3TestConnectionResponse(
+            success=False,
+            message=str(exc),
+            bucket_name=bucket_name,
+            region=region,
+        )
+
+    return AwsS3TestConnectionResponse(
+        success=True,
+        message="Successfully connected to the S3 bucket.",
+        bucket_name=bucket_name,
+        region=region,
+    )
 
 
 def get_okta_credentials() -> OktaSsoCredentialsResponse:

@@ -18,3 +18,10 @@ class AwsS3CredentialsResponse(BaseModel):
 class IntegrationCredentialsResponse(BaseModel):
     okta_sso: OktaSsoCredentialsResponse
     aws_s3: AwsS3CredentialsResponse
+
+
+class AwsS3TestConnectionResponse(BaseModel):
+    success: bool
+    message: str
+    bucket_name: str | None = None
+    region: str | None = None

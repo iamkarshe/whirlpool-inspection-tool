@@ -2,11 +2,15 @@ from fastapi import APIRouter, Depends, Request
 
 from mod.api.integration.helper import (
     get_integration_credentials,
+    test_aws_s3_connection,
     update_aws_s3_credentials,
     update_okta_credentials,
 )
 from mod.api.integration.request import AwsS3UpdateRequest, OktaSsoUpdateRequest
-from mod.api.integration.response import IntegrationCredentialsResponse
+from mod.api.integration.response import (
+    AwsS3TestConnectionResponse,
+    IntegrationCredentialsResponse,
+)
 from mod.api.middleware import auth_dependency
 from utils.decorator import check_api_role, exception_handler_decorator
 
@@ -42,3 +46,18 @@ def put_aws_s3_integration(
     payload: AwsS3UpdateRequest,
 ):
     return update_aws_s3_credentials(payload)
+
+
+@router.post(
+    "/integrations/aws-s3/test-connection",
+    response_model=AwsS3TestConnectionResponse,
+    name="test_aws_s3_connection",
+    description="Test AWS S3 connectivity using saved credentials or an optional request body",
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_aws_s3_test_connection(
+    request: Request,
+    payload: AwsS3UpdateRequest | None = None,
+):
+    return test_aws_s3_connection(payload)
