@@ -14,6 +14,7 @@ from mod.api.product.response import (
 from mod.model import Product, ProductCategory
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
+from utils.roles import ROLES_MASTER_READ
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
@@ -30,7 +31,7 @@ router = APIRouter(
 
 @router.get("/products", response_model=ProductListResponse)
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def get_products(
     request: Request,
     params: PaginationParams = Depends(get_pagination_params),
@@ -88,7 +89,7 @@ def get_products(
 
 @router.get("/products/{product_uuid}", response_model=ProductResponse)
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def get_product(
     request: Request,
     product_uuid: uuid.UUID,

@@ -6,6 +6,7 @@ from fastapi.exceptions import ResponseValidationError
 from fastapi.responses import JSONResponse
 
 from utils.log import debug_rich_console
+from utils.roles import request_is_operator_only as _request_is_operator_only
 
 
 def exception_handler_decorator(func: Callable):
@@ -108,14 +109,8 @@ def _request_from_args(args: tuple, kwargs: dict) -> Optional[Request]:
 
 
 def request_is_operator_only(request: Request) -> bool:
-    """True when the caller has operator role but not manager or superadmin."""
-    role_raw = getattr(request.state, "role", None) or ""
-    roles = [r.strip() for r in str(role_raw).split(",") if r.strip()]
-    return (
-        "operator" in roles
-        and "superadmin" not in roles
-        and "manager" not in roles
-    )
+    """True when the caller has operator role but not manager, biz-admin, or superadmin."""
+    return _request_is_operator_only(request)
 
 
 def apply_operator_scope_filters(func: Callable):

@@ -21,6 +21,7 @@ from mod.model import Warehouse
 from utils.common import read_csv_upload, to_proper_case
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
+from utils.roles import ROLES_MASTER_READ, ROLES_MASTER_WRITE
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
@@ -42,7 +43,7 @@ router = APIRouter(
     response_model=WarehouseListResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def get_warehouses(
     request: Request,
     params: PaginationParams = Depends(get_pagination_params),
@@ -101,7 +102,7 @@ def get_warehouses(
     response_model=WarehouseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def create_warehouse(
     request: Request,
     payload: WarehouseCreateRequest,
@@ -142,7 +143,7 @@ def create_warehouse(
     response_model=WarehouseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def get_warehouse_info(
     request: Request,
     warehouse_uuid: uuid.UUID,
@@ -160,7 +161,7 @@ def get_warehouse_info(
     response_model=WarehouseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def update_warehouse(
     request: Request,
     warehouse_uuid: uuid.UUID,
@@ -210,7 +211,7 @@ def update_warehouse(
     response_model=WarehouseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def delete_warehouse(
     request: Request,
     warehouse_uuid: uuid.UUID,
@@ -231,7 +232,7 @@ def delete_warehouse(
     description="Download warehouse CSV template with existing data",
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def download_warehouses_csv_template(
     request: Request,
     db: Session = Depends(get_db),
@@ -283,7 +284,7 @@ def download_warehouses_csv_template(
     description="Bulk upsert warehouses from CSV",
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def upload_warehouses_csv(
     request: Request,
     file: UploadFile = File(...),

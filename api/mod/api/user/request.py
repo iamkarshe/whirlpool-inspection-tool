@@ -10,7 +10,7 @@ class UserCreateRequest(BaseModel):
     email: EmailStr
     mobile_number: str = Field(pattern=r"^\d{10}$")
     password: str = Field(min_length=6, max_length=128)
-    role: Literal["operator", "manager"] = "operator"
+    role: Literal["operator", "manager", "biz-admin"] = "operator"
     designation: str = Field(default="Operator", min_length=2, max_length=120)
     allowed_warehouse: list[str] = Field(
         default_factory=list,
@@ -27,7 +27,7 @@ class UserUpdateRequest(BaseModel):
     email: EmailStr | None = None
     mobile_number: str | None = None
     password: str | None = Field(default=None, min_length=6, max_length=128)
-    role: Literal["operator", "manager"] | None = None
+    role: Literal["operator", "manager", "biz-admin"] | None = None
     designation: str | None = Field(default=None, min_length=2, max_length=120)
     is_active: bool | None = None
     allowed_warehouse: list[str] | None = Field(

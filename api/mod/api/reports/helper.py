@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session, aliased
 
@@ -34,6 +34,7 @@ from mod.model import (
     Warehouse,
 )
 from utils.common import YES_NO_FAIL_VALUES, utc_end_exclusive_day_range
+from utils.roles import filter_warehouse_ids_for_request, intersect_requested_warehouse_codes
 
 PRODUCT_CATEGORY_PAIR_SEP = "|"
 
@@ -83,13 +84,14 @@ def load_product_category_pairs(db: Session) -> list[tuple[str, str]]:
     return productCategoryPairsCache
 
 
-def build_kpi_parameters(db: Session) -> KpiParametersResponse:
+def build_kpi_parameters(db: Session, request: Request) -> KpiParametersResponse:
     warehouse_rows = (
         db.query(Warehouse.id, Warehouse.warehouse_code, Warehouse.name)
         .filter(Warehouse.is_active.is_(True))
         .order_by(Warehouse.warehouse_code.asc())
         .all()
     )
+    warehouse_rows = filter_warehouse_ids_for_request(db, request, warehouse_rows)
     plant_rows = (
         db.query(Plant.id, Plant.plant_code, Plant.name)
         .filter(Plant.is_active.is_(True))
@@ -144,6 +146,7 @@ def validate_analytics_date_range(
 def analytics_scope_from_request(
     db: Session,
     body: OperationsAnalyticsRequest,
+    request: Request,
 ) -> dict:
     inspection_type = body.inspection_type
     if body.plant and inspection_type == InspectionType.outbound:
@@ -154,8 +157,10 @@ def analytics_scope_from_request(
     plant_codes = resolve_plant_codes(db, body.plant) or None
     if plant_codes and inspection_type is None:
         inspection_type = InspectionType.inbound
+    warehouse_codes = resolve_warehouse_codes(db, body.warehouse) or None
+    warehouse_codes = intersect_requested_warehouse_codes(db, request, warehouse_codes)
     return {
-        "warehouse_codes": resolve_warehouse_codes(db, body.warehouse) or None,
+        "warehouse_codes": warehouse_codes,
         "plant_codes": plant_codes,
         "product_category_pairs": resolve_product_category_pairs(
             db, body.product_category

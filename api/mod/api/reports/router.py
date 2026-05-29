@@ -27,6 +27,7 @@ from mod.api.reports.response import (
 )
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
+from utils.roles import ROLES_DASHBOARD, ROLES_MASTER_WRITE
 
 router = APIRouter(
     tags=["Reports"],
@@ -41,12 +42,12 @@ router = APIRouter(
     response_model=KpiParametersResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_DASHBOARD)
 def get_kpi_parameters(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    return build_kpi_parameters(db)
+    return build_kpi_parameters(db, request)
 
 
 @router.post(
@@ -54,7 +55,7 @@ def get_kpi_parameters(
     name="clear_product_category_pairs_cache",
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def post_clear_product_category_pairs_cache(request: Request):
     clear_product_category_pairs_cache()
     return {"cleared": True}
@@ -66,7 +67,7 @@ def post_clear_product_category_pairs_cache(request: Request):
     response_model=ExecutiveAnalyticsResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_DASHBOARD)
 def post_executive_analytics(
     request: Request,
     body: OperationsAnalyticsRequest,
@@ -74,7 +75,7 @@ def post_executive_analytics(
     db: Session = Depends(get_db),
 ):
     validate_analytics_date_range(body.date_from, body.date_to)
-    scope = analytics_scope_from_request(db, body)
+    scope = analytics_scope_from_request(db, body, request)
     counts = executive_analytics_counts(
         db,
         is_active=is_active,
@@ -95,7 +96,7 @@ def post_executive_analytics(
     response_model=DefectsParetoChartResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_DASHBOARD)
 def post_executive_analytics_defects_pareto_chart(
     request: Request,
     body: OperationsAnalyticsRequest,
@@ -103,7 +104,7 @@ def post_executive_analytics_defects_pareto_chart(
     db: Session = Depends(get_db),
 ):
     validate_analytics_date_range(body.date_from, body.date_to)
-    scope = analytics_scope_from_request(db, body)
+    scope = analytics_scope_from_request(db, body, request)
     return executive_defects_pareto_chart(
         db,
         is_active=is_active,
@@ -119,7 +120,7 @@ def post_executive_analytics_defects_pareto_chart(
     response_model=DefectsMixResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_DASHBOARD)
 def post_executive_analytics_defects_mix(
     request: Request,
     body: OperationsAnalyticsRequest,
@@ -127,7 +128,7 @@ def post_executive_analytics_defects_mix(
     db: Session = Depends(get_db),
 ):
     validate_analytics_date_range(body.date_from, body.date_to)
-    scope = analytics_scope_from_request(db, body)
+    scope = analytics_scope_from_request(db, body, request)
     scope["damage_grading"] = None
     return executive_defects_mix(
         db,
@@ -144,7 +145,7 @@ def post_executive_analytics_defects_mix(
     response_model=DefectsWarehouseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_DASHBOARD)
 def post_executive_analytics_defects_warehouse(
     request: Request,
     body: OperationsAnalyticsRequest,
@@ -152,7 +153,7 @@ def post_executive_analytics_defects_warehouse(
     db: Session = Depends(get_db),
 ):
     validate_analytics_date_range(body.date_from, body.date_to)
-    scope = analytics_scope_from_request(db, body)
+    scope = analytics_scope_from_request(db, body, request)
     scope["damage_grading"] = None
     return executive_defects_warehouse(
         db,
@@ -169,7 +170,7 @@ def post_executive_analytics_defects_warehouse(
     response_model=DefectsPlantResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_DASHBOARD)
 def post_executive_analytics_defects_plant(
     request: Request,
     body: OperationsAnalyticsRequest,
@@ -177,7 +178,7 @@ def post_executive_analytics_defects_plant(
     db: Session = Depends(get_db),
 ):
     validate_analytics_date_range(body.date_from, body.date_to)
-    scope = analytics_scope_from_request(db, body)
+    scope = analytics_scope_from_request(db, body, request)
     scope["damage_grading"] = None
     if scope.get("inspection_type") is None:
         scope["inspection_type"] = InspectionType.inbound
@@ -196,7 +197,7 @@ def post_executive_analytics_defects_plant(
     response_model=DefectsTruckResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_DASHBOARD)
 def post_executive_analytics_defects_truck(
     request: Request,
     body: OperationsAnalyticsRequest,
@@ -204,7 +205,7 @@ def post_executive_analytics_defects_truck(
     db: Session = Depends(get_db),
 ):
     validate_analytics_date_range(body.date_from, body.date_to)
-    scope = analytics_scope_from_request(db, body)
+    scope = analytics_scope_from_request(db, body, request)
     scope["damage_grading"] = None
     return executive_defects_truck(
         db,

@@ -126,9 +126,24 @@ def resolve_inspection_scope_filters(
     return warehouse_code, plant_code
 
 
-def roles_from_request(request: Request) -> list[str]:
-    role_raw = getattr(request.state, "role", None) or ""
-    return [r.strip() for r in str(role_raw).split(",") if r.strip()]
+def apply_inspection_list_warehouse_scope(query, db: Session, request: Request, warehouse_code: str | None):
+    from utils.roles import user_warehouse_codes_for_request
+
+    allowed = user_warehouse_codes_for_request(db, request)
+    if allowed is None:
+        if warehouse_code is not None:
+            return query.filter(Inspection.warehouse_code == warehouse_code)
+        return query
+    if not allowed:
+        return query.filter(False)
+    if warehouse_code is not None:
+        if warehouse_code not in set(allowed):
+            raise HTTPException(
+                status_code=403,
+                detail="Not allowed to view inspections for this warehouse",
+            )
+        return query.filter(Inspection.warehouse_code == warehouse_code)
+    return query.filter(Inspection.warehouse_code.in_(allowed))
 
 
 def resolve_inspection_kpi_warehouse_codes(
@@ -142,8 +157,10 @@ def resolve_inspection_kpi_warehouse_codes(
     ``warehouse_uuid``). Returns a non-empty list to restrict to those codes, or
     an empty list when the user has no assigned warehouses (all KPI counts zero).
     """
+    from utils.roles import request_has_superadmin, roles_from_request
+
     roles = roles_from_request(request)
-    if "superadmin" in roles:
+    if request_has_superadmin(request):
         if warehouse_uuid is None:
             return None
         return [get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code]
@@ -1743,7 +1760,7 @@ def list_warehouse_manager_user_ids(
         .join(User.warehouses_scope)
         .filter(
             User.is_active.is_(True),
-            Role.role == "manager",
+            Role.role.in_(["manager", "biz-admin"]),
             Role.is_active.is_(True),
             Warehouse.warehouse_code == warehouse_code,
             Warehouse.is_active.is_(True),

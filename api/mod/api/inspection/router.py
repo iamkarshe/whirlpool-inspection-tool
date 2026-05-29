@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session, joinedload
 from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
 from mod.api.inspection.helper import (
     acquire_inspection_barcode_lock,
+    apply_inspection_list_warehouse_scope,
     build_active_checklist_grouped_response,
     build_barcode_parse_response,
     build_inspection_metadata_response,
@@ -70,6 +71,12 @@ from utils.decorator import (
     exception_handler_decorator,
     request_is_operator_only,
 )
+from utils.roles import (
+    ROLES_INSPECTION,
+    ROLES_INSPECTION_LEAD,
+    assert_warehouse_code_in_request_scope,
+    request_has_superadmin,
+)
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
@@ -90,7 +97,7 @@ router = APIRouter(
     response_model=InspectionKpisResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def get_inspection_kpis(
     request: Request,
     period: Literal["custom", "today", "yesterday", "week", "month"] = Query(
@@ -133,9 +140,7 @@ def get_inspection_kpis(
     _, plant_code = resolve_inspection_scope_filters(db, None, plant_uuid)
     uid = int(request.state.user_id)
     operator_only = request_is_operator_only(request)
-    role_raw = getattr(request.state, "role", None) or ""
-    roles = [r.strip() for r in str(role_raw).split(",") if r.strip()]
-    superadmin = "superadmin" in roles
+    superadmin = request_has_superadmin(request)
     counts = compute_inspection_kpis(
         db,
         date_from,
@@ -172,7 +177,7 @@ def get_inspection_kpis(
     response_model=ManagerInspectionTeamKpisResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_INSPECTION_LEAD)
 def get_inspection_kpis_manager(
     request: Request,
     period: Literal["custom", "today", "yesterday", "week", "month"] = Query(
@@ -309,7 +314,7 @@ def get_inspection_kpis_operator(
     response_model=InspectionListResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 @apply_operator_scope_filters
 def get_inspections(
     request: Request,
@@ -366,8 +371,9 @@ def get_inspections(
     inspector_scope_id = getattr(request.state, "inspector_scope_user_id", None)
     if inspector_scope_id is not None:
         query = query.filter(Inspection.inspector_id == inspector_scope_id)
-    if warehouse_code is not None:
-        query = query.filter(Inspection.warehouse_code == warehouse_code)
+    query = apply_inspection_list_warehouse_scope(
+        query, db, request, warehouse_code
+    )
     if plant_code is not None:
         query = query.filter(Inspection.supplier_plant_code == plant_code)
     if inspection_type:
@@ -430,7 +436,7 @@ def get_inspections(
     response_model=BarcodeParseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def parse_inspection_barcode(
     request: Request,
     barcode: str = Query(
@@ -448,7 +454,7 @@ def parse_inspection_barcode(
     response_model=BarcodeLockResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def acquire_inspection_barcode_lock_route(
     request: Request,
     body: BarcodeLockAcquireRequest,
@@ -470,7 +476,7 @@ def acquire_inspection_barcode_lock_route(
     response_model=BarcodeLockReleaseResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def release_inspection_barcode_lock_route(
     request: Request,
     body: BarcodeLockAcquireRequest,
@@ -492,7 +498,7 @@ def release_inspection_barcode_lock_route(
     response_model=ActiveChecklistGroupedResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def get_active_inspection_checklist(
     request: Request,
     db: Session = Depends(get_db),
@@ -506,7 +512,7 @@ def get_active_inspection_checklist(
     response_model=InspectionMetadataResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def get_inspection_metadata(
     request: Request,
     db: Session = Depends(get_db),
@@ -520,7 +526,7 @@ def get_inspection_metadata(
     response_model=InspectionWithChecklistPayload,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def start_inbound_inspection(
     request: Request,
     body: StartInboundInspectionRequest,
@@ -535,7 +541,7 @@ def start_inbound_inspection(
     response_model=InspectionWithChecklistPayload,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def start_outbound_inspection(
     request: Request,
     body: StartOutboundInspectionRequest,
@@ -556,7 +562,7 @@ def start_outbound_inspection(
     response_model=InspectionImageUploadResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 async def upload_inspection_image(
     request: Request,
     barcode: str = Form(
@@ -582,7 +588,7 @@ async def upload_inspection_image(
     response_model=InspectionFullResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_INSPECTION_LEAD)
 def patch_inspection_review_status(
     request: Request,
     inspection_uuid: uuid.UUID,
@@ -613,7 +619,7 @@ def delete_inspection(
     response_model=InspectionFullResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager", "operator"])
+@check_api_role(ROLES_INSPECTION)
 def get_inspection_detail(
     request: Request,
     inspection_uuid: uuid.UUID,
@@ -626,6 +632,10 @@ def get_inspection_detail(
         uid = getattr(request.state, "user_id", None)
         if uid is None or inspection.inspector_id != int(uid):
             raise HTTPException(status_code=404, detail="Inspection not found")
+    elif not request_has_superadmin(request):
+        assert_warehouse_code_in_request_scope(
+            db, request, inspection.warehouse_code
+        )
     inbound_uuid: uuid.UUID | None = None
     outbound_uuid: uuid.UUID | None = None
     if inspection.product_unit_id is not None:

@@ -21,6 +21,7 @@ from mod.model import Plant
 from utils.common import read_csv_upload, to_proper_case
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
+from utils.roles import ROLES_MASTER_READ, ROLES_MASTER_WRITE
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
@@ -42,7 +43,7 @@ router = APIRouter(
     response_model=PlantListResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def get_plants(
     request: Request,
     params: PaginationParams = Depends(get_pagination_params),
@@ -98,7 +99,7 @@ def get_plants(
     response_model=PlantResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def create_plant(
     request: Request,
     payload: PlantCreateRequest,
@@ -135,7 +136,7 @@ def create_plant(
     response_model=PlantResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def get_plant_info(
     request: Request,
     plant_uuid: uuid.UUID,
@@ -155,7 +156,7 @@ def get_plant_info(
     response_model=PlantResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def update_plant(
     request: Request,
     plant_uuid: uuid.UUID,
@@ -202,7 +203,7 @@ def update_plant(
     response_model=PlantResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def delete_plant(
     request: Request,
     plant_uuid: uuid.UUID,
@@ -225,7 +226,7 @@ def delete_plant(
     description="Download plant CSV template with existing data",
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_READ)
 def download_plants_csv_template(
     request: Request,
     db: Session = Depends(get_db),
@@ -275,7 +276,7 @@ def download_plants_csv_template(
     description="Bulk upsert plants from CSV",
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(ROLES_MASTER_WRITE)
 def upload_plants_csv(
     request: Request,
     file: UploadFile = File(...),
