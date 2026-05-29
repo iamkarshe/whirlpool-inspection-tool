@@ -65,6 +65,20 @@ def require_user_vpn_device_uuid(user: User) -> uuid.UUID:
     return user.vpn_device_uuid
 
 
+def clear_user_vpn_profile_fields(user: User) -> None:
+    user.vpn_device_uuid = None
+    user.vpn_device_name = None
+    user.vpn_device_type = None
+    user.vpn_provisioned_at = None
+
+
+def revoke_user_vpn_profile(user: User) -> None:
+    if user.vpn_device_uuid is None:
+        return
+    revoke_vpn_device(user.vpn_device_uuid)
+    clear_user_vpn_profile_fields(user)
+
+
 def generate_user_vpn_profile(
     db: Session,
     *,
@@ -90,7 +104,7 @@ def generate_user_vpn_profile(
         )
 
     if user.vpn_device_uuid is not None:
-        revoke_vpn_device(user.vpn_device_uuid)
+        revoke_user_vpn_profile(user)
 
     provisioned_device_uuid = create_vpn_device(
         user_name=user.name,

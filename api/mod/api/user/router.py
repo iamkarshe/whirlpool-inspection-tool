@@ -13,6 +13,7 @@ from mod.api.user.helper import (
     forbid_superadmin_role_assignment,
     generate_user_vpn_profile,
     map_user_response,
+    revoke_user_vpn_profile,
     user_with_role_and_scope,
 )
 from mod.api.user.request import (
@@ -249,6 +250,8 @@ def update_user(
     if payload.designation is not None:
         user.designation = payload.designation
     if payload.is_active is not None:
+        if payload.is_active is False:
+            revoke_user_vpn_profile(user)
         user.is_active = payload.is_active
 
     if payload.password is not None:
