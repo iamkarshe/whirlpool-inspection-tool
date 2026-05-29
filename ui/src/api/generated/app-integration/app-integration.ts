@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.5.1
  */
 import type {
+  AwsS3TestConnectionResponse,
   AwsS3UpdateRequest,
   IntegrationCredentialsResponse,
   OktaSsoUpdateRequest
@@ -55,7 +56,22 @@ const putAwsS3IntegrationApiIntegrationsAwsS3Put = (
     },
       options);
     }
-  return {getIntegrationsApiIntegrationsGet,putOktaSsoIntegrationApiIntegrationsOktaSsoPut,putAwsS3IntegrationApiIntegrationsAwsS3Put}};
+  /**
+ * Test AWS S3 connectivity using saved credentials or an optional request body
+ * @summary Test Aws S3 Connection
+ */
+const testAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPost = (
+    awsS3UpdateRequestNull?: AwsS3UpdateRequest | null,
+ options?: SecondParameter<typeof customInstance<AwsS3TestConnectionResponse>>,) => {
+      return customInstance<AwsS3TestConnectionResponse>(
+      {url: `/api/integrations/aws-s3/test-connection`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: awsS3UpdateRequestNull
+    },
+      options);
+    }
+  return {getIntegrationsApiIntegrationsGet,putOktaSsoIntegrationApiIntegrationsOktaSsoPut,putAwsS3IntegrationApiIntegrationsAwsS3Put,testAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPost}};
 export type GetIntegrationsApiIntegrationsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['getIntegrationsApiIntegrationsGet']>>>
 export type PutOktaSsoIntegrationApiIntegrationsOktaSsoPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['putOktaSsoIntegrationApiIntegrationsOktaSsoPut']>>>
 export type PutAwsS3IntegrationApiIntegrationsAwsS3PutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['putAwsS3IntegrationApiIntegrationsAwsS3Put']>>>
+export type TestAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['testAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPost']>>>

@@ -6,10 +6,14 @@
  * OpenAPI spec version: 1.5.1
  */
 
+/**
+ * App role. Superadmin cannot be assigned via this API.
+ */
 export type UserCreateRequestRole = typeof UserCreateRequestRole[keyof typeof UserCreateRequestRole];
 
 
 export const UserCreateRequestRole = {
   operator: 'operator',
   manager: 'manager',
+  'biz-admin': 'biz-admin',
 } as const;

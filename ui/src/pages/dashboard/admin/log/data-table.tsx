@@ -1,16 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableFilter,
+  type DataTableServerSideConfig,
+} from "@/components/ui/data-table";
 import { PAGES } from "@/endpoints";
-import { LogLevelBadge, LogSourceBadge } from "@/pages/dashboard/admin/log/log-badge";
 import { formatDate } from "@/lib/core";
-import type { Log } from "@/pages/dashboard/admin/log/log-service";
+import { LogLevelBadge, LogSourceBadge } from "@/pages/dashboard/admin/log/log-badge";
+import type { ApplicationLogRow } from "@/pages/dashboard/admin/log/log-types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const logColumns: ColumnDef<Log>[] = [
+const logColumns: ColumnDef<ApplicationLogRow>[] = [
   {
     accessorKey: "level",
+    meta: { align: "left" },
     header: ({ column }) => (
       <Button
         className="-ml-3"
@@ -21,11 +26,7 @@ const logColumns: ColumnDef<Log>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <LogLevelBadge level={row.original.level} />,
-    filterFn: (row, _columnId, filterValue) => {
-      if (!filterValue) return true;
-      return row.getValue("level") === filterValue;
-    },
+    cell: ({ row }) => <LogLevelBadge level={row.original.levelKey} />,
   },
   {
     accessorKey: "message",
@@ -40,7 +41,7 @@ const logColumns: ColumnDef<Log>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <span className="max-w-[320px] truncate text-sm">
+      <span className="max-w-[360px] truncate text-sm" title={row.original.message}>
         {row.original.message}
       </span>
     ),
@@ -60,10 +61,11 @@ const logColumns: ColumnDef<Log>[] = [
     cell: ({ row }) => <LogSourceBadge source={row.original.source} />,
   },
   {
-    accessorKey: "timestamp",
+    accessorKey: "created_at",
+    meta: { align: "right" },
     header: ({ column }) => (
       <Button
-        className="-ml-3"
+        className="-mr-3 ml-auto flex w-full justify-end"
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
@@ -72,8 +74,8 @@ const logColumns: ColumnDef<Log>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-xs">
-        {formatDate(row.original.timestamp)}
+      <span className="block text-right font-mono text-xs tabular-nums">
+        {formatDate(row.original.created_at)}
       </span>
     ),
   },
@@ -84,7 +86,7 @@ const logColumns: ColumnDef<Log>[] = [
     cell: ({ row }) => (
       <Button variant="ghost" size="sm" asChild>
         <Link
-          to={PAGES.logViewPath(row.original.id)}
+          to={PAGES.logViewPath(row.original.uuid)}
           className="gap-1"
           aria-label="View log"
         >
@@ -96,7 +98,7 @@ const logColumns: ColumnDef<Log>[] = [
   },
 ];
 
-const logFilters: DataTableFilter<Log>[] = [
+const logFilters: DataTableFilter<ApplicationLogRow>[] = [
   {
     id: "level",
     title: "Level",
@@ -110,29 +112,38 @@ const logFilters: DataTableFilter<Log>[] = [
     id: "source",
     title: "Source",
     options: [
-      { value: "auth", label: "Auth" },
-      { value: "devices", label: "Devices" },
-      { value: "inspections", label: "Inspections" },
-      { value: "masters", label: "Masters" },
-      { value: "reports", label: "Reports" },
-      { value: "storage", label: "Storage" },
+      { value: "AUTH", label: "Auth" },
+      { value: "USER ADD", label: "User add" },
+      { value: "USER UPDATE", label: "User update" },
+      { value: "MASTER UPDATE", label: "Master update" },
+      {
+        value: "INTEGRATION KEY UPDATED",
+        label: "Integration key updated",
+      },
     ],
   },
 ];
 
 interface LogsDataTableProps {
-  data: Log[];
+  data: ApplicationLogRow[];
+  serverSide: DataTableServerSideConfig;
+  isLoading?: boolean;
 }
 
-export default function LogsDataTable({ data }: LogsDataTableProps) {
+export default function LogsDataTable({
+  data,
+  serverSide,
+  isLoading,
+}: LogsDataTableProps) {
   return (
-    <DataTable<Log>
+    <DataTable<ApplicationLogRow>
       columns={logColumns}
       data={data}
-      searchKey="message"
       filters={logFilters}
-      dateRangeFilter={{ dateAccessorKey: "timestamp" }}
       rangeLabel="logs"
+      isLoading={isLoading ?? false}
+      serverSide={serverSide}
+      showDateRangePicker={false}
     />
   );
 }

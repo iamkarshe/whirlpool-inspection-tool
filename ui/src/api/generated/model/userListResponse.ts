@@ -7,10 +7,18 @@
  */
 import type { UserResponse } from './userResponse';
 
+/**
+ * Paginated user list from GET /api/users.
+ */
 export interface UserListResponse {
+  /** Users on this page. */
   data: UserResponse[];
+  /** Total rows matching filters. */
   total: number;
+  /** Current page (1-based). */
   page: number;
+  /** Page size. */
   per_page: number;
+  /** Total number of pages. */
   total_pages: number;
 }

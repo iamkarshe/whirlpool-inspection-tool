@@ -43,6 +43,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -52,9 +55,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -88,6 +88,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -97,9 +100,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -132,6 +132,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -141,9 +144,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -261,8 +261,8 @@
         "tags": [
           "Users"
         ],
-        "summary": "Get Users",
-        "description": "Get all users",
+        "summary": "List users",
+        "description": "Paginated user directory for superadmin. Supports search, sort, and created_at / updated_at date filters.",
         "operationId": "get_users_api_users_get",
         "parameters": [
           {
@@ -399,6 +399,9 @@
               }
             }
           },
+          "403": {
+            "description": "Caller is not superadmin."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -415,8 +418,8 @@
         "tags": [
           "Users"
         ],
-        "summary": "Create User",
-        "description": "Create a new user",
+        "summary": "Create user",
+        "description": "Creates an active user with hashed password and facility scope. Roles allowed: operator, manager, biz-admin.",
         "operationId": "create_user_api_users_post",
         "requestBody": {
           "required": true,
@@ -439,6 +442,157 @@
               }
             }
           },
+          "409": {
+            "description": "Email or mobile number already in use."
+          },
+          "422": {
+            "description": "Unknown role or invalid body."
+          }
+        }
+      }
+    },
+    "/api/users/generate-vpn": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Generate VPN profile",
+        "description": "Provisions one VPN device for the user via the VPN provision service. Replacing an existing profile revokes the old device first. Requires VPN_PROVISION_SERVER and VPN_PROVISION_KEY.",
+        "operationId": "generate_user_vpn_api_users_generate_vpn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserGenerateVpnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Target user is superadmin."
+          },
+          "404": {
+            "description": "User not found."
+          },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_uuid}/vpn/config": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Download VPN config",
+        "description": "Returns the WireGuard config file for the user's provisioned device. Response body and Content-Type come from the VPN provision server.",
+        "operationId": "download_user_vpn_config_api_users__user_uuid__vpn_config_get",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "User UUID.",
+              "title": "User Uuid"
+            },
+            "description": "User UUID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WireGuard configuration file.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/octet-stream": {},
+              "text/plain": {}
+            }
+          },
+          "404": {
+            "description": "User not found or no VPN profile."
+          },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_uuid}/vpn/qr": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Download VPN QR code",
+        "description": "Returns a QR image for importing the VPN profile on a device. Usually image/png from the provision server.",
+        "operationId": "download_user_vpn_qr_api_users__user_uuid__vpn_qr_get",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "User UUID.",
+              "title": "User Uuid"
+            },
+            "description": "User UUID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VPN QR code image.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "image/png": {},
+              "image/jpeg": {}
+            }
+          },
+          "404": {
+            "description": "User not found or no VPN profile."
+          },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -457,8 +611,8 @@
         "tags": [
           "Users"
         ],
-        "summary": "Update User",
-        "description": "Update user",
+        "summary": "Update user",
+        "description": "Partial update: send only fields to change. Set is_active to false to deactivate; VPN is revoked automatically. Superadmin accounts cannot be edited.",
         "operationId": "update_user_api_users__user_uuid__put",
         "parameters": [
           {
@@ -468,8 +622,10 @@
             "schema": {
               "type": "string",
               "format": "uuid",
+              "description": "User UUID.",
               "title": "User Uuid"
-            }
+            },
+            "description": "User UUID."
           }
         ],
         "requestBody": {
@@ -492,6 +648,15 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Target user is superadmin."
+          },
+          "404": {
+            "description": "User not found."
+          },
+          "409": {
+            "description": "Email or mobile number already in use."
           },
           "422": {
             "description": "Validation Error",
@@ -1275,6 +1440,372 @@
         }
       }
     },
+    "/api/logs/job": {
+      "get": {
+        "tags": [
+          "Logs"
+        ],
+        "summary": "List job logs",
+        "description": "Paginated cron job outcomes (failures and runs that updated rows). Filter by date_field=created_at, search, status, and job_name sort.",
+        "operationId": "get_job_logs_api_logs_job_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by job status: success or failed.",
+              "title": "Status"
+            },
+            "description": "Filter by job status: success or failed."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "id",
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "asc",
+              "title": "Sort Dir"
+            }
+          },
+          {
+            "name": "date_field",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Column key from the route's allowed date_fields (e.g. created_at)",
+              "title": "Date Field"
+            },
+            "description": "Column key from the route's allowed date_fields (e.g. created_at)"
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today",
+              "title": "Date From"
+            },
+            "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today",
+              "title": "Date To"
+            },
+            "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logs": {
+      "get": {
+        "tags": [
+          "Logs"
+        ],
+        "summary": "List application logs",
+        "description": "Paginated application and audit logs for the admin Logs page. Supports search, date range on created_at, level, and source filters.",
+        "operationId": "get_application_logs_api_logs_get",
+        "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by level: info, warn, or error (case insensitive).",
+              "title": "Level"
+            },
+            "description": "Filter by level: info, warn, or error (case insensitive)."
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by source: AUTH, USER ADD, USER UPDATE, MASTER UPDATE, INTEGRATION KEY UPDATED (spaces optional).",
+              "title": "Source"
+            },
+            "description": "Filter by source: AUTH, USER ADD, USER UPDATE, MASTER UPDATE, INTEGRATION KEY UPDATED (spaces optional)."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "id",
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "asc",
+              "title": "Sort Dir"
+            }
+          },
+          {
+            "name": "date_field",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Column key from the route's allowed date_fields (e.g. created_at)",
+              "title": "Date Field"
+            },
+            "description": "Column key from the route's allowed date_fields (e.g. created_at)"
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today",
+              "title": "Date From"
+            },
+            "description": "With date_field: range start (UTC date); omit both dates for default last 7 days including today"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today",
+              "title": "Date To"
+            },
+            "description": "With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/integrations": {
       "get": {
         "tags": [
@@ -1361,6 +1892,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IntegrationCredentialsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/aws-s3/test-connection": {
+      "post": {
+        "tags": [
+          "App Integration"
+        ],
+        "summary": "Test Aws S3 Connection",
+        "description": "Test AWS S3 connectivity using saved credentials or an optional request body",
+        "operationId": "test_aws_s3_connection_api_integrations_aws_s3_test_connection_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/AwsS3UpdateRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AwsS3TestConnectionResponse"
                 }
               }
             }
@@ -2677,7 +3257,7 @@
           "Inspections"
         ],
         "summary": "Upload Inspection Image",
-        "description": "Upload a compressed image before an inspection exists; barcode is always 16 alphanumeric characters (product unit barcode). Returns a CDN-relative path under uploads/inspections/<barcode>/...",
+        "description": "Upload a compressed image before an inspection exists; barcode is always 16 alphanumeric characters (product unit barcode). Returns a stored path under uploads/inspections/<barcode>/... (local disk or S3 key depending on MEDIA_TYPE).",
         "operationId": "upload_inspection_image_api_inspections_upload_image_post",
         "requestBody": {
           "content": {
@@ -4616,6 +5196,288 @@
         }
       }
     },
+    "/api/vpn/health": {
+      "get": {
+        "tags": [
+          "VPN Provision"
+        ],
+        "summary": "Vpn Provision Health",
+        "description": "Health of the VPN provision service",
+        "operationId": "vpn_provision_health_api_vpn_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vpn/devices": {
+      "get": {
+        "tags": [
+          "VPN Provision"
+        ],
+        "summary": "Vpn Provision List Devices",
+        "description": "List active VPN provisioned devices",
+        "operationId": "vpn_provision_list_devices_api_vpn_devices_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "VPN Provision"
+        ],
+        "summary": "Vpn Provision Create Device",
+        "description": "Create a VPN provisioned device",
+        "operationId": "vpn_provision_create_device_api_vpn_devices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VpnDeviceCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vpn/devices/{device_uuid}/config": {
+      "get": {
+        "tags": [
+          "VPN Provision"
+        ],
+        "summary": "Vpn Provision Device Config",
+        "description": "Get VPN config for a provisioned device",
+        "operationId": "vpn_provision_device_config_api_vpn_devices__device_uuid__config_get",
+        "parameters": [
+          {
+            "name": "device_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vpn/devices/{device_uuid}/qr": {
+      "get": {
+        "tags": [
+          "VPN Provision"
+        ],
+        "summary": "Vpn Provision Device Qr",
+        "description": "Get VPN QR code for a provisioned device",
+        "operationId": "vpn_provision_device_qr_api_vpn_devices__device_uuid__qr_get",
+        "parameters": [
+          {
+            "name": "device_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vpn/devices/{device_uuid}/revoke": {
+      "get": {
+        "tags": [
+          "VPN Provision"
+        ],
+        "summary": "Vpn Provision Revoke Device",
+        "description": "Revoke a VPN provisioned device",
+        "operationId": "vpn_provision_revoke_device_api_vpn_devices__device_uuid__revoke_get",
+        "parameters": [
+          {
+            "name": "device_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vpn/peers": {
+      "get": {
+        "tags": [
+          "VPN Provision"
+        ],
+        "summary": "Vpn Provision Wireguard Peers",
+        "description": "Get connected WireGuard peer details",
+        "operationId": "vpn_provision_wireguard_peers_api_vpn_peers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/auto-approve-inspections": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Auto-approve stale inspections",
+        "description": "Approves active inspections still in PENDING or IN_REVIEW when created more than AUTO_APPROVE_INSPECTION_HOURS ago (default 6). Sets is_auto_approved and reviewed_comment. Intended for Ubuntu crontab.",
+        "operationId": "job_auto_approve_inspections_jobs_auto_approve_inspections_get",
+        "parameters": [
+          {
+            "name": "x-job-execute-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Shared secret from JOB_EXECUTE_TOKEN env var.",
+              "title": "X-Job-Execute-Token"
+            },
+            "description": "Shared secret from JOB_EXECUTE_TOKEN env var."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobExecutionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid x-job-execute-token."
+          },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sso": {
       "get": {
         "tags": [
@@ -4860,6 +5722,85 @@
         ],
         "title": "ActiveDeviceResponse"
       },
+      "ApplicationLogItemResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "description": "INFO, WARN, or ERROR."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "AUTH, USER ADD, USER UPDATE, MASTER UPDATE, or INTEGRATION KEY UPDATED."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Event time (UTC)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "uuid",
+          "level",
+          "message",
+          "source",
+          "created_at"
+        ],
+        "title": "ApplicationLogItemResponse"
+      },
+      "ApplicationLogListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationLogItemResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "per_page",
+          "total_pages"
+        ],
+        "title": "ApplicationLogListResponse"
+      },
       "AwsS3CredentialsResponse": {
         "properties": {
           "bucket_name": {
@@ -4895,6 +5836,46 @@
           "secret_access_key"
         ],
         "title": "AwsS3CredentialsResponse"
+      },
+      "AwsS3TestConnectionResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "bucket_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket Name"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "AwsS3TestConnectionResponse"
       },
       "AwsS3UpdateRequest": {
         "properties": {
@@ -5218,7 +6199,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Id"
           },
           "value": {
@@ -6815,14 +7796,19 @@
           "path": {
             "type": "string",
             "title": "Path"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
           }
         },
         "type": "object",
         "required": [
-          "path"
+          "path",
+          "url"
         ],
         "title": "InspectionImageUploadResponse",
-        "description": "Relative storage path (prefix with CDN base URL on the client)."
+        "description": "Stored path for persistence plus an embeddable URL for immediate preview."
       },
       "InspectionInputItemResponse": {
         "properties": {
@@ -7589,6 +8575,127 @@
           "aws_s3"
         ],
         "title": "IntegrationCredentialsResponse"
+      },
+      "JobExecutionResponse": {
+        "properties": {
+          "job_name": {
+            "type": "string",
+            "title": "Job Name",
+            "description": "Internal job identifier."
+          },
+          "rows_updated": {
+            "type": "integer",
+            "title": "Rows Updated",
+            "description": "Number of database rows changed by this run."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable outcome summary."
+          },
+          "logged": {
+            "type": "boolean",
+            "title": "Logged",
+            "description": "True when a row was written to job_logs (failures or at least one row updated)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_name",
+          "rows_updated",
+          "message",
+          "logged"
+        ],
+        "title": "JobExecutionResponse",
+        "description": "Result of a cron-triggered GET job."
+      },
+      "JobLogItemResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "job_name": {
+            "type": "string",
+            "title": "Job Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "success or failed."
+          },
+          "rows_updated": {
+            "type": "integer",
+            "title": "Rows Updated"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "uuid",
+          "job_name",
+          "status",
+          "rows_updated",
+          "created_at"
+        ],
+        "title": "JobLogItemResponse"
+      },
+      "JobLogListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/JobLogItemResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "per_page",
+          "total_pages"
+        ],
+        "title": "JobLogListResponse"
       },
       "KpiParametersResponse": {
         "properties": {
@@ -8570,7 +9677,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -8761,7 +9868,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -9645,13 +10752,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -9741,7 +10848,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10,
+            "minimum": 10.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9800,13 +10907,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -9896,7 +11003,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -9929,39 +11036,64 @@
             "type": "string",
             "maxLength": 120,
             "minLength": 2,
-            "title": "Name"
+            "title": "Name",
+            "description": "Display name.",
+            "examples": [
+              "Devesh Verma"
+            ]
           },
           "email": {
             "type": "string",
             "format": "email",
-            "title": "Email"
+            "title": "Email",
+            "description": "Login email. Stored lowercase.",
+            "examples": [
+              "devesh@whirlpool.com"
+            ]
           },
           "mobile_number": {
             "type": "string",
             "pattern": "^\\d{10}$",
-            "title": "Mobile Number"
+            "title": "Mobile Number",
+            "description": "Ten-digit mobile number, unique across users.",
+            "examples": [
+              "9000000003"
+            ]
           },
           "password": {
             "type": "string",
             "maxLength": 128,
             "minLength": 6,
-            "title": "Password"
+            "title": "Password",
+            "description": "Initial login password (hashed server-side).",
+            "examples": [
+              "ChangeMe123"
+            ]
           },
           "role": {
             "type": "string",
             "enum": [
               "operator",
-              "manager"
+              "manager",
+              "biz-admin"
             ],
             "title": "Role",
-            "default": "operator"
+            "description": "App role. Superadmin cannot be assigned via this API.",
+            "default": "operator",
+            "examples": [
+              "manager"
+            ]
           },
           "designation": {
             "type": "string",
             "maxLength": 120,
             "minLength": 2,
             "title": "Designation",
-            "default": "Operator"
+            "description": "Job title shown in the UI.",
+            "default": "Operator",
+            "examples": [
+              "Operations Manager"
+            ]
           },
           "allowed_warehouse": {
             "items": {
@@ -9969,7 +11101,13 @@
             },
             "type": "array",
             "title": "Allowed Warehouse",
-            "description": "Warehouse codes this user may access"
+            "description": "Warehouse codes the user may access. Required for manager and biz-admin.",
+            "examples": [
+              [
+                "WH01",
+                "WH02"
+              ]
+            ]
           },
           "allowed_plants": {
             "items": {
@@ -9977,7 +11115,12 @@
             },
             "type": "array",
             "title": "Allowed Plants",
-            "description": "Plant codes this user may access"
+            "description": "Plant codes the user may access (inbound scope).",
+            "examples": [
+              [
+                "PL01"
+              ]
+            ]
           }
         },
         "type": "object",
@@ -9987,7 +11130,78 @@
           "mobile_number",
           "password"
         ],
-        "title": "UserCreateRequest"
+        "title": "UserCreateRequest",
+        "description": "Body for POST /api/users.",
+        "examples": [
+          {
+            "allowed_plants": [
+              "PL01"
+            ],
+            "allowed_warehouse": [
+              "WH01"
+            ],
+            "designation": "Operations Manager",
+            "email": "devesh@whirlpool.com",
+            "mobile_number": "9000000003",
+            "name": "Devesh Verma",
+            "password": "ChangeMe123",
+            "role": "manager"
+          }
+        ]
+      },
+      "UserGenerateVpnRequest": {
+        "properties": {
+          "user_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Uuid",
+            "description": "User to provision. One VPN profile per user.",
+            "examples": [
+              "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            ]
+          },
+          "device_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Name",
+            "description": "Label on the VPN server. Defaults to the user's name.",
+            "examples": [
+              "Devesh Laptop"
+            ]
+          },
+          "device_type": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Device Type",
+            "description": "Device type sent to the VPN provision service.",
+            "default": "android",
+            "examples": [
+              "android"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_uuid"
+        ],
+        "title": "UserGenerateVpnRequest",
+        "description": "Body for POST /api/users/generate-vpn.",
+        "examples": [
+          {
+            "device_name": "Devesh Laptop",
+            "device_type": "android",
+            "user_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          }
+        ]
       },
       "UserListResponse": {
         "properties": {
@@ -9996,23 +11210,28 @@
               "$ref": "#/components/schemas/UserResponse"
             },
             "type": "array",
-            "title": "Data"
+            "title": "Data",
+            "description": "Users on this page."
           },
           "total": {
             "type": "integer",
-            "title": "Total"
+            "title": "Total",
+            "description": "Total rows matching filters."
           },
           "page": {
             "type": "integer",
-            "title": "Page"
+            "title": "Page",
+            "description": "Current page (1-based)."
           },
           "per_page": {
             "type": "integer",
-            "title": "Per Page"
+            "title": "Per Page",
+            "description": "Page size."
           },
           "total_pages": {
             "type": "integer",
-            "title": "Total Pages"
+            "title": "Total Pages",
+            "description": "Total number of pages."
           }
         },
         "type": "object",
@@ -10023,57 +11242,158 @@
           "per_page",
           "total_pages"
         ],
-        "title": "UserListResponse"
+        "title": "UserListResponse",
+        "description": "Paginated user list from GET /api/users.",
+        "examples": [
+          {
+            "data": [
+              {
+                "allowed_plants": [
+                  "PL01"
+                ],
+                "allowed_warehouse": [
+                  "WH01"
+                ],
+                "designation": "Operations Manager",
+                "email": "devesh@whirlpool.com",
+                "id": 3,
+                "is_active": true,
+                "mobile_number": "9000000003",
+                "name": "Devesh Verma",
+                "role": "manager",
+                "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              }
+            ],
+            "page": 1,
+            "per_page": 20,
+            "total": 1,
+            "total_pages": 1
+          }
+        ]
       },
       "UserResponse": {
         "properties": {
           "id": {
             "type": "integer",
-            "title": "Id"
+            "title": "Id",
+            "description": "Internal numeric id."
           },
           "uuid": {
             "type": "string",
             "format": "uuid",
-            "title": "Uuid"
+            "title": "Uuid",
+            "description": "Public user id. Use in paths such as /api/users/{user_uuid}."
           },
           "name": {
             "type": "string",
-            "title": "Name"
+            "title": "Name",
+            "description": "Display name."
           },
           "email": {
             "type": "string",
             "format": "email",
-            "title": "Email"
+            "title": "Email",
+            "description": "Login email."
           },
           "mobile_number": {
             "type": "string",
-            "title": "Mobile Number"
+            "title": "Mobile Number",
+            "description": "Ten-digit mobile number."
           },
           "role": {
             "type": "string",
-            "title": "Role"
+            "title": "Role",
+            "description": "Role slug: operator, manager, biz-admin, or superadmin.",
+            "examples": [
+              "manager"
+            ]
           },
           "designation": {
             "type": "string",
-            "title": "Designation"
+            "title": "Designation",
+            "description": "Job title."
           },
           "is_active": {
             "type": "boolean",
-            "title": "Is Active"
+            "title": "Is Active",
+            "description": "False means deactivated (cannot log in)."
           },
           "allowed_warehouse": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Allowed Warehouse"
+            "title": "Allowed Warehouse",
+            "description": "Warehouse codes in scope. Empty for operators without warehouse access.",
+            "examples": [
+              [
+                "WH01",
+                "WH02"
+              ]
+            ]
           },
           "allowed_plants": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Allowed Plants"
+            "title": "Allowed Plants",
+            "description": "Plant codes in scope.",
+            "examples": [
+              [
+                "PL01"
+              ]
+            ]
+          },
+          "vpn_device_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vpn Device Uuid",
+            "description": "VPN provision device id when a profile exists."
+          },
+          "vpn_device_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vpn Device Name",
+            "description": "VPN device label on the provision server."
+          },
+          "vpn_device_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vpn Device Type",
+            "description": "VPN device type (for example android)."
+          },
+          "vpn_provisioned_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vpn Provisioned At",
+            "description": "UTC time when the current VPN profile was created."
           }
         },
         "type": "object",
@@ -10089,7 +11409,26 @@
           "allowed_warehouse",
           "allowed_plants"
         ],
-        "title": "UserResponse"
+        "title": "UserResponse",
+        "description": "User account returned by create, update, list, and VPN provision endpoints.",
+        "examples": [
+          {
+            "allowed_plants": [
+              "PL01"
+            ],
+            "allowed_warehouse": [
+              "WH01"
+            ],
+            "designation": "Operations Manager",
+            "email": "devesh@whirlpool.com",
+            "id": 3,
+            "is_active": true,
+            "mobile_number": "9000000003",
+            "name": "Devesh Verma",
+            "role": "manager",
+            "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          }
+        ]
       },
       "UserUpdateRequest": {
         "properties": {
@@ -10104,7 +11443,8 @@
                 "type": "null"
               }
             ],
-            "title": "Name"
+            "title": "Name",
+            "description": "Display name."
           },
           "email": {
             "anyOf": [
@@ -10116,7 +11456,8 @@
                 "type": "null"
               }
             ],
-            "title": "Email"
+            "title": "Email",
+            "description": "Login email."
           },
           "mobile_number": {
             "anyOf": [
@@ -10127,7 +11468,11 @@
                 "type": "null"
               }
             ],
-            "title": "Mobile Number"
+            "title": "Mobile Number",
+            "description": "Ten-digit mobile number.",
+            "examples": [
+              "9000000003"
+            ]
           },
           "password": {
             "anyOf": [
@@ -10140,7 +11485,8 @@
                 "type": "null"
               }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "New login password."
           },
           "role": {
             "anyOf": [
@@ -10148,14 +11494,16 @@
                 "type": "string",
                 "enum": [
                   "operator",
-                  "manager"
+                  "manager",
+                  "biz-admin"
                 ]
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Role"
+            "title": "Role",
+            "description": "App role. Superadmin cannot be assigned."
           },
           "designation": {
             "anyOf": [
@@ -10168,7 +11516,8 @@
                 "type": "null"
               }
             ],
-            "title": "Designation"
+            "title": "Designation",
+            "description": "Job title."
           },
           "is_active": {
             "anyOf": [
@@ -10179,7 +11528,11 @@
                 "type": "null"
               }
             ],
-            "title": "Is Active"
+            "title": "Is Active",
+            "description": "Set false to deactivate the user (soft delete). Also revokes their VPN profile when VPN was provisioned.",
+            "examples": [
+              false
+            ]
           },
           "allowed_warehouse": {
             "anyOf": [
@@ -10194,7 +11547,13 @@
               }
             ],
             "title": "Allowed Warehouse",
-            "description": "Replace warehouse codes; omit to leave unchanged"
+            "description": "Replaces warehouse scope when provided. Omit to keep existing.",
+            "examples": [
+              [
+                "WH01",
+                "WH02"
+              ]
+            ]
           },
           "allowed_plants": {
             "anyOf": [
@@ -10209,11 +11568,25 @@
               }
             ],
             "title": "Allowed Plants",
-            "description": "Replace plant codes; omit to leave unchanged"
+            "description": "Replaces plant scope when provided. Omit to keep existing."
           }
         },
         "type": "object",
-        "title": "UserUpdateRequest"
+        "title": "UserUpdateRequest",
+        "description": "Body for PUT /api/users/{user_uuid}. Send only fields to change.",
+        "examples": [
+          {
+            "allowed_warehouse": [
+              "WH01",
+              "WH02"
+            ],
+            "designation": "Regional Manager",
+            "name": "Devesh Verma"
+          },
+          {
+            "is_active": false
+          }
+        ]
       },
       "ValidationError": {
         "properties": {
@@ -10287,6 +11660,41 @@
         ],
         "title": "VersionResponse"
       },
+      "VpnDeviceCreateRequest": {
+        "properties": {
+          "user_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "User Name"
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "title": "User Email"
+          },
+          "device_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Device Name"
+          },
+          "device_type": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Device Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_name",
+          "user_email",
+          "device_name",
+          "device_type"
+        ],
+        "title": "VpnDeviceCreateRequest"
+      },
       "WarehouseCreateRequest": {
         "properties": {
           "warehouse_code": {
@@ -10323,7 +11731,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -10538,7 +11946,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {

@@ -239,6 +239,7 @@ const IntegrationsAwsS3Page = lazy(
   () => import("@/pages/dashboard/admin/integrations/aws-s3/page"),
 );
 const LogsPage = lazy(() => import("@/pages/dashboard/admin/log/page"));
+const JobLogsPage = lazy(() => import("@/pages/dashboard/admin/job-logs/page"));
 const LogViewPage = lazy(
   () => import("@/pages/dashboard/admin/log/log-view-page"),
 );
@@ -723,6 +724,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <LogViewPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "admin/job-logs",
+        handle: { title: "Job logs" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <JobLogsPage />
           </Suspense>
         ),
       },

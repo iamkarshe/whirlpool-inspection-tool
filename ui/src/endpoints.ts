@@ -99,6 +99,7 @@ export const PAGES = {
   integrationsOktaPath: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/okta`,
   integrationsAwsS3Path: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/aws-s3`,
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
+  DASHBOARD_ADMIN_JOB_LOGS: "/dashboard/admin/job-logs",
   logViewPath: (id: string) => `${PAGES.DASHBOARD_ADMIN_LOGS}/${id}`,
   DASHBOARD_ADMIN_KNOWLEDGE_BASE: "/dashboard/admin/knowledge-base",
 

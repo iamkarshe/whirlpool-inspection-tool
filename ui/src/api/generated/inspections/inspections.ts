@@ -174,7 +174,7 @@ const startOutboundInspectionApiInspectionsOutboundPost = (
       options);
     }
   /**
- * Upload a compressed image before an inspection exists; barcode is always 16 alphanumeric characters (product unit barcode). Returns a CDN-relative path under uploads/inspections/<barcode>/...
+ * Upload a compressed image before an inspection exists; barcode is always 16 alphanumeric characters (product unit barcode). Returns a stored path under uploads/inspections/<barcode>/... (local disk or S3 key depending on MEDIA_TYPE).
  * @summary Upload Inspection Image
  */
 const uploadInspectionImageApiInspectionsUploadImagePost = (

@@ -1,5 +1,5 @@
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
-import type { Log } from "@/pages/dashboard/admin/log/log-service";
+import type { LogLevelKey } from "@/pages/dashboard/admin/log/log-types";
 import { AlertTriangle, CircleAlert, Info, Tag } from "lucide-react";
 
 type BadgeVariant =
@@ -11,14 +11,14 @@ type BadgeVariant =
   | "info"
   | "success";
 
-const levelVariant: Record<Log["level"], BadgeVariant> = {
+const levelVariant: Record<LogLevelKey, BadgeVariant> = {
   info: "info",
   warn: "warning",
   error: "destructive",
 };
 
 const levelIcon: Record<
-  Log["level"],
+  LogLevelKey,
   React.ComponentType<{ className?: string }>
 > = {
   info: Info,
@@ -27,30 +27,30 @@ const levelIcon: Record<
 };
 
 const sourceVariant: Record<string, BadgeVariant> = {
-  auth: "info",
-  devices: "success",
-  inspections: "default",
-  masters: "secondary",
-  reports: "info",
-  storage: "warning",
+  AUTH: "info",
+  "USER ADD": "success",
+  "USER UPDATE": "secondary",
+  "MASTER UPDATE": "default",
+  "INTEGRATION KEY UPDATED": "warning",
 };
 
-export function LogLevelBadge({ level }: { level: Log["level"] }) {
+export function LogLevelBadge({ level }: { level: LogLevelKey }) {
   const Icon = levelIcon[level];
   return (
     <Badge variant={levelVariant[level]} className={BADGE_ICON_CLASS}>
       <Icon />
-      {level}
+      {level.toUpperCase()}
     </Badge>
   );
 }
 
 export function LogSourceBadge({ source }: { source: string }) {
-  const variant = sourceVariant[source] ?? "secondary";
+  const normalized = source.trim().toUpperCase();
+  const variant = sourceVariant[normalized] ?? "secondary";
   return (
     <Badge variant={variant} className={BADGE_ICON_CLASS}>
       <Tag />
-      {source.toUpperCase()}
+      {normalized}
     </Badge>
   );
 }

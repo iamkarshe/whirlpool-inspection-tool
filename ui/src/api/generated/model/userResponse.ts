@@ -6,15 +6,36 @@
  * OpenAPI spec version: 1.5.1
  */
 
+/**
+ * User account returned by create, update, list, and VPN provision endpoints.
+ */
 export interface UserResponse {
+  /** Internal numeric id. */
   id: number;
+  /** Public user id. Use in paths such as /api/users/{user_uuid}. */
   uuid: string;
+  /** Display name. */
   name: string;
+  /** Login email. */
   email: string;
+  /** Ten-digit mobile number. */
   mobile_number: string;
+  /** Role slug: operator, manager, biz-admin, or superadmin. */
   role: string;
+  /** Job title. */
   designation: string;
+  /** False means deactivated (cannot log in). */
   is_active: boolean;
+  /** Warehouse codes in scope. Empty for operators without warehouse access. */
   allowed_warehouse: string[];
+  /** Plant codes in scope. */
   allowed_plants: string[];
+  /** VPN provision device id when a profile exists. */
+  vpn_device_uuid?: string | null;
+  /** VPN device label on the provision server. */
+  vpn_device_name?: string | null;
+  /** VPN device type (for example android). */
+  vpn_device_type?: string | null;
+  /** UTC time when the current VPN profile was created. */
+  vpn_provisioned_at?: string | null;
 }

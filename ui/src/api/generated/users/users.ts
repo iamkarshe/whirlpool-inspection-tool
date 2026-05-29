@@ -8,6 +8,7 @@
 import type {
   GetUsersApiUsersGetParams,
   UserCreateRequest,
+  UserGenerateVpnRequest,
   UserListResponse,
   UserResponse,
   UserUpdateRequest
@@ -21,8 +22,8 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getUsers = () => {
 /**
- * Get all users
- * @summary Get Users
+ * Paginated user directory for superadmin. Supports search, sort, and created_at / updated_at date filters.
+ * @summary List users
  */
 const getUsersApiUsersGet = (
     params?: GetUsersApiUsersGetParams,
@@ -34,8 +35,8 @@ const getUsersApiUsersGet = (
       options);
     }
   /**
- * Create a new user
- * @summary Create User
+ * Creates an active user with hashed password and facility scope. Roles allowed: operator, manager, biz-admin.
+ * @summary Create user
  */
 const createUserApiUsersPost = (
     userCreateRequest: UserCreateRequest,
@@ -48,8 +49,48 @@ const createUserApiUsersPost = (
       options);
     }
   /**
- * Update user
- * @summary Update User
+ * Provisions one VPN device for the user via the VPN provision service. Replacing an existing profile revokes the old device first. Requires VPN_PROVISION_SERVER and VPN_PROVISION_KEY.
+ * @summary Generate VPN profile
+ */
+const generateUserVpnApiUsersGenerateVpnPost = (
+    userGenerateVpnRequest: UserGenerateVpnRequest,
+ options?: SecondParameter<typeof customInstance<UserResponse>>,) => {
+      return customInstance<UserResponse>(
+      {url: `/api/users/generate-vpn`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: userGenerateVpnRequest
+    },
+      options);
+    }
+  /**
+ * Returns the WireGuard config file for the user's provisioned device. Response body and Content-Type come from the VPN provision server.
+ * @summary Download VPN config
+ */
+const downloadUserVpnConfigApiUsersUserUuidVpnConfigGet = (
+    userUuid: string,
+ options?: SecondParameter<typeof customInstance<unknown | Blob>>,) => {
+      return customInstance<unknown | Blob>(
+      {url: `/api/users/${userUuid}/vpn/config`, method: 'GET',
+        responseType: 'blob'
+    },
+      options);
+    }
+  /**
+ * Returns a QR image for importing the VPN profile on a device. Usually image/png from the provision server.
+ * @summary Download VPN QR code
+ */
+const downloadUserVpnQrApiUsersUserUuidVpnQrGet = (
+    userUuid: string,
+ options?: SecondParameter<typeof customInstance<unknown | Blob>>,) => {
+      return customInstance<unknown | Blob>(
+      {url: `/api/users/${userUuid}/vpn/qr`, method: 'GET',
+        responseType: 'blob'
+    },
+      options);
+    }
+  /**
+ * Partial update: send only fields to change. Set is_active to false to deactivate; VPN is revoked automatically. Superadmin accounts cannot be edited.
+ * @summary Update user
  */
 const updateUserApiUsersUserUuidPut = (
     userUuid: string,
@@ -62,7 +103,10 @@ const updateUserApiUsersUserUuidPut = (
     },
       options);
     }
-  return {getUsersApiUsersGet,createUserApiUsersPost,updateUserApiUsersUserUuidPut}};
+  return {getUsersApiUsersGet,createUserApiUsersPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,updateUserApiUsersUserUuidPut}};
 export type GetUsersApiUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['getUsersApiUsersGet']>>>
 export type CreateUserApiUsersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['createUserApiUsersPost']>>>
+export type GenerateUserVpnApiUsersGenerateVpnPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['generateUserVpnApiUsersGenerateVpnPost']>>>
+export type DownloadUserVpnConfigApiUsersUserUuidVpnConfigGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnConfigApiUsersUserUuidVpnConfigGet']>>>
+export type DownloadUserVpnQrApiUsersUserUuidVpnQrGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnQrApiUsersUserUuidVpnQrGet']>>>
 export type UpdateUserApiUsersUserUuidPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['updateUserApiUsersUserUuidPut']>>>

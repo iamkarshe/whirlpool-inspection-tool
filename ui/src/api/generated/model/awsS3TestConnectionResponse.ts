@@ -6,10 +6,9 @@
  * OpenAPI spec version: 1.5.1
  */
 
-/**
- * Stored path for persistence plus an embeddable URL for immediate preview.
- */
-export interface InspectionImageUploadResponse {
-  path: string;
-  url: string;
+export interface AwsS3TestConnectionResponse {
+  success: boolean;
+  message: string;
+  bucket_name?: string | null;
+  region?: string | null;
 }

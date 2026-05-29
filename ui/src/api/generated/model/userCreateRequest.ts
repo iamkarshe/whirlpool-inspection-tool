@@ -7,28 +7,39 @@
  */
 import type { UserCreateRequestRole } from './userCreateRequestRole';
 
+/**
+ * Body for POST /api/users.
+ */
 export interface UserCreateRequest {
   /**
+     * Display name.
      * @minLength 2
      * @maxLength 120
      */
   name: string;
+  /** Login email. Stored lowercase. */
   email: string;
-  /** @pattern ^\d{10}$ */
+  /**
+     * Ten-digit mobile number, unique across users.
+     * @pattern ^\d{10}$
+     */
   mobile_number: string;
   /**
+     * Initial login password (hashed server-side).
      * @minLength 6
      * @maxLength 128
      */
   password: string;
+  /** App role. Superadmin cannot be assigned via this API. */
   role?: UserCreateRequestRole;
   /**
+     * Job title shown in the UI.
      * @minLength 2
      * @maxLength 120
      */
   designation?: string;
-  /** Warehouse codes this user may access */
+  /** Warehouse codes the user may access. Required for manager and biz-admin. */
   allowed_warehouse?: string[];
-  /** Plant codes this user may access */
+  /** Plant codes the user may access (inbound scope). */
   allowed_plants?: string[];
 }

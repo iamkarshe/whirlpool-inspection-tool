@@ -5,7 +5,7 @@
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
  * OpenAPI spec version: 1.5.1
  */
-import type { WarehouseGradingDefects } from "./warehouseGradingDefects";
+import type { WarehouseGradingDefects } from './warehouseGradingDefects';
 
 export interface DefectsWarehouseItem {
   /** Warehouse id. */

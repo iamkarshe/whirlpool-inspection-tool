@@ -102,6 +102,7 @@ export const navItems: NavGroup[] = [
             href: PAGES.integrationsOktaPath(),
           },
           { title: "Logs", href: PAGES.DASHBOARD_ADMIN_LOGS },
+          { title: "Job Logs", href: PAGES.DASHBOARD_ADMIN_JOB_LOGS },
           {
             title: "Knowledge Base",
             href: PAGES.DASHBOARD_ADMIN_KNOWLEDGE_BASE,

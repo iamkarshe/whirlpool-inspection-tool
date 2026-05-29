@@ -6,16 +6,26 @@
  * OpenAPI spec version: 1.5.1
  */
 
+/**
+ * Body for PUT /api/users/{user_uuid}. Send only fields to change.
+ */
 export interface UserUpdateRequest {
+  /** Display name. */
   name?: string | null;
+  /** Login email. */
   email?: string | null;
+  /** Ten-digit mobile number. */
   mobile_number?: string | null;
+  /** New login password. */
   password?: string | null;
-  role?: 'operator' | 'manager' | null;
+  /** App role. Superadmin cannot be assigned. */
+  role?: 'operator' | 'manager' | 'biz-admin' | null;
+  /** Job title. */
   designation?: string | null;
+  /** Set false to deactivate the user (soft delete). Also revokes their VPN profile when VPN was provisioned. */
   is_active?: boolean | null;
-  /** Replace warehouse codes; omit to leave unchanged */
+  /** Replaces warehouse scope when provided. Omit to keep existing. */
   allowed_warehouse?: string[] | null;
-  /** Replace plant codes; omit to leave unchanged */
+  /** Replaces plant scope when provided. Omit to keep existing. */
   allowed_plants?: string[] | null;
 }
