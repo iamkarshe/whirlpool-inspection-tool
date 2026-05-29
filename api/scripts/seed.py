@@ -62,6 +62,7 @@ def seed_roles(db: Session):
         ("superadmin", "Super administrator"),
         ("manager", "Manager user"),
         ("operator", "Operator user"),
+        ("biz-admin", "Business admin user"),
     ]
 
     for role_name, desc in roles:
@@ -213,6 +214,13 @@ def seed_users(db: Session):
             "mobile": "9000000003",
             "designation": "Operations Manager",
             "role": "manager",
+        },
+        {
+            "name": "Kishor Sahu",
+            "email": "kishor@whirlpool.com",
+            "mobile": "9000000004",
+            "designation": "Business Admin",
+            "role": "biz-admin",
         },
     ]
 
