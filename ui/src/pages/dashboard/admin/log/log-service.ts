@@ -1,5 +1,4 @@
 export {
-  fetchApplicationLogByUuid,
   fetchApplicationLogsPage,
   type ApplicationLogRow,
   type LogLevelKey,

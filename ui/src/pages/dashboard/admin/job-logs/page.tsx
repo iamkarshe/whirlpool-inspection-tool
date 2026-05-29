@@ -80,10 +80,7 @@ export default function JobLogsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageActionBar
-          title="Job logs"
-          description="Cron job outcomes — successes and failures."
-        />
+        <PageActionBar title="Job logs" description="Cron job logs." />
         <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
 

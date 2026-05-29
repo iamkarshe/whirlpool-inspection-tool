@@ -111,29 +111,6 @@ export async function fetchApplicationLogsPage(
   };
 }
 
-export async function fetchApplicationLogByUuid(
-  uuid: string,
-  request?: { signal?: AbortSignal },
-): Promise<ApplicationLogRow | null> {
-  const trimmed = uuid.trim();
-  if (!trimmed) return null;
-  const { data } = await fetchApplicationLogsPage(
-    {
-      page: 1,
-      per_page: 1,
-      search: trimmed,
-      sort_by: "created_at",
-      sort_dir: "desc",
-    },
-    request,
-  );
-  const match =
-    data.find((row) => row.uuid === trimmed) ??
-    data.find((row) => String(row.id) === trimmed) ??
-    data[0];
-  return match ?? null;
-}
-
 export async function fetchJobLogsPage(
   params: JobLogsListParams,
   request?: { signal?: AbortSignal },

@@ -7,10 +7,7 @@ import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import LogsDataTable from "@/pages/dashboard/admin/log/data-table";
 import type { ApplicationLogRow } from "@/pages/dashboard/admin/log/log-types";
-import {
-  fetchApplicationLogsPage,
-  toApiDate,
-} from "@/services/logs-api";
+import { fetchApplicationLogsPage, toApiDate } from "@/services/logs-api";
 
 const APPLICATION_LOG_SORT = {
   allowedColumns: [
@@ -85,7 +82,7 @@ export default function LogsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageActionBar
           title="Logs"
-          description="Application and audit logs."
+          description="Application and audit logs for the application."
         />
         <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
