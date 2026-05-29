@@ -1,4 +1,5 @@
 import re
+import uuid
 from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -46,3 +47,19 @@ class UserUpdateRequest(BaseModel):
         if not re.fullmatch(r"\d{10}", v):
             raise ValueError("mobile_number must be exactly 10 digits")
         return v
+
+
+class UserGenerateVpnRequest(BaseModel):
+    user_uuid: uuid.UUID
+    device_name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=200,
+        description="VPN device label; defaults to the user display name",
+    )
+    device_type: str = Field(
+        default="android",
+        min_length=1,
+        max_length=64,
+        description="Device type sent to the VPN provision server",
+    )

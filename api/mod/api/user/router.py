@@ -2,17 +2,24 @@ import uuid
 
 import bcrypt
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from mod.api.middleware import auth_dependency
 from mod.api.user.helper import (
     apply_user_facility_scope,
+    download_user_vpn_config,
+    download_user_vpn_qr,
     forbid_superadmin_role_assignment,
+    generate_user_vpn_profile,
     map_user_response,
     user_with_role_and_scope,
 )
-from mod.api.user.request import UserCreateRequest, UserUpdateRequest
+from mod.api.user.request import (
+    UserCreateRequest,
+    UserGenerateVpnRequest,
+    UserUpdateRequest,
+)
 from mod.api.user.response import UserListResponse, UserResponse
 from mod.model import Role, User
 from utils.db import get_db
@@ -133,6 +140,64 @@ def create_user(
     if loaded is None:
         raise HTTPException(status_code=500, detail="User reload failed")
     return map_user_response(loaded)
+
+
+@router.post(
+    "/users/generate-vpn",
+    name="generate_user_vpn",
+    description="Provision a VPN profile for a user (one profile per user)",
+    response_model=UserResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def generate_user_vpn(
+    request: Request,
+    payload: UserGenerateVpnRequest,
+    db: Session = Depends(get_db),
+):
+    user = generate_user_vpn_profile(
+        db,
+        user_uuid=payload.user_uuid,
+        device_name=payload.device_name,
+        device_type=payload.device_type,
+    )
+    return map_user_response(user)
+
+
+@router.get(
+    "/users/{user_uuid}/vpn/config",
+    name="download_user_vpn_config",
+    description="Download WireGuard config for the user's VPN profile",
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def get_user_vpn_config(
+    request: Request,
+    user_uuid: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> Response:
+    user = user_with_role_and_scope(db, user_uuid)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return download_user_vpn_config(user)
+
+
+@router.get(
+    "/users/{user_uuid}/vpn/qr",
+    name="download_user_vpn_qr",
+    description="Download VPN QR code for the user's VPN profile",
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def get_user_vpn_qr(
+    request: Request,
+    user_uuid: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> Response:
+    user = user_with_role_and_scope(db, user_uuid)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return download_user_vpn_qr(user)
 
 
 @router.put(

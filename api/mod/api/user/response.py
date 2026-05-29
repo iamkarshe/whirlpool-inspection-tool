@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel, EmailStr
@@ -15,6 +16,10 @@ class UserResponse(BaseModel):
     is_active: bool
     allowed_warehouse: list[str]
     allowed_plants: list[str]
+    vpn_device_uuid: uuid.UUID | None = None
+    vpn_device_name: str | None = None
+    vpn_device_type: str | None = None
+    vpn_provisioned_at: datetime | None = None
 
 
 class UserListResponse(BaseModel):

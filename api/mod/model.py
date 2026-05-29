@@ -264,6 +264,19 @@ class User(TimestampSoftDeleteMixin, Base):
         String(120), nullable=False, server_default=""
     )
 
+    vpn_device_uuid: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+    vpn_device_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    vpn_device_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    vpn_provisioned_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     role: Mapped["Role"] = relationship(back_populates="users")
     devices: Mapped[list["Device"]] = relationship(back_populates="user")
     inspections: Mapped[list["Inspection"]] = relationship(
@@ -371,7 +384,9 @@ class UserSession(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    jti: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    jti: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, index=True
+    )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,

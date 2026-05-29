@@ -1,9 +1,16 @@
 import uuid
+from datetime import datetime, timezone
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Response, status
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from mod.api.user.response import UserResponse
+from mod.api.vpn.helper import (
+    create_vpn_device,
+    fetch_vpn_device_config,
+    fetch_vpn_device_qr,
+    revoke_vpn_device,
+)
 from mod.model import Plant, User, Warehouse
 
 
@@ -42,7 +49,76 @@ def map_user_response(user: User) -> UserResponse:
         is_active=bool(user.is_active),
         allowed_warehouse=list(user.allowed_warehouse),
         allowed_plants=list(user.allowed_plants),
+        vpn_device_uuid=user.vpn_device_uuid,
+        vpn_device_name=user.vpn_device_name,
+        vpn_device_type=user.vpn_device_type,
+        vpn_provisioned_at=user.vpn_provisioned_at,
     )
+
+
+def require_user_vpn_device_uuid(user: User) -> uuid.UUID:
+    if user.vpn_device_uuid is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User does not have a VPN profile",
+        )
+    return user.vpn_device_uuid
+
+
+def generate_user_vpn_profile(
+    db: Session,
+    *,
+    user_uuid: uuid.UUID,
+    device_name: str | None,
+    device_type: str,
+) -> User:
+    user = user_with_role_and_scope(db, user_uuid)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if (user.role.role or "").lower() == "superadmin":
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot generate VPN profile for superadmin accounts",
+        )
+
+    resolved_device_name = (device_name or user.name).strip()
+    if not resolved_device_name:
+        raise HTTPException(
+            status_code=422,
+            detail="device_name could not be resolved",
+        )
+
+    if user.vpn_device_uuid is not None:
+        revoke_vpn_device(user.vpn_device_uuid)
+
+    provisioned_device_uuid = create_vpn_device(
+        user_name=user.name,
+        user_email=user.email,
+        device_name=resolved_device_name,
+        device_type=device_type,
+    )
+
+    user.vpn_device_uuid = provisioned_device_uuid
+    user.vpn_device_name = resolved_device_name
+    user.vpn_device_type = device_type
+    user.vpn_provisioned_at = datetime.now(timezone.utc)
+    db.commit()
+
+    loaded = user_with_role_and_scope(db, user_uuid)
+    if loaded is None:
+        raise HTTPException(status_code=500, detail="User reload failed")
+    return loaded
+
+
+def download_user_vpn_config(user: User) -> Response:
+    device_uuid = require_user_vpn_device_uuid(user)
+    return fetch_vpn_device_config(device_uuid)
+
+
+def download_user_vpn_qr(user: User) -> Response:
+    device_uuid = require_user_vpn_device_uuid(user)
+    return fetch_vpn_device_qr(device_uuid)
 
 
 def apply_user_facility_scope(
