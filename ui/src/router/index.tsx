@@ -28,6 +28,7 @@ const CheckAppPage = lazy(() => import("@/pages/check-app/page"));
 // Dashboard Pages
 const AnalyticsPage = lazy(() => import("@/pages/dashboard/analytics/page"));
 const UsersPage = lazy(() => import("@/pages/dashboard/admin/users/page"));
+const VpnAdminPage = lazy(() => import("@/pages/dashboard/admin/vpn/page"));
 const UserViewLayout = lazy(
   () => import("@/pages/dashboard/admin/users/user-view/user-view-layout"),
 );
@@ -542,6 +543,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <UsersPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "admin/vpn",
+        handle: { title: "VPN" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <VpnAdminPage />
           </Suspense>
         ),
       },

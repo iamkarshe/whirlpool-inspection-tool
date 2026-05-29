@@ -46,6 +46,7 @@ export const PAGES = {
   DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS:
     "/dashboard/reports/executive-analytics",
   DASHBOARD_ADMIN_USERS: "/dashboard/admin/users",
+  DASHBOARD_ADMIN_VPN: "/dashboard/admin/vpn",
   DASHBOARD_ADMIN_DEVICES: "/dashboard/admin/devices",
 
   productCategoryProductsPath: (categoryId: number) =>

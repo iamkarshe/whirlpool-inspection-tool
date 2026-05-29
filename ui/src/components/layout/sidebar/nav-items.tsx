@@ -95,6 +95,7 @@ export const navItems: NavGroup[] = [
         icon: SettingsIcon,
         items: [
           { title: "Users", href: PAGES.DASHBOARD_ADMIN_USERS },
+          { title: "VPN Peers", href: PAGES.DASHBOARD_ADMIN_VPN },
           { title: "Devices", href: PAGES.DASHBOARD_ADMIN_DEVICES },
           { title: "Logins", href: PAGES.DASHBOARD_ADMIN_LOGINS },
           {
