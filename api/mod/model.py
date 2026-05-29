@@ -198,6 +198,14 @@ user_allowed_plants_tbl = Table(
 )
 
 
+class JobLogStatus(str, enum.Enum):
+    success = "success"
+    failed = "failed"
+
+
+JOB_LOG_STATUS_DB = pg_str_enum(JobLogStatus, name="job_log_status", length=16)
+
+
 class TimestampSoftDeleteMixin:
     uuid: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
@@ -1152,14 +1160,6 @@ class BarcodeLock(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="barcode_locks")
-
-
-class JobLogStatus(str, enum.Enum):
-    success = "success"
-    failed = "failed"
-
-
-JOB_LOG_STATUS_DB = pg_str_enum(JobLogStatus, name="job_log_status", length=16)
 
 
 class JobLog(TimestampSoftDeleteMixin, Base):

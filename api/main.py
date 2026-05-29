@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from mod.api.device.router import router as device_router
 from mod.api.inspection.router import router as inspection_router
 from mod.api.integration.router import router as integration_router
+from mod.api.log.router import router as log_router
 from mod.api.login.router import router as login_router
 from mod.api.plant.router import router as plant_router
 from mod.api.product.router import router as product_router
@@ -87,6 +88,7 @@ app.include_router(auth_device_router)
 app.include_router(user_router)
 app.include_router(device_router)
 app.include_router(login_router)
+app.include_router(log_router)
 app.include_router(integration_router)
 app.include_router(warehouse_router)
 app.include_router(inspection_router)
