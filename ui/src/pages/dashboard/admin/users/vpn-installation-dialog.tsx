@@ -1,4 +1,4 @@
-import { Download, ExternalLink, Loader2, QrCode, Smartphone } from "lucide-react";
+import { Download, ExternalLink, Loader2, Mail, QrCode, Smartphone } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { UserResponse } from "@/api/generated/model/userResponse";
@@ -12,6 +12,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  vpnConfigFilenameForUser,
+  vpnQrFilenameForUser,
+} from "@/pages/dashboard/admin/users/vpn-instructions";
 
 const WIREGUARD_INSTALL_URL = "https://www.wireguard.com/install/";
 const WIREGUARD_ANDROID_URL =
@@ -54,6 +58,8 @@ export type VpnInstallationDialogProps = {
   downloading?: "config" | "qr" | null;
   onDownloadConfig: () => void | Promise<void>;
   onDownloadQr: () => void | Promise<void>;
+  onSendEmail: () => void | Promise<void>;
+  sendingEmail?: boolean;
 };
 
 export function VpnInstallationDialog({
@@ -63,15 +69,15 @@ export function VpnInstallationDialog({
   downloading = null,
   onDownloadConfig,
   onDownloadQr,
+  onSendEmail,
+  sendingEmail = false,
 }: VpnInstallationDialogProps) {
-  const configFilename =
-    user ? `${user.email}-wireguard-vpn.conf` : "wireguard-vpn.conf";
-  const qrFilename =
-    user ? `${user.email}-wireguard-vpn-qr.png` : "wireguard-vpn-qr.png";
+  const configFilename = user ? vpnConfigFilenameForUser(user) : "wireguard-vpn.conf";
+  const qrFilename = user ? vpnQrFilenameForUser(user) : "wireguard-vpn-qr.png";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Install WireGuard VPN</DialogTitle>
           <DialogDescription>
@@ -148,11 +154,11 @@ export function VpnInstallationDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-start">
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:flex-nowrap sm:justify-start">
           <Button
             type="button"
             variant="outline"
-            disabled={downloading !== null}
+            disabled={downloading !== null || sendingEmail}
             onClick={() => void onDownloadConfig()}
           >
             {downloading === "config" ?
@@ -169,7 +175,7 @@ export function VpnInstallationDialog({
           <Button
             type="button"
             variant="outline"
-            disabled={downloading !== null}
+            disabled={downloading !== null || sendingEmail}
             onClick={() => void onDownloadQr()}
           >
             {downloading === "qr" ?
@@ -180,6 +186,23 @@ export function VpnInstallationDialog({
             : <>
                 <QrCode className="mr-2 h-4 w-4" />
                 Download QR
+              </>
+            }
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={downloading !== null || sendingEmail}
+            onClick={() => void onSendEmail()}
+          >
+            {sendingEmail ?
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Preparing email…
+              </>
+            : <>
+                <Mail className="mr-2 h-4 w-4" />
+                Send email
               </>
             }
           </Button>

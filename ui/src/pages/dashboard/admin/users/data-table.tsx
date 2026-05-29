@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import {
   ArrowUpDown,
+  BookOpen,
   ClipboardList,
   Download,
   Eye,
@@ -44,7 +45,10 @@ import {
   UserRoleBadge,
   UserStatusBadge,
 } from "@/pages/dashboard/admin/users/user-badge";
-import { isSuperadminRoleName, isUserVpnProvisioned } from "@/services/users-api";
+import {
+  isSuperadminRoleName,
+  isUserVpnProvisioned,
+} from "@/services/users-api";
 
 function buildUserColumns(
   onEditUser: (user: UserResponse) => void,
@@ -54,6 +58,7 @@ function buildUserColumns(
   onVpnDownloadConfig: (user: UserResponse) => void,
   onVpnDownloadQr: (user: UserResponse) => void,
   onVpnRevoke: (user: UserResponse) => void,
+  onVpnShowInstructions: (user: UserResponse) => void,
   vpnBusyUserUuid: string | null,
   vpnBusyAction: "setup" | "config" | "qr" | "revoke" | null,
 ): ColumnDef<UserResponse>[] {
@@ -147,7 +152,7 @@ function buildUserColumns(
         const vpnBusy = vpnBusyUserUuid === userUuid;
         return (
           <div className="flex items-center justify-end gap-1">
-            {!isSuperadminRoleName(user.role) ?
+            {!isSuperadminRoleName(user.role) ? (
               <TooltipProvider delayDuration={300}>
                 <DropdownMenu>
                   <Tooltip>
@@ -171,149 +176,159 @@ function buildUserColumns(
                     <TooltipContent>VPN Provision</TooltipContent>
                   </Tooltip>
                   <DropdownMenuContent align="end">
-                      {!vpnProvisioned ?
+                    {!vpnProvisioned ? (
+                      <DropdownMenuItem
+                        disabled={
+                          !user.is_active ||
+                          (vpnBusy && vpnBusyAction !== "setup")
+                        }
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          onVpnSetup(user);
+                        }}
+                      >
+                        <Settings2 className="mr-2 h-4 w-4" />
+                        {vpnBusy && vpnBusyAction === "setup"
+                          ? "Setting up…"
+                          : "Setup"}
+                      </DropdownMenuItem>
+                    ) : null}
+                    <DropdownMenuItem
+                      disabled={
+                        !vpnProvisioned ||
+                        (vpnBusy && vpnBusyAction !== "config")
+                      }
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        onVpnDownloadConfig(user);
+                      }}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      {vpnBusy && vpnBusyAction === "config"
+                        ? "Downloading…"
+                        : "Download config"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={
+                        !vpnProvisioned || (vpnBusy && vpnBusyAction !== "qr")
+                      }
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        onVpnDownloadQr(user);
+                      }}
+                    >
+                      <QrCode className="mr-2 h-4 w-4" />
+                      {vpnBusy && vpnBusyAction === "qr"
+                        ? "Downloading…"
+                        : "Download QR"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={!vpnProvisioned}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        onVpnShowInstructions(user);
+                      }}
+                    >
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Instructions
+                    </DropdownMenuItem>
+                    {vpnProvisioned ? (
+                      <>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          disabled={
-                            !user.is_active ||
-                            (vpnBusy && vpnBusyAction !== "setup")
-                          }
+                          variant="destructive"
+                          disabled={vpnBusy && vpnBusyAction !== "revoke"}
                           onSelect={(e) => {
                             e.preventDefault();
-                            onVpnSetup(user);
+                            onVpnRevoke(user);
                           }}
                         >
-                          <Settings2 className="mr-2 h-4 w-4" />
-                          {vpnBusy && vpnBusyAction === "setup" ?
-                            "Setting up…"
-                          : "Setup"}
-                        </DropdownMenuItem>
-                      : null}
-                      <DropdownMenuItem
-                        disabled={
-                          !vpnProvisioned ||
-                          (vpnBusy && vpnBusyAction !== "config")
-                        }
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          onVpnDownloadConfig(user);
-                        }}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        {vpnBusy && vpnBusyAction === "config" ?
-                          "Downloading…"
-                        : "Download config"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={
-                          !vpnProvisioned ||
-                          (vpnBusy && vpnBusyAction !== "qr")
-                        }
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          onVpnDownloadQr(user);
-                        }}
-                      >
-                        <QrCode className="mr-2 h-4 w-4" />
-                        {vpnBusy && vpnBusyAction === "qr" ?
-                          "Downloading…"
-                        : "Download QR"}
-                      </DropdownMenuItem>
-                      {vpnProvisioned ?
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            variant="destructive"
-                            disabled={vpnBusy && vpnBusyAction !== "revoke"}
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              onVpnRevoke(user);
-                            }}
-                          >
-                            <ShieldOff className="mr-2 h-4 w-4" />
-                            {vpnBusy && vpnBusyAction === "revoke" ?
-                              "Revoking…"
+                          <ShieldOff className="mr-2 h-4 w-4" />
+                          {vpnBusy && vpnBusyAction === "revoke"
+                            ? "Revoking…"
                             : "Revoke"}
-                          </DropdownMenuItem>
-                        </>
-                      : null}
-                    </DropdownMenuContent>
+                        </DropdownMenuItem>
+                      </>
+                    ) : null}
+                  </DropdownMenuContent>
                 </DropdownMenu>
               </TooltipProvider>
-            : null}
+            ) : null}
             <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link
-                  to={PAGES.userViewPath(userUuid)}
-                  className="flex items-center"
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  View user
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  to={PAGES.userViewDevicesPath(userUuid)}
-                  className="flex items-center"
-                >
-                  <Smartphone className="mr-2 h-4 w-4" />
-                  View devices
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  to={PAGES.userViewInspectionsPath(userUuid)}
-                  className="flex items-center"
-                >
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  View inspections
-                </Link>
-              </DropdownMenuItem>
-              {!isSuperadminRoleName(user.role) ?
-                <>
-                  <DropdownMenuItem
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={PAGES.userViewPath(userUuid)}
                     className="flex items-center"
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      onEditUser(user);
-                    }}
                   >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Update user
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className={
-                      user.is_active ?
-                        "text-destructive focus:text-destructive"
-                      : undefined
-                    }
-                    disabled={togglingUserUuid === userUuid}
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      onToggleUserActive(user);
-                    }}
+                    <Eye className="mr-2 h-4 w-4" />
+                    View user
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={PAGES.userViewDevicesPath(userUuid)}
+                    className="flex items-center"
                   >
-                    {user.is_active ?
-                      <>
-                        <UserX className="mr-2 h-4 w-4 text-destructive" />
-                        Deactivate
-                      </>
-                    : <>
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Activate
-                      </>
-                    }
-                  </DropdownMenuItem>
-                </>
-              : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    <Smartphone className="mr-2 h-4 w-4" />
+                    View devices
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={PAGES.userViewInspectionsPath(userUuid)}
+                    className="flex items-center"
+                  >
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    View inspections
+                  </Link>
+                </DropdownMenuItem>
+                {!isSuperadminRoleName(user.role) ? (
+                  <>
+                    <DropdownMenuItem
+                      className="flex items-center"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        onEditUser(user);
+                      }}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Update user
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className={
+                        user.is_active
+                          ? "text-destructive focus:text-destructive"
+                          : undefined
+                      }
+                      disabled={togglingUserUuid === userUuid}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        onToggleUserActive(user);
+                      }}
+                    >
+                      {user.is_active ? (
+                        <>
+                          <UserX className="mr-2 h-4 w-4 text-destructive" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck className="mr-2 h-4 w-4" />
+                          Activate
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       },
@@ -351,6 +366,7 @@ interface UsersDataTableProps {
   onVpnDownloadConfig: (user: UserResponse) => void;
   onVpnDownloadQr: (user: UserResponse) => void;
   onVpnRevoke: (user: UserResponse) => void;
+  onVpnShowInstructions: (user: UserResponse) => void;
   vpnBusyUserUuid?: string | null;
   vpnBusyAction?: "setup" | "config" | "qr" | "revoke" | null;
 }
@@ -366,6 +382,7 @@ export default function UsersDataTable({
   onVpnDownloadConfig,
   onVpnDownloadQr,
   onVpnRevoke,
+  onVpnShowInstructions,
   vpnBusyUserUuid = null,
   vpnBusyAction = null,
 }: UsersDataTableProps) {
@@ -379,6 +396,7 @@ export default function UsersDataTable({
         onVpnDownloadConfig,
         onVpnDownloadQr,
         onVpnRevoke,
+        onVpnShowInstructions,
         vpnBusyUserUuid,
         vpnBusyAction,
       ),
@@ -390,6 +408,7 @@ export default function UsersDataTable({
       onVpnDownloadConfig,
       onVpnDownloadQr,
       onVpnRevoke,
+      onVpnShowInstructions,
       vpnBusyUserUuid,
       vpnBusyAction,
     ],

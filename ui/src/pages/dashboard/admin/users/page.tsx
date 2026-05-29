@@ -29,6 +29,11 @@ import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
 import { RevokeUserVpnDialog } from "@/pages/dashboard/admin/users/revoke-user-vpn-dialog";
 import { VpnInstallationDialog } from "@/pages/dashboard/admin/users/vpn-installation-dialog";
+import {
+  openVpnSetupMailto,
+  vpnConfigFilenameForUser,
+  vpnQrFilenameForUser,
+} from "@/pages/dashboard/admin/users/vpn-instructions";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
   createUser,
@@ -273,7 +278,7 @@ export default function UsersPage() {
   const [revokeVpnUser, setRevokeVpnUser] = useState<UserResponse | null>(null);
   const [vpnBusyUserUuid, setVpnBusyUserUuid] = useState<string | null>(null);
   const [vpnBusyAction, setVpnBusyAction] = useState<
-    "setup" | "config" | "qr" | "revoke" | null
+    "setup" | "config" | "qr" | "revoke" | "email" | null
   >(null);
   const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
 
@@ -366,6 +371,33 @@ export default function UsersPage() {
 
   const onVpnRevoke = useCallback((user: UserResponse) => {
     setRevokeVpnUser(user);
+  }, []);
+
+  const onVpnShowInstructions = useCallback((user: UserResponse) => {
+    setVpnInstallUser(user);
+  }, []);
+
+  const sendVpnInstructionsEmail = useCallback(async (user: UserResponse) => {
+    setVpnBusyUserUuid(user.uuid);
+    setVpnBusyAction("email");
+    try {
+      await downloadUserVpnConfig(user);
+      await downloadUserVpnQr(user);
+      openVpnSetupMailto(user);
+      toast.info(
+        `Config and QR downloaded. Your default mail app will open — attach ${vpnConfigFilenameForUser(user)} and ${vpnQrFilenameForUser(user)} before sending.`,
+        { duration: 8000 },
+      );
+    } catch (e: unknown) {
+      toast.error(
+        e instanceof Error ?
+          e.message
+        : "Could not prepare VPN files for email.",
+      );
+    } finally {
+      setVpnBusyUserUuid(null);
+      setVpnBusyAction(null);
+    }
   }, []);
 
   const applyVpnRevoke = useCallback(
@@ -485,6 +517,7 @@ export default function UsersPage() {
         onVpnDownloadConfig={onVpnDownloadConfig}
         onVpnDownloadQr={onVpnDownloadQr}
         onVpnRevoke={onVpnRevoke}
+        onVpnShowInstructions={onVpnShowInstructions}
         vpnBusyUserUuid={vpnBusyUserUuid}
         vpnBusyAction={vpnBusyAction}
       />
@@ -532,6 +565,16 @@ export default function UsersPage() {
         }
         onDownloadConfig={handleInstallDialogDownloadConfig}
         onDownloadQr={handleInstallDialogDownloadQr}
+        onSendEmail={() =>
+          vpnInstallUser ?
+            sendVpnInstructionsEmail(vpnInstallUser)
+          : undefined
+        }
+        sendingEmail={
+          vpnInstallUser !== null &&
+          vpnBusyUserUuid === vpnInstallUser.uuid &&
+          vpnBusyAction === "email"
+        }
       />
       <RevokeUserVpnDialog
         open={revokeVpnUser !== null}

@@ -1,13 +1,15 @@
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
 import type { UserResponse } from "@/api/generated/model/userResponse";
+import { cn } from "@/lib/utils";
 import {
   Briefcase,
   CheckCircle,
+  HardHat,
   Shield,
-  User as UserIcon,
   UserCog,
   XCircle,
 } from "lucide-react";
+import type { ComponentType } from "react";
 
 type BadgeVariant =
   | "default"
@@ -15,37 +17,68 @@ type BadgeVariant =
   | "destructive"
   | "outline"
   | "info"
-  | "success";
+  | "success"
+  | "warning";
 
-const roleVariant: Record<string, BadgeVariant> = {
-  Superadmin: "info",
-  Manager: "default",
-  Operator: "secondary",
+type RoleBadgeConfig = {
+  label: string;
+  variant: BadgeVariant;
+  className?: string;
+  Icon: ComponentType<{ className?: string }>;
 };
 
-const roleIcon: Record<string, React.ComponentType<{ className?: string }>> = {
-  Superadmin: Shield,
-  Manager: UserCog,
-  Operator: UserIcon,
+const ROLE_BADGE_CONFIG: Record<string, RoleBadgeConfig> = {
+  Superadmin: {
+    label: "SUPERADMIN",
+    variant: "info",
+    Icon: Shield,
+  },
+  Manager: {
+    label: "MANAGER",
+    variant: "default",
+    Icon: UserCog,
+  },
+  Operator: {
+    label: "OPERATOR",
+    variant: "outline",
+    className:
+      "border-emerald-400/80 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/45 dark:text-emerald-200",
+    Icon: HardHat,
+  },
+  "Biz Admin": {
+    label: "BIZ-ADMIN",
+    variant: "outline",
+    className:
+      "border-amber-400/80 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/45 dark:text-amber-100",
+    Icon: Briefcase,
+  },
 };
 
 function normalizeRoleLabel(role: string): string {
-  const lower = role.toLowerCase().trim();
-  if (lower === "superadmin") return "Superadmin";
+  const lower = role.toLowerCase().trim().replace(/_/g, "-");
+  if (lower === "superadmin" || lower === "admin") return "Superadmin";
   if (lower === "manager") return "Manager";
   if (lower === "operator") return "Operator";
-  if (lower === "admin") return "Superadmin";
-  return role;
+  if (lower === "biz-admin") return "Biz Admin";
+  return role.trim();
 }
 
 export function UserRoleBadge({ role }: { role: string }) {
   const label = normalizeRoleLabel(role);
-  const variant = roleVariant[label] ?? "secondary";
-  const Icon = roleIcon[label] ?? UserIcon;
+  const config = ROLE_BADGE_CONFIG[label] ?? {
+    label: label.toUpperCase(),
+    variant: "secondary" as const,
+    Icon: UserCog,
+  };
+
+  const Icon = config.Icon;
   return (
-    <Badge variant={variant} className={BADGE_ICON_CLASS}>
+    <Badge
+      variant={config.variant}
+      className={cn(BADGE_ICON_CLASS, config.className)}
+    >
       <Icon />
-      {label.toUpperCase()}
+      {config.label}
     </Badge>
   );
 }
