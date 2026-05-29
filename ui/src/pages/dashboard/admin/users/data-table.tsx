@@ -3,9 +3,13 @@ import { useMemo } from "react";
 import {
   ArrowUpDown,
   ClipboardList,
+  Download,
   Eye,
   MoreHorizontal,
+  Network,
   Pencil,
+  QrCode,
+  Settings2,
   Smartphone,
   UserCheck,
   UserX,
@@ -32,12 +36,17 @@ import {
   UserRoleBadge,
   UserStatusBadge,
 } from "@/pages/dashboard/admin/users/user-badge";
-import { isSuperadminRoleName } from "@/services/users-api";
+import { isSuperadminRoleName, isUserVpnProvisioned } from "@/services/users-api";
 
 function buildUserColumns(
   onEditUser: (user: UserResponse) => void,
   onToggleUserActive: (user: UserResponse) => void,
   togglingUserUuid: string | null,
+  onVpnSetup: (user: UserResponse) => void,
+  onVpnDownloadConfig: (user: UserResponse) => void,
+  onVpnDownloadQr: (user: UserResponse) => void,
+  vpnBusyUserUuid: string | null,
+  vpnBusyAction: "setup" | "config" | "qr" | null,
 ): ColumnDef<UserResponse>[] {
   return [
     {
@@ -125,8 +134,61 @@ function buildUserColumns(
       cell: ({ row }) => {
         const user = row.original;
         const userUuid = user.uuid;
+        const vpnProvisioned = isUserVpnProvisioned(user);
+        const vpnBusy = vpnBusyUserUuid === userUuid;
         return (
-          <DropdownMenu>
+          <div className="flex items-center justify-end gap-1">
+            {!isSuperadminRoleName(user.role) ?
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={!user.is_active || (vpnBusy && vpnBusyAction === "setup")}
+                    aria-label="VPN provision"
+                  >
+                    <Network className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    disabled={!user.is_active || (vpnBusy && vpnBusyAction !== "setup")}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      onVpnSetup(user);
+                    }}
+                  >
+                    <Settings2 className="mr-2 h-4 w-4" />
+                    {vpnBusy && vpnBusyAction === "setup" ? "Setting up…" : "Setup"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!vpnProvisioned || (vpnBusy && vpnBusyAction !== "config")}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      onVpnDownloadConfig(user);
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    {vpnBusy && vpnBusyAction === "config" ?
+                      "Downloading…"
+                    : "Download config"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!vpnProvisioned || (vpnBusy && vpnBusyAction !== "qr")}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      onVpnDownloadQr(user);
+                    }}
+                  >
+                    <QrCode className="mr-2 h-4 w-4" />
+                    {vpnBusy && vpnBusyAction === "qr" ?
+                      "Downloading…"
+                    : "Download QR"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            : null}
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <span className="sr-only">Open menu</span>
@@ -200,6 +262,7 @@ function buildUserColumns(
               : null}
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         );
       },
     },
@@ -232,6 +295,11 @@ interface UsersDataTableProps {
   onEditUser: (user: UserResponse) => void;
   onToggleUserActive: (user: UserResponse) => void;
   togglingUserUuid?: string | null;
+  onVpnSetup: (user: UserResponse) => void;
+  onVpnDownloadConfig: (user: UserResponse) => void;
+  onVpnDownloadQr: (user: UserResponse) => void;
+  vpnBusyUserUuid?: string | null;
+  vpnBusyAction?: "setup" | "config" | "qr" | null;
 }
 
 export default function UsersDataTable({
@@ -241,10 +309,34 @@ export default function UsersDataTable({
   onEditUser,
   onToggleUserActive,
   togglingUserUuid = null,
+  onVpnSetup,
+  onVpnDownloadConfig,
+  onVpnDownloadQr,
+  vpnBusyUserUuid = null,
+  vpnBusyAction = null,
 }: UsersDataTableProps) {
   const columns = useMemo(
-    () => buildUserColumns(onEditUser, onToggleUserActive, togglingUserUuid),
-    [onEditUser, onToggleUserActive, togglingUserUuid],
+    () =>
+      buildUserColumns(
+        onEditUser,
+        onToggleUserActive,
+        togglingUserUuid,
+        onVpnSetup,
+        onVpnDownloadConfig,
+        onVpnDownloadQr,
+        vpnBusyUserUuid,
+        vpnBusyAction,
+      ),
+    [
+      onEditUser,
+      onToggleUserActive,
+      togglingUserUuid,
+      onVpnSetup,
+      onVpnDownloadConfig,
+      onVpnDownloadQr,
+      vpnBusyUserUuid,
+      vpnBusyAction,
+    ],
   );
 
   return (

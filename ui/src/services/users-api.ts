@@ -8,6 +8,10 @@ import type { UserListResponse } from "@/api/generated/model/userListResponse";
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import { getUsers } from "@/api/generated/users/users";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
+import {
+  readBlobErrorDetail,
+  triggerBlobDownload,
+} from "@/lib/download-blob";
 
 const CREATABLE_USER_ROLES: ReadonlySet<UserCreateRequestRole> = new Set([
   UserCreateRequestRole.operator,
@@ -131,9 +135,104 @@ export async function fetchUserByUuid(
   return null;
 }
 
+export function isUserVpnProvisioned(user: UserResponse): boolean {
+  return Boolean(user.vpn_device_uuid?.trim());
+}
+
+export function vpnConfigDownloadFilename(email: string): string {
+  return `${email}-wireguard-vpn.conf`;
+}
+
+export function vpnQrDownloadFilename(email: string): string {
+  return `${email}-wireguard-vpn-qr.png`;
+}
+
+export async function generateUserVpn(
+  userUuid: string,
+  opts?: {
+    deviceName?: string;
+    deviceType?: string;
+    signal?: AbortSignal;
+  },
+): Promise<UserResponse> {
+  const api = getUsers();
+  return api.generateUserVpnApiUsersGenerateVpnPost(
+    {
+      user_uuid: userUuid,
+      ...(opts?.deviceName ? { device_name: opts.deviceName } : {}),
+      ...(opts?.deviceType ? { device_type: opts.deviceType } : {}),
+    },
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
+}
+
+async function userVpnBlobErrorMessage(
+  err: unknown,
+  fallback: string,
+): Promise<string> {
+  if (
+    isAxiosError(err) &&
+    err.response?.data instanceof Blob
+  ) {
+    return readBlobErrorDetail(err.response.data, fallback);
+  }
+  return userApiErrorMessage(err, fallback);
+}
+
+export async function downloadUserVpnConfig(
+  user: UserResponse,
+  opts?: { signal?: AbortSignal },
+): Promise<void> {
+  const api = getUsers();
+  try {
+    const blob = await api.downloadUserVpnConfigApiUsersUserUuidVpnConfigGet(
+      user.uuid,
+      opts?.signal ? { signal: opts.signal } : undefined,
+    );
+    if (!(blob instanceof Blob)) {
+      throw new Error("Unexpected VPN config response.");
+    }
+    triggerBlobDownload(blob, vpnConfigDownloadFilename(user.email));
+  } catch (err: unknown) {
+    throw new Error(
+      await userVpnBlobErrorMessage(err, "Could not download VPN config."),
+    );
+  }
+}
+
+export async function downloadUserVpnQr(
+  user: UserResponse,
+  opts?: { signal?: AbortSignal },
+): Promise<void> {
+  const api = getUsers();
+  try {
+    const blob = await api.downloadUserVpnQrApiUsersUserUuidVpnQrGet(
+      user.uuid,
+      opts?.signal ? { signal: opts.signal } : undefined,
+    );
+    if (!(blob instanceof Blob)) {
+      throw new Error("Unexpected VPN QR response.");
+    }
+    triggerBlobDownload(blob, vpnQrDownloadFilename(user.email));
+  } catch (err: unknown) {
+    throw new Error(
+      await userVpnBlobErrorMessage(err, "Could not download VPN QR code."),
+    );
+  }
+}
+
 export function userApiErrorMessage(err: unknown, fallback: string): string {
   if (!isAxiosError(err)) return err instanceof Error ? err.message : fallback;
   const data = err.response?.data as unknown;
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "detail" in data &&
+    typeof (data as { detail: unknown }).detail === "string"
+  ) {
+    const detail = (data as { detail: string }).detail;
+    if (detail.length > 0) return detail;
+  }
   if (
     typeof data === "object" &&
     data !== null &&

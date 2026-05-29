@@ -27,10 +27,15 @@ import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import { DeactivateUserDialog } from "@/pages/dashboard/admin/users/deactivate-user-dialog";
 import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
+import { VpnInstallationDialog } from "@/pages/dashboard/admin/users/vpn-installation-dialog";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
   createUser,
+  downloadUserVpnConfig,
+  downloadUserVpnQr,
   fetchUsersPage,
+  generateUserVpn,
+  isUserVpnProvisioned,
   updateUser,
   userApiErrorMessage,
 } from "@/services/users-api";
@@ -263,6 +268,11 @@ export default function UsersPage() {
   const [editUser, setEditUser] = useState<UserResponse | null>(null);
   const [togglingUserUuid, setTogglingUserUuid] = useState<string | null>(null);
   const [deactivateUser, setDeactivateUser] = useState<UserResponse | null>(null);
+  const [vpnInstallUser, setVpnInstallUser] = useState<UserResponse | null>(null);
+  const [vpnBusyUserUuid, setVpnBusyUserUuid] = useState<string | null>(null);
+  const [vpnBusyAction, setVpnBusyAction] = useState<
+    "setup" | "config" | "qr" | null
+  >(null);
   const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
 
   const applyUserActiveState = useCallback(
@@ -301,6 +311,70 @@ export default function UsersPage() {
     },
     [applyUserActiveState],
   );
+
+  const runVpnDownload = useCallback(
+    async (user: UserResponse, kind: "config" | "qr") => {
+      setVpnBusyUserUuid(user.uuid);
+      setVpnBusyAction(kind);
+      try {
+        if (kind === "config") {
+          await downloadUserVpnConfig(user);
+          toast.success("VPN config downloaded.");
+        } else {
+          await downloadUserVpnQr(user);
+          toast.success("VPN QR code downloaded.");
+        }
+      } catch (e: unknown) {
+        toast.error(e instanceof Error ? e.message : "Download failed.");
+      } finally {
+        setVpnBusyUserUuid(null);
+        setVpnBusyAction(null);
+      }
+    },
+    [],
+  );
+
+  const onVpnSetup = useCallback(async (user: UserResponse) => {
+    setVpnBusyUserUuid(user.uuid);
+    setVpnBusyAction("setup");
+    try {
+      const updated = await generateUserVpn(user.uuid, {
+        deviceName: user.name,
+      });
+      toast.success(
+        isUserVpnProvisioned(user) ?
+          "VPN profile replaced."
+        : "VPN profile created.",
+      );
+      setReloadKey((v) => v + 1);
+      setVpnInstallUser(updated);
+    } catch (e: unknown) {
+      toast.error(userApiErrorMessage(e, "Could not provision VPN."));
+    } finally {
+      setVpnBusyUserUuid(null);
+      setVpnBusyAction(null);
+    }
+  }, []);
+
+  const onVpnDownloadConfig = useCallback(
+    (user: UserResponse) => void runVpnDownload(user, "config"),
+    [runVpnDownload],
+  );
+
+  const onVpnDownloadQr = useCallback(
+    (user: UserResponse) => void runVpnDownload(user, "qr"),
+    [runVpnDownload],
+  );
+
+  const handleInstallDialogDownloadConfig = useCallback(async () => {
+    if (!vpnInstallUser) return;
+    await runVpnDownload(vpnInstallUser, "config");
+  }, [runVpnDownload, vpnInstallUser]);
+
+  const handleInstallDialogDownloadQr = useCallback(async () => {
+    if (!vpnInstallUser) return;
+    await runVpnDownload(vpnInstallUser, "qr");
+  }, [runVpnDownload, vpnInstallUser]);
   const [apiFilters, setApiFilters] = useState<Record<string, string>>({
     is_active: "",
     role: "",
@@ -383,6 +457,11 @@ export default function UsersPage() {
         onEditUser={onEditUser}
         onToggleUserActive={onToggleUserActive}
         togglingUserUuid={togglingUserUuid}
+        onVpnSetup={onVpnSetup}
+        onVpnDownloadConfig={onVpnDownloadConfig}
+        onVpnDownloadQr={onVpnDownloadQr}
+        vpnBusyUserUuid={vpnBusyUserUuid}
+        vpnBusyAction={vpnBusyAction}
       />
       {editUser ?
         <EditUserDialog
@@ -412,6 +491,22 @@ export default function UsersPage() {
             applyUserActiveState(deactivateUser, false)
           : Promise.resolve(false)
         }
+      />
+      <VpnInstallationDialog
+        open={vpnInstallUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setVpnInstallUser(null);
+        }}
+        user={vpnInstallUser}
+        downloading={
+          vpnInstallUser && vpnBusyUserUuid === vpnInstallUser.uuid ?
+            vpnBusyAction === "config" || vpnBusyAction === "qr" ?
+              vpnBusyAction
+            : null
+          : null
+        }
+        onDownloadConfig={handleInstallDialogDownloadConfig}
+        onDownloadQr={handleInstallDialogDownloadQr}
       />
     </div>
   );
