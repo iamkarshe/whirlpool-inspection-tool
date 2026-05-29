@@ -13,6 +13,7 @@ from mod.api.facility_metrics import (
     facility_stats_batch_by_warehouse_code,
     facility_stats_for_warehouse,
 )
+from mod.api.log.audit import audit_master_from_request
 from mod.api.middleware import auth_dependency
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404, map_warehouse
 from mod.api.warehouse.request import WarehouseCreateRequest, WarehouseUpdateRequest
@@ -131,6 +132,15 @@ def create_warehouse(
         is_active=True,
     )
     db.add(warehouse)
+    db.flush()
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="warehouse",
+        resource_key=warehouse.warehouse_code,
+        operation="created",
+        summary=f"Warehouse {warehouse.warehouse_code} created",
+    )
     db.commit()
     db.refresh(warehouse)
     return map_warehouse(warehouse, stats=empty_facility_stats())
@@ -198,6 +208,14 @@ def update_warehouse(
     warehouse.postal_code = str(payload.postal_code)
     warehouse.is_active = payload.is_active
 
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="warehouse",
+        resource_key=warehouse.warehouse_code,
+        operation="updated",
+        summary=f"Warehouse {warehouse.warehouse_code} updated",
+    )
     db.commit()
     db.refresh(warehouse)
     stats = facility_stats_for_warehouse(db, warehouse.warehouse_code, is_active=True)
@@ -220,6 +238,14 @@ def delete_warehouse(
     warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
 
     warehouse.is_active = False
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="warehouse",
+        resource_key=warehouse.warehouse_code,
+        operation="deactivated",
+        summary=f"Warehouse {warehouse.warehouse_code} deactivated",
+    )
     db.commit()
     db.refresh(warehouse)
     stats = facility_stats_for_warehouse(db, warehouse.warehouse_code, is_active=True)
@@ -382,6 +408,14 @@ def upload_warehouses_csv(
         )
         try:
             db.execute(stmt)
+            audit_master_from_request(
+                db,
+                request,
+                resource_type="warehouse",
+                resource_key="bulk_csv",
+                operation="upserted",
+                summary=f"Warehouses CSV upsert: {len(valid_rows)} row(s)",
+            )
             db.commit()
         except IntegrityError as ex:
             db.rollback()

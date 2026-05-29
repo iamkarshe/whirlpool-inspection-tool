@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends, Request
+from sqlalchemy.orm import Session
+
+from utils.db import get_db
 
 from mod.api.integration.helper import (
     get_integration_credentials,
@@ -34,8 +37,9 @@ def get_integrations(request: Request):
 def put_okta_sso_integration(
     request: Request,
     payload: OktaSsoUpdateRequest,
+    db: Session = Depends(get_db),
 ):
-    return update_okta_credentials(payload)
+    return update_okta_credentials(db, int(request.state.user_id), payload)
 
 
 @router.put("/integrations/aws-s3", response_model=IntegrationCredentialsResponse)
@@ -44,8 +48,9 @@ def put_okta_sso_integration(
 def put_aws_s3_integration(
     request: Request,
     payload: AwsS3UpdateRequest,
+    db: Session = Depends(get_db),
 ):
-    return update_aws_s3_credentials(payload)
+    return update_aws_s3_credentials(db, int(request.state.user_id), payload)
 
 
 @router.post(

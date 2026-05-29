@@ -5,6 +5,7 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from sqlalchemy.orm import Session, joinedload, selectinload
 
+from mod.api.log.audit import log_user_added, log_user_updated
 from mod.api.middleware import auth_dependency
 from mod.api.user.helper import (
     apply_user_facility_scope,
@@ -149,6 +150,14 @@ def create_user(
         user,
         warehouse_codes=payload.allowed_warehouse,
         plant_codes=payload.allowed_plants,
+    )
+    log_user_added(
+        db,
+        actor_user_id=int(request.state.user_id),
+        target_user_uuid=str(user.uuid),
+        target_email=user.email,
+        target_name=user.name,
+        target_role=role.role,
     )
     db.commit()
 
@@ -334,6 +343,24 @@ def update_user(
         user,
         warehouse_codes=payload.allowed_warehouse,
         plant_codes=payload.allowed_plants,
+    )
+
+    changed_fields = list(payload.model_dump(exclude_unset=True).keys())
+    if payload.is_active is False:
+        summary = f"User {user.name} ({user.email}) deactivated"
+    elif changed_fields:
+        summary = (
+            f"User {user.name} ({user.email}) updated: "
+            f"{', '.join(changed_fields)}"
+        )
+    else:
+        summary = f"User {user.name} ({user.email}) updated"
+    log_user_updated(
+        db,
+        actor_user_id=int(request.state.user_id),
+        target_user_uuid=str(user.uuid),
+        target_email=user.email,
+        summary=summary,
     )
 
     db.commit()

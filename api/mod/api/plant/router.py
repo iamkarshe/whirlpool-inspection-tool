@@ -13,6 +13,7 @@ from mod.api.facility_metrics import (
     facility_stats_batch_by_plant_code,
     facility_stats_for_plant,
 )
+from mod.api.log.audit import audit_master_from_request
 from mod.api.middleware import auth_dependency
 from mod.api.plant.helper import map_plant
 from mod.api.plant.request import PlantCreateRequest, PlantUpdateRequest
@@ -124,6 +125,15 @@ def create_plant(
         is_active=True,
     )
     db.add(plant)
+    db.flush()
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="plant",
+        resource_key=plant.plant_code,
+        operation="created",
+        summary=f"Plant {plant.plant_code} created",
+    )
     db.commit()
     db.refresh(plant)
     return map_plant(plant, stats=empty_facility_stats())
@@ -190,6 +200,14 @@ def update_plant(
     plant.postal_code = str(payload.postal_code)
     plant.is_active = payload.is_active
 
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="plant",
+        resource_key=plant.plant_code,
+        operation="updated",
+        summary=f"Plant {plant.plant_code} updated",
+    )
     db.commit()
     db.refresh(plant)
     stats = facility_stats_for_plant(db, plant.plant_code, is_active=True)
@@ -214,6 +232,14 @@ def delete_plant(
         raise HTTPException(status_code=404, detail="Plant not found")
 
     plant.is_active = False
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="plant",
+        resource_key=plant.plant_code,
+        operation="deactivated",
+        summary=f"Plant {plant.plant_code} deactivated",
+    )
     db.commit()
     db.refresh(plant)
     stats = facility_stats_for_plant(db, plant.plant_code, is_active=True)
@@ -367,6 +393,14 @@ def upload_plants_csv(
         )
         try:
             db.execute(stmt)
+            audit_master_from_request(
+                db,
+                request,
+                resource_type="plant",
+                resource_key="bulk_csv",
+                operation="upserted",
+                summary=f"Plants CSV upsert: {len(valid_rows)} row(s)",
+            )
             db.commit()
         except IntegrityError as ex:
             db.rollback()

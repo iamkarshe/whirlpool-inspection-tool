@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from mod.api.log.audit import audit_master_from_request
 from mod.api.middleware import auth_dependency
 from mod.api.sku.helper import map_sku
 from mod.api.sku.response import SkuListResponse, SkuResponse
@@ -344,6 +345,19 @@ def upload_skus_csv(
 
         inserted_skus = db.execute(sku_stmt).all()
 
+        audit_master_from_request(
+            db,
+            request,
+            resource_type="sku",
+            resource_key="bulk_csv",
+            operation="imported",
+            summary=(
+                "SKU CSV import: "
+                f"{len(inserted_categories)} categories, "
+                f"{len(inserted_products)} products, "
+                f"{len(inserted_skus)} SKUs"
+            ),
+        )
         db.commit()
 
         return {

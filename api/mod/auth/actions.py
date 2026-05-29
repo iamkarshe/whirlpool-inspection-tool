@@ -1,11 +1,11 @@
-import json
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from mod.auth.request import LoginDeviceInfo
 from mod.auth.session import deactivate_push_subscriptions_for_user_except_device
-from mod.model import Device, DeviceType, Log, LogLevel, User
+from mod.api.log.audit import log_auth_login_failed, log_auth_login_success
+from mod.model import Device, DeviceType, User
 
 
 def upsert_device_action(
@@ -77,23 +77,17 @@ def log_login_action(
     Does NOT commit the transaction; caller is responsible for db.commit().
     """
     token_preview = access_token[:16] + "..." if access_token else ""
-    payload = {
-        "event": "login",
-        "ip": client_ip,
-        "proxy_ip": proxy_ip,
-        "user_agent": user_agent,
-        "access_token_preview": token_preview,
-        "device_fingerprint": getattr(device, "device_fingerprint", None),
-        "device_imei": getattr(device, "imei", None),
-    }
-
-    log = Log(
+    log_auth_login_success(
+        db,
         user_id=user.id,
         device_id=getattr(device, "id", None),
-        log_level=LogLevel.info.value,
-        log_value=json.dumps(payload),
+        client_ip=client_ip,
+        proxy_ip=proxy_ip,
+        user_agent=user_agent,
+        access_token_preview=token_preview,
+        device_fingerprint=getattr(device, "device_fingerprint", None),
+        device_imei=getattr(device, "imei", None),
     )
-    db.add(log)
 
 
 def log_login_failure_action(
@@ -107,20 +101,12 @@ def log_login_failure_action(
     """
     Persist an audit log entry for failed login attempts.
     """
-    payload = {
-        "event": "login_failed",
-        "reason": reason,
-        "ip": client_ip,
-        "proxy_ip": proxy_ip,
-        "user_agent": user_agent,
-        "email": getattr(user, "email", None),
-        "user_id": getattr(user, "id", None),
-    }
-
-    log = Log(
+    log_auth_login_failed(
+        db,
         user_id=getattr(user, "id", None),
-        device_id=None,
-        log_level=LogLevel.warning.value,
-        log_value=json.dumps(payload),
+        email=getattr(user, "email", None),
+        reason=reason,
+        client_ip=client_ip,
+        proxy_ip=proxy_ip,
+        user_agent=user_agent,
     )
-    db.add(log)

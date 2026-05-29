@@ -12,7 +12,10 @@ class ApplicationLogItemResponse(BaseModel):
     message: str
     source: str = Field(
         ...,
-        description="AUTH, DEVICES, INSPECTIONS, MASTERS, REPORTS, or STORAGE.",
+        description=(
+            "AUTH, USER ADD, USER UPDATE, MASTER UPDATE, "
+            "or INTEGRATION KEY UPDATED."
+        ),
     )
     created_at: datetime = Field(..., description="Event time (UTC).")
 

@@ -1,15 +1,28 @@
 import json
 from typing import Any
 
-from sqlalchemy import and_, or_
+from sqlalchemy import or_
 from sqlalchemy.orm import Query
 
+from mod.api.log.audit import (
+    ACTION_AUTH_LOGIN,
+    ACTION_AUTH_LOGIN_FAILED,
+    ACTION_INTEGRATION_KEY_UPDATED,
+    ACTION_MASTER_UPDATE,
+    ACTION_USER_ADD,
+    ACTION_USER_UPDATE,
+    APPLICATION_LOG_SOURCE_CODES,
+    DEFAULT_ACTION_MESSAGES,
+    SOURCE_AUTH,
+    SOURCE_DISPLAY_LABELS,
+    SOURCE_INTEGRATION_KEY_UPDATED,
+    SOURCE_MASTER_UPDATE,
+    SOURCE_USER_ADD,
+    SOURCE_USER_UPDATE,
+    source_display_label,
+)
 from mod.api.log.response import ApplicationLogItemResponse, JobLogItemResponse
 from mod.model import JobLog, Log, LogLevel
-
-APPLICATION_LOG_SOURCES = frozenset(
-    {"AUTH", "DEVICES", "INSPECTIONS", "MASTERS", "REPORTS", "STORAGE"}
-)
 
 
 def parse_log_payload(raw_value: str) -> dict[str, Any]:
@@ -31,51 +44,57 @@ def format_log_level(level: LogLevel | str) -> str:
     return labels.get(value.lower(), value.upper())
 
 
-def resolve_application_log_source(log: Log, payload: dict[str, Any]) -> str:
+def resolve_application_log_source(_log: Log, payload: dict[str, Any]) -> str:
     raw_source = payload.get("source")
     if isinstance(raw_source, str) and raw_source.strip():
-        return raw_source.strip().upper()
+        return source_display_label(raw_source)
+
+    action = str(payload.get("action", "")).strip().lower()
+    if action in {ACTION_AUTH_LOGIN, ACTION_AUTH_LOGIN_FAILED}:
+        return source_display_label(SOURCE_AUTH)
+    if action == ACTION_USER_ADD:
+        return source_display_label(SOURCE_USER_ADD)
+    if action == ACTION_USER_UPDATE:
+        return source_display_label(SOURCE_USER_UPDATE)
+    if action == ACTION_MASTER_UPDATE:
+        return source_display_label(SOURCE_MASTER_UPDATE)
+    if action == ACTION_INTEGRATION_KEY_UPDATED:
+        return source_display_label(SOURCE_INTEGRATION_KEY_UPDATED)
 
     event = str(payload.get("event", "")).strip().lower()
     if event in {"login", "login_failed"}:
-        return "AUTH"
-
-    if log.inspection_id is not None:
-        return "INSPECTIONS"
-    if log.device_id is not None:
-        return "DEVICES"
-    if log.product_id is not None:
-        return "MASTERS"
-
-    text = (log.log_value or "").lower()
-    if any(token in text for token in ("s3", "storage", "upload")):
-        return "STORAGE"
-    if "report" in text:
-        return "REPORTS"
-    if log.user_id is not None:
-        return "AUTH"
+        return source_display_label(SOURCE_AUTH)
     return "SYSTEM"
 
 
-def format_application_log_message(log: Log, payload: dict[str, Any]) -> str:
+def format_application_log_message(_log: Log, payload: dict[str, Any]) -> str:
     explicit = payload.get("message")
     if isinstance(explicit, str) and explicit.strip():
         return explicit.strip()
 
+    action = str(payload.get("action", "")).strip().lower()
+    if action in DEFAULT_ACTION_MESSAGES:
+        default = DEFAULT_ACTION_MESSAGES[action]
+        if action == ACTION_AUTH_LOGIN_FAILED:
+            reason = payload.get("reason")
+            if isinstance(reason, str) and reason.strip():
+                return reason.strip()
+        return default
+
     event = str(payload.get("event", "")).strip().lower()
     if event == "login":
-        return "User login successful"
+        return DEFAULT_ACTION_MESSAGES[ACTION_AUTH_LOGIN]
     if event == "login_failed":
         reason = payload.get("reason")
         if isinstance(reason, str) and reason.strip():
-            return f"Login failed: {reason.strip()}"
-        return "Multiple failed login attempts"
+            return reason.strip()
+        return DEFAULT_ACTION_MESSAGES[ACTION_AUTH_LOGIN_FAILED]
 
-    raw = (log.log_value or "").strip()
+    raw = (_log.log_value or "").strip()
     if raw and not raw.startswith("{"):
         return raw
-    if event:
-        return event.replace("_", " ").capitalize()
+    if action:
+        return action.replace("_", " ").upper()
     return "Application event"
 
 
@@ -121,55 +140,62 @@ def apply_application_log_level_filter(query: Query, level: str | None) -> Query
     return query.filter(Log.log_level == enum_level)
 
 
+def _source_json_match(source_code: str) -> list:
+    return [
+        Log.log_value.ilike(f'%"source": "{source_code}"%'),
+        Log.log_value.ilike(f'%"source":"{source_code}"%'),
+    ]
+
+
 def apply_application_log_source_filter(query: Query, source: str | None) -> Query:
     if not source:
         return query
-    key = source.strip().upper()
-    if key not in APPLICATION_LOG_SOURCES:
+    key = source.strip().upper().replace(" ", "_")
+    if key not in APPLICATION_LOG_SOURCE_CODES:
+        label = source.strip().upper()
+        for code, display in SOURCE_DISPLAY_LABELS.items():
+            if display == label:
+                key = code
+                break
+    if key not in APPLICATION_LOG_SOURCE_CODES:
         return query
 
-    if key == "AUTH":
+    if key == SOURCE_AUTH:
         return query.filter(
             or_(
-                Log.log_value.ilike('%"source": "AUTH"%'),
-                Log.log_value.ilike('%"source":"AUTH"%'),
+                *_source_json_match(SOURCE_AUTH),
+                Log.log_value.ilike(f'%"action": "{ACTION_AUTH_LOGIN}"%'),
+                Log.log_value.ilike(f'%"action": "{ACTION_AUTH_LOGIN_FAILED}"%'),
                 Log.log_value.ilike('%"event": "login"%'),
                 Log.log_value.ilike('%"event": "login_failed"%'),
-                and_(
-                    Log.user_id.isnot(None),
-                    Log.inspection_id.is_(None),
-                    Log.device_id.is_(None),
-                    Log.product_id.is_(None),
-                ),
             )
         )
-    if key == "DEVICES":
-        return query.filter(Log.device_id.isnot(None))
-    if key == "INSPECTIONS":
-        return query.filter(Log.inspection_id.isnot(None))
-    if key == "MASTERS":
-        return query.filter(
-            and_(
-                Log.product_id.isnot(None),
-                Log.inspection_id.is_(None),
-            )
-        )
-    if key == "STORAGE":
+    if key == SOURCE_USER_ADD:
         return query.filter(
             or_(
-                Log.log_value.ilike('%"source": "STORAGE"%'),
-                Log.log_value.ilike('%"source":"STORAGE"%'),
-                Log.log_value.ilike("%s3%"),
-                Log.log_value.ilike("%storage%"),
-                Log.log_value.ilike("%upload%"),
+                *_source_json_match(SOURCE_USER_ADD),
+                Log.log_value.ilike(f'%"action": "{ACTION_USER_ADD}"%'),
             )
         )
-    if key == "REPORTS":
+    if key == SOURCE_USER_UPDATE:
         return query.filter(
             or_(
-                Log.log_value.ilike('%"source": "REPORTS"%'),
-                Log.log_value.ilike('%"source":"REPORTS"%'),
-                Log.log_value.ilike("%report%"),
+                *_source_json_match(SOURCE_USER_UPDATE),
+                Log.log_value.ilike(f'%"action": "{ACTION_USER_UPDATE}"%'),
+            )
+        )
+    if key == SOURCE_MASTER_UPDATE:
+        return query.filter(
+            or_(
+                *_source_json_match(SOURCE_MASTER_UPDATE),
+                Log.log_value.ilike(f'%"action": "{ACTION_MASTER_UPDATE}"%'),
+            )
+        )
+    if key == SOURCE_INTEGRATION_KEY_UPDATED:
+        return query.filter(
+            or_(
+                *_source_json_match(SOURCE_INTEGRATION_KEY_UPDATED),
+                Log.log_value.ilike(f'%"action": "{ACTION_INTEGRATION_KEY_UPDATED}"%'),
             )
         )
     return query

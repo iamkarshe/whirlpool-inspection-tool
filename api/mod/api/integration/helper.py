@@ -5,6 +5,7 @@ from typing import Any
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
 from mod.api.integration.request import AwsS3UpdateRequest, OktaSsoUpdateRequest
 from mod.api.integration.response import (
@@ -13,6 +14,7 @@ from mod.api.integration.response import (
     IntegrationCredentialsResponse,
     OktaSsoCredentialsResponse,
 )
+from mod.api.log.audit import log_integration_keys_updated
 
 credentials_file_path = Path(__file__).resolve().parents[3] / "credentials.json"
 
@@ -114,6 +116,8 @@ def get_integration_credentials() -> IntegrationCredentialsResponse:
 
 
 def update_okta_credentials(
+    db: Session,
+    actor_user_id: int,
     update: OktaSsoUpdateRequest,
 ) -> IntegrationCredentialsResponse:
     payload = load_credentials_payload()
@@ -124,10 +128,18 @@ def update_okta_credentials(
         "client_secret": update.client_secret,
     }
     save_credentials_payload(payload)
+    log_integration_keys_updated(
+        db,
+        actor_user_id=actor_user_id,
+        integration="Okta SSO",
+    )
+    db.commit()
     return map_masked_credentials_response(payload)
 
 
 def update_aws_s3_credentials(
+    db: Session,
+    actor_user_id: int,
     update: AwsS3UpdateRequest,
 ) -> IntegrationCredentialsResponse:
     payload = load_credentials_payload()
@@ -138,6 +150,12 @@ def update_aws_s3_credentials(
         "secret_access_key": update.secret_access_key,
     }
     save_credentials_payload(payload)
+    log_integration_keys_updated(
+        db,
+        actor_user_id=actor_user_id,
+        integration="AWS S3",
+    )
+    db.commit()
     return map_masked_credentials_response(payload)
 
 
