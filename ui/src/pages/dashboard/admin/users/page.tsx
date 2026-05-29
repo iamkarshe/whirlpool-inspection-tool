@@ -24,12 +24,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
+import { DeactivateUserDialog } from "@/pages/dashboard/admin/users/deactivate-user-dialog";
 import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
   createUser,
   fetchUsersPage,
+  updateUser,
   userApiErrorMessage,
 } from "@/services/users-api";
 import {
@@ -259,7 +261,46 @@ export default function UsersPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserResponse | null>(null);
+  const [togglingUserUuid, setTogglingUserUuid] = useState<string | null>(null);
+  const [deactivateUser, setDeactivateUser] = useState<UserResponse | null>(null);
   const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
+
+  const applyUserActiveState = useCallback(
+    async (user: UserResponse, isActive: boolean): Promise<boolean> => {
+      setTogglingUserUuid(user.uuid);
+      try {
+        await updateUser(user.uuid, { is_active: isActive });
+        toast.success(isActive ? "User activated." : "User deactivated.");
+        setReloadKey((v) => v + 1);
+        setDeactivateUser(null);
+        return true;
+      } catch (e: unknown) {
+        toast.error(
+          userApiErrorMessage(
+            e,
+            isActive ?
+              "Could not activate user."
+            : "Could not deactivate user.",
+          ),
+        );
+        return false;
+      } finally {
+        setTogglingUserUuid(null);
+      }
+    },
+    [],
+  );
+
+  const onToggleUserActive = useCallback(
+    (user: UserResponse) => {
+      if (user.is_active) {
+        setDeactivateUser(user);
+        return;
+      }
+      void applyUserActiveState(user, true);
+    },
+    [applyUserActiveState],
+  );
   const [apiFilters, setApiFilters] = useState<Record<string, string>>({
     is_active: "",
     role: "",
@@ -340,6 +381,8 @@ export default function UsersPage() {
         serverSide={serverSideWithFilters}
         isLoading={isLoading}
         onEditUser={onEditUser}
+        onToggleUserActive={onToggleUserActive}
+        togglingUserUuid={togglingUserUuid}
       />
       {editUser ?
         <EditUserDialog
@@ -355,6 +398,21 @@ export default function UsersPage() {
           }}
         />
       : null}
+      <DeactivateUserDialog
+        open={deactivateUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeactivateUser(null);
+        }}
+        user={deactivateUser}
+        isLoading={
+          deactivateUser !== null && togglingUserUuid === deactivateUser.uuid
+        }
+        onConfirm={() =>
+          deactivateUser ?
+            applyUserActiveState(deactivateUser, false)
+          : Promise.resolve(false)
+        }
+      />
     </div>
   );
 }

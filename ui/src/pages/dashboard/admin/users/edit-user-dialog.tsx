@@ -62,7 +62,6 @@ export function EditUserDialog({
     if (list.length === 1) return list[0];
     return "";
   });
-  const [isActive, setIsActive] = useState(user.is_active);
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +101,6 @@ export function EditUserDialog({
     );
     const list = user.allowed_warehouse ?? [];
     setAllowedWarehouseCode(list.length === 1 ? list[0] : "");
-    setIsActive(user.is_active);
     setPassword("");
     setError(null);
   }, [open, user]);
@@ -126,7 +124,6 @@ export function EditUserDialog({
         mobile_number: mobileDigits,
         designation: designation.trim() || null,
         role,
-        is_active: isActive,
         allowed_warehouse:
           allowedWarehouseCode.trim() ?
             [allowedWarehouseCode.trim()]
@@ -222,21 +219,6 @@ export function EditUserDialog({
                 required
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-status">Account status</Label>
-            <Select
-              value={isActive ? "active" : "inactive"}
-              onValueChange={(v) => setIsActive(v === "active")}
-            >
-              <SelectTrigger id="edit-status" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           {loadWhError ? (
             <p className="text-destructive text-sm">{loadWhError}</p>

@@ -7,7 +7,8 @@ import {
   MoreHorizontal,
   Pencil,
   Smartphone,
-  Trash2,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -35,6 +36,8 @@ import { isSuperadminRoleName } from "@/services/users-api";
 
 function buildUserColumns(
   onEditUser: (user: UserResponse) => void,
+  onToggleUserActive: (user: UserResponse) => void,
+  togglingUserUuid: string | null,
 ): ColumnDef<UserResponse>[] {
   return [
     {
@@ -170,9 +173,28 @@ function buildUserColumns(
                     <Pencil className="mr-2 h-4 w-4" />
                     Update user
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive focus:text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                    Delete
+                  <DropdownMenuItem
+                    className={
+                      user.is_active ?
+                        "text-destructive focus:text-destructive"
+                      : undefined
+                    }
+                    disabled={togglingUserUuid === userUuid}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      onToggleUserActive(user);
+                    }}
+                  >
+                    {user.is_active ?
+                      <>
+                        <UserX className="mr-2 h-4 w-4 text-destructive" />
+                        Deactivate
+                      </>
+                    : <>
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Activate
+                      </>
+                    }
                   </DropdownMenuItem>
                 </>
               : null}
@@ -208,6 +230,8 @@ interface UsersDataTableProps {
   serverSide: DataTableServerSideConfig;
   isLoading?: boolean;
   onEditUser: (user: UserResponse) => void;
+  onToggleUserActive: (user: UserResponse) => void;
+  togglingUserUuid?: string | null;
 }
 
 export default function UsersDataTable({
@@ -215,10 +239,12 @@ export default function UsersDataTable({
   serverSide,
   isLoading,
   onEditUser,
+  onToggleUserActive,
+  togglingUserUuid = null,
 }: UsersDataTableProps) {
   const columns = useMemo(
-    () => buildUserColumns(onEditUser),
-    [onEditUser],
+    () => buildUserColumns(onEditUser, onToggleUserActive, togglingUserUuid),
+    [onEditUser, onToggleUserActive, togglingUserUuid],
   );
 
   return (

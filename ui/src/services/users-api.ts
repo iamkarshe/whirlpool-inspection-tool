@@ -14,7 +14,7 @@ const CREATABLE_USER_ROLES: ReadonlySet<UserCreateRequestRole> = new Set([
   UserCreateRequestRole.manager,
 ]);
 
-/** Superadmins cannot be managed through admin create/update/delete UI. */
+/** Superadmins cannot be managed through admin create/update/deactivate UI. */
 export function isSuperadminRoleName(role: string): boolean {
   return role.trim().toLowerCase() === "superadmin";
 }
