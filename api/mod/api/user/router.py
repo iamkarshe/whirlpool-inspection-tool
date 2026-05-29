@@ -2,7 +2,7 @@ import uuid
 
 import bcrypt
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from mod.api.middleware import auth_dependency
@@ -42,8 +42,15 @@ router = APIRouter(
 @router.get(
     "/users",
     name="get_users",
-    description="Get all users",
+    summary="List users",
+    description=(
+        "Paginated user directory for superadmin. "
+        "Supports search, sort, and created_at / updated_at date filters."
+    ),
     response_model=UserListResponse,
+    responses={
+        403: {"description": "Caller is not superadmin."},
+    },
 )
 @exception_handler_decorator
 @check_api_role(["superadmin"])
@@ -87,8 +94,16 @@ def get_users(
 @router.post(
     "/users",
     name="create_user",
-    description="Create a new user",
+    summary="Create user",
+    description=(
+        "Creates an active user with hashed password and facility scope. "
+        "Roles allowed: operator, manager, biz-admin."
+    ),
     response_model=UserResponse,
+    responses={
+        409: {"description": "Email or mobile number already in use."},
+        422: {"description": "Unknown role or invalid body."},
+    },
 )
 @exception_handler_decorator
 @check_api_role(["superadmin"])
@@ -146,8 +161,18 @@ def create_user(
 @router.post(
     "/users/generate-vpn",
     name="generate_user_vpn",
-    description="Provision a VPN profile for a user (one profile per user)",
+    summary="Generate VPN profile",
+    description=(
+        "Provisions one VPN device for the user via the VPN provision service. "
+        "Replacing an existing profile revokes the old device first. "
+        "Requires VPN_PROVISION_SERVER and VPN_PROVISION_KEY."
+    ),
     response_model=UserResponse,
+    responses={
+        403: {"description": "Target user is superadmin."},
+        404: {"description": "User not found."},
+        503: {"description": "VPN provision service not configured."},
+    },
 )
 @exception_handler_decorator
 @check_api_role(["superadmin"])
@@ -168,13 +193,28 @@ def generate_user_vpn(
 @router.get(
     "/users/{user_uuid}/vpn/config",
     name="download_user_vpn_config",
-    description="Download WireGuard config for the user's VPN profile",
+    summary="Download VPN config",
+    description=(
+        "Returns the WireGuard config file for the user's provisioned device. "
+        "Response body and Content-Type come from the VPN provision server."
+    ),
+    responses={
+        200: {
+            "description": "WireGuard configuration file.",
+            "content": {
+                "application/octet-stream": {},
+                "text/plain": {},
+            },
+        },
+        404: {"description": "User not found or no VPN profile."},
+        503: {"description": "VPN provision service not configured."},
+    },
 )
 @exception_handler_decorator
 @check_api_role(["superadmin"])
 def get_user_vpn_config(
     request: Request,
-    user_uuid: uuid.UUID,
+    user_uuid: uuid.UUID = Path(..., description="User UUID."),
     db: Session = Depends(get_db),
 ) -> Response:
     user = user_with_role_and_scope(db, user_uuid)
@@ -186,13 +226,25 @@ def get_user_vpn_config(
 @router.get(
     "/users/{user_uuid}/vpn/qr",
     name="download_user_vpn_qr",
-    description="Download VPN QR code for the user's VPN profile",
+    summary="Download VPN QR code",
+    description=(
+        "Returns a QR image for importing the VPN profile on a device. "
+        "Usually image/png from the provision server."
+    ),
+    responses={
+        200: {
+            "description": "VPN QR code image.",
+            "content": {"image/png": {}, "image/jpeg": {}},
+        },
+        404: {"description": "User not found or no VPN profile."},
+        503: {"description": "VPN provision service not configured."},
+    },
 )
 @exception_handler_decorator
 @check_api_role(["superadmin"])
 def get_user_vpn_qr(
     request: Request,
-    user_uuid: uuid.UUID,
+    user_uuid: uuid.UUID = Path(..., description="User UUID."),
     db: Session = Depends(get_db),
 ) -> Response:
     user = user_with_role_and_scope(db, user_uuid)
@@ -204,15 +256,25 @@ def get_user_vpn_qr(
 @router.put(
     "/users/{user_uuid}",
     name="update_user",
-    description="Update user",
+    summary="Update user",
+    description=(
+        "Partial update: send only fields to change. "
+        "Set is_active to false to deactivate; VPN is revoked automatically. "
+        "Superadmin accounts cannot be edited."
+    ),
     response_model=UserResponse,
+    responses={
+        403: {"description": "Target user is superadmin."},
+        404: {"description": "User not found."},
+        409: {"description": "Email or mobile number already in use."},
+    },
 )
 @exception_handler_decorator
 @check_api_role(["superadmin"])
 def update_user(
     request: Request,
-    user_uuid: uuid.UUID,
-    payload: UserUpdateRequest,
+    user_uuid: uuid.UUID = Path(..., description="User UUID."),
+    payload: UserUpdateRequest = ...,
     db: Session = Depends(get_db),
 ):
     user = user_with_role_and_scope(db, user_uuid)

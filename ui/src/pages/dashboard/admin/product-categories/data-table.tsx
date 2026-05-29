@@ -19,7 +19,6 @@ import {
   BarChart3,
   CheckCircle2,
   ClipboardList,
-  LineChart,
   MoreHorizontal,
   Trash2,
   XCircle,
@@ -201,15 +200,6 @@ export default function ProductCategoriesDataTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link
-                  to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product_category_id=${category.uuid}`}
-                  className="flex items-center"
-                >
-                  <LineChart className="mr-2 h-4 w-4" />
-                  Operations analytics
-                </Link>
-              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
                   to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category.uuid}`}

@@ -89,8 +89,7 @@ function normalizeLoginErrorMessage(
 export function resolvePostLoginHref(roleRaw: string): string {
   const r = roleRaw.trim().toLowerCase();
   if (r === "operator" || r === "manager") return PAGES.OPS_HOME;
-  if (r === "superadmin") return PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS;
-  return PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS;
+  return PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS;
 }
 
 /** Clears persisted auth and Axios bearer header (logout). */

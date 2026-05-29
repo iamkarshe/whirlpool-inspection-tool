@@ -1,7 +1,7 @@
 meta {
-  name: Update User
+  name: Inactive User
   type: http
-  seq: 6
+  seq: 7
 }
 
 put {
@@ -18,6 +18,7 @@ body:json {
     "password": "admim@cmp",
     "role": "biz-admin",
     "designation": "Biz Admin Operator",
-    "allowed_warehouse": ["RIF9", "RIE3"]
+    "allowed_warehouse": ["RIF9", "RIE3"],
+    "is_active": true
   }
 }

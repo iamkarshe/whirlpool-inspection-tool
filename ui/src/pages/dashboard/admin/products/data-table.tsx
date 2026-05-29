@@ -4,7 +4,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
   BarChart3,
-  LineChart,
   MoreHorizontal,
   Trash2,
   Eye,
@@ -163,17 +162,6 @@ function buildProductColumns(): ColumnDef<ProductListItemResponse>[] {
               >
                 <Eye className="mr-2 h-4 w-4" />
                 View product
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?product=${encodeURIComponent(
-                  p.material_code,
-                )}`}
-                className="flex items-center"
-              >
-                <LineChart className="mr-2 h-4 w-4" />
-                Operations analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

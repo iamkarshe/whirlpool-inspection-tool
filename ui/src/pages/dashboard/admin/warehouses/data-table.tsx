@@ -23,7 +23,6 @@ import {
   BarChart3,
   ClipboardList,
   Eye,
-  LineChart,
   MoreHorizontal,
   Smartphone,
   Trash2,
@@ -139,15 +138,6 @@ const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
               <Link to={PAGES.warehouseInspectionsPath(id)} className="flex items-center">
                 <ClipboardList className="mr-2 h-4 w-4" />
                 View inspections
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                to={`${PAGES.DASHBOARD_REPORTS_OPERATIONS_ANALYTICS}?warehouse_id=${id}`}
-                className="flex items-center"
-              >
-                <LineChart className="mr-2 h-4 w-4" />
-                Operations analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
