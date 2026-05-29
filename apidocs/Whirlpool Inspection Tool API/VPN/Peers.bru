@@ -1,0 +1,22 @@
+meta {
+  name: Peers
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/vpn/peers
+  body: none
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}

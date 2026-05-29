@@ -18,6 +18,7 @@ from mod.api.product_category.router import router as product_category_router
 from mod.api.reports.router import router as reports_router
 from mod.api.sku.router import router as sku_router
 from mod.api.user.router import router as user_router
+from mod.api.vpn.router import router as vpn_router
 from mod.api.warehouse.router import router as warehouse_router
 from mod.auth.device_router import router as auth_device_router
 from mod.auth.router import router as auth_router
@@ -94,6 +95,7 @@ app.include_router(product_category_router)
 app.include_router(reports_router)
 app.include_router(sku_router)
 app.include_router(push_notification_router)
+app.include_router(vpn_router)
 app.include_router(okta_sso_router)
 
 # Uploads directory

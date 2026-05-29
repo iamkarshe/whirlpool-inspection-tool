@@ -1,0 +1,17 @@
+meta {
+  name: Generate VPN
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/users/generate-vpn
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "uuid": "46e0-48b4-968a-a91317be89d0"
+  }
+}

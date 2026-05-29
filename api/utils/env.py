@@ -30,3 +30,17 @@ def get_media_base_url() -> str | None:
 def get_allow_multi_login() -> bool:
     raw = (get_env_optional("ALLOW_MULTI_LOGIN", "false") or "false").strip().lower()
     return raw in {"1", "true", "yes", "on"}
+
+
+def get_vpn_provision_server() -> str | None:
+    return get_env_optional("VPN_PROVISION_SERVER")
+
+
+def get_vpn_provision_key() -> str | None:
+    return get_env_optional("VPN_PROVISION_KEY")
+
+
+def is_vpn_provision_configured() -> bool:
+    return (
+        get_vpn_provision_server() is not None and get_vpn_provision_key() is not None
+    )
