@@ -201,6 +201,8 @@ export function mapInspectionFullToInspection(
     reviewer_name: full.reviewer_name ?? null,
     reviewed_at: full.reviewed_at ?? null,
     reviewed_comment: full.reviewed_comment ?? null,
+    is_auto_approved:
+      rec.is_auto_approved === true || rec.is_auto_approved === "true",
     outer_packaging_side_images: full.outer_packaging_side_images ?? [],
     inner_packaging_side_images: full.inner_packaging_side_images ?? [],
     product_side_images: full.product_side_images ?? [],

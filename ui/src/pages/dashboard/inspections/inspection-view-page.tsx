@@ -15,6 +15,11 @@ import { TabbedButtons } from "@/components/tabbed-nav";
 import { TabbedSurface } from "@/components/tabbed-content";
 import { InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
 import {
+  InspectionAutoApprovedBadge,
+  InspectionReviewStatusBadge,
+  inspectionWasAutoApproved,
+} from "@/pages/dashboard/inspections/components/inspection-detail-presenters";
+import {
   getInspectionDetailBundle,
   getInspectionRelationship,
   type Inspection,
@@ -394,6 +399,10 @@ export default function InspectionViewPage() {
           />
           <div className="mt-1 flex flex-wrap gap-1.5">
             <InspectionTypeBadge inspectionType={inspection.inspection_type} />
+            <InspectionReviewStatusBadge status={inspection.review_status} />
+            {inspectionWasAutoApproved(inspection) ? (
+              <InspectionAutoApprovedBadge />
+            ) : null}
             <Badge variant="outline" className="text-xs font-normal">
               {formatDate(inspection.created_at)}
             </Badge>

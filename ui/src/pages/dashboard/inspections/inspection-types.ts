@@ -41,6 +41,8 @@ export interface Inspection {
   reviewer_name?: string | null;
   reviewed_at?: string | null;
   reviewed_comment?: string | null;
+  /** Set when the auto-approve job approved this inspection. */
+  is_auto_approved?: boolean;
   checklist_quality?: InspectionQuestionStatus;
   warehouse_code?: string;
   plant_code?: string;
