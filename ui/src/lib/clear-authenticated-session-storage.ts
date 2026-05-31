@@ -1,3 +1,4 @@
+import { clearInspectionFilterOptionsCache } from "@/pages/dashboard/inspections/components/inspection-filter-options-cache";
 import { clearServerDeviceUuid } from "@/lib/session-device-uuid";
 import { WHIRLPOOL_SESSION_CHANGED_EVENT } from "@/lib/session-events";
 
@@ -14,5 +15,6 @@ export function clearAuthenticatedSessionStorage(): void {
   window.localStorage.removeItem(SESSION_USER_PAYLOAD_KEY);
   window.localStorage.removeItem(SESSION_ROLE_LEGACY_KEY);
   clearServerDeviceUuid();
+  clearInspectionFilterOptionsCache();
   window.dispatchEvent(new Event(WHIRLPOOL_SESSION_CHANGED_EVENT));
 }

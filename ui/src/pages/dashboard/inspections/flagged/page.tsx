@@ -11,11 +11,14 @@ import { getInspections } from "@/pages/dashboard/inspections/inspection-service
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import {
   applyInspectionFilters,
+  buildInspectionFilterContext,
   buildInspectionFilterSections,
   computeInspectionStatusMap,
-  defaultInspectionFilters,
+  defaultFlaggedInspectionFilters,
+  loadInspectionFilterOptions,
   mergeInspectionFilters,
   parseInspectionFiltersFromSearch,
+  type InspectionFilterOptionsSource,
   type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
 
@@ -24,13 +27,23 @@ export default function FlaggedInspectionsPage() {
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>({
-    ...mergeInspectionFilters(
-      { ...defaultInspectionFilters(), status: ["fail"] },
+  const [filterOptions, setFilterOptions] =
+    useState<InspectionFilterOptionsSource | null>(null);
+  const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(() =>
+    mergeInspectionFilters(
+      defaultFlaggedInspectionFilters(),
       parseInspectionFiltersFromSearch(location.search),
     ),
-  });
+  );
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    loadInspectionFilterOptions({ signal: ac.signal })
+      .then(setFilterOptions)
+      .catch(() => setFilterOptions(null));
+    return () => ac.abort();
+  }, []);
 
   useEffect(() => {
     queueMicrotask(() => setLoading(true));
@@ -43,13 +56,19 @@ export default function FlaggedInspectionsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filterSections = useMemo(
-    () => buildInspectionFilterSections(inspections),
-    [inspections],
+  const filterSections = useMemo(() => {
+    if (!filterOptions) return [];
+    return buildInspectionFilterSections(filterOptions, inspections);
+  }, [filterOptions, inspections]);
+
+  const filterContext = useMemo(
+    () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
+    [filterOptions],
   );
+
   const data = useMemo(
-    () => applyInspectionFilters(inspections, filtersValue, statusMap),
-    [filtersValue, inspections, statusMap],
+    () => applyInspectionFilters(inspections, filtersValue, statusMap, filterContext),
+    [filterContext, filtersValue, inspections, statusMap],
   );
 
   return (

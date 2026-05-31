@@ -31,6 +31,7 @@ export async function fetchProductsPage(
   );
 }
 
+/** Admin / masters only — do not use on `/dashboard/inspections` (paginates entire catalog). */
 export async function fetchAllProducts(
   request?: { signal?: AbortSignal },
 ): Promise<ProductListItemResponse[]> {

@@ -23,9 +23,13 @@ function mapDropdownOptions(options: ReportsDropdownOption[]) {
   return options.map((o) => ({ id: o.value, label: o.label }));
 }
 
-export async function fetchExecutiveKpiParameters(): Promise<KpiParametersResponse> {
+export async function fetchExecutiveKpiParameters(opts?: {
+  signal?: AbortSignal;
+}): Promise<KpiParametersResponse> {
   const reports = getReports();
-  return reports.getKpiParametersApiReportsKpiParametersGet();
+  return reports.getKpiParametersApiReportsKpiParametersGet(
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
 }
 
 export function mapKpiParametersToFilterSections(

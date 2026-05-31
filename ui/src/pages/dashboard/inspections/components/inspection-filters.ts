@@ -1,25 +1,56 @@
+import type { ReportsDropdownOption } from "@/api/generated/model/reportsDropdownOption";
 import type {
   Inspection,
   InspectionQuestionResult,
 } from "@/pages/dashboard/inspections/inspection-service";
 import { getInspectionQuestionResults } from "@/pages/dashboard/inspections/inspection-service";
+import { loadInspectionFilterOptionsCached } from "@/pages/dashboard/inspections/components/inspection-filter-options-cache";
+import type {
+  InspectionFilterContext,
+  InspectionFilterOption,
+  InspectionFilterOptionsSource,
+} from "@/pages/dashboard/inspections/components/inspection-filter-options-types";
+import { fetchExecutiveKpiParameters } from "@/pages/dashboard/reports/executive-analytics/executive-analytics-filters";
+import { deriveIsUnderReviewFromReviewStatus } from "@/services/inspections-api";
+import { fetchAllUsers } from "@/services/users-api";
 import type {
   MultiSelectFilterSection,
   MultiSelectFiltersValue,
 } from "@/components/filters/multi-select-filters-dialog";
 
-export type InspectionStatusFilter = "pass" | "fail";
+export type {
+  InspectionFilterContext,
+  InspectionFilterOption,
+  InspectionFilterOptionsSource,
+} from "@/pages/dashboard/inspections/components/inspection-filter-options-types";
+
+export type InspectionStatusFilter = "pass" | "fail" | "under_review";
 
 export type InspectionStatusMap = Record<string, InspectionStatusFilter>;
 
+const TYPE_BOTH_ID = "both";
+
+const INSPECTION_TYPE_OPTIONS: InspectionFilterOption[] = [
+  { id: TYPE_BOTH_ID, label: "Both" },
+  { id: "inbound", label: "Inbound" },
+  { id: "outbound", label: "Outbound" },
+];
+
 export function defaultInspectionFilters(): MultiSelectFiltersValue {
   return {
-    type: [],
+    type: [TYPE_BOTH_ID],
     status: [],
     warehouse: [],
-    product: [],
+    product_category: [],
     inspector: [],
-    product_category_id: [],
+  };
+}
+
+/** Default filter chips for flagged inspection lists (failed checklist). */
+export function defaultFlaggedInspectionFilters(): MultiSelectFiltersValue {
+  return {
+    ...defaultInspectionFilters(),
+    status: ["fail"],
   };
 }
 
@@ -40,9 +71,8 @@ export function parseInspectionFiltersFromSearch(
   next.type = parseCsvParam(params, "type");
   next.status = parseCsvParam(params, "status");
   next.warehouse = parseCsvParam(params, "warehouse");
-  next.product = parseCsvParam(params, "product");
   next.inspector = parseCsvParam(params, "inspector");
-  next.product_category_id = parseCsvParam(params, "product_category_id");
+  next.product_category = parseCsvParam(params, "product_category");
   return next;
 }
 
@@ -58,6 +88,139 @@ export function mergeInspectionFilters(
   return out;
 }
 
+function mergeOptionsById(
+  ...groups: InspectionFilterOption[][]
+): InspectionFilterOption[] {
+  const map = new Map<string, InspectionFilterOption>();
+  for (const group of groups) {
+    for (const option of group) {
+      if (option.id) map.set(option.id, option);
+    }
+  }
+  return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function mapDropdownOptions(
+  options: ReportsDropdownOption[],
+): InspectionFilterOption[] {
+  return options.map((o) => ({ id: o.value, label: o.label }));
+}
+
+/** KPI warehouse labels are `{code} - {name}`; list rows use `warehouse_code`. */
+export function buildWarehouseCodeById(
+  warehouses: ReportsDropdownOption[],
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const w of warehouses) {
+    if (!w.value) continue;
+    const label = w.label.trim();
+    const sep = label.indexOf(" - ");
+    out[w.value] = sep >= 0 ? label.slice(0, sep).trim() : label;
+  }
+  return out;
+}
+
+function buildProductCategoryLabelByPairKey(
+  options: ReportsDropdownOption[],
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const option of options) {
+    if (option.value) out[option.value] = option.label;
+  }
+  return out;
+}
+
+function optionsFromInspections(inspections: Inspection[]): {
+  users: InspectionFilterOption[];
+} {
+  const users = Array.from(
+    new Set(inspections.map((i) => i.inspector_name).filter(Boolean)),
+  )
+    .sort()
+    .map((name) => ({ id: name, label: name }));
+
+  return { users };
+}
+
+async function fetchInspectionFilterOptionsFromApi(opts?: {
+  signal?: AbortSignal;
+}): Promise<InspectionFilterOptionsSource> {
+  const signal = opts?.signal;
+  const [kpiParameters, users] = await Promise.all([
+    fetchExecutiveKpiParameters({ signal }),
+    fetchAllUsers({ signal }),
+  ]);
+
+  const userOptions = users
+    .filter((u) => u.is_active)
+    .map((u) => ({
+      id: u.name,
+      label: u.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  return {
+    kpiParameters,
+    warehouseCodeById: buildWarehouseCodeById(kpiParameters.warehouses),
+    productCategoryLabelByPairKey: buildProductCategoryLabelByPairKey(
+      kpiParameters.product_category,
+    ),
+    users: userOptions,
+  };
+}
+
+/** Loads KPI + user filter metadata; cached in-session until logout. */
+export async function loadInspectionFilterOptions(opts?: {
+  signal?: AbortSignal;
+}): Promise<InspectionFilterOptionsSource> {
+  return loadInspectionFilterOptionsCached(
+    fetchInspectionFilterOptionsFromApi,
+    opts,
+  );
+}
+
+export function buildInspectionFilterContext(
+  source: InspectionFilterOptionsSource,
+): InspectionFilterContext {
+  return {
+    warehouseCodeById: source.warehouseCodeById,
+    productCategoryLabelByPairKey: source.productCategoryLabelByPairKey,
+  };
+}
+
+export function buildInspectionFilterSections(
+  source: InspectionFilterOptionsSource,
+  inspections: Inspection[] = [],
+): MultiSelectFilterSection[] {
+  const fromRows = optionsFromInspections(inspections);
+
+  const warehouseOptions = mapDropdownOptions(source.kpiParameters.warehouses);
+  const categoryOptions = mapDropdownOptions(
+    source.kpiParameters.product_category,
+  );
+  const userOptions = mergeOptionsById(source.users, fromRows.users);
+
+  return [
+    { key: "type", label: "Type", options: INSPECTION_TYPE_OPTIONS },
+    { key: "warehouse", label: "Warehouse", options: warehouseOptions },
+    {
+      key: "product_category",
+      label: "Product category",
+      options: categoryOptions,
+    },
+    { key: "inspector", label: "User", options: userOptions },
+    {
+      key: "status",
+      label: "Status",
+      options: [
+        { id: "pass", label: "Pass" },
+        { id: "fail", label: "Failed" },
+        { id: "under_review", label: "Under review" },
+      ],
+    },
+  ];
+}
+
 function hasAnyFailed(rows: InspectionQuestionResult[]) {
   return rows.some((r) => r.status === "fail");
 }
@@ -67,6 +230,9 @@ export async function computeInspectionStatusMap(
 ): Promise<InspectionStatusMap> {
   const entries = await Promise.all(
     inspections.map(async (i) => {
+      if (i.is_under_review || deriveIsUnderReviewFromReviewStatus(i.review_status ?? "")) {
+        return [i.id, "under_review" as const] as const;
+      }
       if (i.checklist_quality) {
         return [i.id, i.checklist_quality] as const;
       }
@@ -82,97 +248,99 @@ export async function computeInspectionStatusMap(
   return Object.fromEntries(entries);
 }
 
-export function buildInspectionFilterSections(
-  inspections: Inspection[],
-): MultiSelectFilterSection[] {
-  const inspectors = Array.from(
-    new Set(inspections.map((i) => i.inspector_name).filter(Boolean)),
-  )
-    .sort()
-    .map((name) => ({ id: name, label: name }));
+function resolveInspectionStatusFilter(
+  inspection: Inspection,
+  statusMap: InspectionStatusMap | null,
+): InspectionStatusFilter | null {
+  if (
+    inspection.is_under_review ||
+    deriveIsUnderReviewFromReviewStatus(inspection.review_status ?? "")
+  ) {
+    return "under_review";
+  }
+  const mapped = statusMap?.[inspection.id];
+  if (mapped === "pass" || mapped === "fail") return mapped;
+  if (inspection.checklist_quality === "pass" || inspection.checklist_quality === "fail") {
+    return inspection.checklist_quality;
+  }
+  return null;
+}
 
-  const products = Array.from(
-    new Set(inspections.map((i) => i.product_serial).filter(Boolean)),
-  )
-    .sort()
-    .map((serial) => ({ id: serial, label: serial }));
+function resolveInspectionProductCategoryPair(
+  inspection: Inspection,
+  labelByPairKey: Record<string, string>,
+): string | null {
+  const explicit = inspection.product_category_pair?.trim();
+  if (explicit) return explicit;
 
-  const categories = Array.from(
-    new Map(
-      inspections
-        .filter((i) => i.product_category_id != null && i.product_category_name)
-        .map((i) => [
-          String(i.product_category_id),
-          i.product_category_name as string,
-        ]),
-    ).entries(),
-  )
-    .sort((a, b) => a[1].localeCompare(b[1]))
-    .map(([id, name]) => ({ id, label: name }));
+  const categoryType = inspection.product_category_type?.trim();
+  const subCategory = inspection.product_category_sub_category?.trim();
+  if (categoryType && subCategory) {
+    return `${categoryType}|${subCategory}`;
+  }
 
-  // Warehouse is not currently present in Inspection rows in this UI mock.
-  // Keep the section to match UX; options will be empty until data is wired.
-  const warehouses: Array<{ id: string; label: string }> = [];
+  const name = inspection.product_category_name?.trim();
+  if (name) {
+    for (const [pair, label] of Object.entries(labelByPairKey)) {
+      if (label === name) return pair;
+    }
+  }
 
-  return [
-    {
-      key: "type",
-      label: "Type",
-      options: [
-        { id: "inbound", label: "Inbound" },
-        { id: "outbound", label: "Outbound" },
-      ],
-    },
-    {
-      key: "product_category_id",
-      label: "Product category",
-      options: categories,
-    },
-    {
-      key: "status",
-      label: "Status",
-      options: [
-        { id: "pass", label: "Pass" },
-        { id: "fail", label: "Fail" },
-      ],
-    },
-    { key: "warehouse", label: "Warehouse", options: warehouses },
-    { key: "product", label: "Product", options: products },
-    { key: "inspector", label: "Inspector", options: inspectors },
-  ];
+  return null;
 }
 
 export function applyInspectionFilters(
   inspections: Inspection[],
   value: MultiSelectFiltersValue,
   statusMap: InspectionStatusMap | null,
+  context?: InspectionFilterContext,
 ): Inspection[] {
-  const types = new Set(value.type ?? []);
+  const types = value.type ?? [];
+  const typeSet = new Set(types);
+  const filterByType =
+    types.length > 0 && !typeSet.has(TYPE_BOTH_ID);
+  const allowedTypes = new Set(
+    types.filter((t) => t !== TYPE_BOTH_ID),
+  );
+
   const statuses = new Set(value.status ?? []);
-  const warehouses = new Set(value.warehouse ?? []);
-  const products = new Set(value.product ?? []);
+  const warehouseIds = new Set(value.warehouse ?? []);
   const inspectors = new Set(value.inspector ?? []);
-  const categories = new Set(value.product_category_id ?? []);
+  const categoryPairs = new Set(value.product_category ?? []);
+
+  const warehouseCodes = new Set<string>();
+  if (warehouseIds.size > 0 && context?.warehouseCodeById) {
+    for (const id of warehouseIds) {
+      const code = context.warehouseCodeById[id];
+      if (code) warehouseCodes.add(code);
+    }
+  }
+
+  const labelByPairKey = context?.productCategoryLabelByPairKey ?? {};
 
   return inspections.filter((i) => {
-    if (types.size > 0 && !types.has(i.inspection_type)) return false;
-
-    if (categories.size > 0 && !categories.has(String(i.product_category_id ?? ""))) {
-      return false;
+    if (filterByType) {
+      if (allowedTypes.size === 0) return false;
+      if (!allowedTypes.has(i.inspection_type)) return false;
     }
-    if (products.size > 0 && !products.has(i.product_serial)) return false;
+
+    if (categoryPairs.size > 0) {
+      const pair = resolveInspectionProductCategoryPair(i, labelByPairKey);
+      if (!pair || !categoryPairs.has(pair)) return false;
+    }
+
     if (inspectors.size > 0 && !inspectors.has(i.inspector_name)) return false;
 
-    // Warehouse currently unavailable in Inspection rows; when selected, nothing matches.
-    if (warehouses.size > 0) return false;
+    if (warehouseCodes.size > 0) {
+      const code = (i.warehouse_code ?? "").trim();
+      if (!code || !warehouseCodes.has(code)) return false;
+    }
 
     if (statuses.size > 0) {
-      const s = statusMap?.[i.id];
-      if (!s) return false;
-      if (!statuses.has(s)) return false;
+      const bucket = resolveInspectionStatusFilter(i, statusMap);
+      if (!bucket || !statuses.has(bucket)) return false;
     }
 
     return true;
   });
 }
-

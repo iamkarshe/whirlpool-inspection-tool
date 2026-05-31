@@ -12,6 +12,7 @@ import type { InspectionListItemResponse } from "@/api/generated/model/inspectio
 import type { InspectionPassFailCounts } from "@/api/generated/model/inspectionPassFailCounts";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
 import type { InspectionKpisResponse } from "@/api/generated/model/inspectionKpisResponse";
+import type { InspectionMetadataResponse } from "@/api/generated/model/inspectionMetadataResponse";
 import type { InspectionReviewStatusUpdateRequest } from "@/api/generated/model/inspectionReviewStatusUpdateRequest";
 import type {
   Inspection,
@@ -114,6 +115,26 @@ export function mapInspectionListItemToInspection(
     "supplier_plant_code",
     "supplierPlantCode",
   ]);
+  const product_category_pair = optionalCodeFromListItem(row, [
+    "product_category_pair",
+    "productCategoryPair",
+  ]);
+  const product_category_type = optionalCodeFromListItem(row, [
+    "product_category_type",
+    "productCategoryType",
+    "category_type",
+    "categoryType",
+  ]);
+  const product_category_sub_category = optionalCodeFromListItem(row, [
+    "product_category_sub_category",
+    "productCategorySubCategory",
+    "sub_category_type",
+    "subCategoryType",
+  ]);
+  const product_category_name = optionalCodeFromListItem(row, [
+    "product_category_name",
+    "productCategoryName",
+  ]);
 
   return {
     id: row.uuid,
@@ -124,6 +145,10 @@ export function mapInspectionListItemToInspection(
     device_fingerprint: row.device_fingerprint,
     product_id: row.product_id,
     product_serial: row.product_material_code,
+    product_category_pair,
+    product_category_type,
+    product_category_sub_category,
+    product_category_name,
     checklist_id: 0,
     checklist_name: "",
     inspection_type: normalizeInspectionType(row.inspection_type),
@@ -358,6 +383,15 @@ export function inspectionsApiErrorMessage(
   if (typeof err.message === "string" && err.message.length > 0)
     return err.message;
   return fallback;
+}
+
+export async function fetchInspectionMetadata(
+  opts?: { signal?: AbortSignal },
+): Promise<InspectionMetadataResponse> {
+  const api = getInspectionsApi();
+  return api.getInspectionMetadataApiInspectionsMetadataGet(
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
 }
 
 export async function fetchInspectionsPage(

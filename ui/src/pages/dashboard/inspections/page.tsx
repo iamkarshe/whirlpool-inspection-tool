@@ -18,11 +18,14 @@ import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data
 import type { DateRange } from "react-day-picker";
 import {
   applyInspectionFilters,
+  buildInspectionFilterContext,
   buildInspectionFilterSections,
   computeInspectionStatusMap,
   defaultInspectionFilters,
+  loadInspectionFilterOptions,
   mergeInspectionFilters,
   parseInspectionFiltersFromSearch,
+  type InspectionFilterOptionsSource,
   type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
 import { AlertCircle } from "lucide-react";
@@ -36,6 +39,8 @@ export default function InspectionsPage() {
   const [loadingKpis, setLoadingKpis] = useState(true);
   const [loadingTable, setLoadingTable] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [filterOptions, setFilterOptions] =
+    useState<InspectionFilterOptionsSource | null>(null);
   const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(
     () =>
       mergeInspectionFilters(
@@ -45,14 +50,27 @@ export default function InspectionsPage() {
   );
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
-  const filterSections = useMemo(
-    () => buildInspectionFilterSections(inspections),
-    [inspections],
+  useEffect(() => {
+    const ac = new AbortController();
+    loadInspectionFilterOptions({ signal: ac.signal })
+      .then(setFilterOptions)
+      .catch(() => setFilterOptions(null));
+    return () => ac.abort();
+  }, []);
+
+  const filterSections = useMemo(() => {
+    if (!filterOptions) return [];
+    return buildInspectionFilterSections(filterOptions, inspections);
+  }, [filterOptions, inspections]);
+
+  const filterContext = useMemo(
+    () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
+    [filterOptions],
   );
 
   const filteredInspections = useMemo(
-    () => applyInspectionFilters(inspections, filtersValue, statusMap),
-    [filtersValue, inspections, statusMap],
+    () => applyInspectionFilters(inspections, filtersValue, statusMap, filterContext),
+    [filterContext, filtersValue, inspections, statusMap],
   );
 
   useEffect(() => {

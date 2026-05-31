@@ -73,6 +73,7 @@ export async function resolveProductCategoryUuidForProduct(
  * Fetches **every** page of product categories. Avoid in UI routes; prefer
  * {@link fetchProductCategoriesPage} or {@link resolveProductCategoryUuidForProduct}.
  */
+/** Admin / masters only — do not use on `/dashboard/inspections` (paginates entire catalog). */
 export async function fetchAllProductCategories(
   request?: { signal?: AbortSignal },
 ): Promise<ProductCategoryListItemResponse[]> {

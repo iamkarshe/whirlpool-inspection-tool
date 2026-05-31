@@ -21,6 +21,10 @@ export interface Inspection {
   product_serial: string;
   product_category_id?: number;
   product_category_name?: string;
+  /** KPI pair key (`category_type|sub_category_type`) when present on list/detail payload. */
+  product_category_pair?: string;
+  product_category_type?: string;
+  product_category_sub_category?: string;
   /** From detail `product.material_description` (model / variant line on the slip). */
   product_description?: string | null;
   /** From inspection detail `product.barcode` when present. */

@@ -8,11 +8,14 @@ import PageActionBar from "@/components/page-action-bar";
 import SkeletonTable from "@/components/skeleton7";
 import {
   applyInspectionFilters,
+  buildInspectionFilterContext,
   buildInspectionFilterSections,
   computeInspectionStatusMap,
   defaultInspectionFilters,
+  loadInspectionFilterOptions,
   mergeInspectionFilters,
   parseInspectionFiltersFromSearch,
+  type InspectionFilterOptionsSource,
   type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
 import type { InspectionScopeConfig } from "@/pages/dashboard/inspections/inspection-scope-config";
@@ -30,6 +33,8 @@ export function InspectionsScopedListPage({
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [filterOptions, setFilterOptions] =
+    useState<InspectionFilterOptionsSource | null>(null);
   const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(
     () =>
       mergeInspectionFilters(
@@ -46,6 +51,14 @@ export function InspectionsScopedListPage({
   const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
   useEffect(() => {
+    const ac = new AbortController();
+    loadInspectionFilterOptions({ signal: ac.signal })
+      .then(setFilterOptions)
+      .catch(() => setFilterOptions(null));
+    return () => ac.abort();
+  }, []);
+
+  useEffect(() => {
     queueMicrotask(() => setLoading(true));
     getInspections()
       .then(async (list) => {
@@ -59,9 +72,14 @@ export function InspectionsScopedListPage({
       .finally(() => setLoading(false));
   }, [config.inspectionType]);
 
-  const filterSections = useMemo(
-    () => buildInspectionFilterSections(inspections),
-    [inspections],
+  const filterSections = useMemo(() => {
+    if (!filterOptions) return [];
+    return buildInspectionFilterSections(filterOptions, inspections);
+  }, [filterOptions, inspections]);
+
+  const filterContext = useMemo(
+    () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
+    [filterOptions],
   );
 
   const data = useMemo(() => {
@@ -69,11 +87,12 @@ export function InspectionsScopedListPage({
       inspections,
       filtersValue,
       statusMap,
+      filterContext,
     );
     return merged.filter((row) =>
       inspectionMatchesReviewLane(row, config.reviewLane),
     );
-  }, [config.reviewLane, filtersValue, inspections, statusMap]);
+  }, [config.reviewLane, filterContext, filtersValue, inspections, statusMap]);
 
   return (
     <div className="space-y-6">
