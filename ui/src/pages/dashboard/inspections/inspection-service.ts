@@ -37,6 +37,10 @@ export async function getInspectionQuestionResults(
   return fetchInspectionInputsAsQuestionRows(inspectionUuid, section);
 }
 
+/**
+ * Loads every inspection page — avoid on dashboard list routes.
+ * Use `useInspectionsServerTable` + `fetchInspectionsPage` instead.
+ */
 export async function getInspections(): Promise<Inspection[]> {
   return fetchAllInspectionRows({
     sort_by: "created_at",

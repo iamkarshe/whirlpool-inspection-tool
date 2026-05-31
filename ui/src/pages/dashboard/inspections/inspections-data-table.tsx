@@ -12,7 +12,11 @@ import {
 import { Badge, type badgeVariants } from "@/components/ui/badge";
 import type { VariantProps } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableFilter,
+  type DataTableServerSideConfig,
+} from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +70,8 @@ export type InspectionsDataTableProps = {
     headers: string[];
     rows: Record<string, unknown>[];
   };
+  serverSide?: DataTableServerSideConfig;
+  isLoading?: boolean;
 };
 
 function getSectionStatus(rows: InspectionQuestionResult[] | null) {
@@ -248,6 +254,8 @@ export default function InspectionsDataTable({
   onDateRangeChange,
   downloadCsvFileName,
   downloadCsv,
+  serverSide,
+  isLoading,
 }: InspectionsDataTableProps) {
   const [checksDialogOpen, setChecksDialogOpen] = useState(false);
   const [checksDialogMode, setChecksDialogMode] = useState<"failed" | "passed">(
@@ -587,15 +595,24 @@ export default function InspectionsDataTable({
         <DataTable<Inspection>
           columns={columns}
           data={data}
-          searchKey="product_serial"
-          filters={filters}
-          dateRangeFilter={{ dateAccessorKey: "created_at" }}
+          searchKey={serverSide ? undefined : "product_serial"}
+          searchFields={
+            serverSide
+              ? (["product_serial", "inspector_name", "device_fingerprint"] as const)
+              : undefined
+          }
+          filters={serverSide ? undefined : filters}
+          dateRangeFilter={
+            serverSide ? undefined : { dateAccessorKey: "created_at" }
+          }
           showDateRangePicker={false}
           dateRange={dateRange}
           onDateRangeChange={onDateRangeChange}
           rangeLabel="inspections"
           downloadCsvFileName={downloadCsvFileName}
           downloadCsv={downloadCsv}
+          serverSide={serverSide}
+          isLoading={isLoading}
         />
       </div>
     </>

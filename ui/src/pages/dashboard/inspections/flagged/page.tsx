@@ -5,27 +5,20 @@ import type { DateRange } from "react-day-picker";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import PageActionBar from "@/components/page-action-bar";
-import SkeletonTable from "@/components/skeleton7";
-import type { Inspection } from "@/pages/dashboard/inspections/inspection-service";
-import { getInspections } from "@/pages/dashboard/inspections/inspection-service";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import {
-  applyInspectionFilters,
   buildInspectionFilterContext,
   buildInspectionFilterSections,
-  computeInspectionStatusMap,
   defaultFlaggedInspectionFilters,
   loadInspectionFilterOptions,
   mergeInspectionFilters,
   parseInspectionFiltersFromSearch,
   type InspectionFilterOptionsSource,
-  type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
+import { useInspectionsServerTable } from "@/pages/dashboard/inspections/components/use-inspections-server-table";
 
 export default function FlaggedInspectionsPage() {
   const location = useLocation();
-  const [inspections, setInspections] = useState<Inspection[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filterOptions, setFilterOptions] =
     useState<InspectionFilterOptionsSource | null>(null);
@@ -35,7 +28,6 @@ export default function FlaggedInspectionsPage() {
       parseInspectionFiltersFromSearch(location.search),
     ),
   );
-  const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -45,31 +37,24 @@ export default function FlaggedInspectionsPage() {
     return () => ac.abort();
   }, []);
 
-  useEffect(() => {
-    queueMicrotask(() => setLoading(true));
-    getInspections()
-      .then(async (list) => {
-        setInspections(list);
-        const map = await computeInspectionStatusMap(list);
-        setStatusMap(map);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filterSections = useMemo(() => {
-    if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions, inspections);
-  }, [filterOptions, inspections]);
-
   const filterContext = useMemo(
     () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
     [filterOptions],
   );
 
-  const data = useMemo(
-    () => applyInspectionFilters(inspections, filtersValue, statusMap, filterContext),
-    [filterContext, filtersValue, inspections, statusMap],
-  );
+  const { rows, isLoading, error, serverSide } = useInspectionsServerTable({
+    dateRange,
+    filtersValue,
+    filterContext,
+    scope: {
+      checklistStatusPreset: ["fail"],
+    },
+  });
+
+  const filterSections = useMemo(() => {
+    if (!filterOptions) return [];
+    return buildInspectionFilterSections(filterOptions, rows);
+  }, [filterOptions, rows]);
 
   return (
     <div className="space-y-6">
@@ -91,15 +76,17 @@ export default function FlaggedInspectionsPage() {
         </div>
       </div>
 
-      {loading ? (
-        <SkeletonTable />
-      ) : (
-        <InspectionsDataTable
-          data={data}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-        />
-      )}
+      {error && !isLoading ? (
+        <p className="text-destructive text-sm">{error}</p>
+      ) : null}
+
+      <InspectionsDataTable
+        data={rows}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        serverSide={serverSide}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

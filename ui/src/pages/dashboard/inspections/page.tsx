@@ -2,32 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 
 import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
-import SkeletonTable from "@/components/skeleton7";
 import { InspectionStatCards } from "@/pages/dashboard/inspections/components/inspection-stat-cards";
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   getInspectionKpisForDateRange,
-  getInspections,
-  type Inspection,
   type InspectionKpis,
 } from "@/pages/dashboard/inspections/inspection-service";
 import { inspectionsApiErrorMessage } from "@/services/inspections-api";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import type { DateRange } from "react-day-picker";
 import {
-  applyInspectionFilters,
   buildInspectionFilterContext,
   buildInspectionFilterSections,
-  computeInspectionStatusMap,
   defaultInspectionFilters,
   loadInspectionFilterOptions,
   mergeInspectionFilters,
   parseInspectionFiltersFromSearch,
   type InspectionFilterOptionsSource,
-  type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
+import { useInspectionsServerTable } from "@/pages/dashboard/inspections/components/use-inspections-server-table";
 import { AlertCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
@@ -35,9 +30,7 @@ export default function InspectionsPage() {
   const location = useLocation();
   const [kpis, setKpis] = useState<InspectionKpis | null>(null);
   const [kpiError, setKpiError] = useState<string | null>(null);
-  const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loadingKpis, setLoadingKpis] = useState(true);
-  const [loadingTable, setLoadingTable] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filterOptions, setFilterOptions] =
     useState<InspectionFilterOptionsSource | null>(null);
@@ -48,7 +41,6 @@ export default function InspectionsPage() {
         parseInspectionFiltersFromSearch(location.search),
       ),
   );
-  const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -58,20 +50,21 @@ export default function InspectionsPage() {
     return () => ac.abort();
   }, []);
 
-  const filterSections = useMemo(() => {
-    if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions, inspections);
-  }, [filterOptions, inspections]);
-
   const filterContext = useMemo(
     () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
     [filterOptions],
   );
 
-  const filteredInspections = useMemo(
-    () => applyInspectionFilters(inspections, filtersValue, statusMap, filterContext),
-    [filterContext, filtersValue, inspections, statusMap],
-  );
+  const { rows, isLoading, error, serverSide } = useInspectionsServerTable({
+    dateRange,
+    filtersValue,
+    filterContext,
+  });
+
+  const filterSections = useMemo(() => {
+    if (!filterOptions) return [];
+    return buildInspectionFilterSections(filterOptions, rows);
+  }, [filterOptions, rows]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -93,17 +86,6 @@ export default function InspectionsPage() {
       });
     return () => ac.abort();
   }, [dateRange]);
-
-  useEffect(() => {
-    queueMicrotask(() => setLoadingTable(true));
-    getInspections()
-      .then(async (list) => {
-        setInspections(list);
-        const map = await computeInspectionStatusMap(list);
-        setStatusMap(map);
-      })
-      .finally(() => setLoadingTable(false));
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -142,15 +124,16 @@ export default function InspectionsPage() {
         </div>
 
         <div className="lg:col-span-12">
-          {loadingTable ? (
-            <SkeletonTable />
-          ) : (
-            <InspectionsDataTable
-              data={filteredInspections}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-            />
-          )}
+          {error && !isLoading ? (
+            <p className="text-destructive mb-3 text-sm">{error}</p>
+          ) : null}
+          <InspectionsDataTable
+            data={rows}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            serverSide={serverSide}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </div>
