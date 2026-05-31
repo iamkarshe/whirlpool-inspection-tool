@@ -51,6 +51,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PAGES } from "@/endpoints";
 import { formatDate, setPageTitle } from "@/lib/core";
 import { cn } from "@/lib/utils";
+import { formatInspectionReviewerLabel } from "@/pages/dashboard/inspections/components/inspection-detail-presenters";
 import {
   formatIssueSeverity,
   formatIssueStatus,
@@ -926,7 +927,7 @@ export default function OpsInspectionDetailPage() {
                     Reviewer
                   </th>
                   <td className="py-2 font-medium text-foreground">
-                    {inspection.reviewer_name?.trim() || "—"}
+                    {formatInspectionReviewerLabel(inspection)}
                   </td>
                 </tr>
                 <tr className="border-b border-border/50 last:border-0">

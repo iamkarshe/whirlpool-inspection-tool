@@ -6,7 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { InspectionDetailInfoSections } from "@/pages/dashboard/inspections/components/inspection-detail-info-sections";
 import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
-import type { Inspection, InspectionQuestionResult } from "@/pages/dashboard/inspections/inspection-service";
+import type {
+  Inspection,
+  InspectionQuestionResult,
+} from "@/pages/dashboard/inspections/inspection-service";
 
 type Props = {
   reviewLoading: boolean;
@@ -76,18 +79,7 @@ export function InspectionOverviewTab({
         onViewImages={onViewImages}
       />
 
-      <div className="space-y-3">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight">
-            Inspection details
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Product, shipment, damage, and review metadata — same fields as the
-            ops inspection view.
-          </p>
-        </div>
-        <InspectionDetailInfoSections inspection={inspection} />
-      </div>
+      <InspectionDetailInfoSections inspection={inspection} />
     </TabsContent>
   );
 }

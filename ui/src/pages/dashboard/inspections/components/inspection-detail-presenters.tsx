@@ -8,11 +8,14 @@ import type { Inspection } from "@/pages/dashboard/inspections/inspection-types"
 import {
   BadgeCheck,
   Bot,
+  ClipboardCheck,
   Gauge,
+  MapPin,
   Package,
   Tag,
   Truck,
   XCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -32,6 +35,12 @@ export function inspectionWasAutoApproved(inspection: Inspection): boolean {
     comment.includes("auto approv") ||
     comment.includes("automatically approved")
   );
+}
+
+/** Human reviewer name, or a fixed label when the auto-approve job signed off. */
+export function formatInspectionReviewerLabel(inspection: Inspection): string {
+  if (inspectionWasAutoApproved(inspection)) return "System Auto Approved";
+  return inspection.reviewer_name?.trim() || "—";
 }
 
 export function inspectionHasDamageRecorded(inspection: Inspection): boolean {
@@ -139,38 +148,173 @@ export function InspectionAutoApprovedBadge({ className }: { className?: string 
   );
 }
 
+export type InspectionDetailSectionTone =
+  | "product"
+  | "location"
+  | "shipment"
+  | "review";
+
+const SECTION_META: Record<
+  InspectionDetailSectionTone,
+  {
+    icon: LucideIcon;
+    border: string;
+    surface: string;
+    header: string;
+    iconWrap: string;
+    accent: string;
+  }
+> = {
+  product: {
+    icon: Package,
+    border: "border-sky-200/80 dark:border-sky-800/60",
+    surface:
+      "bg-gradient-to-b from-sky-50/90 to-sky-50/30 dark:from-sky-950/35 dark:to-sky-950/10",
+    header: "border-sky-200/50 bg-sky-100/50 dark:border-sky-800/40 dark:bg-sky-900/25",
+    iconWrap: "bg-sky-500/15 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200",
+    accent: "bg-sky-500",
+  },
+  location: {
+    icon: MapPin,
+    border: "border-emerald-200/80 dark:border-emerald-800/60",
+    surface:
+      "bg-gradient-to-b from-emerald-50/90 to-emerald-50/25 dark:from-emerald-950/35 dark:to-emerald-950/10",
+    header:
+      "border-emerald-200/50 bg-emerald-100/45 dark:border-emerald-800/40 dark:bg-emerald-900/25",
+    iconWrap:
+      "bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200",
+    accent: "bg-emerald-500",
+  },
+  shipment: {
+    icon: Truck,
+    border: "border-amber-200/80 dark:border-amber-800/55",
+    surface:
+      "bg-gradient-to-b from-amber-50/85 to-amber-50/20 dark:from-amber-950/30 dark:to-amber-950/10",
+    header:
+      "border-amber-200/50 bg-amber-100/45 dark:border-amber-800/40 dark:bg-amber-900/25",
+    iconWrap:
+      "bg-amber-500/15 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100",
+    accent: "bg-amber-500",
+  },
+  review: {
+    icon: ClipboardCheck,
+    border: "border-violet-200/80 dark:border-violet-800/55",
+    surface:
+      "bg-gradient-to-b from-violet-50/85 to-violet-50/20 dark:from-violet-950/30 dark:to-violet-950/10",
+    header:
+      "border-violet-200/50 bg-violet-100/45 dark:border-violet-800/40 dark:bg-violet-900/25",
+    iconWrap:
+      "bg-violet-500/15 text-violet-900 dark:bg-violet-500/20 dark:text-violet-100",
+    accent: "bg-violet-500",
+  },
+};
+
 export function InspectionDetailSection({
   title,
+  description,
   children,
   className,
+  tone = "product",
 }: {
   title: string;
+  description?: string;
   children: ReactNode;
   className?: string;
+  tone?: InspectionDetailSectionTone;
 }) {
+  const meta = SECTION_META[tone];
+  const Icon = meta.icon;
+
   return (
     <section
       className={cn(
-        "space-y-2 rounded-xl border bg-card/80 p-4 shadow-sm",
+        "flex h-full flex-col overflow-hidden rounded-xl border shadow-sm",
+        meta.border,
+        meta.surface,
         className,
       )}
     >
-      <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        {title}
-      </h2>
-      {children}
+      <div
+        className={cn(
+          "relative flex items-start gap-2.5 border-b px-3 py-2.5",
+          meta.header,
+        )}
+      >
+        <div
+          className={cn(
+            "absolute inset-x-0 top-0 h-0.5",
+            meta.accent,
+            "opacity-80",
+          )}
+          aria-hidden
+        />
+        <div
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+            meta.iconWrap,
+          )}
+        >
+          <Icon className="h-4 w-4" aria-hidden />
+        </div>
+        <div className="min-w-0 pt-0.5">
+          <h2 className="text-xs font-semibold leading-tight tracking-tight">
+            {title}
+          </h2>
+          {description ? (
+            <p className="text-muted-foreground mt-0.5 text-[10px] leading-snug">
+              {description}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-1.5 p-2.5">{children}</div>
     </section>
   );
 }
 
+export function InspectionDetailField({
+  label,
+  children,
+  mono,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  mono?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg bg-background/55 px-2.5 py-2 ring-1 ring-inset ring-border/40",
+        className,
+      )}
+    >
+      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div
+        className={cn(
+          "mt-1 text-[12px] font-medium leading-snug text-foreground",
+          mono && "font-mono text-[11px]",
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** @deprecated Prefer {@link InspectionDetailField} in card grids. */
 export function InspectionDetailTable({ children }: { children: ReactNode }) {
   return (
-    <table className="w-full text-sm">
+    <table className="w-full text-[12px] leading-snug">
       <tbody>{children}</tbody>
     </table>
   );
 }
 
+/** @deprecated Prefer {@link InspectionDetailField} in card grids. */
 export function InspectionDetailRow({
   label,
   children,
@@ -179,14 +323,14 @@ export function InspectionDetailRow({
   children: ReactNode;
 }) {
   return (
-    <tr className="border-b border-border/50 last:border-0">
+    <tr className="border-b border-border/40 last:border-0">
       <th
         scope="row"
-        className="w-[36%] max-w-[10rem] py-2.5 pr-3 text-left align-top text-[13px] font-normal text-muted-foreground"
+        className="w-[38%] max-w-[9rem] py-1 pr-2 text-left align-top text-[11px] font-normal text-muted-foreground"
       >
         {label}
       </th>
-      <td className="py-2.5 text-[13px] font-medium text-foreground">{children}</td>
+      <td className="py-1 text-[12px] font-medium text-foreground">{children}</td>
     </tr>
   );
 }
