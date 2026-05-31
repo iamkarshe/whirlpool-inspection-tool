@@ -1,9 +1,20 @@
+import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  ClipboardList,
+  Eye,
+  MoreHorizontal,
+  Smartphone,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import {
   DataTable,
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
-import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,18 +28,6 @@ import {
   WarehouseInspectionsCountBadge,
   WarehouseUsersCountBadge,
 } from "@/pages/dashboard/admin/warehouses/warehouse-badge";
-import type { ColumnDef } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  BarChart3,
-  ClipboardList,
-  Eye,
-  MoreHorizontal,
-  Smartphone,
-  Trash2,
-  Users,
-} from "lucide-react";
-import { Link } from "react-router-dom";
 
 const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
   {
@@ -44,7 +43,10 @@ const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <Link to={PAGES.warehouseViewPath(row.original.uuid)} className="inline-block">
+      <Link
+        to={PAGES.warehouseViewPath(row.original.uuid)}
+        className="inline-block"
+      >
         <WarehouseCodeBadge code={row.original.warehouse_code} />
       </Link>
     ),
@@ -88,18 +90,25 @@ const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
   {
     id: "users",
     header: "Users",
-    cell: ({ row }) => <WarehouseUsersCountBadge warehouseId={row.original.uuid} count={0} />,
+    cell: ({ row }) => (
+      <WarehouseUsersCountBadge warehouseId={row.original.uuid} count={0} />
+    ),
   },
   {
     id: "devices",
     header: "Devices",
-    cell: ({ row }) => <WarehouseDevicesCountBadge warehouseId={row.original.uuid} count={0} />,
+    cell: ({ row }) => (
+      <WarehouseDevicesCountBadge warehouseId={row.original.uuid} count={0} />
+    ),
   },
   {
     id: "inspections",
     header: "Inspections",
     cell: ({ row }) => (
-      <WarehouseInspectionsCountBadge warehouseId={row.original.uuid} count={0} />
+      <WarehouseInspectionsCountBadge
+        warehouseId={row.original.uuid}
+        count={0}
+      />
     ),
   },
   {
@@ -117,41 +126,40 @@ const warehouseColumns: ColumnDef<WarehouseResponse>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseViewPath(id)} className="flex items-center">
+              <Link
+                to={PAGES.warehouseViewPath(id)}
+                className="flex items-center"
+              >
                 <Eye className="mr-2 h-4 w-4" />
                 View warehouse
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseUsersPath(id)} className="flex items-center">
+              <Link
+                to={PAGES.warehouseUsersPath(id)}
+                className="flex items-center"
+              >
                 <Users className="mr-2 h-4 w-4" />
                 View users
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseDevicesPath(id)} className="flex items-center">
+              <Link
+                to={PAGES.warehouseDevicesPath(id)}
+                className="flex items-center"
+              >
                 <Smartphone className="mr-2 h-4 w-4" />
                 View devices
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.warehouseInspectionsPath(id)} className="flex items-center">
+              <Link
+                to={PAGES.warehouseInspectionsPath(id)}
+                className="flex items-center"
+              >
                 <ClipboardList className="mr-2 h-4 w-4" />
                 View inspections
               </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?warehouse_id=${id}`}
-                className="flex items-center"
-              >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Executive analytics
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

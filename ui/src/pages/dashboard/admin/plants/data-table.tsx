@@ -1,3 +1,15 @@
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  Eye,
+  MoreHorizontal,
+  Smartphone,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
+import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import { Button } from "@/components/ui/button";
 import {
   DataTable,
@@ -9,7 +21,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import { PAGES } from "@/endpoints";
 import {
   PlantCodeBadge,
@@ -17,18 +28,6 @@ import {
   PlantInspectionsCountBadge,
   PlantUsersCountBadge,
 } from "@/pages/dashboard/admin/plants/plant-badge";
-import type { ColumnDef } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  BarChart3,
-  ClipboardList,
-  Eye,
-  MoreHorizontal,
-  Smartphone,
-  Trash2,
-  Users,
-} from "lucide-react";
-import { Link } from "react-router-dom";
 
 const plantColumns: ColumnDef<PlantResponse>[] = [
   {
@@ -44,7 +43,10 @@ const plantColumns: ColumnDef<PlantResponse>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <Link to={PAGES.plantViewPath(row.original.uuid)} className="inline-block">
+      <Link
+        to={PAGES.plantViewPath(row.original.uuid)}
+        className="inline-block"
+      >
         <PlantCodeBadge code={row.original.plant_code} />
       </Link>
     ),
@@ -98,9 +100,7 @@ const plantColumns: ColumnDef<PlantResponse>[] = [
     header: "Devices",
     cell: ({ row }) => {
       const p = row.original;
-      return (
-        <PlantDevicesCountBadge plantId={p.uuid} count={0} />
-      );
+      return <PlantDevicesCountBadge plantId={p.uuid} count={0} />;
     },
   },
   {
@@ -108,12 +108,7 @@ const plantColumns: ColumnDef<PlantResponse>[] = [
     header: "Inspections",
     cell: ({ row }) => {
       const p = row.original;
-      return (
-        <PlantInspectionsCountBadge
-          plantId={p.uuid}
-          count={0}
-        />
-      );
+      return <PlantInspectionsCountBadge plantId={p.uuid} count={0} />;
     },
   },
   {
@@ -143,27 +138,12 @@ const plantColumns: ColumnDef<PlantResponse>[] = [
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={PAGES.plantDevicesPath(id)} className="flex items-center">
+              <Link
+                to={PAGES.plantDevicesPath(id)}
+                className="flex items-center"
+              >
                 <Smartphone className="mr-2 h-4 w-4" />
                 View devices
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                to={PAGES.plantInspectionsPath(id)}
-                className="flex items-center"
-              >
-                <ClipboardList className="mr-2 h-4 w-4" />
-                View inspections
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?plant_id=${id}`}
-                className="flex items-center"
-              >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Executive analytics
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive focus:text-destructive">
