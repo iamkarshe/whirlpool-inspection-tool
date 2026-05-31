@@ -112,7 +112,7 @@ export default function FlaggedImagesPage() {
       parseInspectionFiltersFromSearch(location.search),
     ),
   );
-  const [imageRows, setImageRows] = useState<FlaggedImageRow[]>([]);
+  const [loadedImageRows, setLoadedImageRows] = useState<FlaggedImageRow[]>([]);
   const [imagesLoading, setImagesLoading] = useState(false);
   const [kpiFilter, setKpiFilter] = useState<KpiSectionFilter>("all");
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -165,22 +165,23 @@ export default function FlaggedImagesPage() {
     [filterContext, inspections, filtersValue, statusMap],
   );
 
+  const failedInspections = useMemo(
+    () => filteredInspections.filter((i) => i.checklist_quality === "fail"),
+    [filteredInspections],
+  );
+
   useEffect(() => {
+    if (failedInspections.length === 0) return;
+
     const ac = new AbortController();
     let cancelled = false;
-    const failed = filteredInspections.filter(
-      (i) => i.checklist_quality === "fail",
-    );
 
-    if (failed.length === 0) {
-      setImageRows([]);
-      setImagesLoading(false);
-      return () => ac.abort();
-    }
+    queueMicrotask(() => {
+      if (!cancelled) setImagesLoading(true);
+    });
 
-    setImagesLoading(true);
     Promise.all(
-      failed.map(async (inspection) => {
+      failedInspections.map(async (inspection) => {
         const bundle = await getInspectionDetailBundle(inspection.id, {
           signal: ac.signal,
         });
@@ -193,10 +194,10 @@ export default function FlaggedImagesPage() {
       }),
     )
       .then((chunks) => {
-        if (!cancelled) setImageRows(chunks.flat());
+        if (!cancelled) setLoadedImageRows(chunks.flat());
       })
       .catch(() => {
-        if (!cancelled) setImageRows([]);
+        if (!cancelled) setLoadedImageRows([]);
       })
       .finally(() => {
         if (!cancelled) setImagesLoading(false);
@@ -206,17 +207,14 @@ export default function FlaggedImagesPage() {
       cancelled = true;
       ac.abort();
     };
-  }, [filteredInspections]);
+  }, [failedInspections]);
 
-  const filteredInspectionIds = useMemo(
-    () => new Set(filteredInspections.map((i) => i.id)),
-    [filteredInspections],
-  );
-
-  const filteredRows = useMemo(
-    () => imageRows.filter((r) => filteredInspectionIds.has(r.inspection_id)),
-    [imageRows, filteredInspectionIds],
-  );
+  const filteredRows = useMemo(() => {
+    const rows =
+      failedInspections.length === 0 ? [] : loadedImageRows;
+    const ids = new Set(filteredInspections.map((i) => i.id));
+    return rows.filter((r) => ids.has(r.inspection_id));
+  }, [failedInspections, filteredInspections, loadedImageRows]);
 
   const kpiCounts = useMemo(
     () => ({
@@ -409,7 +407,8 @@ export default function FlaggedImagesPage() {
     ];
   }, [kpiFilteredRows]);
 
-  const loading = listLoading || imagesLoading;
+  const loading =
+    listLoading || (failedInspections.length > 0 && imagesLoading);
 
   return (
     <>
