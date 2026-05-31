@@ -1,5 +1,5 @@
 import {
-  navItems,
+  getNavItemsForRole,
   type NavGroup,
   type NavItem,
 } from "@/components/layout/sidebar/nav-items";
@@ -17,12 +17,18 @@ import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { CommandIcon, SearchIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSessionUser } from "@/hooks/use-session-user";
 
 export default function Search() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const sessionUser = useSessionUser();
+  const visibleNavItems = useMemo(
+    () => getNavItemsForRole(sessionUser?.role),
+    [sessionUser?.role],
+  );
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -64,7 +70,7 @@ export default function Search() {
         <CommandInput placeholder="Type a command or search..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
-          {navItems.map((route: NavGroup) => (
+          {visibleNavItems.map((route: NavGroup) => (
             <React.Fragment key={route.title}>
               <CommandGroup heading={route.title}>
                 {route.items.map((item: NavItem, key: number) => (

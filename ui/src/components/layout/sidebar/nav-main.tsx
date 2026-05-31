@@ -1,4 +1,4 @@
-import { navItems } from "@/components/layout/sidebar/nav-items";
+import { getNavItemsForRole } from "@/components/layout/sidebar/nav-items";
 import {
   Collapsible,
   CollapsibleContent,
@@ -26,14 +26,17 @@ import {
 } from "@/components/ui/sidebar";
 import { ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useSessionUser } from "@/hooks/use-session-user";
 
 export function NavMain() {
   const { pathname } = useLocation();
   const { isMobile } = useSidebar();
+  const sessionUser = useSessionUser();
+  const visibleNavItems = getNavItemsForRole(sessionUser?.role);
 
   return (
     <>
-      {navItems.map((nav) => (
+      {visibleNavItems.map((nav) => (
         <SidebarGroup key={nav.title}>
           <SidebarGroupLabel>{nav.title}</SidebarGroupLabel>
           <SidebarGroupContent className="flex flex-col gap-2">

@@ -1,13 +1,7 @@
-import { PAGES } from "@/endpoints";
-import { useSessionUser } from "@/hooks/use-session-user";
-import { isOpsManagerRole } from "@/lib/ops-role";
-import { Navigate, Outlet } from "react-router-dom";
+import { APP_ROLE } from "@/lib/app-roles";
+import { PageGuard } from "@/router/page-guard";
 
 /** Restricts child routes to warehouse managers (not operators). */
 export default function OpsManagerRoute() {
-  const user = useSessionUser();
-  if (!isOpsManagerRole(user?.role)) {
-    return <Navigate to={PAGES.OPS_HOME} replace />;
-  }
-  return <Outlet />;
+  return <PageGuard allowedRoles={[APP_ROLE.manager]} />;
 }
