@@ -14,7 +14,7 @@ import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { firstNameFromDisplayName } from "@/lib/ops-user-display";
 import { canOpsRoleStartNewInspection, isOpsManagerRole } from "@/lib/ops-role";
-import { getInspectionsPendingManagerReview } from "@/pages/dashboard/inspections/inspection-service";
+import { fetchManagerReviewQueueCount } from "@/pages/dashboard/inspections/inspection-service";
 
 export default function OpsHomePage() {
   const navigate = useNavigate();
@@ -34,10 +34,10 @@ export default function OpsHomePage() {
   useEffect(() => {
     if (!isManager) return;
     let cancelled = false;
-    getInspectionsPendingManagerReview()
-      .then((rows) => {
+    fetchManagerReviewQueueCount()
+      .then((count) => {
         if (!cancelled) {
-          setPendingReviewCount(rows.length);
+          setPendingReviewCount(count);
           setReviewCountFailed(false);
         }
       })

@@ -10,6 +10,28 @@ export type ProductsListParams = Pick<
   "page" | "per_page" | "search" | "sort_by" | "sort_dir" | "date_field" | "date_from" | "date_to" | "is_active"
 >;
 
+/** Resolves list-row inspection KPI fields for a product UUID. */
+export async function fetchProductListItemByUuid(
+  productUuid: string,
+  request?: { signal?: AbortSignal },
+): Promise<ProductListItemResponse | null> {
+  const needle = productUuid.trim();
+  if (!needle) return null;
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const res = await fetchProductsPage(
+      { page, per_page: 100, sort_by: "id", sort_dir: "desc" },
+      request,
+    );
+    const hit = res.data.find((p) => p.uuid === needle);
+    if (hit) return hit;
+    totalPages = Math.max(1, res.total_pages ?? 1);
+    page += 1;
+  } while (page <= totalPages);
+  return null;
+}
+
 export async function fetchProductsPage(
   params: ProductsListParams,
   request?: { signal?: AbortSignal },

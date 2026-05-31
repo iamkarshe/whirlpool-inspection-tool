@@ -136,8 +136,8 @@ export async function loadOpsInspectionFormConfig(
 
   if (!formConfigInFlight) {
     formConfigInFlight = Promise.all([
-      fetchInspectionMetadataForOps(opts),
-      fetchActiveInspectionChecklist(opts),
+      fetchInspectionMetadataForOps(),
+      fetchActiveInspectionChecklist(),
     ])
       .then(([metadata, chk]) => {
         const bundle: OpsInspectionFormConfigBundle = {

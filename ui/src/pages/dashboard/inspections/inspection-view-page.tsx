@@ -22,6 +22,8 @@ import {
   type InspectionQuestionResult,
 } from "@/pages/dashboard/inspections/inspection-service";
 import { formatDate, setPageTitle } from "@/lib/core";
+import { inspectionsApiErrorMessage } from "@/services/inspections-api";
+import { isAxiosError } from "axios";
 import { InspectionOverviewTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-overview-tab";
 import { InspectionSectionTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-section-tab";
 import { InspectionRelationshipTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-relationship-tab";
@@ -49,6 +51,7 @@ export default function InspectionViewPage() {
     undefined,
   );
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [reviewLoading, setReviewLoading] = useState(false);
   const [outerRows, setOuterRows] = useState<InspectionQuestionResult[]>([]);
@@ -115,15 +118,20 @@ export default function InspectionViewPage() {
     getInspectionDetailBundle(id, { signal: ac.signal })
       .then((bundle) => {
         if (ac.signal.aborted) return;
-        if (!bundle) {
-          setInspection(null);
-          return;
-        }
+        setLoadError(null);
         setInspection(bundle.inspection);
         setOuterRows(bundle.outer);
         setInnerRows(bundle.inner);
         setProductRows(bundle.product);
         setDeviceRows(bundle.device);
+      })
+      .catch((err: unknown) => {
+        if (ac.signal.aborted) return;
+        if (isAxiosError(err) && err.code === "ERR_CANCELED") return;
+        setInspection(null);
+        setLoadError(
+          inspectionsApiErrorMessage(err, "Could not load inspection."),
+        );
       })
       .finally(() => {
         if (!ac.signal.aborted) {
@@ -291,7 +299,9 @@ export default function InspectionViewPage() {
   if (inspection === null || inspection === undefined) {
     return (
       <div className="space-y-4">
-        <p className="text-muted-foreground">Inspection not found.</p>
+        <p className="text-muted-foreground">
+          {loadError ?? "Inspection not found."}
+        </p>
         <Button variant="outline" asChild>
           <Link to={PAGES.DASHBOARD_INSPECTIONS}>
             <ArrowLeft className="mr-2 h-4 w-4" />

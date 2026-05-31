@@ -1,4 +1,6 @@
+import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 import { getProductCategories } from "@/api/generated/product-categories/product-categories";
+import type { ProductCategoryInspectionListResponse } from "@/api/generated/model/productCategoryInspectionListResponse";
 import type { ProductCategoryInspectionResponse } from "@/api/generated/model/productCategoryInspectionResponse";
 import type { ProductCategoryResponse } from "@/api/generated/model/productCategoryResponse";
 import type { ProductResponse } from "@/api/generated/model/productResponse";
@@ -8,6 +10,14 @@ export type ProductCategoryInspectionQuery = {
   date_to?: string | null;
   date_field?: string | null;
   is_active?: boolean;
+};
+
+export type ProductCategoryInspectionsPageParams = ProductCategoryInspectionQuery & {
+  page?: number;
+  per_page?: number;
+  search?: string | null;
+  sort_by?: string | null;
+  sort_dir?: string;
 };
 
 export async function fetchProductCategoryDetail(
@@ -35,6 +45,32 @@ export async function fetchProductCategoryProducts(
   return res.data;
 }
 
+export async function fetchProductCategoryInspectionsPage(
+  categoryUuid: string,
+  params: ProductCategoryInspectionsPageParams,
+  signal?: AbortSignal,
+): Promise<ProductCategoryInspectionListResponse> {
+  const api = getProductCategories();
+  return api.getProductCategoryInspectionsApiProductCategoriesProductCategoryUuidInspectionsGet(
+    categoryUuid,
+    {
+      page: params.page ?? 1,
+      per_page: params.per_page ?? DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
+      search: params.search?.trim() ? params.search.trim() : null,
+      sort_by: params.sort_by ?? "created_at",
+      sort_dir: params.sort_dir ?? "desc",
+      date_field: params.date_field ?? "created_at",
+      date_from: params.date_from ?? null,
+      date_to: params.date_to ?? null,
+      is_active: params.is_active,
+    },
+    signal ? { signal } : undefined,
+  );
+}
+
+/**
+ * Loads every page — avoid in UI; prefer {@link fetchProductCategoryInspectionsPage}.
+ */
 export async function fetchAllProductCategoryInspections(
   categoryUuid: string,
   query?: ProductCategoryInspectionQuery,

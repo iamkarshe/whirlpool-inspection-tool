@@ -1,12 +1,14 @@
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { OpsInspectionListCard } from "@/components/ops/ops-inspection-list-card";
 import { OpsListEmptyState } from "@/components/ops/ops-list-empty-state";
 import { opsListEmptySectionClassName } from "@/components/ops/ops-list-section-classes";
 import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
+import { OpsLoadMoreButton } from "@/components/ops/ops-load-more-button";
 import { PAGES } from "@/endpoints";
 import { OpsKpiPeriodBanner } from "@/components/ops/ops-kpi-stats";
+import { useOpsInspectionsPagedList } from "@/hooks/use-ops-inspections-paged-list";
 import { filterInspectionsByMetric } from "@/lib/ops-inspection-list-filter";
 import {
   opsInspectionListPath,
@@ -14,10 +16,7 @@ import {
   parseOpsInspectionListQuery,
 } from "@/lib/ops-inspection-list-query";
 import { setPageTitle } from "@/lib/core";
-import {
-  getInspectionsForOpsList,
-  type Inspection,
-} from "@/pages/dashboard/inspections/inspection-service";
+import type { Inspection } from "@/pages/dashboard/inspections/inspection-types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,53 +36,40 @@ export default function OpsInspectionListPage() {
     [searchKey],
   );
 
-  const [rows, setRows] = useState<Inspection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [periodOpen, setPeriodOpen] = useState(false);
   const [draftFrom, setDraftFrom] = useState("");
   const [draftTo, setDraftTo] = useState("");
 
-  useEffect(() => {
-    if (!query) {
-      startTransition(() => {
-        setRows([]);
-        setLoading(false);
-        setError(null);
-      });
-      return;
-    }
-    const title = opsInspectionListTitle(query);
-    setPageTitle(title);
-    let cancelled = false;
-    startTransition(() => {
-      setLoading(true);
-      setError(null);
-    });
-    const inspectionType =
+  const listQuery = useMemo(() => {
+    if (!query) return null;
+    const inspection_type =
       query.group === "inbound"
-        ? "inbound"
+        ? ("inbound" as const)
         : query.group === "outbound"
-          ? "outbound"
+          ? ("outbound" as const)
           : null;
-    getInspectionsForOpsList({
+    return {
       date_from: query.from,
       date_to: query.to,
-      inspection_type: inspectionType,
-    })
-      .then((list) => {
-        if (cancelled) return;
-        setRows(filterInspectionsByMetric(list, query.metric));
-      })
-      .catch(() => {
-        if (!cancelled) setError("Could not load inspections.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
+      inspection_type,
     };
+  }, [query]);
+
+  const refinePage = useCallback(
+    (page: Inspection[]) =>
+      query ? filterInspectionsByMetric(page, query.metric) : page,
+    [query],
+  );
+
+  const { rows, loading, loadingMore, error, hasMore, loadMore } =
+    useOpsInspectionsPagedList({
+      query: listQuery,
+      refinePage,
+    });
+
+  useEffect(() => {
+    if (!query) return;
+    setPageTitle(opsInspectionListTitle(query));
   }, [query]);
 
   if (!query) {
@@ -229,6 +215,12 @@ export default function OpsInspectionListPage() {
             ))
           : null}
       </section>
+
+      <OpsLoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={loadMore}
+      />
     </div>
   );
 }

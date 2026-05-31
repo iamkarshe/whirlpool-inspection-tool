@@ -462,29 +462,15 @@ export async function fetchInspectionKpis(
   return mapKpisResponse(res);
 }
 
-const detailFlight = new Map<string, Promise<InspectionFullResponse>>();
-
 export async function fetchInspectionDetail(
   inspectionUuid: string,
   opts?: { signal?: AbortSignal },
 ): Promise<InspectionFullResponse> {
-  if (!detailFlight.has(inspectionUuid)) {
-    const api = getInspectionsApi();
-    const p = api
-      .getInspectionDetailApiInspectionsInspectionUuidGet(
-        inspectionUuid,
-        opts?.signal ? { signal: opts.signal } : undefined,
-      )
-      .finally(() => {
-        detailFlight.delete(inspectionUuid);
-      });
-    detailFlight.set(inspectionUuid, p);
-  }
-  return detailFlight.get(inspectionUuid)!;
-}
-
-export function invalidateInspectionDetailCache(inspectionUuid: string): void {
-  detailFlight.delete(inspectionUuid.trim());
+  const api = getInspectionsApi();
+  return api.getInspectionDetailApiInspectionsInspectionUuidGet(
+    inspectionUuid.trim(),
+    opts?.signal ? { signal: opts.signal } : undefined,
+  );
 }
 
 export async function patchInspectionReviewStatus(
@@ -499,7 +485,6 @@ export async function patchInspectionReviewStatus(
       body,
       opts?.signal ? { signal: opts.signal } : undefined,
     );
-  invalidateInspectionDetailCache(inspectionUuid);
   return res;
 }
 

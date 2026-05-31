@@ -58,16 +58,21 @@ export function clearInspectionFilterOptionsCache(): void {
   }
 }
 
+/**
+ * Session-cached filter metadata (KPI params + users). In-flight dedup must not
+ * reuse a promise tied to an aborted Strict Mode mount — callers may pass
+ * `signal` for cleanup, but the shared fetch ignores it.
+ */
 export async function loadInspectionFilterOptionsCached(
   fetcher: (opts?: { signal?: AbortSignal }) => Promise<InspectionFilterOptionsSource>,
-  opts?: { signal?: AbortSignal },
+  _opts?: { signal?: AbortSignal },
 ): Promise<InspectionFilterOptionsSource> {
   const cached = readCachedInspectionFilterOptions();
   if (cached) return cached;
 
   if (inflight) return inflight;
 
-  inflight = fetcher(opts)
+  inflight = fetcher()
     .then((source) => {
       writeCachedInspectionFilterOptions(source);
       return source;

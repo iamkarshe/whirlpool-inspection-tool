@@ -29,7 +29,6 @@ import {
   applyInspectionFilters,
   buildInspectionFilterContext,
   buildInspectionFilterSections,
-  computeInspectionStatusMap,
   defaultFlaggedInspectionFilters,
   loadInspectionFilterOptions,
   mergeInspectionFilters,
@@ -37,9 +36,9 @@ import {
   type InspectionFilterOptionsSource,
   type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
+import { useInspectionsServerTable } from "@/pages/dashboard/inspections/components/use-inspections-server-table";
 import {
-  getInspectionQuestionResults,
-  getInspections,
+  getInspectionDetailBundle,
   type Inspection,
   type InspectionQuestionResult,
   type InspectionSectionKey,
@@ -72,10 +71,38 @@ function sectionLabel(section: InspectionSectionKey) {
   return "Device";
 }
 
+function flaggedRowsFromBundle(
+  inspection: Inspection,
+  sections: {
+    outer: InspectionQuestionResult[];
+    inner: InspectionQuestionResult[];
+    product: InspectionQuestionResult[];
+  },
+): FlaggedImageRow[] {
+  const sectionResults = [sections.outer, sections.inner, sections.product];
+  const failedQuestions = sectionResults
+    .flat()
+    .filter((q) => q.status === "fail");
+
+  return failedQuestions.flatMap((q) =>
+    q.images.map((img, index) => ({
+      id: `${inspection.id}-${q.id}-${index}`,
+      inspection_id: inspection.id,
+      inspection_type: inspection.inspection_type,
+      product_serial: inspection.product_serial,
+      inspector_name: inspection.inspector_name,
+      section: q.section,
+      question: q.question,
+      created_at: inspection.created_at,
+      image_url: img.url,
+      image_filename: img.filename,
+      images: q.images,
+    })),
+  );
+}
+
 export default function FlaggedImagesPage() {
   const location = useLocation();
-  const [inspections, setInspections] = useState<Inspection[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [filterOptions, setFilterOptions] =
     useState<InspectionFilterOptionsSource | null>(null);
@@ -85,8 +112,8 @@ export default function FlaggedImagesPage() {
       parseInspectionFiltersFromSearch(location.search),
     ),
   );
-  const [statusMap, setStatusMap] = useState<InspectionStatusMap | null>(null);
-  const [rows, setRows] = useState<FlaggedImageRow[]>([]);
+  const [imageRows, setImageRows] = useState<FlaggedImageRow[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
   const [kpiFilter, setKpiFilter] = useState<KpiSectionFilter>("all");
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
@@ -100,80 +127,86 @@ export default function FlaggedImagesPage() {
     return () => ac.abort();
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => setLoading(true));
-
-    getInspections()
-      .then(async (list) => {
-        if (cancelled) return;
-        setInspections(list);
-
-        const map = await computeInspectionStatusMap(list);
-        if (cancelled) return;
-        setStatusMap(map);
-
-        const failedInspections = list.filter((i) => map[i.id] === "fail");
-        const sectionKeys: InspectionSectionKey[] = [
-          "outer-packaging",
-          "inner-packaging",
-          "product",
-        ];
-
-        const perInspectionRows = await Promise.all(
-          failedInspections.map(async (inspection) => {
-            const sectionResults = await Promise.all(
-              sectionKeys.map((section) =>
-                getInspectionQuestionResults(inspection.id, section),
-              ),
-            );
-            const failedQuestions = sectionResults
-              .flat()
-              .filter((q: InspectionQuestionResult) => q.status === "fail");
-
-            return failedQuestions.flatMap((q) =>
-              q.images.map((img, index) => ({
-                id: `${inspection.id}-${q.id}-${index}`,
-                inspection_id: inspection.id,
-                inspection_type: inspection.inspection_type,
-                product_serial: inspection.product_serial,
-                inspector_name: inspection.inspector_name,
-                section: q.section,
-                question: q.question,
-                created_at: inspection.created_at,
-                image_url: img.url,
-                image_filename: img.filename,
-                images: q.images,
-              })),
-            );
-          }),
-        );
-
-        if (!cancelled) setRows(perInspectionRows.flat());
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const filterSections = useMemo(() => {
-    if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions, inspections);
-  }, [filterOptions, inspections]);
-
   const filterContext = useMemo(
     () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
     [filterOptions],
   );
 
+  const {
+    rows: inspections,
+    isLoading: listLoading,
+    serverSide,
+  } = useInspectionsServerTable({
+    dateRange,
+    filtersValue,
+    filterContext,
+    scope: { checklistStatusPreset: ["fail"] },
+    errorMessage: "Failed to load flagged inspections.",
+  });
+
+  const statusMap = useMemo((): InspectionStatusMap => {
+    const map: InspectionStatusMap = {};
+    for (const i of inspections) {
+      if (i.checklist_quality === "pass" || i.checklist_quality === "fail") {
+        map[i.id] = i.checklist_quality;
+      }
+    }
+    return map;
+  }, [inspections]);
+
   const filteredInspections = useMemo(
-    () => applyInspectionFilters(inspections, filtersValue, statusMap, filterContext),
+    () =>
+      applyInspectionFilters(
+        inspections,
+        filtersValue,
+        statusMap,
+        filterContext,
+      ),
     [filterContext, inspections, filtersValue, statusMap],
   );
+
+  useEffect(() => {
+    const ac = new AbortController();
+    let cancelled = false;
+    const failed = filteredInspections.filter(
+      (i) => i.checklist_quality === "fail",
+    );
+
+    if (failed.length === 0) {
+      setImageRows([]);
+      setImagesLoading(false);
+      return () => ac.abort();
+    }
+
+    setImagesLoading(true);
+    Promise.all(
+      failed.map(async (inspection) => {
+        const bundle = await getInspectionDetailBundle(inspection.id, {
+          signal: ac.signal,
+        });
+        if (!bundle) return [] as FlaggedImageRow[];
+        return flaggedRowsFromBundle(bundle.inspection, {
+          outer: bundle.outer,
+          inner: bundle.inner,
+          product: bundle.product,
+        });
+      }),
+    )
+      .then((chunks) => {
+        if (!cancelled) setImageRows(chunks.flat());
+      })
+      .catch(() => {
+        if (!cancelled) setImageRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setImagesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [filteredInspections]);
 
   const filteredInspectionIds = useMemo(
     () => new Set(filteredInspections.map((i) => i.id)),
@@ -181,9 +214,10 @@ export default function FlaggedImagesPage() {
   );
 
   const filteredRows = useMemo(
-    () => rows.filter((r) => filteredInspectionIds.has(r.inspection_id)),
-    [rows, filteredInspectionIds],
+    () => imageRows.filter((r) => filteredInspectionIds.has(r.inspection_id)),
+    [imageRows, filteredInspectionIds],
   );
+
   const kpiCounts = useMemo(
     () => ({
       all: filteredRows.length,
@@ -198,6 +232,11 @@ export default function FlaggedImagesPage() {
     if (kpiFilter === "all") return filteredRows;
     return filteredRows.filter((r) => r.section === kpiFilter);
   }, [filteredRows, kpiFilter]);
+
+  const filterSections = useMemo(() => {
+    if (!filterOptions) return [];
+    return buildInspectionFilterSections(filterOptions, inspections);
+  }, [filterOptions, inspections]);
 
   const kpiCards: KpiCardProps[] = useMemo(
     () => [
@@ -370,6 +409,8 @@ export default function FlaggedImagesPage() {
     ];
   }, [kpiFilteredRows]);
 
+  const loading = listLoading || imagesLoading;
+
   return (
     <>
       <ImageGalleryDialog
@@ -386,7 +427,7 @@ export default function FlaggedImagesPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <PageActionBar
             title="Flagged Images"
-            description="All failed-check images across inspections. Click an image to open the viewer."
+            description="Failed-check images for inspections on the current list page. Use table pagination to load more."
           />
           <div className="flex items-center gap-2">
             <CalendarDateRangePicker
@@ -404,7 +445,7 @@ export default function FlaggedImagesPage() {
           </div>
         </div>
 
-        {loading ? (
+        {loading && kpiFilteredRows.length === 0 ? (
           <SkeletonTable />
         ) : (
           <div className="space-y-4">
@@ -422,6 +463,8 @@ export default function FlaggedImagesPage() {
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
               rangeLabel="flagged images"
+              serverSide={serverSide}
+              isLoading={loading}
             />
           </div>
         )}

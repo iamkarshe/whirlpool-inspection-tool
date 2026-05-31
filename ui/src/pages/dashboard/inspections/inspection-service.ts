@@ -21,6 +21,7 @@ import type {
 import type { DateRange } from "react-day-picker";
 
 import {
+  deriveIsUnderReviewFromReviewStatus,
   fetchAllInspectionRows,
   fetchInspectionDetail,
   fetchInspectionInputsAsQuestionRows,
@@ -30,6 +31,7 @@ import {
   mapInspectionFullToInspection,
   mapInputsForSection,
 } from "@/services/inspections-api";
+import { fetchManagerTeamInspectionKpis } from "@/services/ops-inspections-api";
 import type { InspectionFullResponse } from "@/api/generated/model/inspectionFullResponse";
 
 export async function getInspectionQuestionResults(
@@ -50,7 +52,27 @@ export async function getInspections(): Promise<Inspection[]> {
   });
 }
 
-/** Ops inspection list: filter by `created_at` and optional inbound/outbound. */
+/** Manager home badge: `review_queue` from `GET /api/inspections/kpis/manager` (today). */
+export async function fetchManagerReviewQueueCount(opts?: {
+  signal?: AbortSignal;
+}): Promise<number> {
+  const kpis = await fetchManagerTeamInspectionKpis(
+    { period: "today" as const },
+    opts,
+  );
+  return kpis.review_queue ?? 0;
+}
+
+export function inspectionIsPendingManagerReview(inspection: Inspection): boolean {
+  return (
+    inspection.is_under_review === true ||
+    deriveIsUnderReviewFromReviewStatus(inspection.review_status ?? "")
+  );
+}
+
+/**
+ * Ops inspection list — loads every page. Prefer `useOpsInspectionsPagedList` in UI.
+ */
 export async function getInspectionsForOpsList(
   query: {
     date_from: string;
@@ -99,12 +121,8 @@ export async function getInspectionDetailBundle(
   opts?: { signal?: AbortSignal },
 ): Promise<InspectionDetailBundle | null> {
   if (!id?.trim()) return null;
-  try {
-    const full = await fetchInspectionDetail(id.trim(), opts);
-    return mapInspectionFullToDetailBundle(full);
-  } catch {
-    return null;
-  }
+  const full = await fetchInspectionDetail(id.trim(), opts);
+  return mapInspectionFullToDetailBundle(full);
 }
 
 export function mapInspectionFullToDetailBundle(
@@ -181,24 +199,27 @@ export async function getInspectionRelationship(
   };
 }
 
+/** @deprecated Use server table + `fetchInspectionsPage` on admin device view. */
 export async function getInspectionsByDeviceFingerprint(
   fingerprint: string,
 ): Promise<Inspection[]> {
   const fp = fingerprint.trim();
   if (!fp) return [];
-  const rows = await fetchAllInspectionRows({});
+  const rows = await fetchAllInspectionRows({ search: fp });
   return rows.filter((i) => i.device_fingerprint === fp);
 }
 
+/** @deprecated Use server table + `fetchInspectionsPage` on admin device view. */
 export async function getInspectionsByDeviceId(
   numericDeviceId: string,
 ): Promise<Inspection[]> {
   const needle = numericDeviceId.trim();
   if (!needle) return [];
-  const rows = await fetchAllInspectionRows({});
+  const rows = await fetchAllInspectionRows({ search: needle });
   return rows.filter((i) => i.device_id === needle);
 }
 
+/** @deprecated Use server table + `fetchInspectionsPage` on admin user view. */
 export async function getInspectionsByUserId(
   userId: number,
 ): Promise<Inspection[]> {
@@ -233,7 +254,10 @@ export async function getInspectionKpisForDateRange(
   );
 }
 
-/** Inspections awaiting manager sign-off (paginated list, then `is_under_review`). */
+/**
+ * Inspections awaiting manager sign-off — loads every page.
+ * Prefer `useOpsInspectionsPagedList` with `inspectionIsPendingManagerReview`.
+ */
 export async function getInspectionsPendingManagerReview(opts?: {
   signal?: AbortSignal;
 }): Promise<Inspection[]> {
@@ -244,5 +268,5 @@ export async function getInspectionsPendingManagerReview(opts?: {
     },
     opts,
   );
-  return rows.filter((i) => i.is_under_review);
+  return rows.filter(inspectionIsPendingManagerReview);
 }

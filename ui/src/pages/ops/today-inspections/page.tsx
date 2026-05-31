@@ -1,61 +1,78 @@
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { OpsInspectionListCard } from "@/components/ops/ops-inspection-list-card";
 import { OpsInspectionSkeleton } from "@/components/ops/ops-inspection-skeleton";
 import { OpsListEmptyState } from "@/components/ops/ops-list-empty-state";
 import { opsListEmptySectionClassName } from "@/components/ops/ops-list-section-classes";
+import { OpsLoadMoreButton } from "@/components/ops/ops-load-more-button";
 import { PAGES } from "@/endpoints";
+import { useOpsInspectionsPagedList } from "@/hooks/use-ops-inspections-paged-list";
 import { cn } from "@/lib/utils";
-import {
-  getInspectionsForOpsList,
-  type Inspection,
-} from "@/pages/dashboard/inspections/inspection-service";
-import { formatCalendarDateForApi } from "@/services/inspections-api";
 import type { InspectionType } from "@/pages/dashboard/inspections/inspection-types";
+import { formatCalendarDateForApi, fetchInspectionsPage } from "@/services/inspections-api";
 
 export default function OpsTodayInspectionsPage() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<Inspection[]>([]);
-  const [loading, setLoading] = useState(true);
   const [direction, setDirection] = useState<InspectionType>("inbound");
+  const day = formatCalendarDateForApi(new Date());
+  const [inboundCount, setInboundCount] = useState<number | null>(null);
+  const [outboundCount, setOutboundCount] = useState<number | null>(null);
 
   useEffect(() => {
+    const ac = new AbortController();
     let cancelled = false;
-    const day = formatCalendarDateForApi(new Date());
-    getInspectionsForOpsList({
+    const base = {
+      date_field: "created_at" as const,
       date_from: day,
       date_to: day,
-    })
-      .then((list) => {
-        if (!cancelled) setRows(list);
+      page: 1,
+      per_page: 1,
+      sort_by: "created_at",
+      sort_dir: "desc" as const,
+    };
+    Promise.all([
+      fetchInspectionsPage(
+        { ...base, inspection_type: "inbound" },
+        { signal: ac.signal },
+      ),
+      fetchInspectionsPage(
+        { ...base, inspection_type: "outbound" },
+        { signal: ac.signal },
+      ),
+    ])
+      .then(([inbound, outbound]) => {
+        if (cancelled) return;
+        setInboundCount(inbound.total);
+        setOutboundCount(outbound.total);
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+      .catch(() => {
+        if (!cancelled) {
+          setInboundCount(null);
+          setOutboundCount(null);
+        }
       });
-
     return () => {
       cancelled = true;
+      ac.abort();
     };
-  }, []);
+  }, [day]);
 
-  const inboundCount = useMemo(
-    () => rows.filter((r) => r.inspection_type === "inbound").length,
-    [rows],
-  );
-  const outboundCount = useMemo(
-    () => rows.filter((r) => r.inspection_type === "outbound").length,
-    [rows],
-  );
+  const { rows, loading, loadingMore, hasMore, loadMore } = useOpsInspectionsPagedList({
+    query: {
+      date_from: day,
+      date_to: day,
+      inspection_type: direction,
+    },
+  });
 
-  const filteredRows = useMemo(
-    () => rows.filter((r) => r.inspection_type === direction),
-    [rows, direction],
-  );
-
-  const empty = !loading && filteredRows.length === 0;
-  const emptyAllTypes = !loading && rows.length === 0;
+  const empty = !loading && rows.length === 0;
+  const emptyAllTypes =
+    !loading &&
+    rows.length === 0 &&
+    inboundCount === 0 &&
+    outboundCount === 0;
 
   return (
     <div className="space-y-4">
@@ -80,7 +97,7 @@ export default function OpsTodayInspectionsPage() {
             <ArrowDownToLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
             Inbound
             <span className="tabular-nums text-[11px] font-medium text-muted-foreground">
-              ({inboundCount})
+              ({inboundCount ?? "…"})
             </span>
           </span>
         </button>
@@ -100,7 +117,7 @@ export default function OpsTodayInspectionsPage() {
             <ArrowUpFromLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
             Outbound
             <span className="tabular-nums text-[11px] font-medium text-muted-foreground">
-              ({outboundCount})
+              ({outboundCount ?? "…"})
             </span>
           </span>
         </button>
@@ -124,7 +141,7 @@ export default function OpsTodayInspectionsPage() {
             }
           />
         ) : null}
-        {filteredRows.map((inspection) => (
+        {rows.map((inspection) => (
           <OpsInspectionListCard
             key={inspection.id}
             inspection={inspection}
@@ -135,6 +152,12 @@ export default function OpsTodayInspectionsPage() {
           />
         ))}
       </section>
+
+      <OpsLoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onClick={loadMore}
+      />
     </div>
   );
 }

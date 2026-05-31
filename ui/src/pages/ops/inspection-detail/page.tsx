@@ -14,6 +14,7 @@ import {
   Truck,
   XCircle,
 } from "lucide-react";
+import { isAxiosError } from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -58,7 +59,7 @@ import {
 import type { InspectionType } from "@/pages/dashboard/inspections/inspection-types";
 import {
   getInspectionById,
-  getInspectionQuestionResults,
+  getInspectionDetailBundle,
   type Inspection,
   type InspectionQuestionResult,
 } from "@/pages/dashboard/inspections/inspection-service";
@@ -415,49 +416,46 @@ export default function OpsInspectionDetailPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => setLoading(true));
-    getInspectionById(id)
-      .then((result) => {
-        if (!cancelled) setInspection(result);
+    const ac = new AbortController();
+    queueMicrotask(() => {
+      setLoading(true);
+      setReviewLoading(true);
+    });
+    getInspectionDetailBundle(id, { signal: ac.signal })
+      .then((bundle) => {
+        if (ac.signal.aborted) return;
+        if (!bundle) {
+          setInspection(null);
+          return;
+        }
+        setInspection(bundle.inspection);
+        setSectionRows({
+          "outer-packaging": bundle.outer,
+          "inner-packaging": bundle.inner,
+          product: bundle.product,
+        });
+      })
+      .catch((err: unknown) => {
+        if (ac.signal.aborted) return;
+        if (isAxiosError(err) && err.code === "ERR_CANCELED") return;
+        setInspection(null);
+        toast.error(
+          inspectionsApiErrorMessage(err, "Could not load inspection."),
+        );
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!ac.signal.aborted) {
+          setLoading(false);
+          setReviewLoading(false);
+        }
       });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => ac.abort();
   }, [id]);
 
   useEffect(() => {
     if (loading) return;
     setPageTitle("Inspection");
   }, [loading, inspection]);
-
-  useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => setReviewLoading(true));
-    Promise.all([
-      getInspectionQuestionResults(id, "outer-packaging"),
-      getInspectionQuestionResults(id, "inner-packaging"),
-      getInspectionQuestionResults(id, "product"),
-    ])
-      .then(([outer, inner, product]) => {
-        if (cancelled) return;
-        setSectionRows({
-          "outer-packaging": outer,
-          "inner-packaging": inner,
-          product,
-        });
-      })
-      .finally(() => {
-        if (!cancelled) setReviewLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
 
   const summary = useMemo(() => {
     const allRows = [

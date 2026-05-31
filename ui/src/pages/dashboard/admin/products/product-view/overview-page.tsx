@@ -1,7 +1,7 @@
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import type { ProductViewContext } from "@/pages/dashboard/admin/products/product-view/context";
 import { useOutletContext } from "react-router-dom";
-import { useProductInspectionsApi } from "@/pages/dashboard/admin/products/product-view/use-product-inspections-api";
+import { useProductInspectionMetrics } from "@/pages/dashboard/admin/products/product-view/use-product-inspection-metrics";
 import { PAGES } from "@/endpoints";
 import { CheckCircle, ClipboardCheck, Package, XCircle } from "lucide-react";
 import { useMemo } from "react";
@@ -9,11 +9,7 @@ import { useMemo } from "react";
 export default function ProductOverviewPage() {
   const { productUuid, product, categoryUuid, dateRange } =
     useOutletContext<ProductViewContext>();
-  const { metrics, loading } = useProductInspectionsApi(
-    product,
-    categoryUuid,
-    dateRange,
-  );
+  const { metrics, loading } = useProductInspectionMetrics(product, dateRange);
 
   const basePath = useMemo(
     () => PAGES.productViewPath(productUuid),

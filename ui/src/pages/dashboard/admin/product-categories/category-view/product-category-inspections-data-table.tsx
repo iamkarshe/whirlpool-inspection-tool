@@ -1,6 +1,9 @@
 import type { ProductCategoryInspectionResponse } from "@/api/generated/model/productCategoryInspectionResponse";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
+import {
+  DataTable,
+  type DataTableServerSideConfig,
+} from "@/components/ui/data-table";
 import { PAGES } from "@/endpoints";
 import { formatDate } from "@/lib/core";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -82,16 +85,22 @@ const columns: ColumnDef<ProductCategoryInspectionResponse>[] = [
 export default function ProductCategoryInspectionsDataTable({
   rows,
   downloadFileName,
+  serverSide,
+  isLoading,
 }: {
   rows: ProductCategoryInspectionResponse[];
   downloadFileName: string;
+  serverSide?: DataTableServerSideConfig;
+  isLoading?: boolean;
 }) {
   return (
     <DataTable<ProductCategoryInspectionResponse>
       columns={columns}
       data={rows}
-      searchKey="uuid"
+      searchKey={serverSide ? undefined : "uuid"}
       rangeLabel="inspections"
+      serverSide={serverSide}
+      isLoading={isLoading}
       downloadCsvFileName={downloadFileName}
       downloadCsv={(data) => ({
         headers: [

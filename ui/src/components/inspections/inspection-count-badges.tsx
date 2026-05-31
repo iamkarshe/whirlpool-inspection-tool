@@ -12,11 +12,8 @@ import { Link } from "react-router-dom";
 import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
 import { PAGES } from "@/endpoints";
 import { filterByCalendarDateRange } from "@/lib/date-range-filter";
-import {
-  getInspectionQuestionResults,
-  getInspections,
-  type InspectionQuestionResult,
-} from "@/pages/dashboard/inspections/inspection-service";
+import type { Inspection } from "@/pages/dashboard/inspections/inspection-types";
+import { fetchInspectionsPage } from "@/services/inspections-api";
 
 export type InspectionCounts = {
   inboundPassed: number;
@@ -40,28 +37,12 @@ type Kind =
   | "outboundPassed"
   | "outboundFailed";
 
-function hasAnyFailed(rows: InspectionQuestionResult[]) {
-  return rows.some((r) => r.status === "fail");
-}
-
-async function computeInspectionStatus(inspectionId: string) {
-  const [outer, inner, product] = await Promise.all([
-    getInspectionQuestionResults(inspectionId, "outer-packaging"),
-    getInspectionQuestionResults(inspectionId, "inner-packaging"),
-    getInspectionQuestionResults(inspectionId, "product"),
-  ]);
-  return [outer, inner, product].some(hasAnyFailed) ? "fail" : "pass";
-}
-
 function buildHref(params: Record<string, string>) {
   const search = new URLSearchParams(params).toString();
   return `${PAGES.DASHBOARD_INSPECTIONS}${search ? `?${search}` : ""}`;
 }
 
 const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`;
-
-const resolvedCountsCache = new Map<string, InspectionCounts>();
-const pendingCountsCache = new Map<string, Promise<InspectionCounts>>();
 
 function cacheKey(
   scope: InspectionCountsScope,
@@ -78,79 +59,90 @@ function cacheKey(
   return `product:${scope.productSerial}${range ? `|range:${range}` : ""}`;
 }
 
-async function fetchCounts(
-  scope: InspectionCountsScope,
-  options?: InspectionCountsOptions,
-) {
-  const list = await getInspections();
-  const scoped = list.filter((i) => {
-    if ("productCategoryId" in scope)
-      return i.product_category_id === scope.productCategoryId;
-    return i.product_serial === scope.productSerial;
-  });
-  const filtered = options?.dateRange
-    ? filterByCalendarDateRange(scoped, (i) => i.created_at, options.dateRange)
-    : scoped;
-
-  const statuses = await Promise.all(
-    filtered.map(async (i) => ({
-      inspection: i,
-      status: await computeInspectionStatus(i.id),
-    })),
-  );
-
+function countsFromInspections(list: Inspection[]): InspectionCounts {
   const next: InspectionCounts = {
     inboundPassed: 0,
     inboundFailed: 0,
     outboundPassed: 0,
     outboundFailed: 0,
   };
-
-  for (const s of statuses) {
-    const t = s.inspection.inspection_type;
-    if (t === "inbound" && s.status === "pass") next.inboundPassed += 1;
-    if (t === "inbound" && s.status === "fail") next.inboundFailed += 1;
-    if (t === "outbound" && s.status === "pass") next.outboundPassed += 1;
-    if (t === "outbound" && s.status === "fail") next.outboundFailed += 1;
+  for (const i of list) {
+    const quality = i.checklist_quality ?? "pass";
+    if (i.inspection_type === "inbound" && quality === "pass") next.inboundPassed += 1;
+    if (i.inspection_type === "inbound" && quality === "fail") next.inboundFailed += 1;
+    if (i.inspection_type === "outbound" && quality === "pass") next.outboundPassed += 1;
+    if (i.inspection_type === "outbound" && quality === "fail") next.outboundFailed += 1;
   }
-
-  resolvedCountsCache.set(cacheKey(scope, options), next);
   return next;
 }
 
-// Shared by non-component modules that need inspection KPIs.
+async function fetchCountsForScope(
+  scope: InspectionCountsScope,
+  options?: InspectionCountsOptions,
+  opts?: { signal?: AbortSignal },
+): Promise<InspectionCounts> {
+  const search =
+    "productSerial" in scope
+      ? (scope.productSerial ?? "").trim()
+      : String(scope.productCategoryId);
+
+  const { data } = await fetchInspectionsPage(
+    {
+      page: 1,
+      per_page: 100,
+      search: search.length > 0 ? search : null,
+      sort_by: "created_at",
+      sort_dir: "desc",
+    },
+    opts,
+  );
+
+  let scoped = data.filter((i) => {
+    if ("productCategoryId" in scope) {
+      return i.product_category_id === scope.productCategoryId;
+    }
+    return i.product_serial === scope.productSerial;
+  });
+
+  if (options?.dateRange) {
+    scoped = filterByCalendarDateRange(
+      scoped,
+      (i) => i.created_at,
+      options.dateRange,
+    );
+  }
+
+  return countsFromInspections(scoped);
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function useInspectionCounts(
   scope: InspectionCountsScope,
   options?: InspectionCountsOptions,
 ) {
   const key = cacheKey(scope, options);
-  const cachedCounts = resolvedCountsCache.get(key) ?? null;
-  const [fetchedState, setFetchedState] = useState<{
-    key: string;
-    counts: InspectionCounts;
-  } | null>(null);
-  const counts =
-    cachedCounts ?? (fetchedState?.key === key ? fetchedState.counts : null);
+  const [counts, setCounts] = useState<InspectionCounts | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const ac = new AbortController();
     let cancelled = false;
-    if (cachedCounts) return;
-
-    const pending =
-      pendingCountsCache.get(key) ??
-      fetchCounts(scope, options).finally(() => {
-        pendingCountsCache.delete(key);
+    setLoading(true);
+    fetchCountsForScope(scope, options, { signal: ac.signal })
+      .then((next) => {
+        if (!cancelled) setCounts(next);
+      })
+      .catch(() => {
+        if (!cancelled) setCounts(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
-    pendingCountsCache.set(key, pending);
-    pending.then((next) => {
-      if (!cancelled) setFetchedState({ key, counts: next });
-    });
-
     return () => {
       cancelled = true;
+      ac.abort();
     };
-  }, [cachedCounts, key, options, scope]);
+  }, [key, options, scope]);
 
   const total = useMemo(
     () =>
@@ -163,7 +155,7 @@ export function useInspectionCounts(
     [counts],
   );
 
-  return { counts, total, loading: !counts };
+  return { counts, total, loading };
 }
 
 export function InspectionCountBadge({
@@ -175,11 +167,6 @@ export function InspectionCountBadge({
   scope: InspectionCountsScope;
   kind: Kind;
   options?: InspectionCountsOptions;
-  /**
-   * When provided (and scope is category-based), links point to internal
-   * Product Category tab pages instead of global Inspections.
-   * Example: `/dashboard/masters/product-categories/12`
-   */
   linkBasePath?: string;
 }) {
   const { counts, total, loading } = useInspectionCounts(scope, options);
