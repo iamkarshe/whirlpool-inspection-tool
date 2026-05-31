@@ -67,7 +67,7 @@ function SortableHeader({
 const columns: ColumnDef<DefectsPlantItem>[] = [
   {
     id: "plant",
-    accessorFn: (row) => row.plant_code,
+    accessorFn: (row) => `${row.plant_code} ${row.plant_name}`,
     header: ({ column }) => (
       <SortableHeader column={column} label="Plant" align="left" />
     ),
@@ -175,7 +175,7 @@ export function ExecutivePlantDefectsTable({
     <DataTable
       columns={columns}
       data={data}
-      searchKey="plant_name"
+      searchKey="plant"
       showDateRangePicker={false}
       showAllRows
       rangeLabel="plants"

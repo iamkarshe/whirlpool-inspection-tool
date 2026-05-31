@@ -94,7 +94,14 @@ export type DataTableServerSideConfig = {
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
   data: TData[];
-  searchKey?: keyof TData & string;
+  /**
+   * Client-side search: column `id` or `accessorKey` from `columns`, or a row field name.
+   * When no matching column exists, rows are filtered with a global filter on
+   * `searchFields` if provided, otherwise on `searchKey` when it names a row field.
+   */
+  searchKey?: string;
+  /** Row fields for global search when `searchKey` is not a column id/accessor. */
+  searchFields?: (keyof TData & string)[];
   filters?: DataTableFilter<TData>[];
   /** When set, enables the calendar date range picker in the toolbar and filters data by the selected range. */
   dateRangeFilter?: DataTableDateRangeFilter<TData>;
@@ -158,10 +165,46 @@ function formatColumnLabel(input: string) {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
+/** Maps `searchKey` to a table column id (column `id` or `accessorKey`). */
+function resolveSearchColumnId<TData>(
+  columns: ColumnDef<TData, unknown>[],
+  searchKey?: string,
+): string | undefined {
+  if (!searchKey) return undefined;
+
+  for (const col of columns) {
+    const accessorKey =
+      "accessorKey" in col && typeof col.accessorKey === "string"
+        ? col.accessorKey
+        : undefined;
+    const id = col.id ?? accessorKey;
+    if (id === searchKey || accessorKey === searchKey) {
+      return id;
+    }
+  }
+  return undefined;
+}
+
+function rowMatchesClientSearch<TData>(
+  row: TData,
+  query: string,
+  fields: (keyof TData & string)[],
+) {
+  if (!query) return true;
+  const needle = query.toLowerCase();
+  const record = row as Record<string, unknown>;
+  return fields.some((field) =>
+    String(record[field] ?? "")
+      .toLowerCase()
+      .includes(needle),
+  );
+}
+
 export function DataTable<TData>({
   columns,
   data,
   searchKey,
+  searchFields,
   filters,
   dateRangeFilter,
   showDateRangePicker = true,
@@ -220,6 +263,16 @@ export function DataTable<TData>({
       }
     });
   const [rowSelection, setRowSelection] = React.useState({});
+  const [globalFilter, setGlobalFilter] = React.useState("");
+  const searchColumnId = React.useMemo(
+    () => resolveSearchColumnId(columns, searchKey),
+    [columns, searchKey],
+  );
+  const globalSearchFields = React.useMemo((): (keyof TData & string)[] => {
+    if (searchFields?.length) return searchFields;
+    if (!searchKey) return [];
+    return [searchKey as keyof TData & string];
+  }, [searchFields, searchKey]);
   const isDateRangeControlled =
     controlledDateRange !== undefined && onDateRangeChange !== undefined;
   const [internalDateRange, setInternalDateRange] = React.useState<
@@ -247,9 +300,11 @@ export function DataTable<TData>({
   }, [data, dateRange, dateRangeFilter]);
 
   const isServerSide = serverSide !== undefined;
+  const usesGlobalSearch =
+    !isServerSide && Boolean(searchKey) && !searchColumnId;
 
   // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useReactTable<TData>({
     data: filteredData,
     columns,
     onSortingChange: (updater) => {
@@ -277,6 +332,17 @@ export function DataTable<TData>({
           ...(showAllRows ? {} : { getPaginationRowModel: getPaginationRowModel() }),
           getSortedRowModel: getSortedRowModel(),
           getFilteredRowModel: getFilteredRowModel(),
+          ...(usesGlobalSearch
+            ? {
+                globalFilterFn: (row, _columnId, filterValue) =>
+                  rowMatchesClientSearch(
+                    row.original as TData,
+                    String(filterValue ?? ""),
+                    globalSearchFields,
+                  ),
+                onGlobalFilterChange: setGlobalFilter,
+              }
+            : {}),
         }),
     onPaginationChange: (updater) => {
       const next =
@@ -309,8 +375,27 @@ export function DataTable<TData>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      ...(usesGlobalSearch ? { globalFilter } : {}),
     },
   });
+
+  const clientSearchValue = usesGlobalSearch
+    ? globalFilter
+    : searchColumnId
+      ? ((table.getColumn(searchColumnId)?.getFilterValue() as string) ?? "")
+      : "";
+  const setClientSearchValue = React.useCallback(
+    (value: string) => {
+      if (usesGlobalSearch) {
+        setGlobalFilter(value);
+        return;
+      }
+      if (searchColumnId) {
+        table.getColumn(searchColumnId)?.setFilterValue(value);
+      }
+    },
+    [searchColumnId, table, usesGlobalSearch],
+  );
 
   const tableLoading = Boolean(isLoading);
   const serverLoading = isServerSide && tableLoading;
@@ -319,25 +404,28 @@ export function DataTable<TData>({
     ? Math.min(Math.max(1, serverSide.pagination.pageSize), 50)
     : 8;
 
-  const pageRangeText = React.useMemo(() => {
+  const pageRangeText = (() => {
+    const label = rangeLabel ?? "row(s)";
     if (serverSide) {
       const { totalRowCount, pagination: p } = serverSide;
-      if (totalRowCount === 0) return `Showing 0 ${rangeLabel ?? "row(s)"}`;
+      if (totalRowCount === 0) return `Showing 0 ${label}`;
       const start = p.pageIndex * p.pageSize + 1;
       const end = Math.min(totalRowCount, (p.pageIndex + 1) * p.pageSize);
-      return `Showing ${start}–${end} of ${totalRowCount} ${rangeLabel ?? "row(s)"}`;
+      return `Showing ${start}–${end} of ${totalRowCount} ${label}`;
     }
-    const total = table.getFilteredRowModel().rows.length;
-    if (total === 0) return `Showing 0 ${rangeLabel ?? "row(s)"}`;
+    const total = showAllRows
+      ? table.getRowModel().rows.length
+      : table.getFilteredRowModel().rows.length;
+    if (total === 0) return `Showing 0 ${label}`;
     if (showAllRows) {
-      return `Showing all ${total} ${rangeLabel ?? "row(s)"}`;
+      return `Showing all ${total} ${label}`;
     }
 
     const { pageIndex, pageSize } = table.getState().pagination;
     const start = pageIndex * pageSize + 1;
     const end = Math.min(total, (pageIndex + 1) * pageSize);
-    return `Showing ${start}–${end} of ${total} ${rangeLabel ?? "row(s)"}`;
-  }, [rangeLabel, serverSide, showAllRows, table]);
+    return `Showing ${start}–${end} of ${total} ${label}`;
+  })();
 
   return (
     <div className="rounded-lg border bg-background px-4 py-2 text-sm text-muted-foreground my-3">
@@ -361,12 +449,8 @@ export function DataTable<TData>({
             ) : searchKey ? (
               <Input
                 placeholder="Search..."
-                value={
-                  (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) =>
-                  table.getColumn(searchKey)?.setFilterValue(event.target.value)
-                }
+                value={clientSearchValue}
+                onChange={(event) => setClientSearchValue(event.target.value)}
                 className="max-w-xs"
               />
             ) : null}

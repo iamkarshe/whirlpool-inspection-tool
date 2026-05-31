@@ -16,7 +16,10 @@ export default function ProductsPage() {
       initialSorting: [{ id: "id", desc: true }],
       errorMessage: "Failed to load products.",
       load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
-        const { sort_by, sort_dir } = sortingStateToApiSortQuery(s, PRODUCT_LIST_SORT);
+        const { sort_by, sort_dir } = sortingStateToApiSortQuery(
+          s,
+          PRODUCT_LIST_SORT,
+        );
         const res = await fetchProductsPage(
           {
             page: p.pageIndex + 1,
@@ -38,9 +41,15 @@ export default function ProductsPage() {
         description="Manage master data for all products."
       />
 
-      {error && !isLoading ? <p className="text-destructive text-sm">{error}</p> : null}
+      {error && !isLoading ? (
+        <p className="text-destructive text-sm">{error}</p>
+      ) : null}
 
-      <ProductsDataTable data={rows} serverSide={serverSide} isLoading={isLoading} />
+      <ProductsDataTable
+        data={rows}
+        serverSide={serverSide}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

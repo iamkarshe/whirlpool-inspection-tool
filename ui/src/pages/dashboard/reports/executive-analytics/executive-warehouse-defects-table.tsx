@@ -87,7 +87,7 @@ function SortableHeader({
 const columns: ColumnDef<DefectsWarehouseItem>[] = [
   {
     id: "warehouse",
-    accessorFn: (row) => row.warehouse_code,
+    accessorFn: (row) => `${row.warehouse_code} ${row.warehouse_name}`,
     header: ({ column }) => (
       <SortableHeader column={column} label="Warehouse" align="left" />
     ),
@@ -219,7 +219,7 @@ export function ExecutiveWarehouseDefectsTable({
       <DataTable
         columns={columns}
         data={data}
-        searchKey="warehouse_name"
+        searchKey="warehouse"
         showDateRangePicker={false}
         showAllRows
         rangeLabel="warehouses"

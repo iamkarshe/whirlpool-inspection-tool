@@ -2,16 +2,21 @@ import type { ProductListItemResponse } from "@/api/generated/model/productListI
 import type { DataTableServerSideConfig } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
+  ArrowDownToLine,
   ArrowUpDown,
+  ArrowUpFromLine,
   BarChart3,
+  CheckCircle2,
+  ClipboardList,
+  Eye,
   MoreHorizontal,
   Trash2,
-  Eye,
+  XCircle,
 } from "lucide-react";
 
+import { Badge, BADGE_ICON_CLASS } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { InspectionCountBadge } from "@/components/inspections/inspection-count-badges";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import { Link } from "react-router-dom";
+
+const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`;
 
 function buildProductColumns(): ColumnDef<ProductListItemResponse>[] {
   return [
@@ -94,52 +101,92 @@ function buildProductColumns(): ColumnDef<ProductListItemResponse>[] {
   {
     id: "inspections_total",
     header: "Total inspections",
-    cell: ({ row }) => (
-      <InspectionCountBadge
-        scope={{ productSerial: row.original.material_code }}
-        kind="total"
-      />
-    ),
+    cell: ({ row }) => {
+      const p = row.original;
+      const href = `${PAGES.productViewPath(p.uuid)}/inspections`;
+      return (
+        <Link to={href} className="inline-block">
+          <Badge variant="secondary" className={linkBadgeClass}>
+            <ClipboardList />
+            {p.inspections_count}
+          </Badge>
+        </Link>
+      );
+    },
   },
   {
     id: "inspections_inbound_passed",
     header: "Inbound passed",
-    cell: ({ row }) => (
-      <InspectionCountBadge
-        scope={{ productSerial: row.original.material_code }}
-        kind="inboundPassed"
-      />
-    ),
+    cell: ({ row }) => {
+      const p = row.original;
+      const href = `${PAGES.productViewPath(p.uuid)}/inspections/inbound`;
+      return (
+        <Link to={href} className="inline-block">
+          <Badge variant="success" className={linkBadgeClass}>
+            <ArrowDownToLine />
+            <CheckCircle2 />
+            {p.inspection_inbound_approved}
+          </Badge>
+        </Link>
+      );
+    },
   },
   {
     id: "inspections_inbound_failed",
     header: "Inbound failed",
-    cell: ({ row }) => (
-      <InspectionCountBadge
-        scope={{ productSerial: row.original.material_code }}
-        kind="inboundFailed"
-      />
-    ),
+    cell: ({ row }) => {
+      const p = row.original;
+      const href = `${PAGES.productViewPath(p.uuid)}/inspections/inbound-failed`;
+      return (
+        <Link to={href} className="inline-block">
+          <Badge
+            variant="destructive"
+            className={`${linkBadgeClass} border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive`}
+          >
+            <ArrowDownToLine />
+            <XCircle />
+            {p.inspection_inbound_rejected}
+          </Badge>
+        </Link>
+      );
+    },
   },
   {
     id: "inspections_outbound_passed",
     header: "Outbound passed",
-    cell: ({ row }) => (
-      <InspectionCountBadge
-        scope={{ productSerial: row.original.material_code }}
-        kind="outboundPassed"
-      />
-    ),
+    cell: ({ row }) => {
+      const p = row.original;
+      const href = `${PAGES.productViewPath(p.uuid)}/inspections/outbound`;
+      return (
+        <Link to={href} className="inline-block">
+          <Badge variant="success" className={linkBadgeClass}>
+            <ArrowUpFromLine />
+            <CheckCircle2 />
+            {p.inspection_outbound_approved}
+          </Badge>
+        </Link>
+      );
+    },
   },
   {
     id: "inspections_outbound_failed",
     header: "Outbound failed",
-    cell: ({ row }) => (
-      <InspectionCountBadge
-        scope={{ productSerial: row.original.material_code }}
-        kind="outboundFailed"
-      />
-    ),
+    cell: ({ row }) => {
+      const p = row.original;
+      const href = `${PAGES.productViewPath(p.uuid)}/inspections/outbound-failed`;
+      return (
+        <Link to={href} className="inline-block">
+          <Badge
+            variant="destructive"
+            className={`${linkBadgeClass} border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive`}
+          >
+            <ArrowUpFromLine />
+            <XCircle />
+            {p.inspection_outbound_rejected}
+          </Badge>
+        </Link>
+      );
+    },
   },
   {
     id: "actions",
