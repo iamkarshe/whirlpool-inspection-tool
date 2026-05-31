@@ -1,4 +1,15 @@
 import {
+  Activity,
+  BadgeCheck,
+  Bell,
+  FileText,
+  Info,
+  LogOut,
+  ShieldCheck,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -22,17 +33,11 @@ import {
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
 import { clearAuthenticatedSession } from "@/services/login-service";
-import { getApiDocumentationUrl } from "@/lib/api-documentation-url";
-import { getAvatarImage } from "@/lib/utils";
 import {
-  Activity,
-  BadgeCheck,
-  Bell,
-  FileText,
-  Info,
-  LogOut,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+  getApiDocumentationUrl,
+  getVaptReportUrl,
+} from "@/lib/api-documentation-url";
+import { getAvatarImage } from "@/lib/utils";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -40,6 +45,7 @@ export default function UserMenu() {
   const displayName = sessionUser?.name || "User";
   const displayEmail = sessionUser?.email || "user@whirlpool.com";
   const apiDocUrl = getApiDocumentationUrl();
+  const vaptReportUrl = getVaptReportUrl();
 
   return (
     <DropdownMenu>
@@ -91,6 +97,17 @@ export default function UserMenu() {
           >
             <FileText />
             API Documentation
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!vaptReportUrl}
+            onSelect={(event) => {
+              event.preventDefault();
+              if (!vaptReportUrl) return;
+              window.open(vaptReportUrl, "_blank", "noopener,noreferrer");
+            }}
+          >
+            <ShieldCheck />
+            VAPT Report
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(event) => {

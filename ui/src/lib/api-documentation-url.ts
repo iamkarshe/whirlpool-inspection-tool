@@ -8,11 +8,20 @@ export function resolveApiBaseUrl(): string {
   );
 }
 
-/** Opens authenticated Swagger UI (`GET /api-docs?token=…`). */
-export function getApiDocumentationUrl(): string | null {
+function authenticatedDocUrl(path: string): string | null {
   if (typeof window === "undefined") return null;
   const base = resolveApiBaseUrl();
   const token = window.localStorage.getItem(SESSION_ACCESS_TOKEN_KEY)?.trim();
   if (!base || !token) return null;
-  return `${base}/api-docs?token=${encodeURIComponent(token)}`;
+  return `${base}/${path}?token=${encodeURIComponent(token)}`;
+}
+
+/** Opens authenticated Swagger UI (`GET /api-docs?token=…`). */
+export function getApiDocumentationUrl(): string | null {
+  return authenticatedDocUrl("api-docs");
+}
+
+/** Opens authenticated VAPT report (`GET /vapt-report?token=…`). */
+export function getVaptReportUrl(): string | null {
+  return authenticatedDocUrl("vapt-report");
 }
