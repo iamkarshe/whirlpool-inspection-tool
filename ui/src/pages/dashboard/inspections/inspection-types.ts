@@ -101,10 +101,15 @@ export type InspectionRelationshipScan = {
   /** `devices.uuid` for admin device links. */
   deviceUuid: string;
   deviceFingerprint: string;
+  reviewStatus?: string;
+  plantCode?: string;
+  warehouseCode?: string;
+  passedChecks?: number;
+  failedChecks?: number;
 };
 
 export type InspectionRelationship = {
-  inbound: InspectionRelationshipScan;
+  inbound: InspectionRelationshipScan | null;
   outbound: InspectionRelationshipScan | null;
 };
 

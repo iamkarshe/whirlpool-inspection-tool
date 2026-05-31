@@ -470,6 +470,7 @@ export default function InspectionViewPage() {
           <InspectionRelationshipTab
             relationshipLoading={relationshipLoading}
             relationship={relationship}
+            currentInspectionId={inspection.id}
           />
 
           <InspectionImagesTab

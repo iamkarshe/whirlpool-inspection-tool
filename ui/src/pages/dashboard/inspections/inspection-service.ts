@@ -16,6 +16,7 @@ import type {
   InspectionKpis,
   InspectionQuestionResult,
   InspectionRelationship,
+  InspectionRelationshipScan,
   InspectionSectionKey,
 } from "@/pages/dashboard/inspections/inspection-types";
 import type { DateRange } from "react-day-picker";
@@ -138,9 +139,25 @@ export function mapInspectionFullToDetailBundle(
   };
 }
 
+function checklistTotals(inspection: Inspection): {
+  passed: number;
+  failed: number;
+} {
+  const layers = inspection.checklist_layers;
+  if (!layers) return { passed: 0, failed: 0 };
+  return (["outer", "inner", "product"] as const).reduce(
+    (acc, key) => ({
+      passed: acc.passed + (layers[key]?.pass_count ?? 0),
+      failed: acc.failed + (layers[key]?.fail_count ?? 0),
+    }),
+    { passed: 0, failed: 0 },
+  );
+}
+
 function relationshipScanFromInspection(
   inspection: Inspection,
-): InspectionRelationship["inbound"] {
+): InspectionRelationshipScan {
+  const checks = checklistTotals(inspection);
   return {
     inspectionId: inspection.id,
     scannedAt: inspection.created_at,
@@ -148,6 +165,11 @@ function relationshipScanFromInspection(
     personName: inspection.inspector_name,
     deviceUuid: inspection.device_uuid,
     deviceFingerprint: inspection.device_fingerprint,
+    reviewStatus: inspection.review_status,
+    plantCode: inspection.plant_code,
+    warehouseCode: inspection.warehouse_code,
+    passedChecks: checks.passed,
+    failedChecks: checks.failed,
   };
 }
 
@@ -185,14 +207,17 @@ export async function getInspectionRelationship(
   if (!inboundInspection) {
     inboundInspection = await resolveLinked(current.inbound_inspection_uuid);
   }
-  if (!inboundInspection) return null;
 
   if (!outboundInspection) {
     outboundInspection = await resolveLinked(current.outbound_inspection_uuid);
   }
 
+  if (!inboundInspection && !outboundInspection) return null;
+
   return {
-    inbound: relationshipScanFromInspection(inboundInspection),
+    inbound: inboundInspection
+      ? relationshipScanFromInspection(inboundInspection)
+      : null,
     outbound: outboundInspection
       ? relationshipScanFromInspection(outboundInspection)
       : null,
