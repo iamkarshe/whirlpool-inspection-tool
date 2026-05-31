@@ -16,6 +16,7 @@ import {
 const CREATABLE_USER_ROLES: ReadonlySet<UserCreateRequestRole> = new Set([
   UserCreateRequestRole.operator,
   UserCreateRequestRole.manager,
+  UserCreateRequestRole["biz-admin"],
 ]);
 
 /** Superadmins cannot be managed through admin create/update/deactivate UI. */
@@ -58,7 +59,9 @@ export async function createUser(
   request?: { signal?: AbortSignal },
 ): Promise<UserResponse> {
   if (payload.role != null && !CREATABLE_USER_ROLES.has(payload.role)) {
-    throw new Error("Only manager and operator accounts can be created here.");
+    throw new Error(
+      "Only operator, manager, and biz-admin accounts can be created here.",
+    );
   }
   const api = getUsers();
   return api.createUserApiUsersPost(
@@ -70,6 +73,7 @@ export async function createUser(
 const UPDATABLE_ROLES = new Set<NonNullable<UserUpdateRequest["role"]>>([
   "manager",
   "operator",
+  "biz-admin",
 ]);
 
 export async function updateUser(
@@ -81,7 +85,9 @@ export async function updateUser(
     payload.role != null &&
     !UPDATABLE_ROLES.has(payload.role)
   ) {
-    throw new Error("Only manager and operator roles can be assigned here.");
+    throw new Error(
+      "Only operator, manager, and biz-admin roles can be assigned here.",
+    );
   }
   const api = getUsers();
   return api.updateUserApiUsersUserUuidPut(

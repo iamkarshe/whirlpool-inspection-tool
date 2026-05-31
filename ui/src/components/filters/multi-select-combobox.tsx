@@ -25,6 +25,7 @@ export function MultiSelectCombobox({
   onChange,
   placeholder = "All",
   className,
+  disabled = false,
 }: {
   label: string;
   options: MultiSelectComboboxOption[];
@@ -32,6 +33,7 @@ export function MultiSelectCombobox({
   onChange: (next: string[]) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -56,12 +58,18 @@ export function MultiSelectCombobox({
   return (
     <div className={cn("space-y-1", className)}>
       <div className="text-sm font-medium">{label}</div>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={disabled ? false : open}
+        onOpenChange={(next) => {
+          if (!disabled) setOpen(next);
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
             className="w-full justify-between"
+            disabled={disabled}
           >
             <span className={cn("truncate", selectedCount === 0 && "text-muted-foreground")}>
               {buttonText}

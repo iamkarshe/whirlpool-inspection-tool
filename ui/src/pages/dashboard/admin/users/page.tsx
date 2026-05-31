@@ -34,6 +34,7 @@ import {
   vpnConfigFilenameForUser,
   vpnQrFilenameForUser,
 } from "@/pages/dashboard/admin/users/vpn-instructions";
+import { ASSIGNABLE_USER_ROLES } from "@/pages/dashboard/admin/users/user-form-roles";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
   createUser,
@@ -58,7 +59,7 @@ type UserFormValues = {
   password: string;
   role: UserCreateRequestRole | "";
   designation: string;
-  allowed_warehouse_code: string;
+  allowed_warehouse_codes: string[];
 };
 
 const USER_LIST_SORT = {
@@ -78,7 +79,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
     password: "",
     role: "",
     designation: "",
-    allowed_warehouse_code: "",
+    allowed_warehouse_codes: [],
   });
   const [warehouses, setWarehouses] = useState<WarehouseResponse[]>([]);
   const [warehousesError, setWarehousesError] = useState<string | null>(null);
@@ -123,7 +124,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       );
       return;
     }
-    const wh = formValues.allowed_warehouse_code.trim();
     const payload: UserCreateRequest = {
       name: formValues.name.trim(),
       email: formValues.email.trim(),
@@ -131,7 +131,9 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       password: formValues.password,
       role: formValues.role || undefined,
       designation: formValues.designation.trim() || undefined,
-      ...(wh ? { allowed_warehouse: [wh] } : {}),
+      ...(formValues.allowed_warehouse_codes.length > 0 ?
+        { allowed_warehouse: formValues.allowed_warehouse_codes }
+      : {}),
     };
     setIsCreating(true);
     try {
@@ -144,7 +146,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         password: "",
         role: "",
         designation: "",
-        allowed_warehouse_code: "",
+        allowed_warehouse_codes: [],
       });
       onCreated();
     } catch (e: unknown) {
@@ -219,8 +221,11 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
               <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="operator">Operator</SelectItem>
+              {ASSIGNABLE_USER_ROLES.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -240,13 +245,13 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       ) : null}
       <UserWarehouseSelect
         id="create-warehouse"
-        label="Allowed Warehouse"
-        value={formValues.allowed_warehouse_code}
-        onValueChange={(allowed_warehouse_code) => {
+        label="Allowed warehouses"
+        value={formValues.allowed_warehouse_codes}
+        onValueChange={(allowed_warehouse_codes) => {
           if (createError) setCreateError(null);
           setFormValues((previous) => ({
             ...previous,
-            allowed_warehouse_code,
+            allowed_warehouse_codes,
           }));
         }}
         warehouses={warehouses}

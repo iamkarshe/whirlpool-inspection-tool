@@ -1,18 +1,13 @@
+import { useMemo } from "react";
+
+import { MultiSelectCombobox } from "@/components/filters/multi-select-combobox";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type UserWarehouseSelectProps = {
   id: string;
   label: string;
-  value: string;
-  onValueChange: (warehouseCode: string) => void;
+  value: string[];
+  onValueChange: (warehouseCodes: string[]) => void;
   warehouses: WarehouseResponse[];
   disabled?: boolean;
   placeholder?: string;
@@ -25,33 +20,42 @@ export function UserWarehouseSelect({
   onValueChange,
   warehouses,
   disabled,
-  placeholder = "Select warehouse scope",
+  placeholder = "Select warehouses",
 }: UserWarehouseSelectProps) {
-  const active = warehouses
-    .filter((w) => w.is_active)
-    .slice()
-    .sort((a, b) => a.warehouse_code.localeCompare(b.warehouse_code));
+  const options = useMemo(() => {
+    const active = warehouses
+      .filter((w) => w.is_active)
+      .slice()
+      .sort((a, b) => a.warehouse_code.localeCompare(b.warehouse_code));
+
+    const activeCodes = new Set(active.map((w) => w.warehouse_code));
+    const assignedNotInList = value.filter(
+      (code) => code.trim() && !activeCodes.has(code.trim()),
+    );
+
+    const extraOptions = assignedNotInList.map((code) => ({
+      id: code.trim(),
+      label: `${code.trim()} — currently assigned`,
+    }));
+
+    const activeOptions = active.map((w) => ({
+      id: w.warehouse_code,
+      label: `${w.warehouse_code} — ${w.name}`,
+    }));
+
+    return [...extraOptions, ...activeOptions];
+  }, [value, warehouses]);
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Select
-        value={value || "__none__"}
-        onValueChange={(v) => onValueChange(v === "__none__" ? "" : v)}
-        disabled={disabled || active.length === 0}
-      >
-        <SelectTrigger id={id} className="w-full">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__none__">None</SelectItem>
-          {active.map((w) => (
-            <SelectItem key={w.uuid} value={w.warehouse_code}>
-              {w.warehouse_code} — {w.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div id={id}>
+      <MultiSelectCombobox
+        label={label}
+        options={options}
+        value={value}
+        onChange={onValueChange}
+        placeholder={placeholder}
+        disabled={disabled || options.length === 0}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { ChangeEvent, SubmitEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import type { UserResponse } from "@/api/generated/model/userResponse";
@@ -23,6 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ASSIGNABLE_USER_ROLES,
+  normalizeAllowedWarehouseCodes,
+  parseAssignableUserRole,
+  type AssignableUserRole,
+} from "@/pages/dashboard/admin/users/user-form-roles";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
 import {
   fetchAllWarehouses,
@@ -54,22 +60,15 @@ export function EditUserDialog({
   const [email, setEmail] = useState(user.email);
   const [mobile, setMobile] = useState(user.mobile_number);
   const [designation, setDesignation] = useState(user.designation ?? "");
-  const [role, setRole] = useState<"manager" | "operator">(
-    user.role.trim().toLowerCase() === "manager" ? "manager" : "operator",
+  const [role, setRole] = useState<AssignableUserRole>(() =>
+    parseAssignableUserRole(user.role),
   );
-  const [allowedWarehouseCode, setAllowedWarehouseCode] = useState(() => {
-    const list = user.allowed_warehouse ?? [];
-    if (list.length === 1) return list[0];
-    return "";
-  });
+  const [allowedWarehouseCodes, setAllowedWarehouseCodes] = useState(() =>
+    normalizeAllowedWarehouseCodes(user.allowed_warehouse),
+  );
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const ambiguousWarehouseScope = useMemo(() => {
-    const list = user.allowed_warehouse ?? [];
-    return list.length > 1;
-  }, [user.allowed_warehouse]);
 
   useEffect(() => {
     if (!open) return;
@@ -96,11 +95,10 @@ export function EditUserDialog({
     setEmail(user.email);
     setMobile(user.mobile_number);
     setDesignation(user.designation ?? "");
-    setRole(
-      user.role.trim().toLowerCase() === "manager" ? "manager" : "operator",
+    setRole(parseAssignableUserRole(user.role));
+    setAllowedWarehouseCodes(
+      normalizeAllowedWarehouseCodes(user.allowed_warehouse),
     );
-    const list = user.allowed_warehouse ?? [];
-    setAllowedWarehouseCode(list.length === 1 ? list[0] : "");
     setPassword("");
     setError(null);
   }, [open, user]);
@@ -124,10 +122,7 @@ export function EditUserDialog({
         mobile_number: mobileDigits,
         designation: designation.trim() || null,
         role,
-        allowed_warehouse:
-          allowedWarehouseCode.trim() ?
-            [allowedWarehouseCode.trim()]
-          : [],
+        allowed_warehouse: normalizeAllowedWarehouseCodes(allowedWarehouseCodes),
       };
       const pwd = password.trim();
       await updateUser(user.uuid, {
@@ -197,14 +192,17 @@ export function EditUserDialog({
               <Label htmlFor="edit-role">Role</Label>
               <Select
                 value={role}
-                onValueChange={(v) => setRole(v as typeof role)}
+                onValueChange={(v) => setRole(v as AssignableUserRole)}
               >
                 <SelectTrigger id="edit-role" className="w-full">
                   <SelectValue placeholder="Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="operator">Operator</SelectItem>
+                  {ASSIGNABLE_USER_ROLES.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -223,17 +221,11 @@ export function EditUserDialog({
           {loadWhError ? (
             <p className="text-destructive text-sm">{loadWhError}</p>
           ) : null}
-          {ambiguousWarehouseScope ? (
-            <p className="text-muted-foreground text-xs">
-              This user has multiple allowed warehouse codes. Pick one scope
-              below to replace the list, or choose None to clear all.
-            </p>
-          ) : null}
           <UserWarehouseSelect
             id="edit-warehouse"
-            label="Allowed Warehouse"
-            value={allowedWarehouseCode}
-            onValueChange={setAllowedWarehouseCode}
+            label="Allowed warehouses"
+            value={allowedWarehouseCodes}
+            onValueChange={setAllowedWarehouseCodes}
             warehouses={warehouses}
             disabled={Boolean(loadWhError)}
           />
