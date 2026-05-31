@@ -15,9 +15,8 @@ import { TabbedButtons } from "@/components/tabbed-nav";
 import { TabbedSurface } from "@/components/tabbed-content";
 import { InspectionTypeBadge } from "@/pages/dashboard/inspections/inspection-badge";
 import {
-  getInspectionById,
+  getInspectionDetailBundle,
   getInspectionRelationship,
-  getInspectionQuestionResults,
   type Inspection,
   type InspectionRelationship,
   type InspectionQuestionResult,
@@ -111,18 +110,28 @@ export default function InspectionViewPage() {
   }
 
   useEffect(() => {
-    let cancelled = false;
+    const ac = new AbortController();
     queueMicrotask(() => setLoading(true));
-    getInspectionById(id)
-      .then((data) => {
-        if (!cancelled) setInspection(data);
+    getInspectionDetailBundle(id, { signal: ac.signal })
+      .then((bundle) => {
+        if (ac.signal.aborted) return;
+        if (!bundle) {
+          setInspection(null);
+          return;
+        }
+        setInspection(bundle.inspection);
+        setOuterRows(bundle.outer);
+        setInnerRows(bundle.inner);
+        setProductRows(bundle.product);
+        setDeviceRows(bundle.device);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!ac.signal.aborted) {
+          setLoading(false);
+          setReviewLoading(false);
+        }
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => ac.abort();
   }, [id]);
 
   useEffect(() => {
@@ -131,43 +140,20 @@ export default function InspectionViewPage() {
   }, [inspection, activeTabTitle]);
 
   useEffect(() => {
-    let cancelled = false;
+    if (tab !== "relationship" || !inspection) {
+      return;
+    }
+    const ac = new AbortController();
     queueMicrotask(() => setRelationshipLoading(true));
-    getInspectionRelationship(id)
+    getInspectionRelationship(id, { signal: ac.signal, current: inspection })
       .then((data) => {
-        if (!cancelled) setRelationship(data);
+        if (!ac.signal.aborted) setRelationship(data);
       })
       .finally(() => {
-        if (!cancelled) setRelationshipLoading(false);
+        if (!ac.signal.aborted) setRelationshipLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  useEffect(() => {
-    let cancelled = false;
-    queueMicrotask(() => setReviewLoading(true));
-    Promise.all([
-      getInspectionQuestionResults(id, "outer-packaging"),
-      getInspectionQuestionResults(id, "inner-packaging"),
-      getInspectionQuestionResults(id, "product"),
-      getInspectionQuestionResults(id, "device"),
-    ])
-      .then(([outer, inner, product, device]) => {
-        if (cancelled) return;
-        setOuterRows(outer);
-        setInnerRows(inner);
-        setProductRows(product);
-        setDeviceRows(device);
-      })
-      .finally(() => {
-        if (!cancelled) setReviewLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+    return () => ac.abort();
+  }, [id, tab, inspection]);
 
   function getCounts(rows: InspectionQuestionResult[]) {
     const total = rows.length;

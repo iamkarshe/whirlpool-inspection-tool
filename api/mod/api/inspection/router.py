@@ -371,9 +371,7 @@ def get_inspections(
     inspector_scope_id = getattr(request.state, "inspector_scope_user_id", None)
     if inspector_scope_id is not None:
         query = query.filter(Inspection.inspector_id == inspector_scope_id)
-    query = apply_inspection_list_warehouse_scope(
-        query, db, request, warehouse_code
-    )
+    query = apply_inspection_list_warehouse_scope(query, db, request, warehouse_code)
     if plant_code is not None:
         query = query.filter(Inspection.supplier_plant_code == plant_code)
     if inspection_type:
@@ -633,9 +631,7 @@ def get_inspection_detail(
         if uid is None or inspection.inspector_id != int(uid):
             raise HTTPException(status_code=404, detail="Inspection not found")
     elif not request_has_superadmin(request):
-        assert_warehouse_code_in_request_scope(
-            db, request, inspection.warehouse_code
-        )
+        assert_warehouse_code_in_request_scope(db, request, inspection.warehouse_code)
     inbound_uuid: uuid.UUID | None = None
     outbound_uuid: uuid.UUID | None = None
     if inspection.product_unit_id is not None:

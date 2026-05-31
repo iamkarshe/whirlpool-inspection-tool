@@ -28,7 +28,9 @@ import {
   inspectionKpisParamsFromDateRange,
   isoToApiDate,
   mapInspectionFullToInspection,
+  mapInputsForSection,
 } from "@/services/inspections-api";
+import type { InspectionFullResponse } from "@/api/generated/model/inspectionFullResponse";
 
 export async function getInspectionQuestionResults(
   inspectionUuid: string,
@@ -72,46 +74,110 @@ export async function getInspectionsForOpsList(
 
 export async function getInspectionById(
   id: string,
+  opts?: { signal?: AbortSignal },
 ): Promise<Inspection | null> {
   if (!id?.trim()) return null;
   try {
-    const full = await fetchInspectionDetail(id.trim());
+    const full = await fetchInspectionDetail(id.trim(), opts);
     return mapInspectionFullToInspection(full);
   } catch {
     return null;
   }
 }
 
+export type InspectionDetailBundle = {
+  inspection: Inspection;
+  outer: InspectionQuestionResult[];
+  inner: InspectionQuestionResult[];
+  product: InspectionQuestionResult[];
+  device: InspectionQuestionResult[];
+};
+
+/** One `GET /api/inspections/{uuid}` — inspection row plus checklist inputs for all sections. */
+export async function getInspectionDetailBundle(
+  id: string,
+  opts?: { signal?: AbortSignal },
+): Promise<InspectionDetailBundle | null> {
+  if (!id?.trim()) return null;
+  try {
+    const full = await fetchInspectionDetail(id.trim(), opts);
+    return mapInspectionFullToDetailBundle(full);
+  } catch {
+    return null;
+  }
+}
+
+export function mapInspectionFullToDetailBundle(
+  full: InspectionFullResponse,
+): InspectionDetailBundle {
+  const inputs = full.inputs ?? [];
+  return {
+    inspection: mapInspectionFullToInspection(full),
+    outer: mapInputsForSection(inputs, "outer-packaging"),
+    inner: mapInputsForSection(inputs, "inner-packaging"),
+    product: mapInputsForSection(inputs, "product"),
+    device: mapInputsForSection(inputs, "device"),
+  };
+}
+
+function relationshipScanFromInspection(
+  inspection: Inspection,
+): InspectionRelationship["inbound"] {
+  return {
+    inspectionId: inspection.id,
+    scannedAt: inspection.created_at,
+    personId: inspection.inspector_id,
+    personName: inspection.inspector_name,
+    deviceUuid: inspection.device_uuid,
+    deviceFingerprint: inspection.device_fingerprint,
+  };
+}
+
+/**
+ * Uses `inbound_inspection_uuid` / `outbound_inspection_uuid` from detail — at most two
+ * extra detail calls, never the paginated list API.
+ */
 export async function getInspectionRelationship(
   uuid: string,
+  opts?: { signal?: AbortSignal; current?: Inspection },
 ): Promise<InspectionRelationship | null> {
-  const current = await getInspectionById(uuid);
+  const current = opts?.current ?? (await getInspectionById(uuid, opts));
   if (!current) return null;
-  const all = await fetchAllInspectionRows({});
-  const related = all.filter(
-    (i) => i.product_serial === current.product_serial,
-  );
-  if (!related.length) return null;
 
-  const inboundInspection =
-    related.find((i) => i.inspection_type === "inbound") ?? current;
-  const outboundInspection =
-    related.find(
-      (i) => i.inspection_type === "outbound" && i.id !== inboundInspection.id,
-    ) ?? null;
+  const resolveLinked = async (
+    linkedUuid: string | null | undefined,
+  ): Promise<Inspection | null> => {
+    const linked = linkedUuid?.trim();
+    if (!linked) return null;
+    if (linked === current.id) return current;
+    return getInspectionById(linked, opts);
+  };
 
-  const scan = (i: Inspection) => ({
-    inspectionId: i.id,
-    scannedAt: i.created_at,
-    personId: i.inspector_id,
-    personName: i.inspector_name,
-    deviceUuid: i.device_uuid,
-    deviceFingerprint: i.device_fingerprint,
-  });
+  let inboundInspection: Inspection | null = null;
+  let outboundInspection: Inspection | null = null;
+
+  if (current.inspection_type === "inbound") {
+    inboundInspection = current;
+    outboundInspection = await resolveLinked(current.outbound_inspection_uuid);
+  } else {
+    outboundInspection = current;
+    inboundInspection = await resolveLinked(current.inbound_inspection_uuid);
+  }
+
+  if (!inboundInspection) {
+    inboundInspection = await resolveLinked(current.inbound_inspection_uuid);
+  }
+  if (!inboundInspection) return null;
+
+  if (!outboundInspection) {
+    outboundInspection = await resolveLinked(current.outbound_inspection_uuid);
+  }
 
   return {
-    inbound: scan(inboundInspection),
-    outbound: outboundInspection ? scan(outboundInspection) : null,
+    inbound: relationshipScanFromInspection(inboundInspection),
+    outbound: outboundInspection
+      ? relationshipScanFromInspection(outboundInspection)
+      : null,
   };
 }
 
