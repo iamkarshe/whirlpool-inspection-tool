@@ -6,6 +6,7 @@ import PageActionBar from "@/components/page-action-bar";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import JobLogsDataTable from "@/pages/dashboard/admin/job-logs/data-table";
+import { RunAutoApproveJobDialog } from "@/pages/dashboard/admin/job-logs/run-auto-approve-job-dialog";
 import {
   fetchJobLogsPage,
   toApiDate,
@@ -26,6 +27,7 @@ const JOB_LOG_SORT = {
 
 export default function JobLogsPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [logsRefreshKey, setLogsRefreshKey] = useState(0);
   const [apiFilters, setApiFilters] = useState<Record<string, string>>({
     status: "",
   });
@@ -38,6 +40,7 @@ export default function JobLogsPage() {
     useControlledServerTable<JobLogRow>({
       initialSorting: [{ id: "created_at", desc: true }],
       dataScopeKey,
+      refreshKey: logsRefreshKey,
       errorMessage: "Failed to load job logs.",
       load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
         const { sort_by, sort_dir } = sortingStateToApiSortQuery(
@@ -80,8 +83,13 @@ export default function JobLogsPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageActionBar title="Job logs" description="Cron job logs." />
-        <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+        <PageActionBar title="Job logs" description="List of cron job logs." />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+          <RunAutoApproveJobDialog
+            onSuccess={() => setLogsRefreshKey((key) => key + 1)}
+          />
+        </div>
       </div>
 
       {error && !isLoading ? (

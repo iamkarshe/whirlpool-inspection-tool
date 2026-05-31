@@ -17,6 +17,11 @@ function resolveApiBaseUrl(): string {
 
 const baseURL = resolveApiBaseUrl();
 
+/** API origin used by Orval `apiClient` and ad-hoc `fetch` helpers. */
+export function getApiBaseUrl(): string {
+  return baseURL;
+}
+
 export const apiClient = axios.create({
   baseURL,
   headers: {
