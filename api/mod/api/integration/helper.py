@@ -1,5 +1,6 @@
 import json
 import smtplib
+import socket
 import ssl
 import traceback
 from email.message import EmailMessage
@@ -16,6 +17,7 @@ from mod.api.integration.request import (
     AwsS3UpdateRequest,
     OktaSsoUpdateRequest,
     SmtpEncryption,
+    SmtpGatewayTestConnectionRequest,
     SmtpProvider,
     SmtpTestConnectionRequest,
     SmtpUpdateRequest,
@@ -36,13 +38,18 @@ DEFAULT_SMTP_HOSTS: dict[SmtpProvider, str] = {
     SmtpProvider.google_workspace: "smtp.gmail.com",
 }
 
+# Matches a successful `swaks --port 25 --tls --tls-verify` gateway check.
+GATEWAY_TEST_EMAIL_SUBJECT = "SMTP TLS verification test"
+GATEWAY_TEST_EMAIL_BODY = "Testing SMTP with STARTTLS and no authentication."
+
 
 def default_smtp_section() -> dict[str, Any]:
     return {
         "provider": "",
         "host": "",
-        "port": 587,
+        "port": 25,
         "encryption": SmtpEncryption.starttls.value,
+        "auth_enabled": False,
         "username": "",
         "password": "",
         "from_email": "",
@@ -103,6 +110,19 @@ def parse_smtp_timeout(value: Any) -> int:
     return timeout if 1 <= timeout <= 300 else 30
 
 
+def parse_auth_enabled(value: Any, *, default: bool = True) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"false", "0", "no"}:
+        return False
+    if normalized in {"true", "1", "yes"}:
+        return True
+    return default
+
+
 def mask_secret(secret_value: str) -> str:
     return "******" if secret_value else ""
 
@@ -152,11 +172,16 @@ def load_credentials_payload() -> dict[str, Any]:
     smtp = parsed.get("smtp", {})
     if isinstance(smtp, dict):
         provider = parse_smtp_provider(smtp.get("provider"))
+        if "auth_enabled" in smtp:
+            auth_enabled = parse_auth_enabled(smtp.get("auth_enabled"), default=True)
+        else:
+            auth_enabled = bool(str(smtp.get("username", "") or "").strip())
         payload["smtp"] = {
             "provider": provider.value if provider is not None else "",
             "host": str(smtp.get("host", "") or ""),
             "port": parse_smtp_port(smtp.get("port")),
             "encryption": parse_smtp_encryption(smtp.get("encryption")).value,
+            "auth_enabled": auth_enabled,
             "username": str(smtp.get("username", "") or ""),
             "password": str(smtp.get("password", "") or ""),
             "from_email": str(smtp.get("from_email", "") or ""),
@@ -184,6 +209,7 @@ def map_smtp_credentials_response(
         host=str(smtp.get("host", "") or ""),
         port=parse_smtp_port(smtp.get("port")),
         encryption=parse_smtp_encryption(smtp.get("encryption")),
+        auth_enabled=bool(smtp.get("auth_enabled", False)),
         username=str(smtp.get("username", "") or ""),
         password=mask_secret(password) if mask_password else password,
         from_email=str(smtp.get("from_email", "") or ""),
@@ -292,6 +318,7 @@ def smtp_config_from_update(update: SmtpUpdateRequest) -> dict[str, Any]:
         "host": update.host,
         "port": update.port,
         "encryption": update.encryption.value,
+        "auth_enabled": update.auth_enabled,
         "username": update.username,
         "password": update.password,
         "from_email": str(update.from_email),
@@ -330,7 +357,7 @@ def missing_smtp_fields_for_test(credentials: dict[str, Any]) -> list[str]:
     if not str(credentials.get("from_email", "") or "").strip():
         missing.append("from_email")
 
-    if provider != SmtpProvider.google_workspace_relay:
+    if parse_auth_enabled(credentials.get("auth_enabled"), default=True):
         if not str(credentials.get("username", "") or "").strip():
             missing.append("username")
         if not str(credentials.get("password", "") or "").strip():
@@ -339,41 +366,94 @@ def missing_smtp_fields_for_test(credentials: dict[str, Any]) -> list[str]:
     return missing
 
 
+def build_smtp_tls_context(*, verify: bool = True) -> ssl.SSLContext:
+    """TLS context for STARTTLS (swaks --tls --tls-verify when verify=True)."""
+    if verify:
+        context = ssl.create_default_context()
+        context.check_hostname = True
+        context.verify_mode = ssl.CERT_REQUIRED
+        return context
+    context = ssl.create_default_context()
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+    return context
+
+
+def smtp_ehlo_hostname(from_email: str, override: str | None = None) -> str:
+    """EHLO name for relay gateways; swaks often matches the sender's domain."""
+    explicit = str(override or "").strip()
+    if explicit:
+        return explicit
+    if "@" in from_email:
+        return from_email.rsplit("@", 1)[-1].strip()
+    fqdn = socket.getfqdn()
+    return fqdn if fqdn and fqdn != "localhost" else "localhost"
+
+
+def build_swaks_style_test_message(
+    *,
+    from_email: str,
+    to_email: str,
+    subject: str,
+    body: str,
+) -> EmailMessage:
+    """Minimal headers like swaks --from / --to (no display name on From)."""
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = from_email
+    message["To"] = to_email
+    message.set_content(body, subtype="plain")
+    return message
+
+
 def build_smtp_test_message(
     *,
     from_email: str,
     from_name: str,
     to_email: str,
+    subject: str | None = None,
+    body: str | None = None,
 ) -> EmailMessage:
     message = EmailMessage()
-    message["Subject"] = "SMTP configuration test — Whirlpool Inspection Tool"
-    message["From"] = (
-        formataddr((from_name, from_email)) if from_name else from_email
+    message["Subject"] = subject or (
+        "SMTP configuration test — Whirlpool Inspection Tool"
     )
+    message["From"] = formataddr((from_name, from_email)) if from_name else from_email
     message["To"] = to_email
     message.set_content(
-        "This is a test email from the Whirlpool Inspection Tool.\n\n"
-        "If you received this message, your SMTP integration settings are working."
+        body
+        or (
+            "This is a test email from the Whirlpool Inspection Tool.\n\n"
+            "If you received this message, your SMTP integration settings are working."
+        )
     )
     return message
 
 
-def send_smtp_test_email(credentials: dict[str, Any], to_email: str) -> None:
-    host = resolve_smtp_host(credentials)
-    port = parse_smtp_port(credentials.get("port"))
-    encryption = parse_smtp_encryption(credentials.get("encryption"))
-    timeout = parse_smtp_timeout(credentials.get("timeout_seconds"))
-    username = str(credentials.get("username", "") or "").strip()
-    password = str(credentials.get("password", "") or "")
-    from_email = str(credentials.get("from_email", "") or "").strip()
-    from_name = str(credentials.get("from_name", "") or "").strip()
-
+def deliver_smtp_test_message(
+    *,
+    host: str,
+    port: int,
+    encryption: SmtpEncryption,
+    auth_enabled: bool,
+    username: str,
+    password: str,
+    to_email: str,
+    from_email: str,
+    from_name: str,
+    timeout: int,
+    tls_verify: bool = True,
+    subject: str | None = None,
+    body: str | None = None,
+) -> None:
     email_message = build_smtp_test_message(
         from_email=from_email,
         from_name=from_name,
         to_email=to_email,
+        subject=subject,
+        body=body,
     )
-    tls_context = ssl.create_default_context()
+    tls_context = build_smtp_tls_context(verify=tls_verify)
 
     if encryption == SmtpEncryption.ssl:
         server: smtplib.SMTP = smtplib.SMTP_SSL(
@@ -388,16 +468,75 @@ def send_smtp_test_email(credentials: dict[str, Any], to_email: str) -> None:
     try:
         server.ehlo()
         if encryption == SmtpEncryption.starttls:
+            # smtplib passes server_hostname=self._host inside starttls (Py 3.10+).
             server.starttls(context=tls_context)
             server.ehlo()
-        if username:
-            server.login(username, password)
+        if auth_enabled:
+            login_user = username.strip()
+            if not login_user:
+                raise ValueError("SMTP auth is enabled but username is empty")
+            server.login(login_user, password)
         server.send_message(email_message)
     finally:
         try:
             server.quit()
         except smtplib.SMTPException:
             pass
+
+
+def deliver_smtp_gateway_test_message(
+    *,
+    host: str,
+    port: int,
+    from_email: str,
+    to_email: str,
+    timeout: int,
+    tls_verify: bool = True,
+    ehlo_hostname: str | None = None,
+    subject: str = GATEWAY_TEST_EMAIL_SUBJECT,
+    body: str = GATEWAY_TEST_EMAIL_BODY,
+) -> None:
+    """Send like swaks: explicit MAIL FROM/RCPT TO, plain From, STARTTLS on port 25."""
+    ehlo_name = smtp_ehlo_hostname(from_email, ehlo_hostname)
+    email_message = build_swaks_style_test_message(
+        from_email=from_email,
+        to_email=to_email,
+        subject=subject,
+        body=body,
+    )
+    tls_context = build_smtp_tls_context(verify=tls_verify)
+    server = smtplib.SMTP(
+        host,
+        port,
+        timeout=timeout,
+        local_hostname=ehlo_name,
+    )
+
+    try:
+        server.ehlo()
+        server.starttls(context=tls_context)
+        server.ehlo()
+        server.sendmail(from_email, [to_email], email_message.as_string())
+    finally:
+        try:
+            server.quit()
+        except smtplib.SMTPException:
+            pass
+
+
+def send_smtp_test_email(credentials: dict[str, Any], to_email: str) -> None:
+    deliver_smtp_test_message(
+        host=resolve_smtp_host(credentials),
+        port=parse_smtp_port(credentials.get("port")),
+        encryption=parse_smtp_encryption(credentials.get("encryption")),
+        auth_enabled=parse_auth_enabled(credentials.get("auth_enabled"), default=True),
+        username=str(credentials.get("username", "") or ""),
+        password=str(credentials.get("password", "") or ""),
+        to_email=to_email,
+        from_email=str(credentials.get("from_email", "") or "").strip(),
+        from_name=str(credentials.get("from_name", "") or "").strip(),
+        timeout=parse_smtp_timeout(credentials.get("timeout_seconds")),
+    )
 
 
 def test_smtp_connection(
@@ -445,6 +584,139 @@ def test_smtp_connection(
     )
 
 
+def resolve_smtp_gateway_host(host: str | None) -> str:
+    explicit = str(host or "").strip()
+    if explicit:
+        return explicit
+    stored = load_credentials_payload()["smtp"]
+    return str(stored.get("host", "") or "").strip()
+
+
+def resolve_smtp_gateway_from_email(from_email: str | None) -> str:
+    explicit = str(from_email or "").strip()
+    if explicit:
+        return explicit
+    stored = load_credentials_payload()["smtp"]
+    return str(stored.get("from_email", "") or "").strip()
+
+
+def test_smtp_gateway_connection(
+    payload: SmtpGatewayTestConnectionRequest,
+) -> SmtpTestConnectionResponse:
+    to_email = str(payload.to_email)
+    from_email = resolve_smtp_gateway_from_email(
+        str(payload.from_email) if payload.from_email is not None else None
+    )
+    host = resolve_smtp_gateway_host(payload.host)
+    port = payload.port
+    encryption = payload.encryption
+    auth_enabled = payload.auth_enabled
+    timeout = payload.timeout_seconds
+    tls_verify = payload.tls_verify
+
+    if not host:
+        return SmtpTestConnectionResponse(
+            success=False,
+            message="Missing SMTP gateway host (provide host or save it in SMTP settings).",
+            error_trace=None,
+            provider=None,
+            host=None,
+            port=port,
+            to_email=to_email,
+        )
+
+    if not from_email:
+        return SmtpTestConnectionResponse(
+            success=False,
+            message="Missing from_email (provide from_email or save it in SMTP settings).",
+            error_trace=None,
+            provider=None,
+            host=host,
+            port=port,
+            to_email=to_email,
+        )
+
+    if encryption != SmtpEncryption.starttls:
+        return SmtpTestConnectionResponse(
+            success=False,
+            message=(
+                "Gateway test requires encryption=starttls "
+                "(equivalent to swaks --tls on port 25, not --tls-on-connect)."
+            ),
+            error_trace=None,
+            provider=None,
+            host=host,
+            port=port,
+            to_email=to_email,
+        )
+
+    if auth_enabled:
+        return SmtpTestConnectionResponse(
+            success=False,
+            message=(
+                "Gateway test requires auth_enabled=false "
+                "(equivalent to swaks without --auth-user)."
+            ),
+            error_trace=None,
+            provider=None,
+            host=host,
+            port=port,
+            to_email=to_email,
+        )
+
+    try:
+        deliver_smtp_gateway_test_message(
+            host=host,
+            port=port,
+            from_email=from_email,
+            to_email=to_email,
+            timeout=timeout,
+            tls_verify=tls_verify,
+            ehlo_hostname=payload.ehlo_hostname,
+        )
+    except smtplib.SMTPResponseException as exc:
+        hint = ""
+        if exc.smtp_code == 550:
+            hint = (
+                " Confirm from_email/to_email match your working swaks --from/--to "
+                f"(MAIL FROM=<{from_email}>, RCPT TO=<{to_email}>)."
+            )
+        return SmtpTestConnectionResponse(
+            success=False,
+            message=f"{exc}{hint}",
+            error_trace=traceback.format_exc(),
+            provider=None,
+            host=host,
+            port=port,
+            to_email=to_email,
+        )
+    except Exception as exc:
+        return SmtpTestConnectionResponse(
+            success=False,
+            message=str(exc) or exc.__class__.__name__,
+            error_trace=traceback.format_exc(),
+            provider=None,
+            host=host,
+            port=port,
+            to_email=to_email,
+        )
+
+    ehlo_name = smtp_ehlo_hostname(from_email, payload.ehlo_hostname)
+    verify_label = "tls-verify on" if tls_verify else "tls-verify off"
+    return SmtpTestConnectionResponse(
+        success=True,
+        message=(
+            f"Test email sent via gateway {host}:{port} "
+            f"(STARTTLS, {verify_label}, EHLO={ehlo_name}, no auth) to {to_email}."
+        ),
+        error_trace=None,
+        provider=None,
+        host=host,
+        port=port,
+        to_email=to_email,
+    )
+
+
 def resolve_aws_s3_credentials(
     override: AwsS3UpdateRequest | None,
 ) -> dict[str, str]:
@@ -471,10 +743,7 @@ def get_aws_s3_client_and_bucket() -> tuple[Any, str]:
     if missing_fields:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "AWS S3 is not configured: "
-                f"missing {', '.join(missing_fields)}"
-            ),
+            detail=(f"AWS S3 is not configured: missing {', '.join(missing_fields)}"),
         )
 
     client = boto3.client(
@@ -500,11 +769,7 @@ def test_aws_s3_connection(
     bucket_name = credentials["bucket_name"]
     region = credentials["region"]
 
-    missing_fields = [
-        field
-        for field, value in credentials.items()
-        if not value
-    ]
+    missing_fields = [field for field, value in credentials.items() if not value]
     if missing_fields:
         return AwsS3TestConnectionResponse(
             success=False,

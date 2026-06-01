@@ -7,6 +7,7 @@ from mod.api.integration.helper import (
     get_integration_credentials,
     test_aws_s3_connection,
     test_smtp_connection,
+    test_smtp_gateway_connection,
     update_aws_s3_credentials,
     update_okta_credentials,
     update_smtp_credentials,
@@ -14,6 +15,7 @@ from mod.api.integration.helper import (
 from mod.api.integration.request import (
     AwsS3UpdateRequest,
     OktaSsoUpdateRequest,
+    SmtpGatewayTestConnectionRequest,
     SmtpTestConnectionRequest,
     SmtpUpdateRequest,
 )
@@ -103,3 +105,21 @@ def post_smtp_test_connection(
     payload: SmtpTestConnectionRequest,
 ):
     return test_smtp_connection(payload)
+
+
+@router.post(
+    "/integrations/smtp/test-gateway",
+    response_model=SmtpTestConnectionResponse,
+    name="test_smtp_gateway_connection",
+    description=(
+        "Gateway SMTP test matching swaks: --port 25 --tls --tls-verify with no auth. "
+        "Uses subject/body 'SMTP TLS verification test'. Provide host/from_email or saved SMTP."
+    ),
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_smtp_test_gateway_connection(
+    request: Request,
+    payload: SmtpGatewayTestConnectionRequest,
+):
+    return test_smtp_gateway_connection(payload)

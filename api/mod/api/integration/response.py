@@ -28,6 +28,7 @@ class SmtpCredentialsResponse(BaseModel):
     host: str = ""
     port: int = Field(587, ge=1, le=65535)
     encryption: SmtpEncryption | str = SmtpEncryption.starttls
+    auth_enabled: bool = True
     username: str = ""
     password: str = Field(
         "",

@@ -1,6 +1,6 @@
 import enum
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
 class SmtpProvider(str, enum.Enum):
@@ -51,8 +51,12 @@ class SmtpUpdateRequest(BaseModel):
     host: str = Field(default="", max_length=512)
     port: int = Field(default=587, ge=1, le=65535)
     encryption: SmtpEncryption = SmtpEncryption.starttls
+    auth_enabled: bool = Field(
+        default=True,
+        description="When false, SMTP login is skipped (internal relay / gateway).",
+    )
     username: str = Field(default="", max_length=512)
-    password: str = Field(..., min_length=1, max_length=2048)
+    password: str = Field(default="", max_length=2048)
     from_email: EmailStr
     from_name: str = Field(default="", max_length=256)
     timeout_seconds: int = Field(default=30, ge=1, le=300)
@@ -62,12 +66,11 @@ class SmtpUpdateRequest(BaseModel):
     def strip_string_fields(cls, value: str) -> str:
         return value.strip()
 
-    @field_validator("password")
-    @classmethod
-    def password_not_empty(cls, value: str) -> str:
-        if not value:
-            raise ValueError("Field must not be empty")
-        return value
+    @model_validator(mode="after")
+    def validate_auth_credentials(self) -> "SmtpUpdateRequest":
+        if self.auth_enabled and not self.password:
+            raise ValueError("password is required when auth_enabled is true")
+        return self
 
 
 class SmtpTestConnectionRequest(BaseModel):
@@ -79,3 +82,60 @@ class SmtpTestConnectionRequest(BaseModel):
         None,
         description="Optional SMTP settings to test before saving; omit to use credentials.json.",
     )
+
+
+class SmtpGatewayTestConnectionRequest(BaseModel):
+    """
+    Internal SMTP gateway test aligned with swaks:
+    --port 25 --tls --tls-verify --from ... --to ... (no --auth-user).
+    """
+
+    host: str | None = Field(
+        None,
+        max_length=512,
+        description="SMTP server (swaks --server). Omit to use saved smtp.host.",
+    )
+    port: int = Field(
+        default=25,
+        ge=1,
+        le=65535,
+        description="SMTP port (swaks --port 25).",
+    )
+    encryption: SmtpEncryption = Field(
+        default=SmtpEncryption.starttls,
+        description="Must be starttls (swaks --tls on port 25, not implicit SSL).",
+    )
+    tls_verify: bool = Field(
+        default=True,
+        description="Verify server TLS certificate (swaks --tls-verify).",
+    )
+    auth_enabled: bool = Field(
+        default=False,
+        description="Must be false; gateway does not use SMTP AUTH.",
+    )
+    to_email: EmailStr = Field(..., description="Recipient (swaks --to).")
+    from_email: EmailStr | None = Field(
+        None,
+        description="Sender (swaks --from); omit to use saved smtp.from_email.",
+    )
+    from_name: str = Field(
+        default="",
+        max_length=256,
+        description="Ignored for gateway test (swaks uses plain --from address only).",
+    )
+    ehlo_hostname: str | None = Field(
+        None,
+        max_length=512,
+        description=(
+            "Optional EHLO/HELO name (swaks --ehlo). "
+            "Default: domain part of from_email."
+        ),
+    )
+    timeout_seconds: int = Field(default=30, ge=1, le=300)
+
+    @field_validator("host", "from_name", "ehlo_hostname")
+    @classmethod
+    def strip_optional_strings(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip()
