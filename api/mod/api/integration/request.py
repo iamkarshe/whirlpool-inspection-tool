@@ -1,4 +1,19 @@
-from pydantic import BaseModel, Field, field_validator
+import enum
+
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+class SmtpProvider(str, enum.Enum):
+    aws_ses = "aws_ses"
+    google_workspace = "google_workspace"
+    google_workspace_relay = "google_workspace_relay"
+    custom_smtp = "custom_smtp"
+
+
+class SmtpEncryption(str, enum.Enum):
+    starttls = "starttls"
+    ssl = "ssl"
+    none = "none"
 
 
 class OktaSsoUpdateRequest(BaseModel):
@@ -29,3 +44,27 @@ class AwsS3UpdateRequest(BaseModel):
         if not stripped:
             raise ValueError("Field must not be empty")
         return stripped
+
+
+class SmtpUpdateRequest(BaseModel):
+    provider: SmtpProvider
+    host: str = Field(default="", max_length=512)
+    port: int = Field(default=587, ge=1, le=65535)
+    encryption: SmtpEncryption = SmtpEncryption.starttls
+    username: str = Field(default="", max_length=512)
+    password: str = Field(..., min_length=1, max_length=2048)
+    from_email: EmailStr
+    from_name: str = Field(default="", max_length=256)
+    timeout_seconds: int = Field(default=30, ge=1, le=300)
+
+    @field_validator("host", "username", "from_name", "password")
+    @classmethod
+    def strip_string_fields(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("password")
+    @classmethod
+    def password_not_empty(cls, value: str) -> str:
+        if not value:
+            raise ValueError("Field must not be empty")
+        return value

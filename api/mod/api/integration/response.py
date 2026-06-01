@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from mod.api.integration.request import SmtpEncryption, SmtpProvider
+
 
 class OktaSsoCredentialsResponse(BaseModel):
     okta_domain: str = Field(..., min_length=1, max_length=512)
@@ -15,9 +17,31 @@ class AwsS3CredentialsResponse(BaseModel):
     secret_access_key: str = Field(..., min_length=1, max_length=2048)
 
 
+class SmtpCredentialsResponse(BaseModel):
+    provider: SmtpProvider | None = Field(
+        None,
+        description=(
+            "SMTP provider: aws_ses, google_workspace, "
+            "google_workspace_relay, or custom_smtp."
+        ),
+    )
+    host: str = ""
+    port: int = Field(587, ge=1, le=65535)
+    encryption: SmtpEncryption | str = SmtpEncryption.starttls
+    username: str = ""
+    password: str = Field(
+        "",
+        description="Masked SMTP password (****** when configured).",
+    )
+    from_email: str = ""
+    from_name: str = ""
+    timeout_seconds: int = Field(30, ge=1, le=300)
+
+
 class IntegrationCredentialsResponse(BaseModel):
     okta_sso: OktaSsoCredentialsResponse
     aws_s3: AwsS3CredentialsResponse
+    smtp: SmtpCredentialsResponse
 
 
 class AwsS3TestConnectionResponse(BaseModel):

@@ -8,8 +8,13 @@ from mod.api.integration.helper import (
     test_aws_s3_connection,
     update_aws_s3_credentials,
     update_okta_credentials,
+    update_smtp_credentials,
 )
-from mod.api.integration.request import AwsS3UpdateRequest, OktaSsoUpdateRequest
+from mod.api.integration.request import (
+    AwsS3UpdateRequest,
+    OktaSsoUpdateRequest,
+    SmtpUpdateRequest,
+)
 from mod.api.integration.response import (
     AwsS3TestConnectionResponse,
     IntegrationCredentialsResponse,
@@ -51,6 +56,17 @@ def put_aws_s3_integration(
     db: Session = Depends(get_db),
 ):
     return update_aws_s3_credentials(db, int(request.state.user_id), payload)
+
+
+@router.put("/integrations/smtp", response_model=IntegrationCredentialsResponse)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def put_smtp_integration(
+    request: Request,
+    payload: SmtpUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    return update_smtp_credentials(db, int(request.state.user_id), payload)
 
 
 @router.post(

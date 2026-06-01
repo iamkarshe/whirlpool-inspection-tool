@@ -7,19 +7,40 @@ from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from mod.api.integration.request import AwsS3UpdateRequest, OktaSsoUpdateRequest
+from mod.api.integration.request import (
+    AwsS3UpdateRequest,
+    OktaSsoUpdateRequest,
+    SmtpEncryption,
+    SmtpProvider,
+    SmtpUpdateRequest,
+)
 from mod.api.integration.response import (
     AwsS3CredentialsResponse,
     AwsS3TestConnectionResponse,
     IntegrationCredentialsResponse,
     OktaSsoCredentialsResponse,
+    SmtpCredentialsResponse,
 )
 from mod.api.log.audit import log_integration_keys_updated
 
 credentials_file_path = Path(__file__).resolve().parents[3] / "credentials.json"
 
 
-def default_credentials_payload() -> dict[str, dict[str, str]]:
+def default_smtp_section() -> dict[str, Any]:
+    return {
+        "provider": "",
+        "host": "",
+        "port": 587,
+        "encryption": SmtpEncryption.starttls.value,
+        "username": "",
+        "password": "",
+        "from_email": "",
+        "from_name": "",
+        "timeout_seconds": 30,
+    }
+
+
+def default_credentials_payload() -> dict[str, Any]:
     return {
         "okta_sso": {
             "okta_domain": "",
@@ -33,14 +54,49 @@ def default_credentials_payload() -> dict[str, dict[str, str]]:
             "access_key_id": "",
             "secret_access_key": "",
         },
+        "smtp": default_smtp_section(),
     }
+
+
+def parse_smtp_provider(value: Any) -> SmtpProvider | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return SmtpProvider(raw)
+    except ValueError:
+        return None
+
+
+def parse_smtp_encryption(value: Any) -> SmtpEncryption:
+    raw = str(value or "").strip().lower()
+    try:
+        return SmtpEncryption(raw)
+    except ValueError:
+        return SmtpEncryption.starttls
+
+
+def parse_smtp_port(value: Any) -> int:
+    try:
+        port = int(value)
+    except (TypeError, ValueError):
+        return 587
+    return port if 1 <= port <= 65535 else 587
+
+
+def parse_smtp_timeout(value: Any) -> int:
+    try:
+        timeout = int(value)
+    except (TypeError, ValueError):
+        return 30
+    return timeout if 1 <= timeout <= 300 else 30
 
 
 def mask_secret(secret_value: str) -> str:
     return "******" if secret_value else ""
 
 
-def load_credentials_payload() -> dict[str, dict[str, str]]:
+def load_credentials_payload() -> dict[str, Any]:
     payload = default_credentials_payload()
     if not credentials_file_path.exists():
         return payload
@@ -81,6 +137,21 @@ def load_credentials_payload() -> dict[str, dict[str, str]]:
                 "secret_access_key": str(aws.get("secret_access_key", "") or ""),
             }
         )
+
+    smtp = parsed.get("smtp", {})
+    if isinstance(smtp, dict):
+        provider = parse_smtp_provider(smtp.get("provider"))
+        payload["smtp"] = {
+            "provider": provider.value if provider is not None else "",
+            "host": str(smtp.get("host", "") or ""),
+            "port": parse_smtp_port(smtp.get("port")),
+            "encryption": parse_smtp_encryption(smtp.get("encryption")).value,
+            "username": str(smtp.get("username", "") or ""),
+            "password": str(smtp.get("password", "") or ""),
+            "from_email": str(smtp.get("from_email", "") or ""),
+            "from_name": str(smtp.get("from_name", "") or ""),
+            "timeout_seconds": parse_smtp_timeout(smtp.get("timeout_seconds")),
+        }
     return payload
 
 
@@ -91,8 +162,27 @@ def save_credentials_payload(payload: dict[str, Any]) -> None:
     )
 
 
+def map_smtp_credentials_response(
+    smtp: dict[str, Any],
+    *,
+    mask_password: bool = True,
+) -> SmtpCredentialsResponse:
+    password = str(smtp.get("password", "") or "")
+    return SmtpCredentialsResponse(
+        provider=parse_smtp_provider(smtp.get("provider")),
+        host=str(smtp.get("host", "") or ""),
+        port=parse_smtp_port(smtp.get("port")),
+        encryption=parse_smtp_encryption(smtp.get("encryption")),
+        username=str(smtp.get("username", "") or ""),
+        password=mask_secret(password) if mask_password else password,
+        from_email=str(smtp.get("from_email", "") or ""),
+        from_name=str(smtp.get("from_name", "") or ""),
+        timeout_seconds=parse_smtp_timeout(smtp.get("timeout_seconds")),
+    )
+
+
 def map_masked_credentials_response(
-    payload: dict[str, dict[str, str]],
+    payload: dict[str, Any],
 ) -> IntegrationCredentialsResponse:
     return IntegrationCredentialsResponse(
         okta_sso=OktaSsoCredentialsResponse(
@@ -107,6 +197,7 @@ def map_masked_credentials_response(
             access_key_id=payload["aws_s3"]["access_key_id"],
             secret_access_key=mask_secret(payload["aws_s3"]["secret_access_key"]),
         ),
+        smtp=map_smtp_credentials_response(payload["smtp"]),
     )
 
 
@@ -157,6 +248,41 @@ def update_aws_s3_credentials(
     )
     db.commit()
     return map_masked_credentials_response(payload)
+
+
+def update_smtp_credentials(
+    db: Session,
+    actor_user_id: int,
+    update: SmtpUpdateRequest,
+) -> IntegrationCredentialsResponse:
+    payload = load_credentials_payload()
+    payload["smtp"] = {
+        "provider": update.provider.value,
+        "host": update.host,
+        "port": update.port,
+        "encryption": update.encryption.value,
+        "username": update.username,
+        "password": update.password,
+        "from_email": str(update.from_email),
+        "from_name": update.from_name,
+        "timeout_seconds": update.timeout_seconds,
+    }
+    save_credentials_payload(payload)
+    log_integration_keys_updated(
+        db,
+        actor_user_id=actor_user_id,
+        integration="SMTP",
+    )
+    db.commit()
+    return map_masked_credentials_response(payload)
+
+
+def get_smtp_credentials(*, masked: bool = False) -> SmtpCredentialsResponse:
+    payload = load_credentials_payload()
+    return map_smtp_credentials_response(
+        payload["smtp"],
+        mask_password=masked,
+    )
 
 
 def resolve_aws_s3_credentials(
