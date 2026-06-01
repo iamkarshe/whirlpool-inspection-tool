@@ -1,5 +1,4 @@
 import type { JobExecutionResponse } from "@/api/generated/model/jobExecutionResponse";
-import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import { getApiBaseUrl } from "@/api/axios-instance";
 
 const AUTO_APPROVE_INSPECTIONS_PATH = "/jobs/auto-approve-inspections";
@@ -17,7 +16,7 @@ export class JobApiError extends Error {
 function parseJobApiErrorBody(body: unknown, status: number): string {
   if (typeof body === "object" && body !== null) {
     if ("detail" in body) {
-      const { detail } = body as HTTPValidationError & { detail?: unknown };
+      const detail = (body as { detail?: unknown }).detail;
       if (typeof detail === "string" && detail.length > 0) return detail;
       if (Array.isArray(detail)) {
         const first = detail[0]?.msg ?? detail[0]?.type;

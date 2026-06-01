@@ -1,7 +1,6 @@
 import { isAxiosError } from "axios";
 
 import { getVpnProvision } from "@/api/generated/vpn-provision/vpn-provision";
-import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 
 export type VpnWireguardPeer = {
   public_key: string;
@@ -129,7 +128,7 @@ export function vpnProvisionApiErrorMessage(
   if (!isAxiosError(err)) return err instanceof Error ? err.message : fallback;
   const data = err.response?.data as unknown;
   if (typeof data === "object" && data !== null && "detail" in data) {
-    const detail = (data as HTTPValidationError).detail;
+    const detail = (data as { detail?: unknown }).detail;
     if (typeof detail === "string" && detail.length > 0) return detail;
     if (Array.isArray(detail) && detail.length > 0) {
       const first = detail[0]?.msg ?? detail[0]?.type;

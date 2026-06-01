@@ -60,7 +60,7 @@ function buildUserColumns(
   onVpnRevoke: (user: UserResponse) => void,
   onVpnShowInstructions: (user: UserResponse) => void,
   vpnBusyUserUuid: string | null,
-  vpnBusyAction: "setup" | "config" | "qr" | "revoke" | null,
+  vpnBusyAction: "setup" | "config" | "qr" | "revoke" | "email" | null,
 ): ColumnDef<UserResponse>[] {
   return [
     {
@@ -368,7 +368,7 @@ interface UsersDataTableProps {
   onVpnRevoke: (user: UserResponse) => void;
   onVpnShowInstructions: (user: UserResponse) => void;
   vpnBusyUserUuid?: string | null;
-  vpnBusyAction?: "setup" | "config" | "qr" | "revoke" | null;
+  vpnBusyAction?: "setup" | "config" | "qr" | "revoke" | "email" | null;
 }
 
 export default function UsersDataTable({

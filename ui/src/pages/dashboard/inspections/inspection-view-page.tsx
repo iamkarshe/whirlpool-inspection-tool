@@ -122,7 +122,7 @@ export default function InspectionViewPage() {
     queueMicrotask(() => setLoading(true));
     getInspectionDetailBundle(id, { signal: ac.signal })
       .then((bundle) => {
-        if (ac.signal.aborted) return;
+        if (ac.signal.aborted || !bundle) return;
         setLoadError(null);
         setInspection(bundle.inspection);
         setOuterRows(bundle.outer);
