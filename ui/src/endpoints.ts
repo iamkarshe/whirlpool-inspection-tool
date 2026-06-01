@@ -99,6 +99,7 @@ export const PAGES = {
   DASHBOARD_ADMIN_INTEGRATIONS: "/dashboard/admin/integrations",
   integrationsOktaPath: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/okta`,
   integrationsAwsS3Path: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/aws-s3`,
+  integrationsSmtpPath: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/smtp`,
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
   DASHBOARD_ADMIN_JOB_LOGS: "/dashboard/admin/job-logs",
   DASHBOARD_ADMIN_KNOWLEDGE_BASE: "/dashboard/admin/knowledge-base",

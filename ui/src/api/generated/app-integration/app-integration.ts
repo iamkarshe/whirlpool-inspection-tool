@@ -9,7 +9,10 @@ import type {
   AwsS3TestConnectionResponse,
   AwsS3UpdateRequest,
   IntegrationCredentialsResponse,
-  OktaSsoUpdateRequest
+  OktaSsoUpdateRequest,
+  SmtpTestConnectionRequest,
+  SmtpTestConnectionResponse,
+  SmtpUpdateRequest
 } from '../model';
 
 import { customInstance } from '../../axios-instance';
@@ -57,6 +60,19 @@ const putAwsS3IntegrationApiIntegrationsAwsS3Put = (
       options);
     }
   /**
+ * @summary Put Smtp Integration
+ */
+const putSmtpIntegrationApiIntegrationsSmtpPut = (
+    smtpUpdateRequest: SmtpUpdateRequest,
+ options?: SecondParameter<typeof customInstance<IntegrationCredentialsResponse>>,) => {
+      return customInstance<IntegrationCredentialsResponse>(
+      {url: `/api/integrations/smtp`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: smtpUpdateRequest
+    },
+      options);
+    }
+  /**
  * Test AWS S3 connectivity using saved credentials or an optional request body
  * @summary Test Aws S3 Connection
  */
@@ -70,8 +86,24 @@ const testAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPost = (
     },
       options);
     }
-  return {getIntegrationsApiIntegrationsGet,putOktaSsoIntegrationApiIntegrationsOktaSsoPut,putAwsS3IntegrationApiIntegrationsAwsS3Put,testAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPost}};
+  /**
+ * Send a test email using saved SMTP settings or an optional smtp override. On failure, error_trace contains the full stack trace for the UI.
+ * @summary Test Smtp Connection
+ */
+const testSmtpConnectionApiIntegrationsSmtpTestConnectionPost = (
+    smtpTestConnectionRequest: SmtpTestConnectionRequest,
+ options?: SecondParameter<typeof customInstance<SmtpTestConnectionResponse>>,) => {
+      return customInstance<SmtpTestConnectionResponse>(
+      {url: `/api/integrations/smtp/test-connection`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: smtpTestConnectionRequest
+    },
+      options);
+    }
+  return {getIntegrationsApiIntegrationsGet,putOktaSsoIntegrationApiIntegrationsOktaSsoPut,putAwsS3IntegrationApiIntegrationsAwsS3Put,putSmtpIntegrationApiIntegrationsSmtpPut,testAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPost,testSmtpConnectionApiIntegrationsSmtpTestConnectionPost}};
 export type GetIntegrationsApiIntegrationsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['getIntegrationsApiIntegrationsGet']>>>
 export type PutOktaSsoIntegrationApiIntegrationsOktaSsoPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['putOktaSsoIntegrationApiIntegrationsOktaSsoPut']>>>
 export type PutAwsS3IntegrationApiIntegrationsAwsS3PutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['putAwsS3IntegrationApiIntegrationsAwsS3Put']>>>
+export type PutSmtpIntegrationApiIntegrationsSmtpPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['putSmtpIntegrationApiIntegrationsSmtpPut']>>>
 export type TestAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['testAwsS3ConnectionApiIntegrationsAwsS3TestConnectionPost']>>>
+export type TestSmtpConnectionApiIntegrationsSmtpTestConnectionPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAppIntegration>['testSmtpConnectionApiIntegrationsSmtpTestConnectionPost']>>>

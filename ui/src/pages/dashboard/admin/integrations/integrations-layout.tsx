@@ -1,6 +1,6 @@
 import { PAGES } from "@/endpoints";
 import { Outlet } from "react-router-dom";
-import { CloudCog, KeyRound } from "lucide-react";
+import { CloudCog, KeyRound, Mail } from "lucide-react";
 import { TabbedNav } from "@/components/tabbed-nav";
 
 const services = [
@@ -9,6 +9,11 @@ const services = [
     title: "AWS S3",
     href: PAGES.integrationsAwsS3Path(),
     icon: CloudCog,
+  },
+  {
+    title: "SMTP",
+    href: PAGES.integrationsSmtpPath(),
+    icon: Mail,
   },
 ] as const;
 

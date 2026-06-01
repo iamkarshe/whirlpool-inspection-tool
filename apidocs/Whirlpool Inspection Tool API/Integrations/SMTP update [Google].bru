@@ -1,0 +1,25 @@
+meta {
+  name: SMTP update [Google]
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/api/integrations/smtp
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "provider": "aws_ses",
+    "host": "email-smtp.us-east-1.amazonaws.com",
+    "port": 587,
+    "encryption": "starttls",
+    "username": "{{aws_ses_user}}",
+    "password": "{{aws_ses_password}}",
+    "from_email": "dicvp2-notifications@scoptanalytics.in",
+    "from_name": "Whirlpool Inspection",
+    "timeout_seconds": 30
+  }
+}

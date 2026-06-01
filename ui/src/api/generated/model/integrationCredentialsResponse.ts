@@ -7,8 +7,10 @@
  */
 import type { AwsS3CredentialsResponse } from './awsS3CredentialsResponse';
 import type { OktaSsoCredentialsResponse } from './oktaSsoCredentialsResponse';
+import type { SmtpCredentialsResponse } from './smtpCredentialsResponse';
 
 export interface IntegrationCredentialsResponse {
   okta_sso: OktaSsoCredentialsResponse;
   aws_s3: AwsS3CredentialsResponse;
+  smtp: SmtpCredentialsResponse;
 }

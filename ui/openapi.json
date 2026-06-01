@@ -43,9 +43,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -55,6 +52,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -88,9 +88,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -100,6 +97,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -132,9 +132,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -144,6 +141,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -486,9 +486,6 @@
           "404": {
             "description": "User not found."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -498,6 +495,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -538,9 +538,6 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -550,6 +547,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -590,9 +590,6 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -602,6 +599,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -645,9 +645,6 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -657,6 +654,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -1964,6 +1964,47 @@
         }
       }
     },
+    "/api/integrations/smtp": {
+      "put": {
+        "tags": [
+          "App Integration"
+        ],
+        "summary": "Put Smtp Integration",
+        "operationId": "put_smtp_integration_api_integrations_smtp_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmtpUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationCredentialsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/integrations/aws-s3/test-connection": {
       "post": {
         "tags": [
@@ -1996,6 +2037,48 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AwsS3TestConnectionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/smtp/test-connection": {
+      "post": {
+        "tags": [
+          "App Integration"
+        ],
+        "summary": "Test Smtp Connection",
+        "description": "Send a test email using saved SMTP settings or an optional smtp override. On failure, error_trace contains the full stack trace for the UI.",
+        "operationId": "test_smtp_connection_api_integrations_smtp_test_connection_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmtpTestConnectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmtpTestConnectionResponse"
                 }
               }
             }
@@ -5517,9 +5600,6 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5529,6 +5609,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
           }
         }
       }
@@ -6254,7 +6337,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Id"
           },
           "value": {
@@ -8622,12 +8705,16 @@
           },
           "aws_s3": {
             "$ref": "#/components/schemas/AwsS3CredentialsResponse"
+          },
+          "smtp": {
+            "$ref": "#/components/schemas/SmtpCredentialsResponse"
           }
         },
         "type": "object",
         "required": [
           "okta_sso",
-          "aws_s3"
+          "aws_s3",
+          "smtp"
         ],
         "title": "IntegrationCredentialsResponse"
       },
@@ -9732,7 +9819,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -9923,7 +10010,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -10782,6 +10869,254 @@
         ],
         "title": "SkuResponse"
       },
+      "SmtpCredentialsResponse": {
+        "properties": {
+          "provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SmtpProvider"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SMTP provider: aws_ses, google_workspace, google_workspace_relay, or custom_smtp."
+          },
+          "host": {
+            "type": "string",
+            "title": "Host",
+            "default": ""
+          },
+          "port": {
+            "type": "integer",
+            "maximum": 65535,
+            "minimum": 1,
+            "title": "Port",
+            "default": 587
+          },
+          "encryption": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SmtpEncryption"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Encryption",
+            "default": "starttls"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Masked SMTP password (****** when configured).",
+            "default": ""
+          },
+          "from_email": {
+            "type": "string",
+            "title": "From Email",
+            "default": ""
+          },
+          "from_name": {
+            "type": "string",
+            "title": "From Name",
+            "default": ""
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Timeout Seconds",
+            "default": 30
+          }
+        },
+        "type": "object",
+        "title": "SmtpCredentialsResponse"
+      },
+      "SmtpEncryption": {
+        "type": "string",
+        "enum": [
+          "starttls",
+          "ssl",
+          "none"
+        ],
+        "title": "SmtpEncryption"
+      },
+      "SmtpProvider": {
+        "type": "string",
+        "enum": [
+          "aws_ses",
+          "google_workspace",
+          "google_workspace_relay",
+          "custom_smtp"
+        ],
+        "title": "SmtpProvider"
+      },
+      "SmtpTestConnectionRequest": {
+        "properties": {
+          "to_email": {
+            "type": "string",
+            "format": "email",
+            "title": "To Email",
+            "description": "Recipient address for the test message."
+          },
+          "smtp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SmtpUpdateRequest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional SMTP settings to test before saving; omit to use credentials.json."
+          }
+        },
+        "type": "object",
+        "required": [
+          "to_email"
+        ],
+        "title": "SmtpTestConnectionRequest"
+      },
+      "SmtpTestConnectionResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "error_trace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Trace",
+            "description": "Full Python traceback when success is false."
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SmtpProvider"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "host": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Port"
+          },
+          "to_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "SmtpTestConnectionResponse"
+      },
+      "SmtpUpdateRequest": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/SmtpProvider"
+          },
+          "host": {
+            "type": "string",
+            "maxLength": 512,
+            "title": "Host",
+            "default": ""
+          },
+          "port": {
+            "type": "integer",
+            "maximum": 65535,
+            "minimum": 1,
+            "title": "Port",
+            "default": 587
+          },
+          "encryption": {
+            "$ref": "#/components/schemas/SmtpEncryption",
+            "default": "starttls"
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 512,
+            "title": "Username",
+            "default": ""
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Password"
+          },
+          "from_email": {
+            "type": "string",
+            "format": "email",
+            "title": "From Email"
+          },
+          "from_name": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "From Name",
+            "default": ""
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Timeout Seconds",
+            "default": 30
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "password",
+          "from_email"
+        ],
+        "title": "SmtpUpdateRequest"
+      },
       "StartInboundInspectionRequest": {
         "properties": {
           "barcode": {
@@ -10807,13 +11142,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -10903,7 +11238,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10.0,
+            "minimum": 10,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -10962,13 +11297,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -11058,7 +11393,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -11786,7 +12121,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -12001,7 +12336,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {

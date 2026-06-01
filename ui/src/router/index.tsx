@@ -239,6 +239,9 @@ const IntegrationsOktaPage = lazy(
 const IntegrationsAwsS3Page = lazy(
   () => import("@/pages/dashboard/admin/integrations/aws-s3/page"),
 );
+const IntegrationsSmtpPage = lazy(
+  () => import("@/pages/dashboard/admin/integrations/smtp/page"),
+);
 const LogsPage = lazy(() => import("@/pages/dashboard/admin/log/page"));
 const JobLogsPage = lazy(() => import("@/pages/dashboard/admin/job-logs/page"));
 const KnowledgeBasePage = lazy(
@@ -711,6 +714,15 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <IntegrationsAwsS3Page />
+              </Suspense>
+            ),
+          },
+          {
+            path: "smtp",
+            handle: { title: "SMTP" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <IntegrationsSmtpPage />
               </Suspense>
             ),
           },
