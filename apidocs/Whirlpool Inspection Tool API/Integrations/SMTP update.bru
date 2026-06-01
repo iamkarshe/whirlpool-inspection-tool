@@ -13,12 +13,12 @@ put {
 body:json {
   {
     "provider": "aws_ses",
-    "host": "email-smtp.ap-south-1.amazonaws.com",
+    "host": "email-smtp.us-east-1.amazonaws.com",
     "port": 587,
     "encryption": "starttls",
-    "username": "AKIA...",
-    "password": "your-smtp-password",
-    "from_email": "noreply@example.com",
+    "username": "{{aws_ses_user}}",
+    "password": "{{aws_ses_password}}",
+    "from_email": "dicvp2-notifications@scoptanalytics.in",
     "from_name": "Whirlpool Inspection",
     "timeout_seconds": 30
   }

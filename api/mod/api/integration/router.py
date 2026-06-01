@@ -6,6 +6,7 @@ from utils.db import get_db
 from mod.api.integration.helper import (
     get_integration_credentials,
     test_aws_s3_connection,
+    test_smtp_connection,
     update_aws_s3_credentials,
     update_okta_credentials,
     update_smtp_credentials,
@@ -13,11 +14,13 @@ from mod.api.integration.helper import (
 from mod.api.integration.request import (
     AwsS3UpdateRequest,
     OktaSsoUpdateRequest,
+    SmtpTestConnectionRequest,
     SmtpUpdateRequest,
 )
 from mod.api.integration.response import (
     AwsS3TestConnectionResponse,
     IntegrationCredentialsResponse,
+    SmtpTestConnectionResponse,
 )
 from mod.api.middleware import auth_dependency
 from utils.decorator import check_api_role, exception_handler_decorator
@@ -82,3 +85,21 @@ def post_aws_s3_test_connection(
     payload: AwsS3UpdateRequest | None = None,
 ):
     return test_aws_s3_connection(payload)
+
+
+@router.post(
+    "/integrations/smtp/test-connection",
+    response_model=SmtpTestConnectionResponse,
+    name="test_smtp_connection",
+    description=(
+        "Send a test email using saved SMTP settings or an optional smtp override. "
+        "On failure, error_trace contains the full stack trace for the UI."
+    ),
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def post_smtp_test_connection(
+    request: Request,
+    payload: SmtpTestConnectionRequest,
+):
+    return test_smtp_connection(payload)

@@ -1,4 +1,9 @@
 import json
+import smtplib
+import ssl
+import traceback
+from email.message import EmailMessage
+from email.utils import formataddr
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +17,7 @@ from mod.api.integration.request import (
     OktaSsoUpdateRequest,
     SmtpEncryption,
     SmtpProvider,
+    SmtpTestConnectionRequest,
     SmtpUpdateRequest,
 )
 from mod.api.integration.response import (
@@ -20,10 +26,15 @@ from mod.api.integration.response import (
     IntegrationCredentialsResponse,
     OktaSsoCredentialsResponse,
     SmtpCredentialsResponse,
+    SmtpTestConnectionResponse,
 )
 from mod.api.log.audit import log_integration_keys_updated
 
 credentials_file_path = Path(__file__).resolve().parents[3] / "credentials.json"
+
+DEFAULT_SMTP_HOSTS: dict[SmtpProvider, str] = {
+    SmtpProvider.google_workspace: "smtp.gmail.com",
+}
 
 
 def default_smtp_section() -> dict[str, Any]:
@@ -256,17 +267,7 @@ def update_smtp_credentials(
     update: SmtpUpdateRequest,
 ) -> IntegrationCredentialsResponse:
     payload = load_credentials_payload()
-    payload["smtp"] = {
-        "provider": update.provider.value,
-        "host": update.host,
-        "port": update.port,
-        "encryption": update.encryption.value,
-        "username": update.username,
-        "password": update.password,
-        "from_email": str(update.from_email),
-        "from_name": update.from_name,
-        "timeout_seconds": update.timeout_seconds,
-    }
+    payload["smtp"] = smtp_config_from_update(update)
     save_credentials_payload(payload)
     log_integration_keys_updated(
         db,
@@ -282,6 +283,165 @@ def get_smtp_credentials(*, masked: bool = False) -> SmtpCredentialsResponse:
     return map_smtp_credentials_response(
         payload["smtp"],
         mask_password=masked,
+    )
+
+
+def smtp_config_from_update(update: SmtpUpdateRequest) -> dict[str, Any]:
+    return {
+        "provider": update.provider.value,
+        "host": update.host,
+        "port": update.port,
+        "encryption": update.encryption.value,
+        "username": update.username,
+        "password": update.password,
+        "from_email": str(update.from_email),
+        "from_name": update.from_name,
+        "timeout_seconds": update.timeout_seconds,
+    }
+
+
+def resolve_smtp_credentials(
+    override: SmtpUpdateRequest | None,
+) -> dict[str, Any]:
+    if override is not None:
+        return smtp_config_from_update(override)
+    return dict(load_credentials_payload()["smtp"])
+
+
+def resolve_smtp_host(credentials: dict[str, Any]) -> str:
+    host = str(credentials.get("host", "") or "").strip()
+    if host:
+        return host
+    provider = parse_smtp_provider(credentials.get("provider"))
+    if provider is None:
+        return ""
+    return DEFAULT_SMTP_HOSTS.get(provider, "")
+
+
+def missing_smtp_fields_for_test(credentials: dict[str, Any]) -> list[str]:
+    missing: list[str] = []
+    provider = parse_smtp_provider(credentials.get("provider"))
+    if provider is None:
+        missing.append("provider")
+
+    if not resolve_smtp_host(credentials):
+        missing.append("host")
+
+    if not str(credentials.get("from_email", "") or "").strip():
+        missing.append("from_email")
+
+    if provider != SmtpProvider.google_workspace_relay:
+        if not str(credentials.get("username", "") or "").strip():
+            missing.append("username")
+        if not str(credentials.get("password", "") or "").strip():
+            missing.append("password")
+
+    return missing
+
+
+def build_smtp_test_message(
+    *,
+    from_email: str,
+    from_name: str,
+    to_email: str,
+) -> EmailMessage:
+    message = EmailMessage()
+    message["Subject"] = "SMTP configuration test — Whirlpool Inspection Tool"
+    message["From"] = (
+        formataddr((from_name, from_email)) if from_name else from_email
+    )
+    message["To"] = to_email
+    message.set_content(
+        "This is a test email from the Whirlpool Inspection Tool.\n\n"
+        "If you received this message, your SMTP integration settings are working."
+    )
+    return message
+
+
+def send_smtp_test_email(credentials: dict[str, Any], to_email: str) -> None:
+    host = resolve_smtp_host(credentials)
+    port = parse_smtp_port(credentials.get("port"))
+    encryption = parse_smtp_encryption(credentials.get("encryption"))
+    timeout = parse_smtp_timeout(credentials.get("timeout_seconds"))
+    username = str(credentials.get("username", "") or "").strip()
+    password = str(credentials.get("password", "") or "")
+    from_email = str(credentials.get("from_email", "") or "").strip()
+    from_name = str(credentials.get("from_name", "") or "").strip()
+
+    email_message = build_smtp_test_message(
+        from_email=from_email,
+        from_name=from_name,
+        to_email=to_email,
+    )
+    tls_context = ssl.create_default_context()
+
+    if encryption == SmtpEncryption.ssl:
+        server: smtplib.SMTP = smtplib.SMTP_SSL(
+            host,
+            port,
+            timeout=timeout,
+            context=tls_context,
+        )
+    else:
+        server = smtplib.SMTP(host, port, timeout=timeout)
+
+    try:
+        server.ehlo()
+        if encryption == SmtpEncryption.starttls:
+            server.starttls(context=tls_context)
+            server.ehlo()
+        if username:
+            server.login(username, password)
+        server.send_message(email_message)
+    finally:
+        try:
+            server.quit()
+        except smtplib.SMTPException:
+            pass
+
+
+def test_smtp_connection(
+    payload: SmtpTestConnectionRequest,
+) -> SmtpTestConnectionResponse:
+    credentials = resolve_smtp_credentials(payload.smtp)
+    to_email = str(payload.to_email)
+    provider = parse_smtp_provider(credentials.get("provider"))
+    host = resolve_smtp_host(credentials)
+    port = parse_smtp_port(credentials.get("port"))
+
+    missing_fields = missing_smtp_fields_for_test(credentials)
+    if missing_fields:
+        return SmtpTestConnectionResponse(
+            success=False,
+            message=f"Missing SMTP configuration: {', '.join(missing_fields)}",
+            error_trace=None,
+            provider=provider,
+            host=host or None,
+            port=port,
+            to_email=to_email,
+        )
+
+    try:
+        send_smtp_test_email(credentials, to_email)
+    except Exception as exc:
+        return SmtpTestConnectionResponse(
+            success=False,
+            message=str(exc) or exc.__class__.__name__,
+            error_trace=traceback.format_exc(),
+            provider=provider,
+            host=host,
+            port=port,
+            to_email=to_email,
+        )
+
+    return SmtpTestConnectionResponse(
+        success=True,
+        message=f"Test email sent successfully to {to_email}.",
+        error_trace=None,
+        provider=provider,
+        host=host,
+        port=port,
+        to_email=to_email,
     )
 
 

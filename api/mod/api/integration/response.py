@@ -49,3 +49,16 @@ class AwsS3TestConnectionResponse(BaseModel):
     message: str
     bucket_name: str | None = None
     region: str | None = None
+
+
+class SmtpTestConnectionResponse(BaseModel):
+    success: bool
+    message: str
+    error_trace: str | None = Field(
+        None,
+        description="Full Python traceback when success is false.",
+    )
+    provider: SmtpProvider | None = None
+    host: str | None = None
+    port: int | None = None
+    to_email: str | None = None

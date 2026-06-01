@@ -68,3 +68,14 @@ class SmtpUpdateRequest(BaseModel):
         if not value:
             raise ValueError("Field must not be empty")
         return value
+
+
+class SmtpTestConnectionRequest(BaseModel):
+    to_email: EmailStr = Field(
+        ...,
+        description="Recipient address for the test message.",
+    )
+    smtp: SmtpUpdateRequest | None = Field(
+        None,
+        description="Optional SMTP settings to test before saving; omit to use credentials.json.",
+    )

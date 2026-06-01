@@ -1,0 +1,17 @@
+meta {
+  name: Test SMTP email
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/integrations/smtp/test-connection
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "to_email": "utkarsh2point0@gmail.com"
+  }
+}
