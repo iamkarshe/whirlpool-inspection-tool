@@ -45,9 +45,9 @@ from mod.api.product.helper import map_product
 from mod.api.product_category.helper import map_product_category
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
 from mod.api.inspection.media import build_url, compress_image, upload_media
-from mod.push_notification.config import vapid_send_credentials_optional
-from mod.push_notification.helper import send_user_push_notifications
-from mod.push_notification.request import PushSendPayload
+from mod.api.inspection.review_notifications import (
+    schedule_inspection_review_manager_notifications,
+)
 from mod.model import (
     Checklist,
     ChecklistFieldType,
@@ -84,8 +84,6 @@ from utils.common import (
 )
 
 logger = logging.getLogger(__name__)
-
-INSPECTION_REVIEW_PUSH_URL_PREFIX = "/ops/inspections/"
 
 
 def enforced_checklist_image_count(ch: Checklist, answer_value: str) -> int:
@@ -1727,10 +1725,10 @@ def create_inspection(
             )
 
         if loaded.review_status == InspectionReviewStatus.IN_REVIEW:
-            notify_warehouse_managers_inspection_ready_for_review(
+            schedule_inspection_review_manager_notifications(
                 db,
                 loaded,
-                exclude_inspector_id=int(request.state.user_id),
+                exclude_inspector_user_id=int(request.state.user_id),
             )
 
         return map_inspection_with_checklist_inputs(loaded)
@@ -1742,133 +1740,6 @@ def create_inspection(
         if not committed:
             db.rollback()
         raise exc
-
-
-def inspection_review_detail_url(inspection_uuid: uuid.UUID) -> str:
-    return f"{INSPECTION_REVIEW_PUSH_URL_PREFIX}{inspection_uuid}"
-
-
-def list_warehouse_manager_user_ids(
-    db: Session,
-    warehouse_code: str,
-    *,
-    exclude_user_id: int | None = None,
-) -> list[int]:
-    query = (
-        db.query(User.id)
-        .join(User.role)
-        .join(User.warehouses_scope)
-        .filter(
-            User.is_active.is_(True),
-            Role.role.in_(["manager", "biz-admin"]),
-            Role.is_active.is_(True),
-            Warehouse.warehouse_code == warehouse_code,
-            Warehouse.is_active.is_(True),
-        )
-    )
-    if exclude_user_id is not None:
-        query = query.filter(User.id != exclude_user_id)
-    return [row[0] for row in query.distinct().all()]
-
-
-def build_inspection_ready_for_review_payload(
-    inspection: Inspection,
-    *,
-    inspector_name: str | None = None,
-) -> PushSendPayload:
-    inspection_type = (
-        inspection.inspection_type.value
-        if hasattr(inspection.inspection_type, "value")
-        else str(inspection.inspection_type)
-    )
-    type_label = inspection_type.capitalize()
-    warehouse = (inspection.warehouse_code or "").strip()
-    who = (inspector_name or "An inspector").strip()
-    title = f"{type_label} inspection ready for review"
-    body = (
-        f"{who} submitted a {inspection_type} inspection"
-        f"{f' at {warehouse}' if warehouse else ''}. Tap to review."
-    )
-    return PushSendPayload(
-        title=title,
-        body=body,
-        url=inspection_review_detail_url(inspection.uuid),
-        tag=f"inspection-review-{inspection.uuid}",
-        data={
-            "inspection_uuid": str(inspection.uuid),
-            "inspection_type": inspection_type,
-            "warehouse_code": warehouse or None,
-        },
-    )
-
-
-def notify_warehouse_managers_inspection_ready_for_review(
-    db: Session,
-    inspection: Inspection,
-    *,
-    exclude_inspector_id: int | None = None,
-) -> dict[str, int]:
-    vapid = vapid_send_credentials_optional()
-    if vapid is None:
-        logger.debug("Skipping inspection review push: VAPID is not configured")
-        return {"managers_notified": 0, "skipped": 1}
-
-    warehouse_code = (inspection.warehouse_code or "").strip()
-    if not warehouse_code:
-        logger.warning(
-            "Skipping inspection review push: inspection %s has no warehouse_code",
-            inspection.uuid,
-        )
-        return {"managers_notified": 0, "skipped": 1}
-
-    manager_ids = list_warehouse_manager_user_ids(
-        db,
-        warehouse_code,
-        exclude_user_id=exclude_inspector_id,
-    )
-    if not manager_ids:
-        return {"managers_notified": 0, "skipped": 0}
-
-    inspector_name: str | None = None
-    if exclude_inspector_id is not None:
-        inspector = db.query(User).filter(User.id == exclude_inspector_id).first()
-        inspector_name = inspector.name if inspector is not None else None
-
-    payload = build_inspection_ready_for_review_payload(
-        inspection,
-        inspector_name=inspector_name,
-    )
-    private_path, subject = vapid
-    notified = 0
-    for user_id in manager_ids:
-        try:
-            summary = send_user_push_notifications(
-                db,
-                user_id,
-                payload,
-                vapid_private_key_path=private_path,
-                vapid_subject=subject,
-            )
-            if summary.get("sent", 0) > 0:
-                notified += 1
-        except Exception:
-            logger.exception(
-                "Failed to send inspection review push to user_id=%s inspection=%s",
-                user_id,
-                inspection.uuid,
-            )
-
-    try:
-        db.commit()
-    except Exception:
-        db.rollback()
-        logger.exception(
-            "Failed to commit inspection review push records for inspection=%s",
-            inspection.uuid,
-        )
-        return {"managers_notified": 0, "skipped": 0, "commit_failed": 1}
-
-    return {"managers_notified": notified, "target_managers": len(manager_ids)}
 
 
 def create_inbound_inspection(

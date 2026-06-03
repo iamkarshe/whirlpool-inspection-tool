@@ -96,9 +96,28 @@ def validate_send_email_payload(payload: dict[str, Any]) -> None:
         )
 
 
+def validate_notify_inspection_review_payload(payload: dict[str, Any]) -> None:
+    raw_uuid = str(payload.get("inspection_uuid", "") or "").strip()
+    if not raw_uuid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="notify_inspection_review_managers requires inspection_uuid",
+        )
+    try:
+        uuid.UUID(raw_uuid)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="inspection_uuid must be a valid UUID",
+        ) from exc
+
+
 def validate_task_payload(task_type: str, payload: dict[str, Any]) -> None:
     if task_type == "send_email":
         validate_send_email_payload(payload)
+        return
+    if task_type == "notify_inspection_review_managers":
+        validate_notify_inspection_review_payload(payload)
         return
     if task_type not in SUPPORTED_TASK_TYPES:
         raise HTTPException(
@@ -195,6 +214,14 @@ TASK_RESULT_FIELD_TAGS: dict[str, dict[str, str]] = {
         "subject": "Subject",
         "status": "Status",
         "task_type": "Task Type",
+    },
+    "notify_inspection_review_managers": {
+        "inspection_uuid": "Inspection",
+        "warehouse_code": "Warehouse",
+        "target_managers": "Managers",
+        "emails_sent": "Emails Sent",
+        "emails_failed": "Emails Failed",
+        "managers_push_notified": "Push Notified",
     },
     "generate_report": {
         "status": "Status",

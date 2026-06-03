@@ -257,15 +257,16 @@ Send payload example:
 
 ## Inbound / outbound inspection ready for review
 
-When `POST /api/inspections/inbound` or `POST /api/inspections/outbound` creates an inspection with `review_status` `IN_REVIEW`, the API notifies warehouse-scoped **managers** (who approve or reject inspections; excluding the submitting inspector if they are a manager) via `notify_warehouse_managers_inspection_ready_for_review` in `mod/api/inspection/helper.py`.
+When `POST /api/inspections/inbound` or `POST /api/inspections/outbound` creates an inspection with `review_status` `IN_REVIEW`, the API schedules warehouse-scoped **manager** notifications (push + email) via `schedule_inspection_review_manager_notifications` in `mod/api/inspection/review_notifications.py`.
 
-Notification tap URL:
+A Celery task (`notify_inspection_review_managers`) runs when `REDIS_URL` is set; otherwise the same logic runs synchronously (dev fallback).
 
-```text
-/ops/inspections/{inspection_uuid}
-```
+Recipients: active **manager** and **biz-admin** users scoped to the inspection warehouse (excluding the submitting inspector when they are a manager).
 
-Push failures are logged only; inspection creation still succeeds. Requires active push subscriptions and VAPID env vars.
+- **Push**: same payload as before; tap URL `/ops/inspections/{inspection_uuid}` (requires VAPID + subscriptions).
+- **Email**: SMTP from `credentials.json` (`pdiapp@whirlpool.in` / configured from_email); link uses `FRONTEND_BASE_URL` when set.
+
+Notification failures are logged only; inspection creation still succeeds.
 
 Recommended notification storage:
 
