@@ -178,17 +178,50 @@ uv run alembic downgrade -1
 openssl rand -hex 32
 ```
 
-## Background Task Celery
+## Background tasks (Celery + Redis)
+
+Run these from the **API project root** (where `.env` lives). You need **three processes**: Redis, a **worker**, and optionally Flower. Flower alone does not execute tasks.
+
+### 1) Redis
 
 ```bash
-celery -A mod.tasks.worker.celery_app worker --loglevel=info
+redis-server
 ```
 
-- Use Flower to manage
+Set in `.env`:
+
+```env
+REDIS_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND_URL=redis://localhost:6379/1
+```
+
+### 2) Celery worker (required)
+
+Tasks are published to the `default` queue. Without a worker, API rows stay `queued` and Flower shows inspect warnings.
+
+```bash
+celery -A mod.tasks.worker.celery_app worker -Q default,celery --loglevel=info
+```
+
+You should see `mod.tasks.worker.execute_task` in the startup task list and `celery@... ready`.
+
+### 3) Flower (optional monitoring)
+
+Start **after** the worker is running, or inspect warnings (`stats`, `active`, etc.) are expected.
 
 ```bash
 celery -A mod.tasks.worker.celery_app flower --port=5555 --basic-auth=admin:StrongPasswordHere
 ```
+
+### Quick checks
+
+```bash
+redis-cli -n 0 LLEN default
+celery -A mod.tasks.worker.celery_app inspect ping
+celery -A mod.tasks.worker.celery_app inspect active_queues
+```
+
+If `LLEN default` is greater than 0 and the worker is running, the queue should drain. Purge stuck messages only if you intend to discard them: `celery -A mod.tasks.worker.celery_app purge`.
 
 ## Troubleshooting
 

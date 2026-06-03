@@ -80,13 +80,13 @@ function applySmtpFromResponse(s: {
   from_email?: string;
   from_name?: string;
   timeout_seconds?: number;
+  auth_enabled?: boolean;
 }) {
   return {
     provider: (s.provider as SmtpProviderType) || SmtpProvider.custom_smtp,
     host: s.host ?? "",
     port: s.port != null ? String(s.port) : "587",
-    encryption:
-      (s.encryption as SmtpEncryptionType) || SmtpEncryption.starttls,
+    encryption: (s.encryption as SmtpEncryptionType) || SmtpEncryption.starttls,
     username: s.username ?? "",
     password: s.password ?? "",
     fromEmail: s.from_email ?? "",
@@ -117,20 +117,32 @@ export default function IntegrationsSmtpPage() {
 
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<SmtpTestConnectionResponse | null>(
-    null,
-  );
+  const [testResult, setTestResult] =
+    useState<SmtpTestConnectionResponse | null>(null);
   const [testRequestError, setTestRequestError] = useState<string | null>(null);
 
   const isRelay = provider === SmtpProvider.google_workspace_relay;
+  const isCustomSmtp = provider === SmtpProvider.custom_smtp;
+  const credentialsOptional = isRelay || isCustomSmtp;
+
+  const isSmtpAuthEnabled = useMemo(() => {
+    if (isRelay) return false;
+    if (isCustomSmtp) {
+      const hasUsername = Boolean(username.trim());
+      const hasPassword =
+        Boolean(password.trim()) && !isMaskedSecret(password);
+      return hasUsername || hasPassword;
+    }
+    return true;
+  }, [isRelay, isCustomSmtp, username, password]);
 
   const canTestWithFormValues = useMemo(() => {
     if (!fromEmail.trim()) return false;
-    if (isRelay) return true;
+    if (isRelay || (isCustomSmtp && !isSmtpAuthEnabled)) return true;
     if (!username.trim()) return false;
     if (!password.trim() || isMaskedSecret(password)) return false;
     return true;
-  }, [fromEmail, isRelay, username, password]);
+  }, [fromEmail, isRelay, isCustomSmtp, isSmtpAuthEnabled, username, password]);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,19 +176,21 @@ export default function IntegrationsSmtpPage() {
     };
   }, []);
 
-  const resolvePasswordForSave = (): string => {
+  const resolvePasswordForPayload = (): string => {
     const trimmed = password.trim();
     if (isRelay && (!trimmed || isMaskedSecret(trimmed))) return "-";
+    if (!isSmtpAuthEnabled) return "";
     return trimmed;
   };
 
-  const buildPayload = (): SmtpUpdateRequest => ({
+  const buildPayload = (): SmtpUpdateRequest & { auth_enabled: boolean } => ({
     provider,
     host: host.trim() || undefined,
     port: parsePort(port),
     encryption,
+    auth_enabled: isSmtpAuthEnabled,
     username: username.trim() || undefined,
-    password: isRelay ? resolvePasswordForSave() : password.trim(),
+    password: resolvePasswordForPayload(),
     from_email: fromEmail.trim(),
     from_name: fromName.trim() || undefined,
     timeout_seconds: parseTimeout(timeout),
@@ -212,7 +226,7 @@ export default function IntegrationsSmtpPage() {
     setSaveError(null);
 
     if (
-      !isRelay &&
+      isSmtpAuthEnabled &&
       (!password.trim() || isMaskedSecret(password))
     ) {
       setSaveError(
@@ -287,7 +301,8 @@ export default function IntegrationsSmtpPage() {
           <CardTitle>SMTP</CardTitle>
           <CardDescription>
             Configure outbound email for notifications and system messages.
-            Supported providers include AWS SES, Google Workspace, and custom SMTP.
+            Supported providers include AWS SES, Google Workspace, and custom
+            SMTP.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -317,9 +332,9 @@ export default function IntegrationsSmtpPage() {
                   value={host}
                   onChange={onField(setHost)}
                   placeholder={
-                    provider === SmtpProvider.google_workspace ?
-                      "smtp.gmail.com"
-                    : "smtp.example.com"
+                    provider === SmtpProvider.google_workspace
+                      ? "smtp.gmail.com"
+                      : "smtp.example.com"
                   }
                   autoComplete="off"
                 />
@@ -366,7 +381,7 @@ export default function IntegrationsSmtpPage() {
 
               <div className="grid gap-2 sm:col-span-2">
                 <Label htmlFor="smtp_username">
-                  Username{isRelay ? " (optional)" : ""}
+                  Username{credentialsOptional ? " (optional)" : ""}
                 </Label>
                 <Input
                   id="smtp_username"
@@ -380,7 +395,12 @@ export default function IntegrationsSmtpPage() {
               </div>
               <div className="grid gap-2 sm:col-span-2">
                 <Label htmlFor="smtp_password">
-                  Password{isRelay ? " (not used for relay)" : ""}
+                  Password
+                  {isRelay
+                    ? " (not used for relay)"
+                    : isCustomSmtp
+                      ? " (optional)"
+                      : ""}
                 </Label>
                 <Input
                   id="smtp_password"
@@ -388,14 +408,22 @@ export default function IntegrationsSmtpPage() {
                   type="password"
                   value={password}
                   onChange={onField(setPassword)}
-                  placeholder={isRelay ? "Leave blank when unchanged" : "••••••••"}
+                  placeholder={
+                    isRelay ? "Leave blank when unchanged" : "••••••••"
+                  }
                   autoComplete="new-password"
-                  required={!isRelay}
+                  required={!credentialsOptional}
                 />
                 {isRelay ? (
                   <p className="text-muted-foreground text-xs">
                     Relay mode does not authenticate with username/password; a
                     placeholder is stored if the field is left blank.
+                  </p>
+                ) : isCustomSmtp ? (
+                  <p className="text-muted-foreground text-xs">
+                    Leave username and password blank for SMTP servers that do
+                    not require authentication (auth is enabled when either
+                    field is set).
                   </p>
                 ) : null}
               </div>

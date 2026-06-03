@@ -6,25 +6,44 @@ from sqlalchemy.orm import Session
 from mod.api.middleware import auth_dependency
 from mod.api.tasks.helper import (
     get_task_by_uuid_or_404,
-    map_task_result,
-    map_task_status,
+    list_recent_tasks,
+    map_task_detail,
     queue_sample_send_email_task,
     queue_task,
 )
 from mod.api.tasks.request import SampleSendEmailRequest, TaskCreateRequest
 from mod.api.tasks.response import (
     TaskCreateResponse,
-    TaskResultResponse,
-    TaskStatusResponse,
+    TaskDetailResponse,
+    TaskListResponse,
 )
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
+
+TASK_API_ROLES = ["superadmin"]
 
 router = APIRouter(
     tags=["Tasks"],
     dependencies=[Depends(auth_dependency)],
     prefix="/api",
 )
+
+
+@router.get(
+    "/tasks",
+    name="list_tasks",
+    summary="List recent background tasks",
+    description="Returns the 50 most recently created tasks, newest first.",
+    response_model=TaskListResponse,
+    responses={403: {"description": "Caller is not superadmin."}},
+)
+@exception_handler_decorator
+@check_api_role(TASK_API_ROLES)
+def list_tasks(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> TaskListResponse:
+    return list_recent_tasks(db)
 
 
 @router.post(
@@ -34,7 +53,7 @@ router = APIRouter(
     response_model=TaskCreateResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(TASK_API_ROLES)
 def create_task(
     request: Request,
     body: TaskCreateRequest,
@@ -55,7 +74,7 @@ def create_task(
     response_model=TaskCreateResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
+@check_api_role(TASK_API_ROLES)
 def queue_sample_send_email(
     request: Request,
     body: SampleSendEmailRequest,
@@ -67,33 +86,20 @@ def queue_sample_send_email(
 
 @router.get(
     "/tasks/{task_uuid}",
-    name="get_task_status",
-    summary="Get background task status",
-    response_model=TaskStatusResponse,
+    name="get_task",
+    summary="Get background task status and result",
+    description=(
+        "Returns task status, timing, result flags, and display_fields "
+        "as tagged rows for React detail screens."
+    ),
+    response_model=TaskDetailResponse,
 )
 @exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
-def get_task_status(
+@check_api_role(TASK_API_ROLES)
+def get_task(
     request: Request,
     task_uuid: uuid.UUID,
     db: Session = Depends(get_db),
-) -> TaskStatusResponse:
+) -> TaskDetailResponse:
     task = get_task_by_uuid_or_404(db, task_uuid)
-    return map_task_status(task)
-
-
-@router.get(
-    "/tasks/{task_uuid}/result",
-    name="get_task_result",
-    summary="Get background task result",
-    response_model=TaskResultResponse,
-)
-@exception_handler_decorator
-@check_api_role(["superadmin", "manager"])
-def get_task_result(
-    request: Request,
-    task_uuid: uuid.UUID,
-    db: Session = Depends(get_db),
-) -> TaskResultResponse:
-    task = get_task_by_uuid_or_404(db, task_uuid)
-    return map_task_result(task)
+    return map_task_detail(task)

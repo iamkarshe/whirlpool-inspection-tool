@@ -33,14 +33,13 @@ export function SmtpTestConnectionDialog({
   testing,
   result,
   requestError,
-  useFormValues,
   onRunTest,
 }: Props) {
   const [toEmail, setToEmail] = useState("");
 
   useEffect(() => {
     if (!open) {
-      setToEmail("");
+      setTimeout(() => setToEmail(""), 0);
     }
   }, [open]);
 
@@ -59,10 +58,7 @@ export function SmtpTestConnectionDialog({
         <DialogHeader className="space-y-1 px-6 pt-6 pb-2">
           <DialogTitle>Test email connection</DialogTitle>
           <DialogDescription>
-            Sends a test message using{" "}
-            {useFormValues ?
-              "the values in the form above (unsaved)."
-            : "saved SMTP settings."}
+            Sends a test message using SMTP settings.
           </DialogDescription>
         </DialogHeader>
 
@@ -125,7 +121,9 @@ export function SmtpTestConnectionDialog({
                     <pre
                       className={cn(
                         "p-3 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap",
-                        succeeded ? "text-muted-foreground" : "text-destructive/90",
+                        succeeded
+                          ? "text-muted-foreground"
+                          : "text-destructive/90",
                       )}
                     >
                       {result.error_trace}

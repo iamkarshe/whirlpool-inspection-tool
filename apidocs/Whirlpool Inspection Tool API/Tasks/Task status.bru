@@ -1,0 +1,21 @@
+meta {
+  name: Task status
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/tasks/31d166cb-d346-4671-bd02-867e3c33e15a
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-job-execute-token: {{job_trigger_key}}
+}
+
+body:json {
+  {
+   "to_email": "utkarsh2point0@gmail.com" 
+  }
+}
