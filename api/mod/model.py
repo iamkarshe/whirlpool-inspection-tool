@@ -206,6 +206,18 @@ class JobLogStatus(str, enum.Enum):
 JOB_LOG_STATUS_DB = pg_str_enum(JobLogStatus, name="job_log_status", length=16)
 
 
+class TaskStatus(str, enum.Enum):
+    queued = "queued"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+    retrying = "retrying"
+    cancelled = "cancelled"
+
+
+TASK_STATUS_DB = pg_str_enum(TaskStatus, name="task_status", length=30)
+
+
 class TimestampSoftDeleteMixin:
     uuid: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
@@ -1180,3 +1192,81 @@ class JobLog(TimestampSoftDeleteMixin, Base):
         Integer, nullable=False, server_default="0"
     )
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(
+        "metadata",
+        JSONB,
+        nullable=True,
+    )
+
+
+class Task(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "tasks"
+    __table_args__ = (
+        Index("ix_tasks_task_type", "task_type"),
+        Index("ix_tasks_status", "status"),
+        Index("ix_tasks_queue_name", "queue_name"),
+        Index("ix_tasks_celery_task_id", "celery_task_id"),
+        Index("ix_tasks_created_at", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    task_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[TaskStatus] = mapped_column(
+        TASK_STATUS_DB,
+        nullable=False,
+        default=TaskStatus.queued,
+    )
+    queue_name: Mapped[str] = mapped_column(
+        String(100), nullable=False, server_default="default"
+    )
+    celery_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    payload: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, server_default="{}"
+    )
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
+    progress_percent: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
+    progress_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tenant_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    started_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    completed_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    failed_at: Mapped[Any | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    logs: Mapped[list["TaskLog"]] = relationship(
+        back_populates="task",
+        cascade="all, delete-orphan",
+    )
+
+
+class TaskLog(Base):
+    __tablename__ = "task_logs"
+    __table_args__ = (Index("ix_task_logs_task_id", "task_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    level: Mapped[str] = mapped_column(String(30), nullable=False, server_default="info")
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    context: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    task: Mapped["Task"] = relationship(back_populates="logs")

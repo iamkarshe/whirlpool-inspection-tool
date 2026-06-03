@@ -78,6 +78,7 @@ def resolve_role_context(
             proxy_ip=ctx.proxy_ip,
             user_agent=ctx.user_agent,
             reason="missing_or_inactive_role",
+            attempted_email=user.email,
         )
         db.commit()
         raise HTTPException(
@@ -126,6 +127,9 @@ def ensure_user_is_active(
     ctx: RequestClientContext,
     *,
     failure_reason: str = "inactive_user",
+    attempted_email: str | None = None,
+    login_method: str = "password",
+    login_metadata: dict | None = None,
 ) -> None:
     if user.is_active:
         return
@@ -137,6 +141,9 @@ def ensure_user_is_active(
         proxy_ip=ctx.proxy_ip,
         user_agent=ctx.user_agent,
         reason=failure_reason,
+        attempted_email=attempted_email or user.email,
+        login_method=login_method,
+        login_metadata=login_metadata,
     )
     db.commit()
     raise HTTPException(
@@ -151,6 +158,9 @@ def log_user_not_found_and_raise(
     *,
     reason: str,
     detail: str = "Invalid email or password",
+    attempted_email: str | None = None,
+    login_method: str = "password",
+    login_metadata: dict | None = None,
 ) -> None:
     log_login_failure_action(
         db=db,
@@ -159,6 +169,9 @@ def log_user_not_found_and_raise(
         proxy_ip=ctx.proxy_ip,
         user_agent=ctx.user_agent,
         reason=reason,
+        attempted_email=attempted_email,
+        login_method=login_method,
+        login_metadata=login_metadata,
     )
     db.commit()
     raise HTTPException(
@@ -173,6 +186,9 @@ def complete_login(
     ctx: RequestClientContext,
     *,
     device_payload: LoginDeviceInfo | None = None,
+    attempted_email: str | None = None,
+    login_method: str = "password",
+    login_metadata: dict | None = None,
 ) -> LoginResponse:
     role_name, allowed_warehouses = resolve_role_context(db, user, ctx)
     allow_multi_login = get_allow_multi_login()
@@ -204,6 +220,9 @@ def complete_login(
         client_ip=ctx.client_ip,
         proxy_ip=ctx.proxy_ip,
         user_agent=ctx.user_agent,
+        attempted_email=attempted_email or user.email,
+        login_method=login_method,
+        login_metadata=login_metadata,
     )
     db.flush()
 

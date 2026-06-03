@@ -94,7 +94,17 @@ def log_auth_login_success(
     access_token_preview: str | None,
     device_fingerprint: str | None,
     device_imei: str | None,
+    attempted_email: str | None = None,
+    login_method: str = "password",
+    login_metadata: dict[str, Any] | None = None,
 ) -> None:
+    details: dict[str, Any] = {
+        "attempted_email": attempted_email,
+        "login_email": attempted_email,
+        "login_method": login_method,
+    }
+    if login_metadata:
+        details["login_metadata"] = login_metadata
     record_application_log(
         db,
         actor_user_id=user_id,
@@ -108,6 +118,7 @@ def log_auth_login_success(
         access_token_preview=access_token_preview,
         device_fingerprint=device_fingerprint,
         device_imei=device_imei,
+        **details,
     )
 
 
@@ -120,8 +131,20 @@ def log_auth_login_failed(
     client_ip: str | None,
     proxy_ip: str | None,
     user_agent: str | None,
+    attempted_email: str | None = None,
+    login_method: str = "password",
+    login_metadata: dict[str, Any] | None = None,
 ) -> None:
+    normalized_attempt = (attempted_email or email or "").strip().lower() or None
     message = reason.strip() or DEFAULT_ACTION_MESSAGES[ACTION_AUTH_LOGIN_FAILED]
+    details: dict[str, Any] = {
+        "reason": message,
+        "attempted_email": normalized_attempt,
+        "login_email": email,
+        "login_method": login_method,
+    }
+    if login_metadata:
+        details["login_metadata"] = login_metadata
     record_application_log(
         db,
         actor_user_id=user_id,
@@ -131,7 +154,8 @@ def log_auth_login_failed(
         ip=client_ip,
         proxy_ip=proxy_ip,
         user_agent=user_agent,
-        email=email,
+        email=email or normalized_attempt,
+        **details,
     )
 
 

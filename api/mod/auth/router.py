@@ -6,7 +6,8 @@ from utils.auth_rate_limit import (
 )
 from sqlalchemy.orm import Session
 
-from mod.auth.actions import log_login_failure_action
+from mod.auth.actions import build_login_device_metadata, log_login_failure_action
+from utils.common import normalize_login_email
 from mod.auth.helper import (
     complete_login,
     ensure_user_is_active,
@@ -41,13 +42,27 @@ def login(
     db: Session = Depends(get_db),
 ) -> LoginResponse:
     ctx = get_request_client_context(request)
+    attempted_email = normalize_login_email(str(payload.email))
+    login_metadata = build_login_device_metadata(payload.device)
 
-    user: User | None = get_user_for_login(db, str(payload.email))
+    user: User | None = get_user_for_login(db, attempted_email)
 
     if user is None:
-        log_user_not_found_and_raise(db, ctx, reason="user_not_found")
+        log_user_not_found_and_raise(
+            db,
+            ctx,
+            reason="user_not_found",
+            attempted_email=attempted_email,
+            login_metadata=login_metadata,
+        )
 
-    ensure_user_is_active(db, user, ctx)
+    ensure_user_is_active(
+        db,
+        user,
+        ctx,
+        attempted_email=attempted_email,
+        login_metadata=login_metadata,
+    )
 
     if not verify_password(payload.password, user.password):
         log_login_failure_action(
@@ -57,6 +72,8 @@ def login(
             proxy_ip=ctx.proxy_ip,
             user_agent=ctx.user_agent,
             reason="invalid_password",
+            attempted_email=attempted_email,
+            login_metadata=login_metadata,
         )
         db.commit()
         raise HTTPException(
@@ -64,7 +81,15 @@ def login(
             detail="Invalid email or password",
         )
 
-    login_response = complete_login(db, user, ctx, device_payload=payload.device)
+    login_response = complete_login(
+        db,
+        user,
+        ctx,
+        device_payload=payload.device,
+        attempted_email=attempted_email,
+        login_method="password",
+        login_metadata=login_metadata,
+    )
     reset_auth_rate_limit_after_successful_login(request, response)
     return login_response
 
@@ -84,8 +109,10 @@ def login_token(
 ) -> LoginResponse:
     ctx = get_request_client_context(request)
     email = verify_sso_login_token(payload.access_token)
+    attempted_email = normalize_login_email(email)
+    login_metadata = build_login_device_metadata(payload.device)
 
-    user: User | None = get_user_for_login(db, email)
+    user: User | None = get_user_for_login(db, attempted_email)
 
     if user is None:
         log_user_not_found_and_raise(
@@ -93,11 +120,30 @@ def login_token(
             ctx,
             reason="sso_user_not_found",
             detail="No account found for this SSO user",
+            attempted_email=attempted_email,
+            login_method="sso",
+            login_metadata=login_metadata,
         )
 
-    ensure_user_is_active(db, user, ctx, failure_reason="sso_inactive_user")
+    ensure_user_is_active(
+        db,
+        user,
+        ctx,
+        failure_reason="sso_inactive_user",
+        attempted_email=attempted_email,
+        login_method="sso",
+        login_metadata=login_metadata,
+    )
 
-    login_response = complete_login(db, user, ctx, device_payload=payload.device)
+    login_response = complete_login(
+        db,
+        user,
+        ctx,
+        device_payload=payload.device,
+        attempted_email=attempted_email,
+        login_method="sso",
+        login_metadata=login_metadata,
+    )
     reset_auth_rate_limit_after_successful_login(request, response)
     return login_response
 

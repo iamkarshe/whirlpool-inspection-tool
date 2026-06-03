@@ -65,6 +65,19 @@ def upsert_device_action(
     return device
 
 
+def build_login_device_metadata(
+    device_payload: Optional[LoginDeviceInfo],
+) -> dict[str, str | None]:
+    if device_payload is None:
+        return {"device_present": False}
+    return {
+        "device_present": True,
+        "device_type": device_payload.device_type,
+        "device_fingerprint": device_payload.device_fingerprint,
+        "device_imei": device_payload.imei,
+    }
+
+
 def log_login_action(
     db: Session,
     user: User,
@@ -73,6 +86,10 @@ def log_login_action(
     client_ip: Optional[str],
     proxy_ip: Optional[str],
     user_agent: Optional[str],
+    *,
+    attempted_email: Optional[str] = None,
+    login_method: str = "password",
+    login_metadata: Optional[dict] = None,
 ) -> None:
     """
     Persist an audit log entry for a successful login.
@@ -89,6 +106,9 @@ def log_login_action(
         access_token_preview=token_preview,
         device_fingerprint=getattr(device, "device_fingerprint", None),
         device_imei=getattr(device, "imei", None),
+        attempted_email=attempted_email or user.email,
+        login_method=login_method,
+        login_metadata=login_metadata,
     )
 
 
@@ -99,6 +119,10 @@ def log_login_failure_action(
     proxy_ip: Optional[str],
     user_agent: Optional[str],
     reason: str,
+    *,
+    attempted_email: Optional[str] = None,
+    login_method: str = "password",
+    login_metadata: Optional[dict] = None,
 ) -> None:
     """
     Persist an audit log entry for failed login attempts.
@@ -111,4 +135,7 @@ def log_login_failure_action(
         client_ip=client_ip,
         proxy_ip=proxy_ip,
         user_agent=user_agent,
+        attempted_email=attempted_email,
+        login_method=login_method,
+        login_metadata=login_metadata,
     )

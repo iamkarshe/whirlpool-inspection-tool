@@ -35,6 +35,10 @@ class JobLogItemResponse(BaseModel):
     status: str = Field(..., description="success or failed.")
     rows_updated: int
     message: str | None = None
+    metadata: dict | None = Field(
+        default=None,
+        description="Structured context (task_uuid, thresholds, login correlation, etc.).",
+    )
     created_at: datetime
 
 

@@ -76,9 +76,19 @@ def format_application_log_message(_log: Log, payload: dict[str, Any]) -> str:
     if action in DEFAULT_ACTION_MESSAGES:
         default = DEFAULT_ACTION_MESSAGES[action]
         if action == ACTION_AUTH_LOGIN_FAILED:
+            attempted = payload.get("attempted_email") or payload.get("email")
             reason = payload.get("reason")
+            if isinstance(attempted, str) and attempted.strip():
+                email_label = attempted.strip()
+                if isinstance(reason, str) and reason.strip():
+                    return f"Login failed for {email_label}: {reason.strip()}"
+                return f"Login failed for {email_label}"
             if isinstance(reason, str) and reason.strip():
                 return reason.strip()
+        if action == ACTION_AUTH_LOGIN:
+            attempted = payload.get("attempted_email") or payload.get("login_email")
+            if isinstance(attempted, str) and attempted.strip():
+                return f"User login successful ({attempted.strip()})"
         return default
 
     event = str(payload.get("event", "")).strip().lower()
@@ -119,6 +129,7 @@ def map_job_log_item(row: JobLog) -> JobLogItemResponse:
         status=status,
         rows_updated=int(row.rows_updated or 0),
         message=row.message,
+        metadata=row.metadata_json if isinstance(row.metadata_json, dict) else None,
         created_at=row.created_at,
     )
 

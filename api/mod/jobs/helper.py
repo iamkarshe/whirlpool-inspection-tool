@@ -82,6 +82,7 @@ def persist_job_log(
     status: JobLogStatus,
     rows_updated: int,
     message: str,
+    metadata: dict | None = None,
 ) -> bool:
     if not should_persist_job_log(status=status, rows_updated=rows_updated):
         return False
@@ -92,6 +93,7 @@ def persist_job_log(
             status=status,
             rows_updated=rows_updated,
             message=message[:4000] if message else None,
+            metadata_json=metadata,
             is_active=True,
         )
     )
@@ -160,6 +162,10 @@ def run_auto_approve_inspections(db: Session) -> JobRunResult:
             status=JobLogStatus.success,
             rows_updated=rows_updated,
             message=message,
+            metadata={
+                "hours_threshold": hours,
+                "candidate_count": len(candidate_ids),
+            },
         )
         return JobRunResult(
             job_name=job_name,
@@ -176,6 +182,7 @@ def run_auto_approve_inspections(db: Session) -> JobRunResult:
             status=JobLogStatus.failed,
             rows_updated=rows_updated,
             message=message,
+            metadata={"error_type": exc.__class__.__name__},
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

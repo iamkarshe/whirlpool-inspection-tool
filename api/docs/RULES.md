@@ -8,6 +8,7 @@
 - Use UUID in API path params for resource lookup (`/{resource_uuid}`), never numeric database IDs.
 - Keep routers thin: mappers, `get_*_or_404` loaders, and similar helpers live in `mod/api/<module>/helper.py` (or `mod/<module>/helper.py` for non-API packages such as auth), not in the router file.
 - Reusable helpers and shared literals belong in `utils/common.py` with normal names (no leading underscore on module-level constants or on helpers intended for reuse across modules).
+- Try to find the existing function for same thing and use, extend same function, we have to use DRY (don't repeat yourself), most of the helper already exists.
 
 ### Database migrations
 
@@ -20,4 +21,5 @@
 
 - Do not use 1) or 1. in code comments, code comment should be direct to the point and verbose-less.
 - Variable names should do the comment work.
+- Variable and function never ever start with \_(underscore).
 - Prefer fully spelled names over abbreviations (for example `existing_inspection`, not `existing_insp` or `dup`).

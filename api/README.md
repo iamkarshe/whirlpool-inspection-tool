@@ -143,13 +143,14 @@ uv run alembic revision --autogenerate -m "initial migration"
 uv run alembic upgrade head
 ```
 
-3. After changes into `model.py` use following command to auto-generate the migration 
+3. After changes into `model.py` use following command to auto-generate the migration
 
 ```bash
 alembic revision --autogenerate -m "add plants and warehouse location columns"
 ```
 
-4. Apply it using: 
+4. Apply it using:
+
 ```bash
 alembic upgrade head
 ```
@@ -173,8 +174,20 @@ uv run alembic downgrade -1
 
 ## JWT Secret Key
 
-```
+```bash
 openssl rand -hex 32
+```
+
+## Background Task Celery
+
+```bash
+celery -A mod.tasks.worker.celery_app worker --loglevel=info
+```
+
+- Use Flower to manage
+
+```bash
+celery -A mod.tasks.worker.celery_app flower --port=5555 --basic-auth=admin:StrongPasswordHere
 ```
 
 ## Troubleshooting

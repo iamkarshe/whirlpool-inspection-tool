@@ -74,6 +74,21 @@ def get_job_execute_token() -> str | None:
     return get_env_optional("JOB_EXECUTE_TOKEN")
 
 
+def get_redis_url() -> str:
+    return get_env_optional("REDIS_URL") or "redis://localhost:6379/0"
+
+
+def get_celery_result_backend_url() -> str:
+    return (
+        get_env_optional("CELERY_RESULT_BACKEND_URL")
+        or "redis://localhost:6379/1"
+    )
+
+
+def is_celery_broker_configured() -> bool:
+    return get_env_optional("REDIS_URL") is not None
+
+
 def get_auto_approve_inspection_hours() -> int:
     raw = get_env_optional("AUTO_APPROVE_INSPECTION_HOURS", "6") or "6"
     try:
