@@ -1,0 +1,16 @@
+[Unit]
+Description=Whirlpool API Flower
+After=redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=whirlpool
+Group=whirlpool
+WorkingDirectory=/opt/whirlpool/api
+EnvironmentFile=/etc/whirlpool/api.env
+ExecStart=/opt/whirlpool/api/.venv/bin/celery -A mod.tasks.worker.celery_app flower --port=5555 --basic-auth=admin:changeme
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
