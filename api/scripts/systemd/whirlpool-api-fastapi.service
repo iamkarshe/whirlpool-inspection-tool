@@ -2,15 +2,19 @@
 Description=Whirlpool API FastAPI
 After=redis-server.service
 Requires=redis-server.service
+PartOf=whirlpool-api.target
 
 [Service]
 Type=simple
-User=whirlpool
-Group=whirlpool
+User=scoptanalytics-whirlpool
+Group=scoptanalytics-whirlpool
 WorkingDirectory=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in
 EnvironmentFile=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.env
 ExecStart=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8210 --workers 4
 Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=whirlpool-api.target

@@ -2,15 +2,19 @@
 Description=Whirlpool API Flower
 After=redis-server.service
 Requires=redis-server.service
+PartOf=whirlpool-api.target
 
 [Service]
 Type=simple
-User=whirlpool
-Group=whirlpool
+User=scoptanalytics-whirlpool
+Group=scoptanalytics-whirlpool
 WorkingDirectory=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in
 EnvironmentFile=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.env
-ExecStart=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.venv/bin/celery -A mod.tasks.worker.celery_app flower --port=5555 --basic-auth=celery:dPlKg0hfgmBHKwcTy7oQPfgG
+ExecStart=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.venv/bin/celery -A mod.tasks.worker.celery_app flower --address=127.0.0.1 --port=5555 --basic-auth=${FLOWER_BASIC_AUTH}
 Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target

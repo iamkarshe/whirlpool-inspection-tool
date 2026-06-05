@@ -1,0 +1,7 @@
+[Unit]
+Description=Whirlpool API Stack
+Wants=whirlpool-api-fastapi.service whirlpool-api-celery.service whirlpool-api-flower.service
+After=network-online.target redis-server.service
+
+[Install]
+WantedBy=multi-user.target
