@@ -1,0 +1,16 @@
+[Unit]
+Description=Whirlpool API Celery worker
+After=redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=whirlpool
+Group=whirlpool
+WorkingDirectory=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in
+EnvironmentFile=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.env
+ExecStart=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.venv/bin/celery -A mod.tasks.worker.celery_app worker -Q default,celery --loglevel=info
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
