@@ -5,6 +5,11 @@ from typing import Any, List
 from pydantic import BaseModel, Field
 
 
+class LoginIpExternalLinksResponse(BaseModel):
+    abuseipdb: str = Field(description="AbuseIPDB check page for this IP.")
+    ipinfo: str = Field(description="IPinfo lookup page for this IP.")
+
+
 class LoginIpMetadataResponse(BaseModel):
     country_code: str | None = None
     country_name: str | None = None
@@ -68,6 +73,7 @@ class LoginIpSummaryItemResponse(BaseModel):
             "or only_failures"
         ),
     )
+    external_links: LoginIpExternalLinksResponse
 
 
 class LoginIpSummaryListResponse(BaseModel):
@@ -92,6 +98,7 @@ class LoginIpHealthResponse(BaseModel):
     ip_metadata: LoginIpMetadataResponse | None = None
     is_abusive: bool
     abusive_reasons: List[str] = Field(default_factory=list)
+    external_links: LoginIpExternalLinksResponse
 
 
 class LoginIpRecentUserResponse(BaseModel):

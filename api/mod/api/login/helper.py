@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, time, timedelta, timezone
 from typing import Any
+from urllib.parse import quote
 
 from sqlalchemy import Float, and_, case, cast, func, or_
 from sqlalchemy.dialects.postgresql import JSONB
@@ -19,6 +20,7 @@ from mod.api.login.response import (
     LoginDetailResponse,
     LoginInspectionResponse,
     LoginIpDetailResponse,
+    LoginIpExternalLinksResponse,
     LoginIpHealthResponse,
     LoginIpMetadataResponse,
     LoginIpRecentUserResponse,
@@ -221,6 +223,15 @@ LOGIN_IP_RECENT_LOGINS_LIMIT = 100
 LOGIN_IP_RECENT_USERS_LIMIT = 10
 
 
+def build_login_ip_external_links(ip_address: str) -> LoginIpExternalLinksResponse:
+    normalized = normalize_ip_address(ip_address) or str(ip_address).strip()
+    encoded = quote(normalized, safe="")
+    return LoginIpExternalLinksResponse(
+        abuseipdb=f"https://www.abuseipdb.com/check/{encoded}",
+        ipinfo=f"https://ipinfo.io/{encoded}",
+    )
+
+
 def login_log_ip_expression():
     return cast(Log.log_value, JSONB)["ip"].astext
 
@@ -416,8 +427,9 @@ def map_login_ip_summary_item(
         failed_logins=failed_logins,
         successful_logins=successful_logins,
     )
+    ip_value = str(row.ip_address)
     return LoginIpSummaryItemResponse(
-        ip_address=str(row.ip_address),
+        ip_address=ip_value,
         total_logins=total_logins,
         successful_logins=successful_logins,
         failed_logins=failed_logins,
@@ -427,6 +439,7 @@ def map_login_ip_summary_item(
         ip_metadata=map_ip_metadata(ip_metadata),
         is_abusive=is_abusive,
         abusive_reasons=abusive_reasons,
+        external_links=build_login_ip_external_links(ip_value),
     )
 
 
@@ -515,6 +528,7 @@ def fetch_login_ip_detail(
         ip_metadata=map_ip_metadata(ip_metadata),
         is_abusive=is_abusive,
         abusive_reasons=abusive_reasons,
+        external_links=build_login_ip_external_links(normalized),
     )
 
     recent_rows = (
