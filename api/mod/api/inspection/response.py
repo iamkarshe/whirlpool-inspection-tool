@@ -29,6 +29,7 @@ from utils.common import (
     normalize_registration,
     parse_to_utc_datetime,
 )
+from utils.pagination import PaginatedListResponseBase
 
 
 class BarcodeLockAcquireRequest(BaseModel):
@@ -106,12 +107,10 @@ class InspectionListItemResponse(BaseModel):
     updated_at: datetime
 
 
-class InspectionListResponse(BaseModel):
-    data: List[InspectionListItemResponse]
-    total: int
-    page: int
-    per_page: int
-    total_pages: int
+class InspectionListResponse(PaginatedListResponseBase):
+    data: List[InspectionListItemResponse] = Field(
+        description="Inspection rows for the current page.",
+    )
 
 
 class InspectionAnalyticsKpis(BaseModel):

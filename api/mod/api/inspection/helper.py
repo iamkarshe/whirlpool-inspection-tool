@@ -46,7 +46,10 @@ from mod.api.inspection.review_notifications import (
 )
 from mod.api.plant.helper import get_plant_by_uuid_or_404
 from mod.api.product.helper import map_product
-from mod.api.product_category.helper import map_product_category
+from mod.api.product_category.helper import (
+    get_product_category_or_404,
+    map_product_category,
+)
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
 from mod.model import (
     BarcodeLock,
@@ -110,6 +113,43 @@ def enforced_checklist_image_count(ch: Checklist, answer_value: str) -> int:
     return 0
 
 
+def resolve_inspector_user_ids(
+    db: Session, inspector_uuids: list[uuid.UUID]
+) -> list[int]:
+    if not inspector_uuids:
+        return []
+    return [
+        row[0]
+        for row in db.query(User.id)
+        .filter(User.uuid.in_(inspector_uuids), User.is_active.is_(True))
+        .all()
+    ]
+
+
+def resolve_warehouse_codes_from_uuids(
+    db: Session, warehouse_uuids: list[uuid.UUID]
+) -> list[str]:
+    if not warehouse_uuids:
+        return []
+    codes: list[str] = []
+    for warehouse_uuid in warehouse_uuids:
+        codes.append(
+            get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code
+        )
+    return codes
+
+
+def resolve_product_category_ids_from_uuids(
+    db: Session, product_category_uuids: list[uuid.UUID]
+) -> list[int]:
+    if not product_category_uuids:
+        return []
+    return [
+        get_product_category_or_404(db, category_uuid).id
+        for category_uuid in product_category_uuids
+    ]
+
+
 def resolve_inspection_scope_filters(
     db: Session,
     warehouse_uuid: uuid.UUID | None,
@@ -125,24 +165,29 @@ def resolve_inspection_scope_filters(
 
 
 def apply_inspection_list_warehouse_scope(
-    query, db: Session, request: Request, warehouse_code: str | None
+    query,
+    db: Session,
+    request: Request,
+    warehouse_codes: list[str] | None,
 ):
     from utils.roles import user_warehouse_codes_for_request
 
+    selected_codes = list(warehouse_codes or [])
     allowed = user_warehouse_codes_for_request(db, request)
     if allowed is None:
-        if warehouse_code is not None:
-            return query.filter(Inspection.warehouse_code == warehouse_code)
+        if selected_codes:
+            return query.filter(Inspection.warehouse_code.in_(selected_codes))
         return query
     if not allowed:
         return query.filter(False)
-    if warehouse_code is not None:
-        if warehouse_code not in set(allowed):
+    if selected_codes:
+        disallowed = set(selected_codes) - set(allowed)
+        if disallowed:
             raise HTTPException(
                 status_code=403,
-                detail="Not allowed to view inspections for this warehouse",
+                detail="Not allowed to view inspections for one or more warehouses",
             )
-        return query.filter(Inspection.warehouse_code == warehouse_code)
+        return query.filter(Inspection.warehouse_code.in_(selected_codes))
     return query.filter(Inspection.warehouse_code.in_(allowed))
 
 

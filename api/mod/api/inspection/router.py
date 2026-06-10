@@ -15,6 +15,10 @@ from fastapi import (
 from sqlalchemy.orm import Session, joinedload
 
 from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
+from mod.api.inspection.request import (
+    InspectionListQueryParams,
+    get_inspection_list_query_params,
+)
 from mod.api.inspection.helper import (
     acquire_inspection_barcode_lock,
     apply_inspection_list_warehouse_scope,
@@ -37,6 +41,9 @@ from mod.api.inspection.helper import (
     release_inspection_barcode_lock,
     resolve_inspection_kpi_warehouse_codes,
     resolve_inspection_scope_filters,
+    resolve_inspector_user_ids,
+    resolve_product_category_ids_from_uuids,
+    resolve_warehouse_codes_from_uuids,
     save_inspection_image_upload,
     update_inspection_review_status,
 )
@@ -77,12 +84,7 @@ from utils.roles import (
     assert_warehouse_code_in_request_scope,
     request_has_superadmin,
 )
-from utils.pagination import (
-    PaginationParams,
-    apply_standard_filters,
-    get_pagination_params,
-    paginate_query,
-)
+from utils.pagination import apply_standard_filters, paginate_query
 
 router = APIRouter(
     tags=["Inspections"],
@@ -311,6 +313,8 @@ def get_inspection_kpis_operator(
 @router.get(
     "/inspections",
     name="get_inspections",
+    summary="List inspections",
+    description="Paginated list of inspections with optional filters.",
     response_model=InspectionListResponse,
 )
 @exception_handler_decorator
@@ -318,19 +322,10 @@ def get_inspection_kpis_operator(
 @apply_operator_scope_filters
 def get_inspections(
     request: Request,
-    params: PaginationParams = Depends(get_pagination_params),
-    is_active: bool = Query(True),
-    inspection_type: str | None = Query(
-        None, description="Filter: inbound or outbound"
-    ),
-    warehouse_uuid: uuid.UUID | None = Query(
-        None, description="Optional filter by warehouse UUID"
-    ),
-    plant_uuid: uuid.UUID | None = Query(
-        None, description="Optional filter by plant UUID"
-    ),
+    query_params: InspectionListQueryParams = Depends(get_inspection_list_query_params),
     db: Session = Depends(get_db),
 ):
+    params = query_params.pagination_params()
     if (params.date_from is None) ^ (params.date_to is None):
         raise HTTPException(
             status_code=400,
@@ -351,9 +346,10 @@ def get_inspections(
         and params.date_field is None
     ):
         filter_params = params.model_copy(update={"date_field": "created_at"})
-    warehouse_code, plant_code = resolve_inspection_scope_filters(
-        db, warehouse_uuid, plant_uuid
+    warehouse_codes = resolve_warehouse_codes_from_uuids(
+        db, query_params.warehouse_uuids
     )
+    _, plant_code = resolve_inspection_scope_filters(db, None, query_params.plant_uuid)
     query = (
         db.query(Inspection)
         .join(Product, Inspection.product_id == Product.id)
@@ -366,23 +362,44 @@ def get_inspections(
             joinedload(Inspection.product),
             joinedload(Inspection.product_unit),
         )
-        .filter(Inspection.is_active.is_(is_active))
+        .filter(Inspection.is_active.is_(query_params.is_active))
     )
     inspector_scope_id = getattr(request.state, "inspector_scope_user_id", None)
     if inspector_scope_id is not None:
         query = query.filter(Inspection.inspector_id == inspector_scope_id)
-    query = apply_inspection_list_warehouse_scope(query, db, request, warehouse_code)
+    elif query_params.inspector_uuids:
+        inspector_ids = resolve_inspector_user_ids(db, query_params.inspector_uuids)
+        if not inspector_ids:
+            return InspectionListResponse(
+                data=[],
+                total=0,
+                page=params.page,
+                per_page=params.per_page,
+                total_pages=0,
+            )
+        query = query.filter(Inspection.inspector_id.in_(inspector_ids))
+    query = apply_inspection_list_warehouse_scope(
+        query, db, request, warehouse_codes or None
+    )
     if plant_code is not None:
         query = query.filter(Inspection.supplier_plant_code == plant_code)
-    if inspection_type:
-        try:
-            it = InspectionType(inspection_type.strip().lower())
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail="inspection_type must be inbound or outbound",
-            ) from None
-        query = query.filter(Inspection.inspection_type == it)
+    if query_params.product_category_uuids:
+        category_ids = resolve_product_category_ids_from_uuids(
+            db, query_params.product_category_uuids
+        )
+        if not category_ids:
+            return InspectionListResponse(
+                data=[],
+                total=0,
+                page=params.page,
+                per_page=params.per_page,
+                total_pages=0,
+            )
+        query = query.filter(Inspection.product_category_id.in_(category_ids))
+    if query_params.inspection_type is not None:
+        query = query.filter(
+            Inspection.inspection_type == InspectionType(query_params.inspection_type)
+        )
 
     query = apply_standard_filters(
         query=query,

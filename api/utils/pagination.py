@@ -51,33 +51,76 @@ def build_paginated_response(
 
 
 class PaginationParams(BaseModel):
-    page: int = Field(1, ge=1)
-    per_page: int = Field(20, ge=1, le=100)
-    search: Optional[str] = None
-    sort_by: Optional[str] = "id"
-    sort_dir: str = "asc"
-    date_field: Optional[str] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
+    """Shared query-string pagination and table filters (GET requests, not JSON body)."""
+
+    page: int = Field(1, ge=1, description="Page number (1-based).")
+    per_page: int = Field(
+        20,
+        ge=1,
+        le=100,
+        description="Rows per page (max 100).",
+    )
+    search: Optional[str] = Field(
+        default=None,
+        description="Case-insensitive substring search across route-specific text columns.",
+    )
+    sort_by: Optional[str] = Field(
+        default="id",
+        description="Sort column key; allowed values depend on the list endpoint.",
+    )
+    sort_dir: str = Field(
+        default="asc",
+        description="Sort direction: asc or desc.",
+    )
+    date_field: Optional[str] = Field(
+        default=None,
+        description=(
+            "Date column to filter on (e.g. created_at). "
+            "Required with date_from/date_to unless the route applies a default range."
+        ),
+    )
+    date_from: Optional[date] = Field(
+        default=None,
+        description="Inclusive UTC start date; must be set together with date_to.",
+    )
+    date_to: Optional[date] = Field(
+        default=None,
+        description="Inclusive UTC end date; must be set together with date_from.",
+    )
+
+
+class PaginatedListResponseBase(BaseModel):
+    """Standard list envelope returned by paginated GET endpoints."""
+
+    total: int = Field(description="Total rows matching filters across all pages.")
+    page: int = Field(description="Current page number (1-based).")
+    per_page: int = Field(description="Page size used for this response.")
+    total_pages: int = Field(description="Total pages available for the current filters.")
 
 
 def get_pagination_params(
-    page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=100),
-    search: Optional[str] = Query(None),
-    sort_by: Optional[str] = Query("id"),
-    sort_dir: str = Query("asc"),
+    page: int = Query(1, ge=1, description="Page number (1-based)."),
+    per_page: int = Query(20, ge=1, le=100, description="Rows per page (max 100)."),
+    search: Optional[str] = Query(
+        None,
+        description="Case-insensitive substring search across route-specific columns.",
+    ),
+    sort_by: Optional[str] = Query(
+        "id",
+        description="Sort column key; allowed values depend on the list endpoint.",
+    ),
+    sort_dir: str = Query("asc", description="Sort direction: asc or desc."),
     date_field: Optional[str] = Query(
         None,
-        description="Column key from the route's allowed date_fields (e.g. created_at)",
+        description="Date column key (e.g. created_at). See endpoint docs for allowed keys.",
     ),
     date_from: Optional[date] = Query(
         None,
-        description="With date_field: range start (UTC date); omit both dates for default last 7 days including today",
+        description="Inclusive UTC start date; set together with date_to.",
     ),
     date_to: Optional[date] = Query(
         None,
-        description="With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today",
+        description="Inclusive UTC end date; set together with date_from.",
     ),
 ) -> PaginationParams:
     return PaginationParams(
