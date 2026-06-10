@@ -48,10 +48,15 @@ router = APIRouter(
 def get_plants(
     request: Request,
     params: PaginationParams = Depends(get_pagination_params),
-    is_active: bool = Query(True, description="Filter by active status"),
+    is_active: bool | None = Query(
+        None,
+        description="Filter by active status; omit to return all plants.",
+    ),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Plant).filter(Plant.is_active.is_(is_active))
+    query = db.query(Plant)
+    if is_active is not None:
+        query = query.filter(Plant.is_active.is_(is_active))
 
     query = apply_standard_filters(
         query=query,
@@ -106,7 +111,9 @@ def create_plant(
     payload: PlantCreateRequest,
     db: Session = Depends(get_db),
 ):
-    existing_code = db.query(Plant).filter(Plant.plant_code == payload.plant_code).first()
+    existing_code = (
+        db.query(Plant).filter(Plant.plant_code == payload.plant_code).first()
+    )
     if existing_code is not None:
         raise HTTPException(status_code=409, detail="Plant code already exists")
 
@@ -214,38 +221,6 @@ def update_plant(
     return map_plant(plant, stats=stats)
 
 
-@router.delete(
-    "/plants/{plant_uuid}",
-    name="delete_plant",
-    description="Delete (deactivate) plant",
-    response_model=PlantResponse,
-)
-@exception_handler_decorator
-@check_api_role(ROLES_MASTER_WRITE)
-def delete_plant(
-    request: Request,
-    plant_uuid: uuid.UUID,
-    db: Session = Depends(get_db),
-):
-    plant = db.query(Plant).filter(Plant.uuid == plant_uuid).first()
-    if plant is None:
-        raise HTTPException(status_code=404, detail="Plant not found")
-
-    plant.is_active = False
-    audit_master_from_request(
-        db,
-        request,
-        resource_type="plant",
-        resource_key=plant.plant_code,
-        operation="deactivated",
-        summary=f"Plant {plant.plant_code} deactivated",
-    )
-    db.commit()
-    db.refresh(plant)
-    stats = facility_stats_for_plant(db, plant.plant_code, is_active=True)
-    return map_plant(plant, stats=stats)
-
-
 @router.get(
     "/plants/csv/template",
     name="download_plants_csv_template",
@@ -334,14 +309,18 @@ def upload_plants_csv(
         postal_code_raw = (row.get("postal_code") or "").strip()
         is_active_raw = (row.get("is_active") or "true").strip().lower()
 
-        if not all([plant_code, name, address, city, lat_raw, lng_raw, postal_code_raw]):
+        if not all(
+            [plant_code, name, address, city, lat_raw, lng_raw, postal_code_raw]
+        ):
             skipped += 1
             errors.append(f"Row {row_number}: required field is missing")
             continue
 
         if plant_code in seen_codes:
             skipped += 1
-            errors.append(f"Row {row_number}: duplicate plant_code in same upload ({plant_code})")
+            errors.append(
+                f"Row {row_number}: duplicate plant_code in same upload ({plant_code})"
+            )
             continue
         seen_codes.add(plant_code)
 

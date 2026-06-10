@@ -48,10 +48,15 @@ router = APIRouter(
 def get_warehouses(
     request: Request,
     params: PaginationParams = Depends(get_pagination_params),
-    is_active: bool = Query(True, description="Filter by active status"),
+    is_active: bool | None = Query(
+        None,
+        description="Filter by active status; omit to return all warehouses.",
+    ),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Warehouse).filter(Warehouse.is_active.is_(is_active))
+    query = db.query(Warehouse)
+    if is_active is not None:
+        query = query.filter(Warehouse.is_active.is_(is_active))
 
     query = apply_standard_filters(
         query=query,
@@ -215,36 +220,6 @@ def update_warehouse(
         resource_key=warehouse.warehouse_code,
         operation="updated",
         summary=f"Warehouse {warehouse.warehouse_code} updated",
-    )
-    db.commit()
-    db.refresh(warehouse)
-    stats = facility_stats_for_warehouse(db, warehouse.warehouse_code, is_active=True)
-    return map_warehouse(warehouse, stats=stats)
-
-
-@router.delete(
-    "/warehouses/{warehouse_uuid}",
-    name="delete_warehouse",
-    description="Delete (deactivate) warehouse",
-    response_model=WarehouseResponse,
-)
-@exception_handler_decorator
-@check_api_role(ROLES_MASTER_WRITE)
-def delete_warehouse(
-    request: Request,
-    warehouse_uuid: uuid.UUID,
-    db: Session = Depends(get_db),
-):
-    warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
-
-    warehouse.is_active = False
-    audit_master_from_request(
-        db,
-        request,
-        resource_type="warehouse",
-        resource_key=warehouse.warehouse_code,
-        operation="deactivated",
-        summary=f"Warehouse {warehouse.warehouse_code} deactivated",
     )
     db.commit()
     db.refresh(warehouse)

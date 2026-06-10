@@ -1,0 +1,23 @@
+meta {
+  name: Update
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/plants
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "plant_code": "WH01",
+    "name": "New Warehouse",
+    "address": "Address for Warehouse",
+    "city": "Jaipur",
+    "lat": "11.36",
+    "lng": "15.36",
+    "postal_code": "111115"
+  }
+}

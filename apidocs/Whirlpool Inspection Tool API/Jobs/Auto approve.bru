@@ -13,32 +13,3 @@ get {
 headers {
   x-job-execute-token: {{job_trigger_key}}
 }
-
-example {
-  name: 200 Response
-  description: Successful Response
-  
-  request: {
-    url: {{baseUrl}}/health
-    method: GET
-    mode: none
-  }
-  
-  response: {
-    headers: {
-      Content-Type: application/json
-    }
-  
-    status: {
-      code: 200
-      text: OK
-    }
-  
-    body: {
-      type: json
-      content: '''
-  
-      '''
-    }
-  }
-}
