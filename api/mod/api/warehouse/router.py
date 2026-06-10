@@ -15,11 +15,20 @@ from mod.api.facility_metrics import (
 )
 from mod.api.log.audit import audit_master_from_request
 from mod.api.middleware import auth_dependency
-from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404, map_warehouse
+from mod.api.warehouse.helper import (
+    get_warehouse_by_uuid_or_404,
+    map_warehouse,
+    permanently_delete_warehouse,
+)
 from mod.api.warehouse.request import WarehouseCreateRequest, WarehouseUpdateRequest
-from mod.api.warehouse.response import WarehouseListResponse, WarehouseResponse
+from mod.api.warehouse.response import (
+    WarehouseListResponse,
+    WarehousePermanentDeleteResponse,
+    WarehouseResponse,
+)
 from mod.model import Warehouse
 from utils.common import read_csv_upload, to_proper_case
+from utils.critical_admin_delete import require_critical_admin_delete_token
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.roles import ROLES_MASTER_READ, ROLES_MASTER_WRITE
@@ -225,6 +234,42 @@ def update_warehouse(
     db.refresh(warehouse)
     stats = facility_stats_for_warehouse(db, warehouse.warehouse_code, is_active=True)
     return map_warehouse(warehouse, stats=stats)
+
+
+@router.delete(
+    "/warehouses/{warehouse_uuid}",
+    name="delete_warehouse_permanently",
+    description="Permanently delete warehouse (requires x-critical-admin-delete-token).",
+    response_model=WarehousePermanentDeleteResponse,
+    responses={
+        401: {"description": "Invalid or missing x-critical-admin-delete-token."},
+        409: {"description": "Warehouse is referenced by inspections."},
+        503: {"description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."},
+    },
+)
+@exception_handler_decorator
+@check_api_role(ROLES_MASTER_WRITE)
+def delete_warehouse_permanently(
+    request: Request,
+    warehouse_uuid: uuid.UUID,
+    _: None = Depends(require_critical_admin_delete_token),
+    db: Session = Depends(get_db),
+) -> WarehousePermanentDeleteResponse:
+    warehouse = get_warehouse_by_uuid_or_404(db, warehouse_uuid)
+    warehouse_code = permanently_delete_warehouse(db, warehouse)
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="warehouse",
+        resource_key=warehouse_code,
+        operation="deleted_permanently",
+        summary=f"Warehouse {warehouse_code} permanently deleted",
+    )
+    db.commit()
+    return WarehousePermanentDeleteResponse(
+        message=f"Warehouse {warehouse_code} permanently deleted",
+        warehouse_code=warehouse_code,
+    )
 
 
 @router.get(

@@ -15,11 +15,20 @@ from mod.api.facility_metrics import (
 )
 from mod.api.log.audit import audit_master_from_request
 from mod.api.middleware import auth_dependency
-from mod.api.plant.helper import map_plant
+from mod.api.plant.helper import (
+    get_plant_by_uuid_or_404,
+    map_plant,
+    permanently_delete_plant,
+)
 from mod.api.plant.request import PlantCreateRequest, PlantUpdateRequest
-from mod.api.plant.response import PlantListResponse, PlantResponse
+from mod.api.plant.response import (
+    PlantListResponse,
+    PlantPermanentDeleteResponse,
+    PlantResponse,
+)
 from mod.model import Plant
 from utils.common import read_csv_upload, to_proper_case
+from utils.critical_admin_delete import require_critical_admin_delete_token
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.roles import ROLES_MASTER_READ, ROLES_MASTER_WRITE
@@ -219,6 +228,42 @@ def update_plant(
     db.refresh(plant)
     stats = facility_stats_for_plant(db, plant.plant_code, is_active=True)
     return map_plant(plant, stats=stats)
+
+
+@router.delete(
+    "/plants/{plant_uuid}",
+    name="delete_plant_permanently",
+    description="Permanently delete plant (requires x-critical-admin-delete-token).",
+    response_model=PlantPermanentDeleteResponse,
+    responses={
+        401: {"description": "Invalid or missing x-critical-admin-delete-token."},
+        409: {"description": "Plant is referenced by inspections."},
+        503: {"description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."},
+    },
+)
+@exception_handler_decorator
+@check_api_role(ROLES_MASTER_WRITE)
+def delete_plant_permanently(
+    request: Request,
+    plant_uuid: uuid.UUID,
+    _: None = Depends(require_critical_admin_delete_token),
+    db: Session = Depends(get_db),
+) -> PlantPermanentDeleteResponse:
+    plant = get_plant_by_uuid_or_404(db, plant_uuid)
+    plant_code = permanently_delete_plant(db, plant)
+    audit_master_from_request(
+        db,
+        request,
+        resource_type="plant",
+        resource_key=plant_code,
+        operation="deleted_permanently",
+        summary=f"Plant {plant_code} permanently deleted",
+    )
+    db.commit()
+    return PlantPermanentDeleteResponse(
+        message=f"Plant {plant_code} permanently deleted",
+        plant_code=plant_code,
+    )
 
 
 @router.get(

@@ -1,0 +1,28 @@
+meta {
+  name: Delete
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/warehouses/464e98ff-506a-431b-8cee-e242b0d06fa2
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-critical-admin-delete-token: {{admin_critical_delete_action_token}}
+}
+
+body:json {
+  {
+    "warehouse_code": "TST0101",
+    "name": "TEST WH-Tripura 1",
+    "lat": 32.0,
+    "lng": 92.0,
+    "address": "10",
+    "city": "Bhilai",
+    "postal_code": "490001",
+    "is_active": false
+  }
+}

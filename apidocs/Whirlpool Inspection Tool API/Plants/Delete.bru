@@ -1,13 +1,17 @@
 meta {
-  name: Update
+  name: Delete
   type: http
-  seq: 6
+  seq: 7
 }
 
-put {
+delete {
   url: {{baseUrl}}/api/plants/f45c457c-f7ce-457d-ad5e-c9568edbda1c
-  body: json
+  body: none
   auth: inherit
+}
+
+headers {
+  x-critical-admin-delete-token: {{admin_critical_delete_action_token}}
 }
 
 body:json {

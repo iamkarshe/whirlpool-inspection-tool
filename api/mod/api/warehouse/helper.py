@@ -5,7 +5,30 @@ from sqlalchemy.orm import Session
 
 from mod.api.facility_metrics import FacilityStatsResponse, empty_facility_stats
 from mod.api.warehouse.response import WarehouseResponse
-from mod.model import Warehouse
+from mod.model import Inspection, Warehouse
+
+
+def count_inspections_for_warehouse(db: Session, warehouse_code: str) -> int:
+    return (
+        db.query(Inspection.id)
+        .filter(Inspection.warehouse_code == warehouse_code)
+        .count()
+    )
+
+
+def permanently_delete_warehouse(db: Session, warehouse: Warehouse) -> str:
+    warehouse_code = warehouse.warehouse_code
+    inspection_count = count_inspections_for_warehouse(db, warehouse_code)
+    if inspection_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Cannot delete warehouse {warehouse_code}: "
+                f"{inspection_count} inspection(s) still reference it"
+            ),
+        )
+    db.delete(warehouse)
+    return warehouse_code
 
 
 def map_warehouse(

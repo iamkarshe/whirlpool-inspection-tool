@@ -23,6 +23,12 @@ class PlantResponse(BaseModel):
     stats: FacilityStatsResponse
 
 
+class PlantPermanentDeleteResponse(BaseModel):
+    success: bool = True
+    message: str
+    plant_code: str
+
+
 class PlantListResponse(BaseModel):
     data: List[PlantResponse]
     total: int

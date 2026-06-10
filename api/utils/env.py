@@ -78,6 +78,10 @@ def get_job_execute_token() -> str | None:
     return get_env_optional("JOB_EXECUTE_TOKEN")
 
 
+def get_critical_admin_delete_token() -> str | None:
+    return get_env_optional("CRITICAL_ADMIN_DELETE_TOKEN")
+
+
 def get_redis_url() -> str:
     return get_env_optional("REDIS_URL") or "redis://localhost:6379/0"
 

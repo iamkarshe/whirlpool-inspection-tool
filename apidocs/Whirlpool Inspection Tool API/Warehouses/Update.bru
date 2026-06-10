@@ -1,0 +1,24 @@
+meta {
+  name: Update
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/api/warehouses/464e98ff-506a-431b-8cee-e242b0d06fa2
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "warehouse_code": "TST0101",
+    "name": "TEST WH-Tripura 1",
+    "lat": 32.0,
+    "lng": 92.0,
+    "address": "10",
+    "city": "Bhilai",
+    "postal_code": "490001",
+    "is_active": false
+  }
+}

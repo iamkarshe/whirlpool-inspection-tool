@@ -23,6 +23,12 @@ class WarehouseResponse(BaseModel):
     stats: FacilityStatsResponse
 
 
+class WarehousePermanentDeleteResponse(BaseModel):
+    success: bool = True
+    message: str
+    warehouse_code: str
+
+
 class WarehouseListResponse(BaseModel):
     data: List[WarehouseResponse]
     total: int
