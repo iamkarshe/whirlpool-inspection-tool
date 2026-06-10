@@ -1,6 +1,8 @@
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { GetWarehousesApiWarehousesGetParams } from "@/api/generated/model/getWarehousesApiWarehousesGetParams";
 import type { WarehouseCreateRequest } from "@/api/generated/model/warehouseCreateRequest";
+import type { WarehousePermanentDeleteResponse } from "@/api/generated/model/warehousePermanentDeleteResponse";
+import type { WarehouseUpdateRequest } from "@/api/generated/model/warehouseUpdateRequest";
 import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
 import type { UserResponse } from "@/api/generated/model/userResponse";
@@ -153,6 +155,36 @@ export async function createWarehouse(
   return api.createWarehouseApiWarehousesPost(
     payload,
     request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
+export async function updateWarehouse(
+  warehouseUuid: string,
+  payload: WarehouseUpdateRequest,
+  request?: { signal?: AbortSignal },
+): Promise<WarehouseResponse> {
+  const api = getWarehouses();
+  return api.updateWarehouseApiWarehousesWarehouseUuidPut(
+    warehouseUuid,
+    payload,
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
+export async function deleteWarehousePermanently(
+  warehouseUuid: string,
+  criticalAdminDeleteToken: string,
+  request?: { signal?: AbortSignal },
+): Promise<WarehousePermanentDeleteResponse> {
+  const api = getWarehouses();
+  return api.deleteWarehousePermanentlyApiWarehousesWarehouseUuidDelete(
+    warehouseUuid,
+    {
+      headers: {
+        "x-critical-admin-delete-token": criticalAdminDeleteToken,
+      },
+      ...(request?.signal ? { signal: request.signal } : {}),
+    },
   );
 }
 

@@ -19,7 +19,9 @@ import {
   uploadWarehousesCsv,
   warehouseApiErrorMessage,
 } from "@/services/warehouses-api";
+import { DeleteWarehouseDialog } from "./delete-warehouse-dialog";
 import WarehousesDataTable from "./data-table";
+import { EditWarehouseDialog } from "./edit-warehouse-dialog";
 
 type WarehouseFormValues = {
   name: string;
@@ -54,6 +56,10 @@ export default function WarehousesPage() {
   });
   const [isCreating, setIsCreating] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [warehouseToEdit, setWarehouseToEdit] =
+    useState<WarehouseResponse | null>(null);
+  const [warehouseToDelete, setWarehouseToDelete] =
+    useState<WarehouseResponse | null>(null);
 
   const {
     rows: warehouses,
@@ -246,6 +252,26 @@ export default function WarehousesPage() {
         data={warehouses}
         serverSide={serverSide}
         isLoading={isLoading}
+        onEditWarehouse={setWarehouseToEdit}
+        onDeleteWarehouse={setWarehouseToDelete}
+      />
+
+      <EditWarehouseDialog
+        open={warehouseToEdit !== null}
+        onOpenChange={(open) => {
+          if (!open) setWarehouseToEdit(null);
+        }}
+        warehouse={warehouseToEdit}
+        onSaved={() => setReloadKey((v) => v + 1)}
+      />
+
+      <DeleteWarehouseDialog
+        open={warehouseToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setWarehouseToDelete(null);
+        }}
+        warehouse={warehouseToDelete}
+        onDeleted={() => setReloadKey((v) => v + 1)}
       />
     </div>
   );

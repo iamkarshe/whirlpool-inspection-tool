@@ -3,15 +3,30 @@ import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse"
 import { PAGES } from "@/endpoints";
 import {
   Building2,
+  CheckCircle,
   ClipboardCheck,
   MapPin,
   MapPinned,
   Smartphone,
   Users,
+  XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`;
+
+export function WarehouseStatusBadge({ isActive }: { isActive: boolean }) {
+  const Icon = isActive ? CheckCircle : XCircle;
+  return (
+    <Badge
+      variant={isActive ? "success" : "destructive"}
+      className={BADGE_ICON_CLASS}
+    >
+      <Icon />
+      {isActive ? "ACTIVE" : "INACTIVE"}
+    </Badge>
+  );
+}
 
 export function WarehouseCodeBadge({ code }: { code: string }) {
   return (
