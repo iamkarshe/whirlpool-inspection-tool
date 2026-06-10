@@ -1,5 +1,18 @@
 import axios, { type AxiosRequestConfig, isAxiosError } from "axios";
 
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    /** When true, a 401 does not clear the session or redirect to login. */
+    skipSessionRevokedRedirect?: boolean;
+  }
+}
+
+export type CriticalAdminDeleteResult<T> = {
+  ok: boolean;
+  status: number;
+  data: T;
+};
+
 import { PAGES } from "@/endpoints";
 import {
   clearAuthenticatedSessionStorage,
@@ -79,7 +92,11 @@ apiClient.interceptors.response.use(
         window.localStorage.getItem(SESSION_ACCESS_TOKEN_KEY)?.trim(),
       );
 
-      if (hadSession && !isPublicAuthRequest(requestUrl)) {
+      if (
+        hadSession &&
+        !isPublicAuthRequest(requestUrl) &&
+        !error.config?.skipSessionRevokedRedirect
+      ) {
         redirectToLoginRevoked();
       }
     }
@@ -87,6 +104,38 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+/**
+ * Permanent facility delete (plants/warehouses). Never triggers session logout on
+ * 401 (invalid delete token); always returns status + body for UI display.
+ */
+export async function criticalAdminDeleteRequest<T>(
+  path: string,
+  criticalAdminDeleteToken: string,
+  request?: { signal?: AbortSignal },
+): Promise<CriticalAdminDeleteResult<T>> {
+  try {
+    const response = await apiClient.request<T>({
+      url: path,
+      method: "DELETE",
+      headers: {
+        "x-critical-admin-delete-token": criticalAdminDeleteToken,
+      },
+      skipSessionRevokedRedirect: true,
+      signal: request?.signal,
+    });
+    return { ok: true, status: response.status, data: response.data };
+  } catch (error) {
+    if (isAxiosError(error) && error.response) {
+      return {
+        ok: false,
+        status: error.response.status,
+        data: error.response.data as T,
+      };
+    }
+    throw error;
+  }
+}
 
 /**
  * Orval axios mutator — returns response body (unwraps axios `data`).

@@ -11,6 +11,7 @@ import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
 import type { PlantListResponse } from "@/api/generated/model/plantListResponse";
 import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import type { UserResponse } from "@/api/generated/model/userResponse";
+import { criticalAdminDeleteRequest } from "@/api/axios-instance";
 import { getPlants } from "@/api/generated/plants/plants";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 
@@ -160,14 +161,12 @@ export async function deletePlantPermanently(
   plantUuid: string,
   criticalAdminDeleteToken: string,
   request?: { signal?: AbortSignal },
-): Promise<PlantPermanentDeleteResponse> {
-  const api = getPlants();
-  return api.deletePlantPermanentlyApiPlantsPlantUuidDelete(plantUuid, {
-    headers: {
-      "x-critical-admin-delete-token": criticalAdminDeleteToken,
-    },
-    ...(request?.signal ? { signal: request.signal } : {}),
-  });
+) {
+  return criticalAdminDeleteRequest<PlantPermanentDeleteResponse>(
+    `/api/plants/${plantUuid}`,
+    criticalAdminDeleteToken,
+    request,
+  );
 }
 
 export async function uploadPlantsCsv(

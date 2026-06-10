@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertCircle, TriangleAlert } from "lucide-react";
 
-import type { PlantPermanentDeleteResponse } from "@/api/generated/model/plantPermanentDeleteResponse";
+import type { CriticalAdminDeleteResult } from "@/api/axios-instance";
 import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  deletePlantPermanently,
-  plantsApiErrorMessage,
-} from "@/services/plants-api";
+import { deletePlantPermanently } from "@/services/plants-api";
 
 export type DeletePlantDialogProps = {
   open: boolean;
@@ -57,6 +54,16 @@ function responseToTableRows(data: unknown): JsonTableRow[] {
   }));
 }
 
+function deleteResultToTableRows(
+  result: CriticalAdminDeleteResult<unknown>,
+): JsonTableRow[] {
+  return [
+    { key: "status", value: String(result.status) },
+    { key: "ok", value: String(result.ok) },
+    ...responseToTableRows(result.data),
+  ];
+}
+
 type DeletePlantDialogContentProps = {
   plant: PlantResponse;
   onOpenChange: (open: boolean) => void;
@@ -71,8 +78,8 @@ function DeletePlantDialogContent({
   const [deleteToken, setDeleteToken] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteResponse, setDeleteResponse] =
-    useState<PlantPermanentDeleteResponse | null>(null);
+  const [deleteResult, setDeleteResult] =
+    useState<CriticalAdminDeleteResult<unknown> | null>(null);
 
   const handleDelete = async () => {
     const token = deleteToken.trim();
@@ -84,20 +91,22 @@ function DeletePlantDialogContent({
     setError(null);
     setDeleting(true);
     try {
-      const response = await deletePlantPermanently(plant.uuid, token);
-      setDeleteResponse(response);
-      toast.success("Plant deleted.");
-      onDeleted();
-    } catch (e: unknown) {
-      setError(plantsApiErrorMessage(e, "Could not delete plant."));
+      const result = await deletePlantPermanently(plant.uuid, token);
+      setDeleteResult(result);
+      if (result.ok) {
+        toast.success("Plant deleted.");
+        onDeleted();
+      }
+    } catch {
+      setError("Could not delete plant. Check your connection and try again.");
     } finally {
       setDeleting(false);
     }
   };
 
-  const resultRows = deleteResponse ? responseToTableRows(deleteResponse) : [];
+  const resultRows = deleteResult ? deleteResultToTableRows(deleteResult) : [];
 
-  if (deleteResponse) {
+  if (deleteResult) {
     return (
       <>
         <DialogHeader>

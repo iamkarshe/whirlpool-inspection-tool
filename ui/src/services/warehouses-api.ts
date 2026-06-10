@@ -8,6 +8,7 @@ import type { InspectionListResponse } from "@/api/generated/model/inspectionLis
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import type { WarehouseListResponse } from "@/api/generated/model/warehouseListResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
+import { criticalAdminDeleteRequest } from "@/api/axios-instance";
 import { getInspections } from "@/api/generated/inspections/inspections";
 import { getWarehouses } from "@/api/generated/warehouses/warehouses";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
@@ -175,16 +176,11 @@ export async function deleteWarehousePermanently(
   warehouseUuid: string,
   criticalAdminDeleteToken: string,
   request?: { signal?: AbortSignal },
-): Promise<WarehousePermanentDeleteResponse> {
-  const api = getWarehouses();
-  return api.deleteWarehousePermanentlyApiWarehousesWarehouseUuidDelete(
-    warehouseUuid,
-    {
-      headers: {
-        "x-critical-admin-delete-token": criticalAdminDeleteToken,
-      },
-      ...(request?.signal ? { signal: request.signal } : {}),
-    },
+) {
+  return criticalAdminDeleteRequest<WarehousePermanentDeleteResponse>(
+    `/api/warehouses/${warehouseUuid}`,
+    criticalAdminDeleteToken,
+    request,
   );
 }
 

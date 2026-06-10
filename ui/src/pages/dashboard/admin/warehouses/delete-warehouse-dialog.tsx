@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertCircle, TriangleAlert } from "lucide-react";
 
-import type { WarehousePermanentDeleteResponse } from "@/api/generated/model/warehousePermanentDeleteResponse";
+import type { CriticalAdminDeleteResult } from "@/api/axios-instance";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  deleteWarehousePermanently,
-  warehouseApiErrorMessage,
-} from "@/services/warehouses-api";
+import { deleteWarehousePermanently } from "@/services/warehouses-api";
 
 export type DeleteWarehouseDialogProps = {
   open: boolean;
@@ -57,6 +54,16 @@ function responseToTableRows(data: unknown): JsonTableRow[] {
   }));
 }
 
+function deleteResultToTableRows(
+  result: CriticalAdminDeleteResult<unknown>,
+): JsonTableRow[] {
+  return [
+    { key: "status", value: String(result.status) },
+    { key: "ok", value: String(result.ok) },
+    ...responseToTableRows(result.data),
+  ];
+}
+
 type DeleteWarehouseDialogContentProps = {
   warehouse: WarehouseResponse;
   onOpenChange: (open: boolean) => void;
@@ -71,8 +78,8 @@ function DeleteWarehouseDialogContent({
   const [deleteToken, setDeleteToken] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteResponse, setDeleteResponse] =
-    useState<WarehousePermanentDeleteResponse | null>(null);
+  const [deleteResult, setDeleteResult] =
+    useState<CriticalAdminDeleteResult<unknown> | null>(null);
 
   const handleDelete = async () => {
     const token = deleteToken.trim();
@@ -84,20 +91,22 @@ function DeleteWarehouseDialogContent({
     setError(null);
     setDeleting(true);
     try {
-      const response = await deleteWarehousePermanently(warehouse.uuid, token);
-      setDeleteResponse(response);
-      toast.success("Warehouse deleted.");
-      onDeleted();
-    } catch (e: unknown) {
-      setError(warehouseApiErrorMessage(e, "Could not delete warehouse."));
+      const result = await deleteWarehousePermanently(warehouse.uuid, token);
+      setDeleteResult(result);
+      if (result.ok) {
+        toast.success("Warehouse deleted.");
+        onDeleted();
+      }
+    } catch {
+      setError("Could not delete warehouse. Check your connection and try again.");
     } finally {
       setDeleting(false);
     }
   };
 
-  const resultRows = deleteResponse ? responseToTableRows(deleteResponse) : [];
+  const resultRows = deleteResult ? deleteResultToTableRows(deleteResult) : [];
 
-  if (deleteResponse) {
+  if (deleteResult) {
     return (
       <>
         <DialogHeader>
