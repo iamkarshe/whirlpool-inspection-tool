@@ -28,7 +28,8 @@ def require_job_token(
     description=(
         "Approves active inspections still in PENDING or IN_REVIEW when "
         "created more than AUTO_APPROVE_INSPECTION_HOURS ago (default 6). "
-        "Sets is_auto_approved and reviewed_comment. Intended for Ubuntu crontab."
+        "Sets is_auto_approved and reviewed_comment. "
+        "Also runs every 15 minutes via Celery beat when the worker uses --beat."
     ),
     response_model=JobExecutionResponse,
     responses={

@@ -10,7 +10,7 @@ User=scoptanalytics-whirlpool
 Group=scoptanalytics-whirlpool
 WorkingDirectory=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in
 EnvironmentFile=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.env
-ExecStart=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.venv/bin/celery -A mod.tasks.worker.celery_app worker -Q default,celery --loglevel=info
+ExecStart=/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/.venv/bin/celery -A mod.tasks.worker.celery_app worker -Q default,celery --beat --loglevel=info
 Restart=on-failure
 RestartSec=5
 KillSignal=SIGTERM

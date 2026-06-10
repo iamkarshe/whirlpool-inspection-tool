@@ -21,8 +21,10 @@ def get_celery_app():
         "whirlpool_inspection_worker",
         broker=get_redis_url(),
         backend=get_celery_result_backend_url(),
-        include=["mod.tasks.worker"],
+        include=["mod.tasks.worker", "mod.jobs.celery_tasks"],
     )
+    from mod.jobs.helper import AUTO_APPROVE_BEAT_INTERVAL_SECONDS
+
     app.conf.update(
         task_track_started=True,
         task_time_limit=300,
@@ -45,5 +47,12 @@ def get_celery_app():
             Queue("celery", Exchange("celery", type="direct"), routing_key="celery"),
         ),
         task_create_missing_queues=True,
+        beat_schedule={
+            "auto_approve_inspections_every_15_minutes": {
+                "task": "mod.jobs.celery_tasks.auto_approve_inspections",
+                "schedule": AUTO_APPROVE_BEAT_INTERVAL_SECONDS,
+                "options": {"queue": DEFAULT_TASK_QUEUE},
+            },
+        },
     )
     return app

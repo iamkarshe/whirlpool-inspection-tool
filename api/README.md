@@ -200,10 +200,12 @@ CELERY_RESULT_BACKEND_URL=redis://localhost:6379/1
 Tasks are published to the `default` queue. Without a worker, API rows stay `queued` and Flower shows inspect warnings.
 
 ```bash
-celery -A mod.tasks.worker.celery_app worker -Q default,celery --loglevel=info
+celery -A mod.tasks.worker.celery_app worker -Q default,celery --beat --loglevel=info
 ```
 
-You should see `mod.tasks.worker.execute_task` in the startup task list and `celery@... ready`.
+`--beat` runs the 15-minute auto-approve inspections job (same logic as `GET /jobs/auto-approve-inspections`).
+
+You should see `mod.tasks.worker.execute_task` and `mod.jobs.celery_tasks.auto_approve_inspections` in the task list and `celery@... ready`.
 
 ### 3) Flower (optional monitoring)
 

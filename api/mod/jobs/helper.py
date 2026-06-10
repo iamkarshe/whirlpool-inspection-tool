@@ -22,6 +22,7 @@ from mod.model import (
 from utils.env import get_auto_approve_inspection_hours, get_job_execute_token
 
 AUTO_APPROVE_JOB_NAME = "auto_approve_inspections"
+AUTO_APPROVE_BEAT_INTERVAL_SECONDS = 15 * 60
 def auto_approve_review_comment(hours: int) -> str:
     return (
         f"Automatically approved after {hours} hours with no manual review."
@@ -101,7 +102,7 @@ def persist_job_log(
     return True
 
 
-def run_auto_approve_inspections(db: Session) -> JobRunResult:
+def execute_auto_approve_inspections(db: Session) -> JobRunResult:
     job_name = AUTO_APPROVE_JOB_NAME
     rows_updated = 0
     try:
@@ -176,7 +177,7 @@ def run_auto_approve_inspections(db: Session) -> JobRunResult:
     except Exception as exc:
         db.rollback()
         message = str(exc)
-        logged = persist_job_log(
+        persist_job_log(
             db,
             job_name=job_name,
             status=JobLogStatus.failed,
@@ -184,7 +185,16 @@ def run_auto_approve_inspections(db: Session) -> JobRunResult:
             message=message,
             metadata={"error_type": exc.__class__.__name__},
         )
+        raise
+
+
+def run_auto_approve_inspections(db: Session) -> JobRunResult:
+    try:
+        return execute_auto_approve_inspections(db)
+    except HTTPException:
+        raise
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=message,
+            detail=str(exc),
         ) from exc
