@@ -1,0 +1,22 @@
+meta {
+  name: Login Summary
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/logins/ip-summary
+  body: none
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}

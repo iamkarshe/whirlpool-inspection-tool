@@ -1,14 +1,21 @@
 import json
+from datetime import datetime, time, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import or_
-from sqlalchemy.orm import Query
+from sqlalchemy import Float, and_, case, cast, func, or_
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Query, Session
+
+from mod.api.ip_metadata.helper import get_ip_metadata_by_addresses
+from utils.common import utc_end_exclusive_day_range
+from utils.pagination import PaginationParams
 
 from mod.api.log.audit import ACTION_AUTH_LOGIN, ACTION_AUTH_LOGIN_FAILED
 from mod.api.login.response import (
     LoginDetailResponse,
     LoginInspectionResponse,
     LoginIpMetadataResponse,
+    LoginIpSummaryItemResponse,
     LoginListItemResponse,
 )
 from mod.model import Device, Inspection, IpAddressMetadata, Log, User
@@ -197,6 +204,216 @@ def map_login_detail(
         inspections_done=0,
         inspections=[],
     )
+
+
+ABUSIVE_MIN_FAILED_ATTEMPTS = 5
+ABUSIVE_MIN_TOTAL_FOR_RATE = 3
+ABUSIVE_FAILURE_RATE_THRESHOLD = 0.7
+ABUSIVE_HIGH_VOLUME_THRESHOLD = 20
+
+
+def login_log_ip_expression():
+    return cast(Log.log_value, JSONB)["ip"].astext
+
+
+def login_failed_attempt_expression():
+    return case(
+        (
+            or_(
+                Log.log_value.ilike(f'%"action": "{ACTION_AUTH_LOGIN_FAILED}"%'),
+                Log.log_value.ilike('%"event": "login_failed"%'),
+            ),
+            1,
+        ),
+        else_=0,
+    )
+
+
+def login_successful_attempt_expression():
+    return case(
+        (
+            or_(
+                Log.log_value.ilike(f'%"action": "{ACTION_AUTH_LOGIN}"%'),
+                Log.log_value.ilike('%"event": "login"%'),
+            ),
+            1,
+        ),
+        else_=0,
+    )
+
+
+def assess_abusive_ip(
+    *,
+    total_logins: int,
+    failed_logins: int,
+    successful_logins: int,
+) -> tuple[bool, list[str]]:
+    reasons: list[str] = []
+    if failed_logins >= ABUSIVE_MIN_FAILED_ATTEMPTS:
+        reasons.append("high_failed_attempts")
+    if (
+        total_logins >= ABUSIVE_MIN_TOTAL_FOR_RATE
+        and failed_logins / total_logins >= ABUSIVE_FAILURE_RATE_THRESHOLD
+    ):
+        reasons.append("high_failure_rate")
+    if (
+        total_logins >= ABUSIVE_HIGH_VOLUME_THRESHOLD
+        and failed_logins > successful_logins
+    ):
+        reasons.append("high_volume_suspicious")
+    if failed_logins >= 3 and successful_logins == 0:
+        reasons.append("only_failures")
+    return bool(reasons), reasons
+
+
+def abusive_ip_having_clause(total_logins, failed_logins, successful_logins):
+    return or_(
+        failed_logins >= ABUSIVE_MIN_FAILED_ATTEMPTS,
+        and_(
+            total_logins >= ABUSIVE_MIN_TOTAL_FOR_RATE,
+            cast(failed_logins, Float) / cast(total_logins, Float)
+            >= ABUSIVE_FAILURE_RATE_THRESHOLD,
+        ),
+        and_(
+            total_logins >= ABUSIVE_HIGH_VOLUME_THRESHOLD,
+            failed_logins > successful_logins,
+        ),
+        and_(failed_logins >= 3, successful_logins == 0),
+    )
+
+
+def build_login_ip_summary_query(
+    db: Session,
+    params: PaginationParams,
+    *,
+    abusive_only: bool = False,
+):
+    ip_address = login_log_ip_expression()
+    failed_logins = func.sum(login_failed_attempt_expression()).label("failed_logins")
+    successful_logins = func.sum(login_successful_attempt_expression()).label(
+        "successful_logins"
+    )
+    total_logins = func.count(Log.id).label("total_logins")
+    unique_users = func.count(func.distinct(Log.user_id)).label("unique_users")
+    first_seen_at = func.min(Log.created_at).label("first_seen_at")
+    last_seen_at = func.max(Log.created_at).label("last_seen_at")
+
+    query = (
+        db.query(
+            ip_address.label("ip_address"),
+            total_logins,
+            successful_logins,
+            failed_logins,
+            unique_users,
+            first_seen_at,
+            last_seen_at,
+        )
+        .filter(Log.is_active.is_(True))
+    )
+    query = is_login_event_query(query)
+    query = query.filter(ip_address.isnot(None), ip_address != "")
+
+    if params.search and params.search.strip():
+        term = f"%{params.search.strip()}%"
+        query = query.filter(ip_address.ilike(term))
+
+    if params.date_from is not None and params.date_to is not None:
+        start, end_exclusive = utc_end_exclusive_day_range(
+            params.date_from, params.date_to
+        )
+        query = query.filter(
+            Log.created_at >= start,
+            Log.created_at < end_exclusive,
+        )
+    elif params.date_from is not None:
+        start = datetime.combine(params.date_from, time.min, tzinfo=timezone.utc)
+        query = query.filter(Log.created_at >= start)
+    elif params.date_to is not None:
+        end_exclusive = datetime.combine(
+            params.date_to + timedelta(days=1),
+            time.min,
+            tzinfo=timezone.utc,
+        )
+        query = query.filter(Log.created_at < end_exclusive)
+
+    query = query.group_by(ip_address)
+
+    if abusive_only:
+        query = query.having(
+            abusive_ip_having_clause(total_logins, failed_logins, successful_logins)
+        )
+
+    sort_key = (params.sort_by or "failed_logins").strip()
+    sort_dir = (params.sort_dir or "desc").lower()
+    sort_columns = {
+        "ip_address": ip_address,
+        "total_logins": total_logins,
+        "successful_logins": successful_logins,
+        "failed_logins": failed_logins,
+        "unique_users": unique_users,
+        "first_seen_at": first_seen_at,
+        "last_seen_at": last_seen_at,
+    }
+    sort_column = sort_columns.get(sort_key, failed_logins)
+    if sort_dir == "desc":
+        query = query.order_by(sort_column.desc(), ip_address.asc())
+    else:
+        query = query.order_by(sort_column.asc(), ip_address.asc())
+
+    return query
+
+
+def map_login_ip_summary_item(
+    row: Any,
+    ip_metadata: IpAddressMetadata | None = None,
+) -> LoginIpSummaryItemResponse:
+    total_logins = int(row.total_logins or 0)
+    failed_logins = int(row.failed_logins or 0)
+    successful_logins = int(row.successful_logins or 0)
+    is_abusive, abusive_reasons = assess_abusive_ip(
+        total_logins=total_logins,
+        failed_logins=failed_logins,
+        successful_logins=successful_logins,
+    )
+    return LoginIpSummaryItemResponse(
+        ip_address=str(row.ip_address),
+        total_logins=total_logins,
+        successful_logins=successful_logins,
+        failed_logins=failed_logins,
+        unique_users=int(row.unique_users or 0),
+        first_seen_at=row.first_seen_at,
+        last_seen_at=row.last_seen_at,
+        ip_metadata=map_ip_metadata(ip_metadata),
+        is_abusive=is_abusive,
+        abusive_reasons=abusive_reasons,
+    )
+
+
+def fetch_login_ip_summary_page(
+    db: Session,
+    params: PaginationParams,
+    *,
+    abusive_only: bool = False,
+) -> tuple[list[LoginIpSummaryItemResponse], int, int, int, int]:
+    from utils.pagination import paginate_query
+
+    query = build_login_ip_summary_query(db, params, abusive_only=abusive_only)
+    total = db.query(func.count()).select_from(query.subquery()).scalar() or 0
+    page = params.page if params.page >= 1 else 1
+    per_page = params.per_page if params.per_page >= 1 else 1
+    rows = paginate_query(query, page=page, per_page=per_page).all()
+    metadata_by_ip = get_ip_metadata_by_addresses(
+        db, [str(row.ip_address) for row in rows]
+    )
+    data = [
+        map_login_ip_summary_item(
+            row,
+            ip_metadata=metadata_by_ip.get(str(row.ip_address)),
+        )
+        for row in rows
+    ]
+    total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+    return data, total, page, per_page, total_pages
 
 
 def map_login_inspection(inspection: Inspection) -> LoginInspectionResponse:

@@ -49,6 +49,35 @@ class LoginListResponse(BaseModel):
     total_pages: int
 
 
+class LoginIpSummaryItemResponse(BaseModel):
+    ip_address: str
+    total_logins: int
+    successful_logins: int
+    failed_logins: int
+    unique_users: int
+    first_seen_at: datetime
+    last_seen_at: datetime
+    ip_metadata: LoginIpMetadataResponse | None = None
+    is_abusive: bool = Field(
+        description="True when the IP matches one or more suspicious-login heuristics.",
+    )
+    abusive_reasons: List[str] = Field(
+        default_factory=list,
+        description=(
+            "high_failed_attempts, high_failure_rate, high_volume_suspicious, "
+            "or only_failures"
+        ),
+    )
+
+
+class LoginIpSummaryListResponse(BaseModel):
+    data: List[LoginIpSummaryItemResponse]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+
+
 class LoginInspectionResponse(BaseModel):
     id: int
     uuid: uuid.UUID

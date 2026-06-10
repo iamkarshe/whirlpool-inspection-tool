@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from mod.api.ip_metadata.helper import get_ip_metadata_by_addresses
 from mod.api.login.helper import (
     apply_login_status_filter,
+    fetch_login_ip_summary_page,
     is_login_event_query,
     is_login_payload,
     is_successful_login_payload,
@@ -17,6 +18,7 @@ from mod.api.login.helper import (
 )
 from mod.api.login.response import (
     LoginDetailResponse,
+    LoginIpSummaryListResponse,
     LoginKpiResponse,
     LoginListResponse,
 )
@@ -122,7 +124,9 @@ def get_logins(
 
     data = []
     for log, user, device in rows:
-        ip_address = str(parse_log_payload(log.log_value).get("ip") or "").strip() or None
+        ip_address = (
+            str(parse_log_payload(log.log_value).get("ip") or "").strip() or None
+        )
         data.append(
             map_login_list_item(
                 log=log,
@@ -134,6 +138,51 @@ def get_logins(
 
     total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
     return LoginListResponse(
+        data=data,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
+
+
+@router.get(
+    "/logins/ip-summary",
+    name="get_login_ip_summary",
+    description="Paginated unique client IPs with login counts, geo metadata, and abuse flags",
+    response_model=LoginIpSummaryListResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def get_login_ip_summary(
+    request: Request,
+    params: PaginationParams = Depends(get_pagination_params),
+    abusive_only: bool = Query(
+        False,
+        description="When true, return only IPs matching suspicious-login heuristics.",
+    ),
+    db: Session = Depends(get_db),
+):
+    if (params.date_from is None) ^ (params.date_to is None):
+        raise HTTPException(
+            status_code=400,
+            detail="date_from and date_to must both be set or both omitted",
+        )
+    if (
+        params.date_from is not None
+        and params.date_to is not None
+        and params.date_to < params.date_from
+    ):
+        raise HTTPException(
+            status_code=400, detail="date_to must be on or after date_from"
+        )
+
+    data, total, page, per_page, total_pages = fetch_login_ip_summary_page(
+        db,
+        params,
+        abusive_only=abusive_only,
+    )
+    return LoginIpSummaryListResponse(
         data=data,
         total=total,
         page=page,
@@ -171,7 +220,9 @@ def get_login_detail(
         raise HTTPException(status_code=404, detail="Login record not found")
 
     ip_address = str(payload.get("ip") or "").strip() or None
-    metadata_by_ip = get_ip_metadata_by_addresses(db, [ip_address] if ip_address else [])
+    metadata_by_ip = get_ip_metadata_by_addresses(
+        db, [ip_address] if ip_address else []
+    )
     response = map_login_detail(
         log=log,
         user=user,
