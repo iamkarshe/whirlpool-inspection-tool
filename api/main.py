@@ -2,11 +2,11 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Query, Request
-from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
 from mod.api.device.router import router as device_router
 from mod.api.inspection.router import router as inspection_router
@@ -22,23 +22,25 @@ from mod.api.tasks.router import router as tasks_router
 from mod.api.user.router import router as user_router
 from mod.api.vpn.router import router as vpn_router
 from mod.api.warehouse.router import router as warehouse_router
+from mod.app.helper import require_superadmin_for_api_docs
+from mod.app.response import VersionResponse
 from mod.auth.device_router import router as auth_device_router
 from mod.auth.router import router as auth_router
 from mod.jobs.router import router as jobs_router
 from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
-from mod.app.helper import require_superadmin_for_api_docs
-from mod.app.response import VersionResponse
-from utils.db import get_db
 from mod.tagmetadata import tags_metadata
-from utils.env import get_allow_multi_login, get_env, get_env_optional
-from utils.log import setup_logging
 from utils.auth_rate_limit import (
     AUTH_ATTEMPT_REMAINING_HEADER,
     AuthAttemptRemainingMiddleware,
 )
-from utils.vpn_access import VpnAccessMiddleware, client_can_access_app
+from utils.cors import get_cors_config
+from utils.db import get_db
+from utils.env import get_allow_multi_login, get_env_optional
 from utils.ip_address import get_client_ip_address
+from utils.log import setup_logging
+from utils.security_headers import SecurityHeadersMiddleware
+from utils.vpn_access import VpnAccessMiddleware, client_can_access_app
 
 setup_logging()
 
@@ -64,19 +66,40 @@ app = FastAPI(
     openapi_tags=tags_metadata,
 )
 
-# Allowed origins for CORS middleware
-app_env = (get_env_optional("APP_ENV", "dev") or "dev").strip().lower()
-cors_allowed_origins = ["*"] if app_env == "dev" else [get_env("APP_ORIGIN").strip()]
+
+# Disable TRACE method
+@app.middleware("http")
+async def block_trace_method(request: Request, call_next):
+    if request.method.upper() == "TRACE":
+        return JSONResponse(
+            status_code=405,
+            content={"detail": "Method not allowed"},
+            headers={"Allow": "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"},
+        )
+
+    return await call_next(request)
+
+
+# CORS middleware config
+cors_config = get_cors_config(
+    app_env=get_env_optional("APP_ENV", "dev"),
+    app_origin=get_env_optional("APP_ORIGIN"),
+    app_cors_origins=get_env_optional("APP_CORS_ORIGINS"),
+    expose_headers=[AUTH_ATTEMPT_REMAINING_HEADER],
+)
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=[AUTH_ATTEMPT_REMAINING_HEADER],
+    allow_origins=cors_config.allowed_origins,
+    allow_credentials=cors_config.allow_credentials,
+    allow_methods=cors_config.allow_methods,
+    allow_headers=cors_config.allow_headers,
+    expose_headers=cors_config.expose_headers,
 )
+
+# Security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # VPN access middleware
 app.add_middleware(VpnAccessMiddleware)
@@ -175,6 +198,15 @@ async def api_spec(
 ):
     require_superadmin_for_api_docs(request, db, token)
     return JSONResponse(content=app.openapi())
+
+
+# Robots
+@app.get("/robots.txt", include_in_schema=False)
+def robots_txt() -> PlainTextResponse:
+    return PlainTextResponse(
+        content="User-agent: *\nDisallow: /\n",
+        media_type="text/plain",
+    )
 
 
 # ReactJS build

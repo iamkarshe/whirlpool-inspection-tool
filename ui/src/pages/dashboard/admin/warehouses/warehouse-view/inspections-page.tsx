@@ -64,7 +64,7 @@ export default function WarehouseViewInspectionsPage() {
   const { rows, isLoading, serverSide } =
     useControlledServerTable<InspectionListItemResponse>({
       initialSorting: [{ id: "created_at", desc: true }],
-      dataScopeKey: warehouse.uuid,
+      dataScopeKey: warehouse.id,
       errorMessage: "Failed to load warehouse inspections.",
       load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
         const { sort_by, sort_dir } = sortingStateToApiSortQuery(
@@ -73,7 +73,7 @@ export default function WarehouseViewInspectionsPage() {
         );
         const res = await fetchWarehouseInspectionsPage(
           {
-            warehouse_uuid: warehouse.uuid,
+            warehouse_id: warehouse.id,
             page: p.pageIndex + 1,
             per_page: p.pageSize,
             search: q.length > 0 ? q : null,

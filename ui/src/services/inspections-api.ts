@@ -1,10 +1,15 @@
 import { isAxiosError } from "axios";
 
+import { customInstance } from "@/api/axios-instance";
 import { getInspections as getInspectionsApi } from "@/api/generated/inspections/inspections";
 import { deviceUuidForAdminDevicePath } from "@/lib/device-admin-path";
 import type { InspectionFullResponse } from "@/api/generated/model/inspectionFullResponse";
-import type { GetInspectionKpisApiInspectionsKpisGetParams } from "@/api/generated/model/getInspectionKpisApiInspectionsKpisGetParams";
-import type { GetInspectionsApiInspectionsGetParams } from "@/api/generated/model/getInspectionsApiInspectionsGetParams";
+import {
+  serializeInspectionKpisQueryParams,
+  serializeInspectionListQueryParams,
+  type InspectionKpisQueryParams,
+  type InspectionsPageParams,
+} from "@/services/inspection-list-api-params";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { ChecklistItemResponse } from "@/api/generated/model/checklistItemResponse";
 import type { InspectionInputItemResponse } from "@/api/generated/model/inspectionInputItemResponse";
@@ -25,21 +30,7 @@ import type {
 
 const MAX_PAGES = 200;
 
-export type InspectionsPageParams = Pick<
-  GetInspectionsApiInspectionsGetParams,
-  | "page"
-  | "per_page"
-  | "search"
-  | "sort_by"
-  | "sort_dir"
-  | "inspection_type"
-  | "warehouse_uuid"
-  | "plant_uuid"
-  | "date_field"
-  | "date_from"
-  | "date_to"
-  | "is_active"
->;
+export type { InspectionKpisQueryParams, InspectionsPageParams } from "@/services/inspection-list-api-params";
 
 function layerFailed(layer: InspectionPassFailCounts): boolean {
   return (layer.fail_count ?? 0) > 0;
@@ -273,7 +264,7 @@ export function formatCalendarDateForApi(d: Date): string {
 export function inspectionKpisParamsFromDateRange(range: {
   from?: Date;
   to?: Date;
-}): GetInspectionKpisApiInspectionsKpisGetParams {
+}): Pick<InspectionKpisQueryParams, "date_from" | "date_to" | "period"> {
   if (!range.from) return {};
   const end = range.to ?? range.from;
   return {
@@ -396,28 +387,28 @@ export async function fetchInspectionMetadata(
   );
 }
 
+export async function fetchInspectionsListResponse(
+  params: InspectionsPageParams,
+  opts?: { signal?: AbortSignal },
+): Promise<InspectionListResponse> {
+  return customInstance<InspectionListResponse>(
+    {
+      url: "/api/inspections",
+      method: "GET",
+      params: serializeInspectionListQueryParams(params),
+    },
+    {
+      ...(opts?.signal ? { signal: opts.signal } : {}),
+      paramsSerializer: { indexes: null },
+    },
+  );
+}
+
 export async function fetchInspectionsPage(
   params: InspectionsPageParams,
   opts?: { signal?: AbortSignal },
 ): Promise<{ data: Inspection[]; total: number }> {
-  const api = getInspectionsApi();
-  const res: InspectionListResponse = await api.getInspectionsApiInspectionsGet(
-    {
-      page: params.page ?? 1,
-      per_page: params.per_page ?? 100,
-      search: params.search?.trim() ? params.search : null,
-      sort_by: params.sort_by ?? "created_at",
-      sort_dir: params.sort_dir ?? "desc",
-      inspection_type: params.inspection_type ?? null,
-      warehouse_uuid: params.warehouse_uuid ?? null,
-      plant_uuid: params.plant_uuid ?? null,
-      date_field: params.date_field ?? null,
-      date_from: params.date_from ?? null,
-      date_to: params.date_to ?? null,
-      is_active: params.is_active,
-    },
-    opts?.signal ? { signal: opts.signal } : undefined,
-  );
+  const res = await fetchInspectionsListResponse(params, opts);
   return {
     data: res.data.map(mapInspectionListItemToInspection),
     total: res.total,
@@ -453,13 +444,19 @@ export function isoToApiDate(raw?: string): string | undefined {
 }
 
 export async function fetchInspectionKpis(
-  params?: GetInspectionKpisApiInspectionsKpisGetParams,
+  params?: InspectionKpisQueryParams,
   opts?: { signal?: AbortSignal },
 ): Promise<InspectionKpis> {
-  const api = getInspectionsApi();
-  const res = await api.getInspectionKpisApiInspectionsKpisGet(
-    params ?? {},
-    opts?.signal ? { signal: opts.signal } : undefined,
+  const res = await customInstance<InspectionKpisResponse>(
+    {
+      url: "/api/inspections/kpis",
+      method: "GET",
+      params: serializeInspectionKpisQueryParams(params ?? {}),
+    },
+    {
+      ...(opts?.signal ? { signal: opts.signal } : {}),
+      paramsSerializer: { indexes: null },
+    },
   );
   return mapKpisResponse(res);
 }

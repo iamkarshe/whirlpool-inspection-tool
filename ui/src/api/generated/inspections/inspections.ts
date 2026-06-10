@@ -76,7 +76,8 @@ const getInspectionKpisOperatorApiInspectionsKpisOperatorGet = (
       options);
     }
   /**
- * @summary Get Inspections
+ * Paginated list of inspections with optional filters.
+ * @summary List inspections
  */
 const getInspectionsApiInspectionsGet = (
     params?: GetInspectionsApiInspectionsGetParams,

@@ -4,7 +4,6 @@ import type { DateRange } from "react-day-picker";
 import type { MultiSelectFiltersValue } from "@/components/filters/multi-select-filters-dialog";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
-import type { InspectionFilterContext } from "@/pages/dashboard/inspections/components/inspection-filter-options-types";
 import {
   buildInspectionListApiParams,
   INSPECTION_LIST_SORT,
@@ -17,7 +16,6 @@ import { fetchInspectionsPage } from "@/services/inspections-api";
 export type UseInspectionsServerTableOptions = {
   dateRange?: DateRange;
   filtersValue: MultiSelectFiltersValue;
-  filterContext?: InspectionFilterContext;
   scope?: InspectionListServerScope;
   errorMessage?: string;
 };
@@ -25,7 +23,6 @@ export type UseInspectionsServerTableOptions = {
 export function useInspectionsServerTable({
   dateRange,
   filtersValue,
-  filterContext,
   scope,
   errorMessage = "Failed to load inspections.",
 }: UseInspectionsServerTableOptions) {
@@ -61,11 +58,7 @@ export function useInspectionsServerTable({
       const { data, total } = await fetchInspectionsPage(apiParams, {
         signal,
       });
-      const rows = refineInspectionListPageRows(data, {
-        filtersValue,
-        filterContext,
-        scope,
-      });
+      const rows = refineInspectionListPageRows(data, { scope });
       return { data: rows, total };
     },
   });

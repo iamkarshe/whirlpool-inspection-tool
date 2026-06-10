@@ -14,7 +14,6 @@ import { inspectionsApiErrorMessage } from "@/services/inspections-api";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import type { DateRange } from "react-day-picker";
 import {
-  buildInspectionFilterContext,
   buildInspectionFilterSections,
   defaultInspectionFilters,
   loadInspectionFilterOptions,
@@ -50,21 +49,15 @@ export default function InspectionsPage() {
     return () => ac.abort();
   }, []);
 
-  const filterContext = useMemo(
-    () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
-    [filterOptions],
-  );
-
   const { rows, isLoading, error, serverSide } = useInspectionsServerTable({
     dateRange,
     filtersValue,
-    filterContext,
   });
 
   const filterSections = useMemo(() => {
     if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions, rows);
-  }, [filterOptions, rows]);
+    return buildInspectionFilterSections(filterOptions);
+  }, [filterOptions]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -72,7 +65,10 @@ export default function InspectionsPage() {
       setLoadingKpis(true);
       setKpiError(null);
     });
-    getInspectionKpisForDateRange(dateRange, { signal: ac.signal })
+    getInspectionKpisForDateRange(dateRange, {
+      signal: ac.signal,
+      filtersValue,
+    })
       .then(setKpis)
       .catch((e) => {
         if (ac.signal.aborted) return;
@@ -85,7 +81,7 @@ export default function InspectionsPage() {
         if (!ac.signal.aborted) setLoadingKpis(false);
       });
     return () => ac.abort();
-  }, [dateRange]);
+  }, [dateRange, filtersValue]);
 
   return (
     <div className="space-y-6">

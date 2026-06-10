@@ -1,0 +1,85 @@
+server {
+  listen 80;
+  listen [::]:80;
+  listen 443 quic;
+  listen 443 ssl;
+  listen [::]:443 quic;
+  listen [::]:443 ssl;
+  http3 off;
+
+  {{ssl_certificate_key}}
+  {{ssl_certificate}}
+
+  server_name whirlpool.scoptanalytics.in;
+  {{root}}
+
+  {{nginx_access_log}}
+  {{nginx_error_log}}
+
+  add_header X-Frame-Options "DENY" always;
+  add_header X-Content-Type-Options "nosniff" always;
+
+  error_page 405 = @method_not_allowed;
+
+  if ($request_method = TRACE) {
+    return 405;
+  }
+
+  if ($scheme != "https") {
+    rewrite ^ https://$host$request_uri permanent;
+  }
+
+  location @method_not_allowed {
+    add_header Allow "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    return 405;
+  }
+
+  location ~ /.well-known {
+    auth_basic off;
+    allow all;
+  }
+
+  {{settings}}
+
+  include /etc/nginx/global_settings;
+
+  index index.html;
+
+  location / {
+    proxy_pass http://127.0.0.1:{{app_port}}/;
+    proxy_http_version 1.1;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $host;
+
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+
+    proxy_pass_request_headers on;
+
+    proxy_connect_timeout 900;
+    proxy_send_timeout 900;
+    proxy_read_timeout 900;
+
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
+  }
+
+  location ^~ /uploads/ {
+    alias /home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/uploads/;
+
+    autoindex off;
+    expires 30d;
+    access_log off;
+
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+  }
+}

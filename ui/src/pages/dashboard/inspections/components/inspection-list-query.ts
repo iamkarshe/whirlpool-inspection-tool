@@ -1,20 +1,20 @@
 import type { DateRange } from "react-day-picker";
 
 import type { MultiSelectFiltersValue } from "@/components/filters/multi-select-filters-dialog";
-import type { InspectionFilterContext } from "@/pages/dashboard/inspections/components/inspection-filter-options-types";
-import {
-  applyInspectionFilters,
-  type InspectionStatusMap,
-} from "@/pages/dashboard/inspections/components/inspection-filters";
+import { TYPE_BOTH_ID } from "@/pages/dashboard/inspections/components/inspection-filters";
 import type { Inspection } from "@/pages/dashboard/inspections/inspection-types";
 import type { InspectionReviewLane } from "@/pages/dashboard/inspections/utils/inspection-review-filter";
 import { inspectionMatchesReviewLane } from "@/pages/dashboard/inspections/utils/inspection-review-filter";
 import {
-  formatCalendarDateForApi,
+  parseProductCategoryKeysFromFilterValues,
+  parseWarehouseIdsFromFilterValues,
+  type InspectionKpisQueryParams,
   type InspectionsPageParams,
+} from "@/services/inspection-list-api-params";
+import {
+  formatCalendarDateForApi,
+  inspectionKpisParamsFromDateRange,
 } from "@/services/inspections-api";
-
-const TYPE_BOTH_ID = "both";
 
 export const INSPECTION_LIST_SORT = {
   allowedColumns: [
@@ -43,6 +43,40 @@ export type BuildInspectionListQueryInput = {
   scope?: InspectionListServerScope;
 };
 
+function nonEmpty(values: string[] | undefined): string[] {
+  return (values ?? []).map((v) => v.trim()).filter(Boolean);
+}
+
+export function inspectionFiltersToServerParams(
+  filtersValue?: MultiSelectFiltersValue,
+  scope?: InspectionListServerScope,
+): Pick<
+  InspectionsPageParams,
+  "inspection_type" | "warehouse_ids" | "product_category" | "plant_ids"
+> {
+  const warehouseIds = parseWarehouseIdsFromFilterValues(
+    nonEmpty(filtersValue?.warehouse),
+  );
+  const productCategory = parseProductCategoryKeysFromFilterValues(
+    nonEmpty(filtersValue?.product_category),
+  );
+
+  let inspectionType = scope?.inspectionType ?? null;
+  if (!inspectionType) {
+    const types = nonEmpty(filtersValue?.type).filter((t) => t !== TYPE_BOTH_ID);
+    if (types.length === 1) {
+      inspectionType = types[0] as "inbound" | "outbound";
+    }
+  }
+
+  return {
+    inspection_type: inspectionType,
+    warehouse_ids: warehouseIds.length > 0 ? warehouseIds : null,
+    product_category: productCategory.length > 0 ? productCategory : null,
+    plant_ids: null,
+  };
+}
+
 export function buildInspectionListApiParams(
   input: BuildInspectionListQueryInput,
 ): InspectionsPageParams {
@@ -52,6 +86,7 @@ export function buildInspectionListApiParams(
     sort_by: input.sortBy,
     sort_dir: input.sortDir,
     search: input.searchQuery.trim() ? input.searchQuery.trim() : null,
+    ...inspectionFiltersToServerParams(input.filtersValue, input.scope),
   };
 
   if (input.dateRange?.from) {
@@ -62,40 +97,43 @@ export function buildInspectionListApiParams(
     );
   }
 
-  const scopeType = input.scope?.inspectionType;
-  if (scopeType) {
-    params.inspection_type = scopeType;
-  } else {
-    const types = (input.filtersValue?.type ?? []).filter(
-      (t) => t !== TYPE_BOTH_ID,
-    );
-    if (types.length === 1) {
-      params.inspection_type = types[0];
-    }
-  }
-
   return params;
 }
 
-/** Client refinements not yet on `GET /api/inspections` (applied to the current page only). */
+export function buildInspectionKpisApiParams(input: {
+  dateRange?: DateRange;
+  filtersValue?: MultiSelectFiltersValue;
+}): InspectionKpisQueryParams {
+  const dateParams = inspectionKpisParamsFromDateRange({
+    from: input.dateRange?.from,
+    to: input.dateRange?.to,
+  });
+  const warehouseIds = parseWarehouseIdsFromFilterValues(
+    nonEmpty(input.filtersValue?.warehouse),
+  );
+  const productCategory = parseProductCategoryKeysFromFilterValues(
+    nonEmpty(input.filtersValue?.product_category),
+  );
+
+  return {
+    ...dateParams,
+    warehouse_ids: warehouseIds.length > 0 ? warehouseIds : null,
+    product_category: productCategory.length > 0 ? productCategory : null,
+    plant_ids: null,
+  };
+}
+
+/**
+ * Scoped-route refinements not yet on `GET /api/inspections` (review lane, checklist preset).
+ * Warehouse and category filters are applied server-side via kpi-parameters values.
+ */
 export function refineInspectionListPageRows(
   rows: Inspection[],
   options: {
-    filtersValue?: MultiSelectFiltersValue;
-    filterContext?: InspectionFilterContext;
-    statusMap?: InspectionStatusMap | null;
     scope?: InspectionListServerScope;
   },
 ): Inspection[] {
   let next = rows;
-  if (options.filtersValue) {
-    next = applyInspectionFilters(
-      next,
-      options.filtersValue,
-      options.statusMap ?? null,
-      options.filterContext,
-    );
-  }
   if (options.scope?.reviewLane) {
     next = next.filter((row) =>
       inspectionMatchesReviewLane(row, options.scope!.reviewLane),

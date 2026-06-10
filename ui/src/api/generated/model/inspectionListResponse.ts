@@ -8,9 +8,14 @@
 import type { InspectionListItemResponse } from './inspectionListItemResponse';
 
 export interface InspectionListResponse {
-  data: InspectionListItemResponse[];
+  /** Total rows matching filters across all pages. */
   total: number;
+  /** Current page number (1-based). */
   page: number;
+  /** Page size used for this response. */
   per_page: number;
+  /** Total pages available for the current filters. */
   total_pages: number;
+  /** Inspection rows for the current page. */
+  data: InspectionListItemResponse[];
 }

@@ -26,15 +26,12 @@ import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import { PAGES } from "@/endpoints";
 import { formatDate } from "@/lib/core";
 import {
-  applyInspectionFilters,
-  buildInspectionFilterContext,
   buildInspectionFilterSections,
   defaultFlaggedInspectionFilters,
   loadInspectionFilterOptions,
   mergeInspectionFilters,
   parseInspectionFiltersFromSearch,
   type InspectionFilterOptionsSource,
-  type InspectionStatusMap,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
 import { useInspectionsServerTable } from "@/pages/dashboard/inspections/components/use-inspections-server-table";
 import {
@@ -127,11 +124,6 @@ export default function FlaggedImagesPage() {
     return () => ac.abort();
   }, []);
 
-  const filterContext = useMemo(
-    () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
-    [filterOptions],
-  );
-
   const {
     rows: inspections,
     isLoading: listLoading,
@@ -139,35 +131,13 @@ export default function FlaggedImagesPage() {
   } = useInspectionsServerTable({
     dateRange,
     filtersValue,
-    filterContext,
     scope: { checklistStatusPreset: ["fail"] },
     errorMessage: "Failed to load flagged inspections.",
   });
 
-  const statusMap = useMemo((): InspectionStatusMap => {
-    const map: InspectionStatusMap = {};
-    for (const i of inspections) {
-      if (i.checklist_quality === "pass" || i.checklist_quality === "fail") {
-        map[i.id] = i.checklist_quality;
-      }
-    }
-    return map;
-  }, [inspections]);
-
-  const filteredInspections = useMemo(
-    () =>
-      applyInspectionFilters(
-        inspections,
-        filtersValue,
-        statusMap,
-        filterContext,
-      ),
-    [filterContext, inspections, filtersValue, statusMap],
-  );
-
   const failedInspections = useMemo(
-    () => filteredInspections.filter((i) => i.checklist_quality === "fail"),
-    [filteredInspections],
+    () => inspections.filter((i) => i.checklist_quality === "fail"),
+    [inspections],
   );
 
   useEffect(() => {
@@ -212,9 +182,9 @@ export default function FlaggedImagesPage() {
   const filteredRows = useMemo(() => {
     const rows =
       failedInspections.length === 0 ? [] : loadedImageRows;
-    const ids = new Set(filteredInspections.map((i) => i.id));
+    const ids = new Set(failedInspections.map((i) => i.id));
     return rows.filter((r) => ids.has(r.inspection_id));
-  }, [failedInspections, filteredInspections, loadedImageRows]);
+  }, [failedInspections, loadedImageRows]);
 
   const kpiCounts = useMemo(
     () => ({
@@ -233,8 +203,8 @@ export default function FlaggedImagesPage() {
 
   const filterSections = useMemo(() => {
     if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions, inspections);
-  }, [filterOptions, inspections]);
+    return buildInspectionFilterSections(filterOptions);
+  }, [filterOptions]);
 
   const kpiCards: KpiCardProps[] = useMemo(
     () => [

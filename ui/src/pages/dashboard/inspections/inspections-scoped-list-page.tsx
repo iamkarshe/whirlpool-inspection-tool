@@ -6,7 +6,6 @@ import CalendarDateRangePicker from "@/components/custom-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import {
-  buildInspectionFilterContext,
   buildInspectionFilterSections,
   defaultInspectionFilters,
   loadInspectionFilterOptions,
@@ -33,9 +32,6 @@ export function InspectionsScopedListPage({
         {
           ...defaultInspectionFilters(),
           type: [config.inspectionType],
-          ...(config.checklistStatusPreset?.length
-            ? { status: [...config.checklistStatusPreset] }
-            : {}),
         },
         parseInspectionFiltersFromSearch(location.search),
       ),
@@ -49,11 +45,6 @@ export function InspectionsScopedListPage({
     return () => ac.abort();
   }, []);
 
-  const filterContext = useMemo(
-    () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
-    [filterOptions],
-  );
-
   const scope = useMemo(
     () => ({
       inspectionType: config.inspectionType,
@@ -66,14 +57,13 @@ export function InspectionsScopedListPage({
   const { rows, isLoading, error, serverSide } = useInspectionsServerTable({
     dateRange,
     filtersValue,
-    filterContext,
     scope,
   });
 
   const filterSections = useMemo(() => {
     if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions, rows);
-  }, [filterOptions, rows]);
+    return buildInspectionFilterSections(filterOptions);
+  }, [filterOptions]);
 
   return (
     <div className="space-y-6">

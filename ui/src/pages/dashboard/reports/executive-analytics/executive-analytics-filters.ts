@@ -1,9 +1,11 @@
-import { getReports } from "@/api/generated/reports/reports";
 import type { DamageGrading } from "@/api/generated/model/damageGrading";
 import type { InspectionType } from "@/api/generated/model/inspectionType";
 import type { KpiParametersResponse } from "@/api/generated/model/kpiParametersResponse";
 import type { OperationsAnalyticsRequest } from "@/api/generated/model/operationsAnalyticsRequest";
-import type { ReportsDropdownOption } from "@/api/generated/model/reportsDropdownOption";
+import {
+  fetchKpiParameters,
+  mapKpiDropdownOptions,
+} from "@/services/kpi-parameters-api";
 import type {
   MultiSelectFilterSection,
   MultiSelectFiltersValue,
@@ -19,17 +21,10 @@ export type ExecutiveAnalyticsFilters = {
   grading?: string | null;
 };
 
-function mapDropdownOptions(options: ReportsDropdownOption[]) {
-  return options.map((o) => ({ id: o.value, label: o.label }));
-}
-
 export async function fetchExecutiveKpiParameters(opts?: {
   signal?: AbortSignal;
 }): Promise<KpiParametersResponse> {
-  const reports = getReports();
-  return reports.getKpiParametersApiReportsKpiParametersGet(
-    opts?.signal ? { signal: opts.signal } : undefined,
-  );
+  return fetchKpiParameters(opts);
 }
 
 export function mapKpiParametersToFilterSections(
@@ -39,22 +34,22 @@ export function mapKpiParametersToFilterSections(
     {
       key: "warehouseIds",
       label: "Warehouse",
-      options: mapDropdownOptions(params.warehouses),
+      options: mapKpiDropdownOptions(params.warehouses),
     },
     {
       key: "plantIds",
       label: "Plant (inbound only)",
-      options: mapDropdownOptions(params.plants),
+      options: mapKpiDropdownOptions(params.plants),
     },
     {
       key: "productCategoryKeys",
       label: "Product category",
-      options: mapDropdownOptions(params.product_category),
+      options: mapKpiDropdownOptions(params.product_category),
     },
     {
       key: "grading",
       label: "Damage grading",
-      options: mapDropdownOptions(params.gradings),
+      options: mapKpiDropdownOptions(params.gradings),
     },
   ];
 }

@@ -9,7 +9,7 @@ import type { UserResponse } from "@/api/generated/model/userResponse";
 import type { WarehouseListResponse } from "@/api/generated/model/warehouseListResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import { criticalAdminDeleteRequest } from "@/api/axios-instance";
-import { getInspections } from "@/api/generated/inspections/inspections";
+import { fetchInspectionsListResponse } from "@/services/inspections-api";
 import { getWarehouses } from "@/api/generated/warehouses/warehouses";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 import { isAxiosError } from "axios";
@@ -28,7 +28,7 @@ export type WarehousesListParams = Pick<
 >;
 
 export type WarehouseInspectionsListParams = {
-  warehouse_uuid: string;
+  warehouse_id: number;
   page?: number;
   per_page?: number;
   search?: string | null;
@@ -129,22 +129,25 @@ export async function fetchWarehouseInspectionsPage(
   params: WarehouseInspectionsListParams,
   request?: { signal?: AbortSignal },
 ): Promise<InspectionListResponse> {
-  const api = getInspections();
-  return api.getInspectionsApiInspectionsGet(
+  const inspectionType = params.inspection_type?.trim();
+  return fetchInspectionsListResponse(
     {
-      warehouse_uuid: params.warehouse_uuid,
+      warehouse_ids: [params.warehouse_id],
       page: params.page ?? 1,
       per_page: params.per_page ?? DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
       search: params.search?.trim() ? params.search : null,
       sort_by: params.sort_by ?? "created_at",
       sort_dir: params.sort_dir ?? "desc",
-      inspection_type: params.inspection_type ?? null,
+      inspection_type:
+        inspectionType === "inbound" || inspectionType === "outbound"
+          ? inspectionType
+          : undefined,
       is_active: params.is_active,
       date_field: params.date_field ?? null,
       date_from: params.date_from ?? null,
       date_to: params.date_to ?? null,
     },
-    request?.signal ? { signal: request.signal } : undefined,
+    request,
   );
 }
 

@@ -2,7 +2,7 @@ import type { InspectionFilterOptionsSource } from "@/pages/dashboard/inspection
 import { SESSION_USER_PAYLOAD_KEY } from "@/lib/clear-authenticated-session-storage";
 
 /** Bump when filter metadata shape or fetch strategy changes (invalidates session cache). */
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 4;
 const CACHE_KEY_PREFIX = `whirlpool.inspection-filter-options:v${CACHE_VERSION}:`;
 
 function inspectionFilterOptionsCacheKey(): string | null {
@@ -59,7 +59,7 @@ export function clearInspectionFilterOptionsCache(): void {
 }
 
 /**
- * Session-cached filter metadata (KPI params + users). In-flight dedup must not
+ * Session-cached filter metadata from GET /api/reports/kpi-parameters. In-flight dedup must not
  * reuse a promise tied to an aborted Strict Mode mount — callers may pass
  * `signal` for cleanup, but the shared fetch ignores it.
  */

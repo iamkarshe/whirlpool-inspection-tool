@@ -21,13 +21,14 @@ import type {
 } from "@/pages/dashboard/inspections/inspection-types";
 import type { DateRange } from "react-day-picker";
 
+import type { MultiSelectFiltersValue } from "@/components/filters/multi-select-filters-dialog";
+import { buildInspectionKpisApiParams } from "@/pages/dashboard/inspections/components/inspection-list-query";
 import {
   deriveIsUnderReviewFromReviewStatus,
   fetchAllInspectionRows,
   fetchInspectionDetail,
   fetchInspectionInputsAsQuestionRows,
   fetchInspectionKpis,
-  inspectionKpisParamsFromDateRange,
   isoToApiDate,
   mapInspectionFullToInspection,
   mapInputsForSection,
@@ -268,12 +269,12 @@ export async function getInspectionKpis(
 
 export async function getInspectionKpisForDateRange(
   range: DateRange | undefined,
-  opts?: { signal?: AbortSignal },
+  opts?: { signal?: AbortSignal; filtersValue?: MultiSelectFiltersValue },
 ): Promise<InspectionKpis> {
   return fetchInspectionKpis(
-    inspectionKpisParamsFromDateRange({
-      from: range?.from,
-      to: range?.to,
+    buildInspectionKpisApiParams({
+      dateRange: range,
+      filtersValue: opts?.filtersValue,
     }),
     opts,
   );

@@ -7,7 +7,6 @@ import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filt
 import PageActionBar from "@/components/page-action-bar";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
 import {
-  buildInspectionFilterContext,
   buildInspectionFilterSections,
   defaultFlaggedInspectionFilters,
   loadInspectionFilterOptions,
@@ -37,15 +36,9 @@ export default function FlaggedInspectionsPage() {
     return () => ac.abort();
   }, []);
 
-  const filterContext = useMemo(
-    () => (filterOptions ? buildInspectionFilterContext(filterOptions) : undefined),
-    [filterOptions],
-  );
-
   const { rows, isLoading, error, serverSide } = useInspectionsServerTable({
     dateRange,
     filtersValue,
-    filterContext,
     scope: {
       checklistStatusPreset: ["fail"],
     },
@@ -53,8 +46,8 @@ export default function FlaggedInspectionsPage() {
 
   const filterSections = useMemo(() => {
     if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions, rows);
-  }, [filterOptions, rows]);
+    return buildInspectionFilterSections(filterOptions);
+  }, [filterOptions]);
 
   return (
     <div className="space-y-6">

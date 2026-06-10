@@ -1,4 +1,5 @@
 import time
+import secrets
 import uuid
 from urllib.parse import quote
 
@@ -29,7 +30,7 @@ def okta_sso_login(
     response_mode = "query"
     scope = "openid profile email"
     redirect_uri = okta_credentials.redirect_uri
-    nonce = str(time.time())
+    nonce = secrets.token_urlsafe(32)
     state = str(uuid.uuid4()).replace("-", "")
 
     okta_login_url = (

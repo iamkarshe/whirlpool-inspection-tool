@@ -63,6 +63,7 @@ export * from './getInspectionKpisManagerApiInspectionsKpisManagerGetParams';
 export * from './getInspectionKpisManagerApiInspectionsKpisManagerGetPeriod';
 export * from './getInspectionKpisOperatorApiInspectionsKpisOperatorGetParams';
 export * from './getInspectionKpisOperatorApiInspectionsKpisOperatorGetPeriod';
+export * from './getInspectionsApiInspectionsGetInspectionType';
 export * from './getInspectionsApiInspectionsGetParams';
 export * from './getJobLogsApiLogsJobGetParams';
 export * from './getLoginsApiLoginsGetParams';

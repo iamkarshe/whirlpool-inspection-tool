@@ -8,27 +8,38 @@
 
 export type GetUsersApiUsersGetParams = {
 /**
+ * Page number (1-based).
  * @minimum 1
  */
 page?: number;
 /**
+ * Rows per page (max 100).
  * @minimum 1
  * @maximum 100
  */
 per_page?: number;
+/**
+ * Case-insensitive substring search across route-specific columns.
+ */
 search?: string | null;
+/**
+ * Sort column key; allowed values depend on the list endpoint.
+ */
 sort_by?: string | null;
+/**
+ * Sort direction: asc or desc.
+ */
 sort_dir?: string;
 /**
- * Column key from the route's allowed date_fields (e.g. created_at)
+ * Date column key (e.g. created_at). See endpoint docs for allowed keys.
  */
 date_field?: string | null;
 /**
- * With date_field: range start (UTC date); omit both dates for default last 7 days including today
+ * Inclusive UTC start date; set together with date_to.
  */
 date_from?: string | null;
 /**
- * With date_field: range end (UTC date, inclusive); omit both dates for default last 7 days including today
+ * Inclusive UTC end date; set together with date_from.
  */
 date_to?: string | null;
 };
