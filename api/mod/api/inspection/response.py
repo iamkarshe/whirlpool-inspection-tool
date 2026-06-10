@@ -483,13 +483,13 @@ class StartOutboundInspectionRequest(BaseModel):
     supplier_plant_code: str | None = None
     lat: float = Field(..., ge=INDIA_LAT_MIN, le=INDIA_LAT_MAX)
     lng: float = Field(..., ge=INDIA_LNG_MIN, le=INDIA_LNG_MAX)
-    truck_number: str = Field(..., min_length=1)
+    truck_number: str | None = None
     dock_number: str | None = None
     damage_type: DamageType | None = None
     damage_severity: DamageSeverity | None = None
     damage_cause: DamageLikelyCause | None = None
     damage_grade: DamageGrading | None = None
-    truck_docking_time: datetime
+    truck_docking_time: datetime | None = None
     outer_packaging_side_images: list[str] = Field(..., min_length=1)
     inner_packaging_side_images: list[str] = Field(..., min_length=1)
     product_side_images: list[str] = Field(..., min_length=1)
@@ -498,8 +498,12 @@ class StartOutboundInspectionRequest(BaseModel):
 
     @field_validator("truck_number", mode="after")
     @classmethod
-    def validate_truck_number(cls, v: str) -> str:
-        t = (v or "").strip()
+    def validate_truck_number(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        t = v.strip()
+        if not t:
+            return None
         if not is_valid_registration(t):
             raise ValueError(
                 "truck_number must be a valid Indian vehicle registration "
@@ -510,6 +514,8 @@ class StartOutboundInspectionRequest(BaseModel):
     @field_validator("truck_docking_time", mode="before")
     @classmethod
     def coerce_truck_docking_time(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
         return parse_to_utc_datetime(v)
 
     @field_validator(

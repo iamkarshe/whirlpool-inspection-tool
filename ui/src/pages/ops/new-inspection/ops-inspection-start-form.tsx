@@ -1258,7 +1258,7 @@ export function OpsInspectionStartForm({
       return;
     }
 
-    const dockingIso = new Date(truckDockingLocal).toISOString();
+    const inboundTruckDockingIso = new Date(truckDockingLocal).toISOString();
     const deviceUuid =
       getServerAssignedDeviceUuid() ?? getOrCreatePersistentDeviceId();
     const truckNumberNormalized =
@@ -1306,7 +1306,7 @@ export function OpsInspectionStartForm({
           lng: coords.lng,
           truck_number: truckNumberNormalized,
           dock_number: dockNumber.trim() || null,
-          truck_docking_time: dockingIso,
+          truck_docking_time: inboundTruckDockingIso,
           outer_packaging_side_images: outerSideImages,
           inner_packaging_side_images: innerSideImages,
           product_side_images: productSideImages,
@@ -1330,9 +1330,9 @@ export function OpsInspectionStartForm({
           warehouse_code: warehouseCode.trim(),
           lat: coords.lat,
           lng: coords.lng,
-          truck_number: truckNumberNormalized || "OUTBOUND",
+          truck_number: truckNumberNormalized || null,
           dock_number: dockNumber.trim() || null,
-          truck_docking_time: dockingIso,
+          truck_docking_time: null,
           outer_packaging_side_images: outerSideImages,
           inner_packaging_side_images: innerSideImages,
           product_side_images: productSideImages,

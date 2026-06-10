@@ -28,14 +28,13 @@ export interface StartOutboundInspectionRequest {
      * @maximum 97.8
      */
   lng: number;
-  /** @minLength 1 */
-  truck_number: string;
+  truck_number?: string | null;
   dock_number?: string | null;
   damage_type?: DamageType | null;
   damage_severity?: DamageSeverity | null;
   damage_cause?: DamageLikelyCause | null;
   damage_grade?: DamageGrading | null;
-  truck_docking_time: string;
+  truck_docking_time?: string | null;
   /** @minItems 1 */
   outer_packaging_side_images: string[];
   /** @minItems 1 */
