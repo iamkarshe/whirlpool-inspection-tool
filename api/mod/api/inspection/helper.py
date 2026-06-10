@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Literal
 
 from fastapi import HTTPException, Request, status
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -44,13 +44,13 @@ from mod.api.inspection.response import (
 from mod.api.inspection.review_notifications import (
     schedule_inspection_review_manager_notifications,
 )
-from mod.api.plant.helper import get_plant_by_uuid_or_404
 from mod.api.product.helper import map_product
-from mod.api.product_category.helper import (
-    get_product_category_or_404,
-    map_product_category,
+from mod.api.product_category.helper import map_product_category
+from mod.api.reports.helper import (
+    resolve_plant_codes,
+    resolve_product_category_pairs,
+    resolve_warehouse_codes,
 )
-from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
 from mod.model import (
     BarcodeLock,
     Checklist,
@@ -70,6 +70,7 @@ from mod.model import (
     InspectionType,
     Plant,
     Product,
+    ProductCategory,
     ProductUnit,
     User,
     Warehouse,
@@ -126,42 +127,63 @@ def resolve_inspector_user_ids(
     ]
 
 
-def resolve_warehouse_codes_from_uuids(
-    db: Session, warehouse_uuids: list[uuid.UUID]
-) -> list[str]:
-    if not warehouse_uuids:
-        return []
-    codes: list[str] = []
-    for warehouse_uuid in warehouse_uuids:
-        codes.append(
-            get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code
+def validate_plant_filter_for_inspection_type(
+    inspection_type: InspectionType | Literal["inbound", "outbound"] | None,
+    plant_ids: list[int],
+) -> None:
+    if not plant_ids:
+        return
+    if inspection_type in (InspectionType.outbound, "outbound"):
+        raise HTTPException(
+            status_code=422,
+            detail="Plant filter applies to inbound inspections only",
         )
-    return codes
 
 
-def resolve_product_category_ids_from_uuids(
-    db: Session, product_category_uuids: list[uuid.UUID]
-) -> list[int]:
-    if not product_category_uuids:
-        return []
-    return [
-        get_product_category_or_404(db, category_uuid).id
-        for category_uuid in product_category_uuids
-    ]
-
-
-def resolve_inspection_scope_filters(
+def inspection_scope_filter_clauses(
     db: Session,
-    warehouse_uuid: uuid.UUID | None,
-    plant_uuid: uuid.UUID | None,
-) -> tuple[str | None, str | None]:
-    warehouse_code: str | None = None
-    plant_code: str | None = None
-    if warehouse_uuid is not None:
-        warehouse_code = get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code
-    if plant_uuid is not None:
-        plant_code = get_plant_by_uuid_or_404(db, plant_uuid).plant_code
-    return warehouse_code, plant_code
+    *,
+    plant_codes: list[str] | None = None,
+    product_category_pairs: list[tuple[str, str]] | None = None,
+) -> list:
+    clauses: list = []
+    if plant_codes:
+        clauses.extend(
+            [
+                Inspection.inspection_type == InspectionType.inbound,
+                Inspection.supplier_plant_code.in_(plant_codes),
+            ]
+        )
+    if product_category_pairs:
+        pair_filters = [
+            and_(
+                ProductCategory.category_type == category_type,
+                ProductCategory.sub_category_type == sub_category_type,
+            )
+            for category_type, sub_category_type in product_category_pairs
+        ]
+        category_id_query = db.query(ProductCategory.id).filter(
+            ProductCategory.is_active.is_(True),
+            or_(*pair_filters),
+        )
+        clauses.append(Inspection.product_category_id.in_(category_id_query))
+    return clauses
+
+
+def apply_inspection_scope_filters_to_query(
+    query,
+    db: Session,
+    *,
+    plant_codes: list[str] | None = None,
+    product_category_pairs: list[tuple[str, str]] | None = None,
+):
+    for clause in inspection_scope_filter_clauses(
+        db,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+    ):
+        query = query.filter(clause)
+    return query
 
 
 def apply_inspection_list_warehouse_scope(
@@ -194,46 +216,32 @@ def apply_inspection_list_warehouse_scope(
 def resolve_inspection_kpi_warehouse_codes(
     db: Session,
     request: Request,
-    warehouse_uuid: uuid.UUID | None,
+    warehouse_ids: list[int],
 ) -> list[str] | None:
-    """Resolve warehouse filter for KPI endpoints.
+    """Resolve warehouse filter for KPI endpoints (kpi-parameters warehouse ids)."""
+    from utils.roles import intersect_requested_warehouse_codes
 
-    Returns ``None`` when the caller may see all warehouses (superadmin without
-    ``warehouse_uuid``). Returns a non-empty list to restrict to those codes, or
-    an empty list when the user has no assigned warehouses (all KPI counts zero).
-    """
-    from utils.roles import request_has_superadmin, roles_from_request
+    requested = resolve_warehouse_codes(db, warehouse_ids) if warehouse_ids else None
+    return intersect_requested_warehouse_codes(db, request, requested)
 
-    roles = roles_from_request(request)
-    if request_has_superadmin(request):
-        if warehouse_uuid is None:
-            return None
-        return [get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code]
 
-    user_id = getattr(request.state, "user_id", None)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    user = (
-        db.query(User)
-        .options(joinedload(User.warehouses_scope))
-        .filter(User.id == int(user_id))
-        .first()
-    )
-    if user is None:
-        raise HTTPException(status_code=401, detail="User not found")
-    allowed = [w.warehouse_code for w in (user.warehouses_scope or [])]
-    allowed_unique = list(dict.fromkeys(allowed))
-
-    if warehouse_uuid is not None:
-        code = get_warehouse_by_uuid_or_404(db, warehouse_uuid).warehouse_code
-        if code not in set(allowed_unique):
-            raise HTTPException(
-                status_code=403,
-                detail="Not allowed to view KPIs for this warehouse",
-            )
-        return [code]
-
-    return allowed_unique
+def resolve_inspection_scope_from_query(
+    db: Session,
+    *,
+    warehouse_ids: list[int],
+    plant_ids: list[int],
+    product_category: list[str],
+    inspection_type: InspectionType | Literal["inbound", "outbound"] | None = None,
+) -> dict[str, list[str] | list[tuple[str, str]] | None]:
+    validate_plant_filter_for_inspection_type(inspection_type, plant_ids)
+    warehouse_codes = resolve_warehouse_codes(db, warehouse_ids) if warehouse_ids else None
+    plant_codes = resolve_plant_codes(db, plant_ids) if plant_ids else None
+    product_category_pairs = resolve_product_category_pairs(db, product_category)
+    return {
+        "warehouse_codes": warehouse_codes,
+        "plant_codes": plant_codes,
+        "product_category_pairs": product_category_pairs,
+    }
 
 
 def compute_inspection_analytics_kpis(
@@ -243,7 +251,8 @@ def compute_inspection_analytics_kpis(
     date_to: date,
     is_active: bool,
     warehouse_codes: list[str] | None,
-    plant_code: str | None,
+    plant_codes: list[str] | None = None,
+    product_category_pairs: list[tuple[str, str]] | None = None,
     user_id: int,
     operator_mode: bool,
     approvals_rejections_any_reviewer: bool = False,
@@ -258,6 +267,12 @@ def compute_inspection_analytics_kpis(
     rst = InspectionReviewStatus
     pending_review = (rst.PENDING, rst.IN_REVIEW)
 
+    scope_clauses = inspection_scope_filter_clauses(
+        db,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+    )
+
     def _scope_filters():
         conds = [
             Inspection.is_active.is_(is_active),
@@ -266,8 +281,7 @@ def compute_inspection_analytics_kpis(
         ]
         if warehouse_codes is not None:
             conds.append(Inspection.warehouse_code.in_(warehouse_codes))
-        if plant_code is not None:
-            conds.append(Inspection.supplier_plant_code == plant_code)
+        conds.extend(scope_clauses)
         return conds
 
     def _count(*extra) -> int:
@@ -306,11 +320,7 @@ def compute_inspection_analytics_kpis(
                     if warehouse_codes is not None
                     else []
                 ),
-                *(
-                    [Inspection.supplier_plant_code == plant_code]
-                    if plant_code is not None
-                    else []
-                ),
+                *scope_clauses,
             )
             .scalar()
             or 0
@@ -329,11 +339,7 @@ def compute_inspection_analytics_kpis(
                     if warehouse_codes is not None
                     else []
                 ),
-                *(
-                    [Inspection.supplier_plant_code == plant_code]
-                    if plant_code is not None
-                    else []
-                ),
+                *scope_clauses,
             )
             .scalar()
             or 0
@@ -360,11 +366,7 @@ def compute_inspection_analytics_kpis(
                     if warehouse_codes is not None
                     else []
                 ),
-                *(
-                    [Inspection.supplier_plant_code == plant_code]
-                    if plant_code is not None
-                    else []
-                ),
+                *scope_clauses,
             )
             .scalar()
             or 0
@@ -383,11 +385,7 @@ def compute_inspection_analytics_kpis(
                     if warehouse_codes is not None
                     else []
                 ),
-                *(
-                    [Inspection.supplier_plant_code == plant_code]
-                    if plant_code is not None
-                    else []
-                ),
+                *scope_clauses,
             )
             .scalar()
             or 0
@@ -920,8 +918,9 @@ def compute_inspection_kpis(
     date_to: date,
     is_active: bool,
     warehouse_code: str | None = None,
-    plant_code: str | None = None,
     warehouse_codes: list[str] | None = None,
+    plant_codes: list[str] | None = None,
+    product_category_pairs: list[tuple[str, str]] | None = None,
     inspector_id: int | None = None,
 ) -> dict[str, int]:
     start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
@@ -947,8 +946,12 @@ def compute_inspection_kpis(
         query = query.filter(Inspection.warehouse_code.in_(warehouse_codes))
     elif warehouse_code is not None:
         query = query.filter(Inspection.warehouse_code == warehouse_code)
-    if plant_code is not None:
-        query = query.filter(Inspection.supplier_plant_code == plant_code)
+    for clause in inspection_scope_filter_clauses(
+        db,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+    ):
+        query = query.filter(clause)
     if inspector_id is not None:
         query = query.filter(Inspection.inspector_id == inspector_id)
     inspections = query.all()
@@ -990,7 +993,8 @@ def compute_manager_inspection_team_kpis(
     date_to: date,
     is_active: bool,
     warehouse_codes: list[str] | None,
-    plant_code: str | None = None,
+    plant_codes: list[str] | None = None,
+    product_category_pairs: list[tuple[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Team overview counts for managers: warehouse scope, ``created_at`` window.
 
@@ -1019,8 +1023,12 @@ def compute_manager_inspection_team_kpis(
     )
     if warehouse_codes is not None:
         query = query.filter(Inspection.warehouse_code.in_(warehouse_codes))
-    if plant_code is not None:
-        query = query.filter(Inspection.supplier_plant_code == plant_code)
+    query = apply_inspection_scope_filters_to_query(
+        query,
+        db,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+    )
     rows = query.all()
     inbound = InspectionType.inbound
     outbound = InspectionType.outbound
@@ -1085,7 +1093,8 @@ def compute_operator_inspection_kpis(
     is_active: bool,
     warehouse_codes: list[str] | None,
     inspector_user_id: int,
-    plant_code: str | None = None,
+    plant_codes: list[str] | None = None,
+    product_category_pairs: list[tuple[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Data analytics style counts for operators: only rows where they are ``inspector_id``.
 
@@ -1112,8 +1121,12 @@ def compute_operator_inspection_kpis(
     )
     if warehouse_codes is not None:
         query = query.filter(Inspection.warehouse_code.in_(warehouse_codes))
-    if plant_code is not None:
-        query = query.filter(Inspection.supplier_plant_code == plant_code)
+    query = apply_inspection_scope_filters_to_query(
+        query,
+        db,
+        plant_codes=plant_codes,
+        product_category_pairs=product_category_pairs,
+    )
     rows = query.all()
     inbound = InspectionType.inbound
     outbound = InspectionType.outbound

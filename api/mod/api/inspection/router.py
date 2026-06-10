@@ -17,7 +17,9 @@ from sqlalchemy.orm import Session, joinedload
 from mod.api.inspection.checklist_inspection import InspectionWithChecklistPayload
 from mod.api.inspection.request import (
     InspectionListQueryParams,
+    InspectionScopeQueryParams,
     get_inspection_list_query_params,
+    get_inspection_scope_query_params,
 )
 from mod.api.inspection.helper import (
     acquire_inspection_barcode_lock,
@@ -39,11 +41,11 @@ from mod.api.inspection.helper import (
     map_inspection_list_item,
     present_inspection_full,
     release_inspection_barcode_lock,
+    apply_inspection_scope_filters_to_query,
     resolve_inspection_kpi_warehouse_codes,
-    resolve_inspection_scope_filters,
+    resolve_inspection_scope_from_query,
     resolve_inspector_user_ids,
-    resolve_product_category_ids_from_uuids,
-    resolve_warehouse_codes_from_uuids,
+    validate_plant_filter_for_inspection_type,
     save_inspection_image_upload,
     update_inspection_review_status,
 )
@@ -118,12 +120,7 @@ def get_inspection_kpis(
         description="With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
     ),
     is_active: bool = Query(True),
-    warehouse_uuid: uuid.UUID | None = Query(
-        None, description="Optional filter by warehouse UUID"
-    ),
-    plant_uuid: uuid.UUID | None = Query(
-        None, description="Optional filter by plant UUID"
-    ),
+    scope: InspectionScopeQueryParams = Depends(get_inspection_scope_query_params),
     db: Session = Depends(get_db),
 ):
     try:
@@ -136,10 +133,15 @@ def get_inspection_kpis(
         raise HTTPException(
             status_code=400, detail="date_to must be on or after date_from"
         )
-    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
-        db, request, warehouse_uuid
+    scope_filters = resolve_inspection_scope_from_query(
+        db,
+        warehouse_ids=scope.warehouse_ids,
+        plant_ids=scope.plant_ids,
+        product_category=scope.product_category,
     )
-    _, plant_code = resolve_inspection_scope_filters(db, None, plant_uuid)
+    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
+        db, request, scope.warehouse_ids
+    )
     uid = int(request.state.user_id)
     operator_only = request_is_operator_only(request)
     superadmin = request_has_superadmin(request)
@@ -149,8 +151,9 @@ def get_inspection_kpis(
         date_to,
         is_active,
         warehouse_code=None,
-        plant_code=plant_code,
         warehouse_codes=warehouse_codes,
+        plant_codes=scope_filters["plant_codes"],
+        product_category_pairs=scope_filters["product_category_pairs"],
         inspector_id=uid if operator_only else None,
     )
     analytics_counts = compute_inspection_analytics_kpis(
@@ -159,7 +162,8 @@ def get_inspection_kpis(
         date_to=date_to,
         is_active=is_active,
         warehouse_codes=warehouse_codes,
-        plant_code=plant_code,
+        plant_codes=scope_filters["plant_codes"],
+        product_category_pairs=scope_filters["product_category_pairs"],
         user_id=uid,
         operator_mode=operator_only,
         approvals_rejections_any_reviewer=superadmin and not operator_only,
@@ -198,13 +202,7 @@ def get_inspection_kpis_manager(
         description="With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
     ),
     is_active: bool = Query(True),
-    warehouse_uuid: uuid.UUID | None = Query(
-        None,
-        description="Optional filter by warehouse UUID (superadmin or allowed scope)",
-    ),
-    plant_uuid: uuid.UUID | None = Query(
-        None, description="Optional filter by plant UUID"
-    ),
+    scope: InspectionScopeQueryParams = Depends(get_inspection_scope_query_params),
     db: Session = Depends(get_db),
 ):
     """Manager team overview KPIs: warehouse scope matches assigned warehouses."""
@@ -218,17 +216,23 @@ def get_inspection_kpis_manager(
         raise HTTPException(
             status_code=400, detail="date_to must be on or after date_from"
         )
-    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
-        db, request, warehouse_uuid
+    scope_filters = resolve_inspection_scope_from_query(
+        db,
+        warehouse_ids=scope.warehouse_ids,
+        plant_ids=scope.plant_ids,
+        product_category=scope.product_category,
     )
-    _, plant_code = resolve_inspection_scope_filters(db, None, plant_uuid)
+    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
+        db, request, scope.warehouse_ids
+    )
     payload = compute_manager_inspection_team_kpis(
         db,
         date_from,
         date_to,
         is_active,
         warehouse_codes=warehouse_codes,
-        plant_code=plant_code,
+        plant_codes=scope_filters["plant_codes"],
+        product_category_pairs=scope_filters["product_category_pairs"],
     )
     return ManagerInspectionTeamKpisResponse(
         period=period_norm,
@@ -266,13 +270,7 @@ def get_inspection_kpis_operator(
         description="With period=custom: range end (UTC, inclusive); omit both dates for last 7 days",
     ),
     is_active: bool = Query(True),
-    warehouse_uuid: uuid.UUID | None = Query(
-        None,
-        description="Optional filter by warehouse UUID (must be in the operator's scope)",
-    ),
-    plant_uuid: uuid.UUID | None = Query(
-        None, description="Optional filter by plant UUID"
-    ),
+    scope: InspectionScopeQueryParams = Depends(get_inspection_scope_query_params),
     db: Session = Depends(get_db),
 ):
     """Operator analytics KPIs: only inspections where the caller is ``inspector_id``."""
@@ -286,10 +284,15 @@ def get_inspection_kpis_operator(
         raise HTTPException(
             status_code=400, detail="date_to must be on or after date_from"
         )
-    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
-        db, request, warehouse_uuid
+    scope_filters = resolve_inspection_scope_from_query(
+        db,
+        warehouse_ids=scope.warehouse_ids,
+        plant_ids=scope.plant_ids,
+        product_category=scope.product_category,
     )
-    _, plant_code = resolve_inspection_scope_filters(db, None, plant_uuid)
+    warehouse_codes = resolve_inspection_kpi_warehouse_codes(
+        db, request, scope.warehouse_ids
+    )
     inspector_user_id = int(request.state.user_id)
     payload = compute_operator_inspection_kpis(
         db,
@@ -298,7 +301,8 @@ def get_inspection_kpis_operator(
         is_active,
         warehouse_codes=warehouse_codes,
         inspector_user_id=inspector_user_id,
-        plant_code=plant_code,
+        plant_codes=scope_filters["plant_codes"],
+        product_category_pairs=scope_filters["product_category_pairs"],
     )
     return OperatorInspectionKpisResponse(
         period=period_norm,
@@ -346,10 +350,17 @@ def get_inspections(
         and params.date_field is None
     ):
         filter_params = params.model_copy(update={"date_field": "created_at"})
-    warehouse_codes = resolve_warehouse_codes_from_uuids(
-        db, query_params.warehouse_uuids
+    validate_plant_filter_for_inspection_type(
+        query_params.inspection_type, query_params.plant_ids
     )
-    _, plant_code = resolve_inspection_scope_filters(db, None, query_params.plant_uuid)
+    scope_filters = resolve_inspection_scope_from_query(
+        db,
+        warehouse_ids=query_params.warehouse_ids,
+        plant_ids=query_params.plant_ids,
+        product_category=query_params.product_category,
+        inspection_type=query_params.inspection_type,
+    )
+    warehouse_codes = scope_filters["warehouse_codes"] or []
     query = (
         db.query(Inspection)
         .join(Product, Inspection.product_id == Product.id)
@@ -381,21 +392,12 @@ def get_inspections(
     query = apply_inspection_list_warehouse_scope(
         query, db, request, warehouse_codes or None
     )
-    if plant_code is not None:
-        query = query.filter(Inspection.supplier_plant_code == plant_code)
-    if query_params.product_category_uuids:
-        category_ids = resolve_product_category_ids_from_uuids(
-            db, query_params.product_category_uuids
-        )
-        if not category_ids:
-            return InspectionListResponse(
-                data=[],
-                total=0,
-                page=params.page,
-                per_page=params.per_page,
-                total_pages=0,
-            )
-        query = query.filter(Inspection.product_category_id.in_(category_ids))
+    query = apply_inspection_scope_filters_to_query(
+        query,
+        db,
+        plant_codes=scope_filters["plant_codes"],
+        product_category_pairs=scope_filters["product_category_pairs"],
+    )
     if query_params.inspection_type is not None:
         query = query.filter(
             Inspection.inspection_type == InspectionType(query_params.inspection_type)

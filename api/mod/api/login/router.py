@@ -181,7 +181,9 @@ def get_login_detail(
             Inspection.created_at >= log.created_at,
         )
         if log.user_id is not None:
-            inspections_query = inspections_query.filter(Inspection.inspector_id == log.user_id)
+            inspections_query = inspections_query.filter(
+                Inspection.inspector_id == log.user_id
+            )
         if next_login is not None:
             inspections_query = inspections_query.filter(
                 Inspection.created_at < next_login.created_at

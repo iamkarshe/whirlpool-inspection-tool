@@ -3,7 +3,7 @@ from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -198,6 +198,22 @@ async def api_spec(
 ):
     require_superadmin_for_api_docs(request, db, token)
     return JSONResponse(content=app.openapi())
+
+
+# Sitemap XML
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap_xml() -> Response:
+    content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://whirlpool.scoptanalytics.in/</loc>
+  </url>
+</urlset>
+"""
+    return Response(
+        content=content,
+        media_type="application/xml",
+    )
 
 
 # Robots

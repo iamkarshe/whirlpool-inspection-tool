@@ -12,12 +12,34 @@ from pydantic import BaseModel, Field
 from utils.pagination import PaginationParams, get_pagination_params
 
 
-class InspectionListQueryParams(BaseModel):
-    """All query parameters for ``GET /api/inspections``.
+class InspectionScopeQueryParams(BaseModel):
+    """Shared scope filters aligned with ``GET /api/reports/kpi-parameters`` values."""
 
-    Orval exposes these as URL query parameters. Omit a filter to mean "All"
-    in the admin UI (Type / Warehouse / Category / User = All).
-    """
+    warehouse_ids: list[int] = Field(
+        default_factory=list,
+        description=(
+            "Warehouse numeric ids (multi-select). "
+            "Repeat query param per id. Empty or omitted means all (role scope)."
+        ),
+    )
+    plant_ids: list[int] = Field(
+        default_factory=list,
+        description=(
+            "Plant numeric ids (multi-select, inbound only). "
+            "Repeat query param per id. Empty or omitted means all."
+        ),
+    )
+    product_category: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Product category pair keys (multi-select), e.g. AC|SPLIT. "
+            "Repeat query param per value. Empty or omitted means all."
+        ),
+    )
+
+
+class InspectionListQueryParams(InspectionScopeQueryParams):
+    """All query parameters for ``GET /api/inspections``."""
 
     page: int = Field(1, ge=1, description="Page number (1-based).")
     per_page: int = Field(20, ge=1, le=100, description="Rows per page (max 100).")
@@ -52,24 +74,6 @@ class InspectionListQueryParams(BaseModel):
         default=None,
         description="Filter by direction. Omit for All (inbound + outbound).",
     )
-    warehouse_uuids: list[uuid.UUID] = Field(
-        default_factory=list,
-        description=(
-            "Warehouse UUIDs (multi-select). "
-            "Repeat query param per UUID. Empty or omitted means All warehouses."
-        ),
-    )
-    plant_uuid: uuid.UUID | None = Field(
-        default=None,
-        description="Filter by plant UUID. Omit for All plants.",
-    )
-    product_category_uuids: list[uuid.UUID] = Field(
-        default_factory=list,
-        description=(
-            "Product category UUIDs (multi-select). "
-            "Repeat query param per UUID. Empty or omitted means All categories."
-        ),
-    )
     inspector_uuids: list[uuid.UUID] = Field(
         default_factory=list,
         description=(
@@ -92,28 +96,34 @@ class InspectionListQueryParams(BaseModel):
         )
 
 
+def get_inspection_scope_query_params(
+    warehouse_ids: list[int] | None = Query(
+        None,
+        description="Warehouse ids from kpi-parameters. Repeat param per value.",
+    ),
+    plant_ids: list[int] | None = Query(
+        None,
+        description="Plant ids from kpi-parameters (inbound only). Repeat param per value.",
+    ),
+    product_category: list[str] | None = Query(
+        None,
+        description="Category pair keys from kpi-parameters, e.g. AC|SPLIT.",
+    ),
+) -> InspectionScopeQueryParams:
+    return InspectionScopeQueryParams(
+        warehouse_ids=list(warehouse_ids or []),
+        plant_ids=list(plant_ids or []),
+        product_category=list(product_category or []),
+    )
+
+
 def get_inspection_list_query_params(
     pagination: PaginationParams = Depends(get_pagination_params),
+    scope: InspectionScopeQueryParams = Depends(get_inspection_scope_query_params),
     is_active: bool = Query(True, description="When false, include soft-deleted inspections."),
     inspection_type: Literal["inbound", "outbound"] | None = Query(
         None,
         description="inbound or outbound. Omit for All.",
-    ),
-    warehouse_uuids: list[uuid.UUID] | None = Query(
-        None,
-        description=(
-            "Warehouse UUIDs (multi-select). Repeat param per value. Omit for All."
-        ),
-    ),
-    plant_uuid: uuid.UUID | None = Query(
-        None,
-        description="Plant UUID. Omit for All.",
-    ),
-    product_category_uuids: list[uuid.UUID] | None = Query(
-        None,
-        description=(
-            "Product category UUIDs (multi-select). Repeat param per value. Omit for All."
-        ),
     ),
     inspector_uuids: list[uuid.UUID] | None = Query(
         None,
@@ -131,10 +141,10 @@ def get_inspection_list_query_params(
         date_field=pagination.date_field,
         date_from=pagination.date_from,
         date_to=pagination.date_to,
+        warehouse_ids=scope.warehouse_ids,
+        plant_ids=scope.plant_ids,
+        product_category=scope.product_category,
         is_active=is_active,
         inspection_type=inspection_type,
-        warehouse_uuids=list(warehouse_uuids or []),
-        plant_uuid=plant_uuid,
-        product_category_uuids=list(product_category_uuids or []),
         inspector_uuids=list(inspector_uuids or []),
     )
