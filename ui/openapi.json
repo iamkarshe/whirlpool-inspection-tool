@@ -43,6 +43,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -52,9 +55,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -88,6 +88,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -97,9 +100,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -132,6 +132,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -141,9 +144,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -496,6 +496,9 @@
           "404": {
             "description": "User not found."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -505,9 +508,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -548,6 +548,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -557,9 +560,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -600,6 +600,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -609,9 +612,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -655,6 +655,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -664,9 +667,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -2804,6 +2804,9 @@
           "409": {
             "description": "Warehouse is referenced by inspections."
           },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -2813,9 +2816,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           }
         }
       }
@@ -3017,6 +3017,27 @@
               "title": "Product Category"
             },
             "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
+          },
+          {
+            "name": "user_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inspector user ids from kpi-parameters users[].value.",
+              "title": "User Ids"
+            },
+            "description": "Inspector user ids from kpi-parameters users[].value."
           }
         ],
         "responses": {
@@ -3181,6 +3202,27 @@
               "title": "Product Category"
             },
             "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
+          },
+          {
+            "name": "user_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inspector user ids from kpi-parameters users[].value.",
+              "title": "User Ids"
+            },
+            "description": "Inspector user ids from kpi-parameters users[].value."
           }
         ],
         "responses": {
@@ -3345,6 +3387,27 @@
               "title": "Product Category"
             },
             "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
+          },
+          {
+            "name": "user_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inspector user ids from kpi-parameters users[].value.",
+              "title": "User Ids"
+            },
+            "description": "Inspector user ids from kpi-parameters users[].value."
           }
         ],
         "responses": {
@@ -3377,7 +3440,7 @@
           "Inspections"
         ],
         "summary": "List inspections",
-        "description": "Paginated list of inspections with optional filters.",
+        "description": "Paginated list of inspections. Scope filters use values from GET /api/reports/kpi-parameters: warehouse_ids, plant_ids, product_category (pair keys), and user_ids (inspector ids).",
         "operationId": "get_inspections_api_inspections_get",
         "parameters": [
           {
@@ -3413,28 +3476,6 @@
               "title": "Inspection Type"
             },
             "description": "inbound or outbound. Omit for All."
-          },
-          {
-            "name": "inspector_uuids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Inspector user UUIDs (multi-select). Repeat param per value. Omit for All.",
-              "title": "Inspector Uuids"
-            },
-            "description": "Inspector user UUIDs (multi-select). Repeat param per value. Omit for All."
           },
           {
             "name": "page",
@@ -3630,6 +3671,27 @@
               "title": "Product Category"
             },
             "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
+          },
+          {
+            "name": "user_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inspector user ids from kpi-parameters users[].value.",
+              "title": "User Ids"
+            },
+            "description": "Inspector user ids from kpi-parameters users[].value."
           }
         ],
         "responses": {
@@ -4458,6 +4520,9 @@
           "409": {
             "description": "Plant is referenced by inspections."
           },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -4467,9 +4532,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           }
         }
       }
@@ -5213,7 +5275,8 @@
         "tags": [
           "Reports"
         ],
-        "summary": "Get Kpi Parameters",
+        "summary": "KPI filter dropdown options",
+        "description": "Filter metadata for inspection list/KPI and executive analytics screens. Use warehouses[].value as warehouse_ids, plants[].value as plant_ids, users[].value as user_ids, and product_category[].value as product_category.",
         "operationId": "get_kpi_parameters_api_reports_kpi_parameters_get",
         "responses": {
           "200": {
@@ -6200,6 +6263,9 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -6209,9 +6275,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
           }
         }
       }
@@ -6258,6 +6321,9 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -6267,9 +6333,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
           }
         }
       }
@@ -7145,7 +7208,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Id"
           },
           "value": {
@@ -9683,6 +9746,14 @@
             "title": "Plants",
             "description": "Active plants (value is plant id)."
           },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/ReportsDropdownOption"
+            },
+            "type": "array",
+            "title": "Users",
+            "description": "Active users (value is user id, label is name and email)."
+          },
           "product_category": {
             "items": {
               "$ref": "#/components/schemas/ReportsDropdownOption"
@@ -9704,6 +9775,7 @@
         "required": [
           "warehouses",
           "plants",
+          "users",
           "product_category",
           "gradings"
         ],
@@ -9727,6 +9799,12 @@
               {
                 "label": "AC - SPLIT",
                 "value": "AC|SPLIT"
+              }
+            ],
+            "users": [
+              {
+                "label": "Jane Doe - jane@example.com",
+                "value": "12"
               }
             ],
             "warehouses": [
@@ -11196,7 +11274,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -11410,7 +11488,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -12098,7 +12176,7 @@
           "value": {
             "type": "string",
             "title": "Value",
-            "description": "Filter value sent back on analytics requests. Warehouses and plants use numeric id strings. Product categories use \"category_type|sub_category_type\".",
+            "description": "Filter value sent back on analytics requests. Warehouses, plants, and users use numeric id strings. Product categories use \"category_type|sub_category_type\".",
             "examples": [
               "1",
               "AC|SPLIT"
@@ -12339,8 +12417,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "default": 587
           },
@@ -12384,8 +12462,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -12419,8 +12497,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "description": "SMTP port (swaks --port 25).",
             "default": 25
@@ -12483,8 +12561,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -12618,8 +12696,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "default": 587
           },
@@ -12658,8 +12736,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -12696,13 +12774,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -12792,7 +12870,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10,
+            "minimum": 10.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -12851,13 +12929,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -12960,7 +13038,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -13006,8 +13084,8 @@
           },
           "max_attempts": {
             "type": "integer",
-            "maximum": 5,
-            "minimum": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
             "title": "Max Attempts",
             "default": 3
           }
@@ -14086,7 +14164,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -14324,7 +14402,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {

@@ -5,7 +5,6 @@ from mod.api.middleware import auth_dependency
 from mod.api.reports.helper import (
     analytics_scope_from_request,
     build_kpi_parameters,
-    clear_product_category_pairs_cache,
     executive_analytics_counts,
     executive_defects_mix,
     executive_defects_pareto_chart,
@@ -14,6 +13,7 @@ from mod.api.reports.helper import (
     executive_defects_warehouse,
     validate_analytics_date_range,
 )
+from mod.api.reports.kpi_parameters_cache import clear_product_category_pairs_cache
 from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.model import InspectionType
 from mod.api.reports.response import (
@@ -39,6 +39,12 @@ router = APIRouter(
 @router.get(
     "/reports/kpi-parameters",
     name="get_kpi_parameters",
+    summary="KPI filter dropdown options",
+    description=(
+        "Filter metadata for inspection list/KPI and executive analytics screens. "
+        "Use warehouses[].value as warehouse_ids, plants[].value as plant_ids, "
+        "users[].value as user_ids, and product_category[].value as product_category."
+    ),
     response_model=KpiParametersResponse,
 )
 @exception_handler_decorator

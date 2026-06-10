@@ -323,7 +323,11 @@ def get_inspection_kpis_operator(
     "/inspections",
     name="get_inspections",
     summary="List inspections",
-    description="Paginated list of inspections with optional filters.",
+    description=(
+        "Paginated list of inspections. Scope filters use values from "
+        "GET /api/reports/kpi-parameters: warehouse_ids, plant_ids, "
+        "product_category (pair keys), and user_ids (inspector ids)."
+    ),
     response_model=InspectionListResponse,
 )
 @exception_handler_decorator

@@ -17,10 +17,6 @@ is_active?: boolean;
  */
 inspection_type?: GetInspectionsApiInspectionsGetInspectionType;
 /**
- * Inspector user UUIDs (multi-select). Repeat param per value. Omit for All.
- */
-inspector_uuids?: string[] | null;
-/**
  * Page number (1-based).
  * @minimum 1
  */
@@ -67,4 +63,8 @@ plant_ids?: number[] | null;
  * Category pair keys from kpi-parameters, e.g. AC|SPLIT.
  */
 product_category?: string[] | null;
+/**
+ * Inspector user ids from kpi-parameters users[].value.
+ */
+user_ids?: number[] | null;
 };

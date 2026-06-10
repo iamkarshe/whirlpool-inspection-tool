@@ -15,6 +15,8 @@ export interface KpiParametersResponse {
   warehouses: ReportsDropdownOption[];
   /** Active plants (value is plant id). */
   plants: ReportsDropdownOption[];
+  /** Active users (value is user id, label is name and email). */
+  users: ReportsDropdownOption[];
   /** Distinct category pairs (value is category_type|sub_category_type). */
   product_category: ReportsDropdownOption[];
   /** Damage grading options (value equals label). */

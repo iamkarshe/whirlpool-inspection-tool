@@ -76,7 +76,7 @@ const getInspectionKpisOperatorApiInspectionsKpisOperatorGet = (
       options);
     }
   /**
- * Paginated list of inspections with optional filters.
+ * Paginated list of inspections. Scope filters use values from GET /api/reports/kpi-parameters: warehouse_ids, plant_ids, product_category (pair keys), and user_ids (inspector ids).
  * @summary List inspections
  */
 const getInspectionsApiInspectionsGet = (

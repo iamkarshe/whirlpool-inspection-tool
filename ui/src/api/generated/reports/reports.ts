@@ -30,7 +30,8 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getReports = () => {
 /**
- * @summary Get Kpi Parameters
+ * Filter metadata for inspection list/KPI and executive analytics screens. Use warehouses[].value as warehouse_ids, plants[].value as plant_ids, users[].value as user_ids, and product_category[].value as product_category.
+ * @summary KPI filter dropdown options
  */
 const getKpiParametersApiReportsKpiParametersGet = (
 

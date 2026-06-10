@@ -33,4 +33,8 @@ plant_ids?: number[] | null;
  * Category pair keys from kpi-parameters, e.g. AC|SPLIT.
  */
 product_category?: string[] | null;
+/**
+ * Inspector user ids from kpi-parameters users[].value.
+ */
+user_ids?: number[] | null;
 };

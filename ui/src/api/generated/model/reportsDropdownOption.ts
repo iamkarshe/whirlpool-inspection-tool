@@ -10,7 +10,7 @@
  * Dropdown option for report filter controls.
  */
 export interface ReportsDropdownOption {
-  /** Filter value sent back on analytics requests. Warehouses and plants use numeric id strings. Product categories use "category_type|sub_category_type". */
+  /** Filter value sent back on analytics requests. Warehouses, plants, and users use numeric id strings. Product categories use "category_type|sub_category_type". */
   value: string;
   /** Human-readable label shown in the UI. */
   label: string;
