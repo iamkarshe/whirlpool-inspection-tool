@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertCircle, TriangleAlert } from "lucide-react";
 
-import type { CriticalAdminDeleteResult } from "@/api/axios-instance";
+import type { SafeApiResult } from "@/api/axios-instance";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -54,9 +54,7 @@ function responseToTableRows(data: unknown): JsonTableRow[] {
   }));
 }
 
-function deleteResultToTableRows(
-  result: CriticalAdminDeleteResult<unknown>,
-): JsonTableRow[] {
+function deleteResultToTableRows(result: SafeApiResult<unknown>): JsonTableRow[] {
   return [
     { key: "status", value: String(result.status) },
     { key: "ok", value: String(result.ok) },
@@ -78,8 +76,9 @@ function DeleteWarehouseDialogContent({
   const [deleteToken, setDeleteToken] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteResult, setDeleteResult] =
-    useState<CriticalAdminDeleteResult<unknown> | null>(null);
+  const [deleteResult, setDeleteResult] = useState<SafeApiResult<unknown> | null>(
+    null,
+  );
 
   const handleDelete = async () => {
     const token = deleteToken.trim();

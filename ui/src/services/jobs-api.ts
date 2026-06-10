@@ -39,6 +39,9 @@ function parseJobApiErrorBody(body: unknown, status: number): string {
 /**
  * Runs the auto-approve job via `fetch`, outside the shared axios client, so a
  * job-token 401 does not trigger the session-revoked logout interceptor.
+ *
+ * Same pattern as `safeApiRequest` / `criticalAdminDeleteRequest` in
+ * `axios-instance.ts` and integration test helpers in `integrations-api.ts`.
  */
 export async function runAutoApproveInspectionsJob(
   jobExecuteToken: string,

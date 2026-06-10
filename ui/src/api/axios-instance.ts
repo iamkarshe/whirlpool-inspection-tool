@@ -1,5 +1,12 @@
 import axios, { type AxiosRequestConfig, isAxiosError } from "axios";
 
+import { PAGES } from "@/endpoints";
+import {
+  clearAuthenticatedSessionStorage,
+  SESSION_ACCESS_TOKEN_KEY,
+} from "@/lib/clear-authenticated-session-storage";
+import { bootstrapServerDeviceUuidFromStorage } from "@/lib/session-device-uuid";
+
 declare module "axios" {
   export interface AxiosRequestConfig {
     /** When true, a 401 does not clear the session or redirect to login. */
@@ -7,18 +14,27 @@ declare module "axios" {
   }
 }
 
-export type CriticalAdminDeleteResult<T> = {
+/** Result for admin/diagnostic calls that must not trigger session logout. */
+export type SafeApiResult<T> = {
   ok: boolean;
   status: number;
   data: T;
 };
 
-import { PAGES } from "@/endpoints";
-import {
-  clearAuthenticatedSessionStorage,
-  SESSION_ACCESS_TOKEN_KEY,
-} from "@/lib/clear-authenticated-session-storage";
-import { bootstrapServerDeviceUuidFromStorage } from "@/lib/session-device-uuid";
+/** @deprecated Use `SafeApiResult` */
+export type CriticalAdminDeleteResult<T> = SafeApiResult<T>;
+
+export class SafeApiRequestError extends Error {
+  readonly status: number;
+  readonly data: unknown;
+
+  constructor(message: string, status: number, data: unknown) {
+    super(message);
+    this.name = "SafeApiRequestError";
+    this.status = status;
+    this.data = data;
+  }
+}
 
 function resolveApiBaseUrl(): string {
   if (typeof window === "undefined") return "";
@@ -106,23 +122,16 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Permanent facility delete (plants/warehouses). Never triggers session logout on
- * 401 (invalid delete token); always returns status + body for UI display.
+ * Axios call for admin/diagnostic flows (delete tokens, SMTP/S3 tests, etc.).
+ * Never triggers session logout on 401; returns status + body for UI display.
  */
-export async function criticalAdminDeleteRequest<T>(
-  path: string,
-  criticalAdminDeleteToken: string,
-  request?: { signal?: AbortSignal },
-): Promise<CriticalAdminDeleteResult<T>> {
+export async function safeApiRequest<T>(
+  config: AxiosRequestConfig,
+): Promise<SafeApiResult<T>> {
   try {
     const response = await apiClient.request<T>({
-      url: path,
-      method: "DELETE",
-      headers: {
-        "x-critical-admin-delete-token": criticalAdminDeleteToken,
-      },
+      ...config,
       skipSessionRevokedRedirect: true,
-      signal: request?.signal,
     });
     return { ok: true, status: response.status, data: response.data };
   } catch (error) {
@@ -135,6 +144,25 @@ export async function criticalAdminDeleteRequest<T>(
     }
     throw error;
   }
+}
+
+/**
+ * Permanent facility delete (plants/warehouses). Never triggers session logout on
+ * 401 (invalid delete token); always returns status + body for UI display.
+ */
+export async function criticalAdminDeleteRequest<T>(
+  path: string,
+  criticalAdminDeleteToken: string,
+  request?: { signal?: AbortSignal },
+): Promise<SafeApiResult<T>> {
+  return safeApiRequest<T>({
+    url: path,
+    method: "DELETE",
+    headers: {
+      "x-critical-admin-delete-token": criticalAdminDeleteToken,
+    },
+    signal: request?.signal,
+  });
 }
 
 /**

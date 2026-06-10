@@ -1,6 +1,9 @@
 import { isAxiosError } from "axios";
 
-import { customInstance } from "@/api/axios-instance";
+import {
+  SafeApiRequestError,
+  safeApiRequest,
+} from "@/api/axios-instance";
 import { getAppIntegration } from "@/api/generated/app-integration/app-integration";
 import type { AwsS3TestConnectionResponse } from "@/api/generated/model/awsS3TestConnectionResponse";
 import type { AwsS3UpdateRequest } from "@/api/generated/model/awsS3UpdateRequest";
@@ -53,33 +56,88 @@ export async function updateSmtpIntegration(
   );
 }
 
+function throwSafeApiResult<T>(
+  result: { ok: boolean; status: number; data: T },
+  fallback: string,
+): never {
+  throw new SafeApiRequestError(
+    integrationsApiErrorMessageFromBody(result.data, result.status, fallback),
+    result.status,
+    result.data,
+  );
+}
+
+function integrationsApiErrorMessageFromBody(
+  data: unknown,
+  status: number,
+  fallback: string,
+): string {
+  if (typeof data === "object" && data !== null) {
+    if ("detail" in data) {
+      const detail = (data as { detail?: unknown }).detail;
+      if (typeof detail === "string" && detail.trim().length > 0) {
+        return detail.trim();
+      }
+      if (Array.isArray(detail)) {
+        const first = (detail as HTTPValidationError["detail"])?.[0]?.msg ??
+          (detail as HTTPValidationError["detail"])?.[0]?.type;
+        if (typeof first === "string" && first.length > 0) return first;
+      }
+    }
+    if (
+      "message" in data &&
+      typeof (data as { message?: unknown }).message === "string"
+    ) {
+      const message = (data as { message: string }).message.trim();
+      if (message.length > 0) return message;
+    }
+  }
+  if (status > 0) return `${fallback} (HTTP ${status}).`;
+  return fallback;
+}
+
+/**
+ * SMTP test — uses safeApiRequest so connection/validation failures never
+ * trigger the session-revoked logout interceptor (same idea as jobs-api fetch).
+ */
 export async function testSmtpConnection(
   body: SmtpTestConnectionRequest,
   opts?: { signal?: AbortSignal },
 ): Promise<SmtpTestConnectionResponse> {
-  const api = getAppIntegration();
-  return api.testSmtpConnectionApiIntegrationsSmtpTestConnectionPost(
-    body,
-    opts?.signal ? { signal: opts.signal } : undefined,
-  );
+  const result = await safeApiRequest<SmtpTestConnectionResponse>({
+    url: "/api/integrations/smtp/test-connection",
+    method: "POST",
+    data: body,
+    signal: opts?.signal,
+  });
+  if (!result.ok) {
+    throwSafeApiResult(result, "Could not send test email.");
+  }
+  return result.data;
 }
 
+/**
+ * AWS S3 test — same safe handler as SMTP (no logout on diagnostic 401/4xx).
+ */
 export async function testAwsS3Connection(opts?: {
   signal?: AbortSignal;
 }): Promise<AwsS3TestConnectionResponse> {
-  return customInstance<AwsS3TestConnectionResponse>(
-    {
-      url: "/api/integrations/aws-s3/test-connection",
-      method: "POST",
-    },
-    opts?.signal ? { signal: opts.signal } : undefined,
-  );
+  const result = await safeApiRequest<AwsS3TestConnectionResponse>({
+    url: "/api/integrations/aws-s3/test-connection",
+    method: "POST",
+    signal: opts?.signal,
+  });
+  if (!result.ok) {
+    throwSafeApiResult(result, "Could not test AWS S3 connection.");
+  }
+  return result.data;
 }
 
 export function integrationsApiErrorMessage(
   err: unknown,
   fallback: string,
 ): string {
+  if (err instanceof SafeApiRequestError) return err.message;
   if (!isAxiosError(err)) return err instanceof Error ? err.message : fallback;
   const data = err.response?.data as unknown;
   if (
