@@ -200,6 +200,22 @@ async def api_spec(
     return JSONResponse(content=app.openapi())
 
 
+# VAPT Report
+@app.get("/vapt-report", include_in_schema=False)
+async def vapt_report() -> Response:
+    content = """
+    <html>
+        <body>
+            <code>Report coming soon</code>
+        </body>
+    </html>
+    """
+    return Response(
+        content=content,
+        media_type="text/html",
+    )
+
+
 # Sitemap XML
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap_xml() -> Response:
