@@ -6,7 +6,11 @@ from sqlalchemy import Float, and_, case, cast, func, or_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Query, Session
 
-from mod.api.ip_metadata.helper import get_ip_metadata_by_addresses
+from mod.api.ip_metadata.helper import (
+    get_ip_metadata_by_addresses,
+    normalize_ip_address,
+    refresh_ip_metadata_on_demand,
+)
 from utils.common import utc_end_exclusive_day_range
 from utils.pagination import PaginationParams
 
@@ -14,7 +18,10 @@ from mod.api.log.audit import ACTION_AUTH_LOGIN, ACTION_AUTH_LOGIN_FAILED
 from mod.api.login.response import (
     LoginDetailResponse,
     LoginInspectionResponse,
+    LoginIpDetailResponse,
+    LoginIpHealthResponse,
     LoginIpMetadataResponse,
+    LoginIpRecentUserResponse,
     LoginIpSummaryItemResponse,
     LoginListItemResponse,
 )
@@ -210,10 +217,44 @@ ABUSIVE_MIN_FAILED_ATTEMPTS = 5
 ABUSIVE_MIN_TOTAL_FOR_RATE = 3
 ABUSIVE_FAILURE_RATE_THRESHOLD = 0.7
 ABUSIVE_HIGH_VOLUME_THRESHOLD = 20
+LOGIN_IP_RECENT_LOGINS_LIMIT = 100
+LOGIN_IP_RECENT_USERS_LIMIT = 10
 
 
 def login_log_ip_expression():
     return cast(Log.log_value, JSONB)["ip"].astext
+
+
+def apply_login_ip_filter(query: Query, ip_address: str) -> Query:
+    return query.filter(login_log_ip_expression() == ip_address)
+
+
+def login_logs_for_ip_query(db: Session, ip_address: str) -> Query:
+    query = db.query(Log).filter(Log.is_active.is_(True))
+    query = is_login_event_query(query)
+    return apply_login_ip_filter(query, ip_address)
+
+
+def login_events_for_ip_query(db: Session, ip_address: str) -> Query:
+    query = (
+        db.query(Log, User, Device)
+        .outerjoin(User, Log.user_id == User.id)
+        .outerjoin(Device, Log.device_id == Device.id)
+    )
+    query = is_login_event_query(query)
+    return apply_login_ip_filter(query, ip_address)
+
+
+def resolve_ip_health_status(
+    *,
+    is_abusive: bool,
+    failed_logins: int,
+) -> str:
+    if is_abusive:
+        return "abusive"
+    if failed_logins > 0:
+        return "suspicious"
+    return "healthy"
 
 
 def login_failed_attempt_expression():
@@ -414,6 +455,118 @@ def fetch_login_ip_summary_page(
     ]
     total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
     return data, total, page, per_page, total_pages
+
+
+def fetch_login_ip_detail(
+    db: Session,
+    ip_address: str,
+    *,
+    refresh_metadata: bool = False,
+) -> LoginIpDetailResponse | None:
+    normalized = normalize_ip_address(ip_address)
+    if normalized is None:
+        return None
+
+    stats_row = (
+        login_logs_for_ip_query(db, normalized)
+        .with_entities(
+            func.count(Log.id).label("total_logins"),
+            func.sum(login_successful_attempt_expression()).label("successful_logins"),
+            func.sum(login_failed_attempt_expression()).label("failed_logins"),
+            func.count(func.distinct(Log.user_id)).label("unique_users"),
+            func.min(Log.created_at).label("first_seen_at"),
+            func.max(Log.created_at).label("last_seen_at"),
+        )
+        .first()
+    )
+    if stats_row is None or int(stats_row.total_logins or 0) == 0:
+        return None
+
+    metadata_refresh_queued = refresh_ip_metadata_on_demand(
+        db,
+        normalized,
+        created_by="login_ip_detail",
+        force=refresh_metadata,
+    )
+
+    total_logins = int(stats_row.total_logins or 0)
+    failed_logins = int(stats_row.failed_logins or 0)
+    successful_logins = int(stats_row.successful_logins or 0)
+    is_abusive, abusive_reasons = assess_abusive_ip(
+        total_logins=total_logins,
+        failed_logins=failed_logins,
+        successful_logins=successful_logins,
+    )
+    metadata_by_ip = get_ip_metadata_by_addresses(db, [normalized])
+    ip_metadata = metadata_by_ip.get(normalized)
+
+    health = LoginIpHealthResponse(
+        ip_address=normalized,
+        health_status=resolve_ip_health_status(
+            is_abusive=is_abusive,
+            failed_logins=failed_logins,
+        ),
+        total_logins=total_logins,
+        successful_logins=successful_logins,
+        failed_logins=failed_logins,
+        unique_users=int(stats_row.unique_users or 0),
+        first_seen_at=stats_row.first_seen_at,
+        last_seen_at=stats_row.last_seen_at,
+        ip_metadata=map_ip_metadata(ip_metadata),
+        is_abusive=is_abusive,
+        abusive_reasons=abusive_reasons,
+    )
+
+    recent_rows = (
+        login_events_for_ip_query(db, normalized)
+        .order_by(Log.created_at.desc())
+        .limit(LOGIN_IP_RECENT_LOGINS_LIMIT)
+        .all()
+    )
+    recent_logins = [
+        map_login_list_item(log=log, user=user, device=device, ip_metadata=ip_metadata)
+        for log, user, device in recent_rows
+    ]
+
+    user_stats = (
+        login_logs_for_ip_query(db, normalized)
+        .filter(Log.user_id.isnot(None))
+        .with_entities(
+            Log.user_id.label("user_id"),
+            func.max(Log.created_at).label("last_login_at"),
+            func.count(Log.id).label("login_count"),
+        )
+        .group_by(Log.user_id)
+        .order_by(func.max(Log.created_at).desc())
+        .limit(LOGIN_IP_RECENT_USERS_LIMIT)
+        .all()
+    )
+    user_ids = [int(row.user_id) for row in user_stats if row.user_id is not None]
+    users_by_id: dict[int, User] = {}
+    if user_ids:
+        users_by_id = {
+            user.id: user
+            for user in db.query(User).filter(User.id.in_(user_ids)).all()
+        }
+    recent_users: list[LoginIpRecentUserResponse] = []
+    for row in user_stats:
+        user = users_by_id.get(int(row.user_id))
+        recent_users.append(
+            LoginIpRecentUserResponse(
+                user_uuid=user.uuid if user is not None else None,
+                user_name=user.name if user is not None else "N/A",
+                email=user.email if user is not None else None,
+                last_login_at=row.last_login_at,
+                login_count=int(row.login_count or 0),
+            )
+        )
+
+    return LoginIpDetailResponse(
+        health=health,
+        recent_logins=recent_logins,
+        recent_users=recent_users,
+        metadata_refresh_queued=metadata_refresh_queued,
+    )
 
 
 def map_login_inspection(inspection: Inspection) -> LoginInspectionResponse:

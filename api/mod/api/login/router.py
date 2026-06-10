@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from mod.api.ip_metadata.helper import get_ip_metadata_by_addresses
 from mod.api.login.helper import (
     apply_login_status_filter,
+    fetch_login_ip_detail,
     fetch_login_ip_summary_page,
     is_login_event_query,
     is_login_payload,
@@ -18,6 +19,7 @@ from mod.api.login.helper import (
 )
 from mod.api.login.response import (
     LoginDetailResponse,
+    LoginIpDetailResponse,
     LoginIpSummaryListResponse,
     LoginKpiResponse,
     LoginListResponse,
@@ -189,6 +191,39 @@ def get_login_ip_summary(
         per_page=per_page,
         total_pages=total_pages,
     )
+
+
+@router.get(
+    "/logins/ip/{ip_address}",
+    name="get_login_ip_detail",
+    description=(
+        "IP health summary, recent logins, and latest unique users. "
+        "Queues a background geolocation job when metadata is missing or failed."
+    ),
+    response_model=LoginIpDetailResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin", "manager"])
+def get_login_ip_detail(
+    request: Request,
+    ip_address: str,
+    refresh_metadata: bool = Query(
+        False,
+        description=(
+            "When true, queue a new geolocation lookup even if metadata was "
+            "previously completed."
+        ),
+    ),
+    db: Session = Depends(get_db),
+):
+    response = fetch_login_ip_detail(
+        db,
+        ip_address,
+        refresh_metadata=refresh_metadata,
+    )
+    if response is None:
+        raise HTTPException(status_code=404, detail="No login activity for this IP")
+    return response
 
 
 @router.get(

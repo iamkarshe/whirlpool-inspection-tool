@@ -78,6 +78,49 @@ class LoginIpSummaryListResponse(BaseModel):
     total_pages: int
 
 
+class LoginIpHealthResponse(BaseModel):
+    ip_address: str
+    health_status: str = Field(
+        description="healthy, suspicious, or abusive based on login patterns.",
+    )
+    total_logins: int
+    successful_logins: int
+    failed_logins: int
+    unique_users: int
+    first_seen_at: datetime | None = None
+    last_seen_at: datetime | None = None
+    ip_metadata: LoginIpMetadataResponse | None = None
+    is_abusive: bool
+    abusive_reasons: List[str] = Field(default_factory=list)
+
+
+class LoginIpRecentUserResponse(BaseModel):
+    user_uuid: uuid.UUID | None = None
+    user_name: str
+    email: str | None = None
+    last_login_at: datetime
+    login_count: int = Field(
+        description="Number of login events from this IP for this user.",
+    )
+
+
+class LoginIpDetailResponse(BaseModel):
+    health: LoginIpHealthResponse
+    recent_logins: List[LoginListItemResponse] = Field(
+        description="Up to 100 most recent login events from this IP.",
+    )
+    recent_users: List[LoginIpRecentUserResponse] = Field(
+        description="Up to 10 distinct users by most recent login from this IP.",
+    )
+    metadata_refresh_queued: bool = Field(
+        default=False,
+        description=(
+            "True when this request queued a background resolve_ip_metadata task. "
+            "Poll again after a few seconds for updated country/ISP fields."
+        ),
+    )
+
+
 class LoginInspectionResponse(BaseModel):
     id: int
     uuid: uuid.UUID

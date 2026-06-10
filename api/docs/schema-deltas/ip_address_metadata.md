@@ -30,5 +30,6 @@ Used by login audit logs: client IP is stored in `logs.log_value` (`ip` field) a
 ## Operations
 
 - **On login:** `schedule_ip_metadata_lookup` enqueues one `resolve_ip_metadata` task per new public IP.
+- **On demand:** `GET /api/logins/ip/{ip_address}` queues `resolve_ip_metadata` when metadata is `pending` or `failed` (or when `refresh_metadata=true`). Response includes `metadata_refresh_queued`; poll the endpoint after a few seconds for updated geo fields.
 - **Backfill / retry:** cron job `GET /jobs/resolve-pending-ip-metadata` (header `x-job-execute-token`) or Celery beat task `resolve_pending_ip_metadata` seeds IPs from login logs and enqueues lookups for rows with `lookup_status` `pending` or `failed` (batch size `IP_GEO_BATCH_LIMIT`).
 - **Failure tracking:** permanent Celery failures write `job_logs` with `job_name` `task:resolve_ip_metadata` and `metadata.ip_address`; batch runs write `job_name` `resolve_pending_ip_metadata`.

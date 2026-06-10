@@ -1,0 +1,26 @@
+meta {
+  name: IP Data
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/logins/ip/103.39.243.18?refresh_metadata=true
+  body: none
+  auth: inherit
+}
+
+params:query {
+  refresh_metadata: true
+}
+
+body:json {
+  {
+    "name": "New User",
+    "email": "user9@someone.com",
+    "mobile_number": "9406103499",
+    "password": "admim@cmp",
+    "role": "operator",
+    "designation": "Warehouse Operator"
+  }
+}

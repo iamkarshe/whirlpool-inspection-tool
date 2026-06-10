@@ -86,6 +86,7 @@ def enqueue_ip_metadata_lookup_task(
     ip_address: str,
     *,
     created_by: str,
+    force: bool = False,
 ) -> uuid.UUID | None:
     from mod.tasks.queue import try_enqueue_background_task
 
@@ -97,7 +98,7 @@ def enqueue_ip_metadata_lookup_task(
         return None
 
     row = get_or_create_ip_metadata(db, normalized)
-    if row.lookup_status == IpLookupStatus.completed:
+    if row.lookup_status == IpLookupStatus.completed and not force:
         return None
 
     task_uuid = try_enqueue_background_task(
@@ -109,7 +110,32 @@ def enqueue_ip_metadata_lookup_task(
     if task_uuid is None:
         return None
     row.lookup_status = IpLookupStatus.pending
+    row.lookup_error = None
     return task_uuid
+
+
+def refresh_ip_metadata_on_demand(
+    db: Session,
+    ip_address: str,
+    *,
+    created_by: str,
+    force: bool = False,
+) -> bool:
+    """Queue ``resolve_ip_metadata`` when geo data is missing or should be refreshed."""
+    task_uuid = enqueue_ip_metadata_lookup_task(
+        db,
+        ip_address,
+        created_by=created_by,
+        force=force,
+    )
+    if task_uuid is not None:
+        db.commit()
+        return True
+
+    normalized = normalize_ip_address(ip_address)
+    if normalized and is_private_or_local_ip(normalized):
+        db.commit()
+    return False
 
 
 def schedule_ip_metadata_lookup(db: Session, ip_address: str | None) -> None:
