@@ -78,7 +78,10 @@ def get_logins_kpi(
 @router.get(
     "/logins",
     name="get_logins",
-    description="Paginated login activity with IP geolocation metadata",
+    description=(
+        "Paginated login activity with IP geolocation metadata and third-party "
+        "investigation links (AbuseIPDB, IPinfo) per row."
+    ),
     response_model=LoginListResponse,
 )
 @exception_handler_decorator
@@ -151,7 +154,10 @@ def get_logins(
 @router.get(
     "/logins/ip-summary",
     name="get_login_ip_summary",
-    description="Paginated unique client IPs with login counts, geo metadata, and abuse flags",
+    description=(
+        "Paginated unique client IPs with login counts, geo metadata, abuse flags, "
+        "and third-party investigation links."
+    ),
     response_model=LoginIpSummaryListResponse,
 )
 @exception_handler_decorator

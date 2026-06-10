@@ -84,4 +84,11 @@ def okta_sso_callback(
         f"{frontend_base_url}/login?token={quote(frontend_access_token, safe='')}"
     )
 
-    return RedirectResponse(frontend_url)
+    return RedirectResponse(
+        url=frontend_url,
+        status_code=302,
+        headers={
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+        },
+    )

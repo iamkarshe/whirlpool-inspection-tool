@@ -6,19 +6,59 @@ from pydantic import BaseModel, Field
 
 
 class LoginIpExternalLinksResponse(BaseModel):
-    abuseipdb: str = Field(description="AbuseIPDB check page for this IP.")
-    ipinfo: str = Field(description="IPinfo lookup page for this IP.")
+    """Third-party pages to manually investigate a client IP address."""
+
+    abuseipdb: str = Field(
+        description=(
+            "AbuseIPDB check URL for this IP. Open in a new browser tab to view "
+            "abuse reports, confidence score, and ISP/country summary."
+        ),
+        examples=["https://www.abuseipdb.com/check/203.0.113.10"],
+    )
+    ipinfo: str = Field(
+        description=(
+            "IPinfo lookup URL for this IP. Open in a new browser tab to view "
+            "geolocation, ASN, company, and hosted domains."
+        ),
+        examples=["https://ipinfo.io/203.0.113.10"],
+    )
 
 
 class LoginIpMetadataResponse(BaseModel):
-    country_code: str | None = None
-    country_name: str | None = None
-    region: str | None = None
-    city: str | None = None
-    isp: str | None = None
+    """Geolocation and ISP data resolved asynchronously for a client IP."""
+
+    country_code: str | None = Field(
+        default=None,
+        description="ISO 3166-1 alpha-2 country code when lookup completed.",
+        examples=["IN"],
+    )
+    country_name: str | None = Field(
+        default=None,
+        description="Human-readable country name when lookup completed.",
+        examples=["India"],
+    )
+    region: str | None = Field(
+        default=None,
+        description="Region or state name from the geo provider.",
+        examples=["Maharashtra"],
+    )
+    city: str | None = Field(
+        default=None,
+        description="City name from the geo provider.",
+        examples=["Pune"],
+    )
+    isp: str | None = Field(
+        default=None,
+        description="Internet service provider or organization name.",
+        examples=["Example ISP Pvt Ltd"],
+    )
     lookup_status: str | None = Field(
         default=None,
-        description="pending, completed, failed, or skipped",
+        description=(
+            "Geo lookup state: pending (queued), completed, failed, or skipped "
+            "(private/local IP)."
+        ),
+        examples=["completed"],
     )
 
 
@@ -35,15 +75,43 @@ class LoginListItemResponse(BaseModel):
     reference_id: str
     user_name: str
     email: str | None
-    attempted_email: str | None = None
-    login_method: str | None = None
-    failure_reason: str | None = None
+    attempted_email: str | None = Field(
+        default=None,
+        description="Email submitted at login time (including failed attempts).",
+    )
+    login_method: str | None = Field(
+        default=None,
+        description="Authentication method, e.g. password or SSO token exchange.",
+    )
+    failure_reason: str | None = Field(
+        default=None,
+        description="Present when status is failed; explains why login was rejected.",
+    )
     logged_at: datetime
-    ip_address: str | None
-    proxy_ip_address: str | None = None
-    ip_metadata: LoginIpMetadataResponse | None = None
+    ip_address: str | None = Field(
+        default=None,
+        description="Client IP captured from the login request.",
+    )
+    proxy_ip_address: str | None = Field(
+        default=None,
+        description="Raw X-Forwarded-For value when the request passed through a proxy.",
+    )
+    ip_metadata: LoginIpMetadataResponse | None = Field(
+        default=None,
+        description="Cached geolocation for ip_address from ip_address_metadata.",
+    )
+    external_links: LoginIpExternalLinksResponse | None = Field(
+        default=None,
+        description=(
+            "Ready-to-open AbuseIPDB and IPinfo URLs for ip_address. "
+            "Null when this login row has no client IP."
+        ),
+    )
     device_source: str
-    status: str
+    status: str = Field(
+        description="Login outcome: successful or failed.",
+        examples=["successful"],
+    )
 
 
 class LoginListResponse(BaseModel):
@@ -55,25 +123,30 @@ class LoginListResponse(BaseModel):
 
 
 class LoginIpSummaryItemResponse(BaseModel):
-    ip_address: str
+    ip_address: str = Field(description="Distinct client IP aggregated from login audit logs.")
     total_logins: int
     successful_logins: int
     failed_logins: int
     unique_users: int
     first_seen_at: datetime
     last_seen_at: datetime
-    ip_metadata: LoginIpMetadataResponse | None = None
+    ip_metadata: LoginIpMetadataResponse | None = Field(
+        default=None,
+        description="Cached geolocation for this IP from ip_address_metadata.",
+    )
     is_abusive: bool = Field(
         description="True when the IP matches one or more suspicious-login heuristics.",
     )
     abusive_reasons: List[str] = Field(
         default_factory=list,
         description=(
-            "high_failed_attempts, high_failure_rate, high_volume_suspicious, "
-            "or only_failures"
+            "Heuristic codes when is_abusive is true: high_failed_attempts, "
+            "high_failure_rate, high_volume_suspicious, or only_failures."
         ),
     )
-    external_links: LoginIpExternalLinksResponse
+    external_links: LoginIpExternalLinksResponse = Field(
+        description="Third-party URLs to manually investigate this IP on AbuseIPDB and IPinfo.",
+    )
 
 
 class LoginIpSummaryListResponse(BaseModel):
@@ -87,7 +160,8 @@ class LoginIpSummaryListResponse(BaseModel):
 class LoginIpHealthResponse(BaseModel):
     ip_address: str
     health_status: str = Field(
-        description="healthy, suspicious, or abusive based on login patterns.",
+        description="healthy, suspicious, or abusive based on login patterns for this IP.",
+        examples=["suspicious"],
     )
     total_logins: int
     successful_logins: int
@@ -95,10 +169,23 @@ class LoginIpHealthResponse(BaseModel):
     unique_users: int
     first_seen_at: datetime | None = None
     last_seen_at: datetime | None = None
-    ip_metadata: LoginIpMetadataResponse | None = None
-    is_abusive: bool
-    abusive_reasons: List[str] = Field(default_factory=list)
-    external_links: LoginIpExternalLinksResponse
+    ip_metadata: LoginIpMetadataResponse | None = Field(
+        default=None,
+        description="Cached geolocation for this IP from ip_address_metadata.",
+    )
+    is_abusive: bool = Field(
+        description="True when the IP matches one or more suspicious-login heuristics.",
+    )
+    abusive_reasons: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Heuristic codes when is_abusive is true: high_failed_attempts, "
+            "high_failure_rate, high_volume_suspicious, or only_failures."
+        ),
+    )
+    external_links: LoginIpExternalLinksResponse = Field(
+        description="Third-party URLs to manually investigate this IP on AbuseIPDB and IPinfo.",
+    )
 
 
 class LoginIpRecentUserResponse(BaseModel):
@@ -142,16 +229,44 @@ class LoginDetailResponse(BaseModel):
     reference_id: str
     user_name: str
     email: str | None
-    attempted_email: str | None = None
-    login_method: str | None = None
-    failure_reason: str | None = None
+    attempted_email: str | None = Field(
+        default=None,
+        description="Email submitted at login time (including failed attempts).",
+    )
+    login_method: str | None = Field(
+        default=None,
+        description="Authentication method, e.g. password or SSO token exchange.",
+    )
+    failure_reason: str | None = Field(
+        default=None,
+        description="Present when status is failed; explains why login was rejected.",
+    )
     logged_at: datetime
-    ip_address: str | None
-    proxy_ip_address: str | None
-    ip_metadata: LoginIpMetadataResponse | None = None
+    ip_address: str | None = Field(
+        default=None,
+        description="Client IP captured from the login request.",
+    )
+    proxy_ip_address: str | None = Field(
+        default=None,
+        description="Raw X-Forwarded-For value when the request passed through a proxy.",
+    )
+    ip_metadata: LoginIpMetadataResponse | None = Field(
+        default=None,
+        description="Cached geolocation for ip_address from ip_address_metadata.",
+    )
+    external_links: LoginIpExternalLinksResponse | None = Field(
+        default=None,
+        description=(
+            "Ready-to-open AbuseIPDB and IPinfo URLs for ip_address. "
+            "Null when this login row has no client IP."
+        ),
+    )
     device_source: str
-    user_agent: str | None
-    status: str
+    user_agent: str | None = None
+    status: str = Field(
+        description="Login outcome: successful or failed.",
+        examples=["successful"],
+    )
     device_info: Any
     inspections_done: int
     inspections: List[LoginInspectionResponse]

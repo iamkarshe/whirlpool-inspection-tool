@@ -167,6 +167,11 @@ def map_login_list_item(
 ) -> LoginListItemResponse:
     payload = parse_log_payload(log.log_value)
     attempted_email = resolve_attempted_email(payload, user)
+    ip_address = payload.get("ip")
+    if isinstance(ip_address, str):
+        ip_address = ip_address.strip() or None
+    else:
+        ip_address = None
     return LoginListItemResponse(
         id=log.id,
         uuid=log.uuid,
@@ -177,9 +182,10 @@ def map_login_list_item(
         login_method=payload.get("login_method"),
         failure_reason=resolve_failure_reason(payload),
         logged_at=log.created_at,
-        ip_address=payload.get("ip"),
+        ip_address=ip_address,
         proxy_ip_address=payload.get("proxy_ip"),
         ip_metadata=map_ip_metadata(ip_metadata),
+        external_links=resolve_login_ip_external_links(ip_address),
         device_source=resolve_device_source(payload=payload, device=device),
         status=resolve_status(payload),
     )
@@ -193,6 +199,11 @@ def map_login_detail(
 ) -> LoginDetailResponse:
     payload = parse_log_payload(log.log_value)
     attempted_email = resolve_attempted_email(payload, user)
+    ip_address = payload.get("ip")
+    if isinstance(ip_address, str):
+        ip_address = ip_address.strip() or None
+    else:
+        ip_address = None
     return LoginDetailResponse(
         id=log.id,
         uuid=log.uuid,
@@ -203,9 +214,10 @@ def map_login_detail(
         login_method=payload.get("login_method"),
         failure_reason=resolve_failure_reason(payload),
         logged_at=log.created_at,
-        ip_address=payload.get("ip"),
+        ip_address=ip_address,
         proxy_ip_address=payload.get("proxy_ip"),
         ip_metadata=map_ip_metadata(ip_metadata),
+        external_links=resolve_login_ip_external_links(ip_address),
         device_source=resolve_device_source(payload=payload, device=device),
         user_agent=payload.get("user_agent"),
         status=resolve_status(payload),
@@ -230,6 +242,17 @@ def build_login_ip_external_links(ip_address: str) -> LoginIpExternalLinksRespon
         abuseipdb=f"https://www.abuseipdb.com/check/{encoded}",
         ipinfo=f"https://ipinfo.io/{encoded}",
     )
+
+
+def resolve_login_ip_external_links(
+    ip_address: str | None,
+) -> LoginIpExternalLinksResponse | None:
+    if ip_address is None:
+        return None
+    value = str(ip_address).strip()
+    if not value:
+        return None
+    return build_login_ip_external_links(value)
 
 
 def login_log_ip_expression():
