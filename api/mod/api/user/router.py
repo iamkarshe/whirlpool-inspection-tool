@@ -33,6 +33,7 @@ from utils.pagination import (
     build_paginated_response,
     get_pagination_params,
 )
+from mod.api.reports.kpi_parameters_cache import invalidate_kpi_parameters_cache
 
 router = APIRouter(
     tags=["Users"],
@@ -160,6 +161,8 @@ def create_user(
         target_name=user.name,
         target_role=role.role,
     )
+
+    invalidate_kpi_parameters_cache()
     db.commit()
 
     loaded = user_with_role_and_scope(db, user.uuid)
@@ -377,8 +380,7 @@ def update_user(
         summary = f"User {user.name} ({user.email}) deactivated"
     elif changed_fields:
         summary = (
-            f"User {user.name} ({user.email}) updated: "
-            f"{', '.join(changed_fields)}"
+            f"User {user.name} ({user.email}) updated: {', '.join(changed_fields)}"
         )
     else:
         summary = f"User {user.name} ({user.email}) updated"
@@ -389,7 +391,9 @@ def update_user(
         target_email=user.email,
         summary=summary,
     )
+    from mod.api.reports.kpi_parameters_cache import invalidate_kpi_parameters_cache
 
+    invalidate_kpi_parameters_cache()
     db.commit()
 
     loaded = user_with_role_and_scope(db, user_uuid)

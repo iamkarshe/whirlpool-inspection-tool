@@ -34,7 +34,7 @@ Do **not** require category or warehouse UUIDs on list/KPI query params.
 | `warehouse_ids`    | `int`    | yes (`warehouse_ids=1&warehouse_ids=2`) | kpi-parameters `warehouses[].value`       | Omit or empty = all (subject to role scope)                                    |
 | `plant_ids`        | `int`    | yes                                     | kpi-parameters `plants[].value`           | Inbound-only; omit = all                                                       |
 | `product_category` | `string` | yes                                     | kpi-parameters `product_category[].value` | Pair key e.g. `AC\|SPLIT`; parse with existing `parse_product_category_pair()` |
-| `inspector_uuids`  | `UUID`   | yes                                     | future metadata                           | Optional; operators still scoped to own rows                                   |
+| `user_ids`         | `int`    | yes                                     | kpi-parameters `users[].value`            | Optional; operators still scoped to own rows                                   |
 
 ### Keep unchanged
 
@@ -51,7 +51,7 @@ Reuse reports helpers:
 - `resolve_product_category_pairs(db, product_category)` → filter `Inspection.product_category_id`
 - `resolve_plant_codes(db, plant_ids)` → filter `Inspection.supplier_plant_code` (inbound)
 
-`inspector_uuids` → existing `resolve_inspector_user_ids()`.
+`user_ids` → `resolve_inspector_user_ids()` (validates active users by numeric id).
 
 ### Response
 
@@ -86,6 +86,7 @@ Align filter vocabulary with the list endpoint and kpi-parameters.
 | `warehouse_ids`    | `int`    | yes    | Multi-warehouse; omit = role default / all |
 | `plant_ids`        | `int`    | yes    | Inbound-only                               |
 | `product_category` | `string` | yes    | Pair keys                                  |
+| `user_ids`         | `int`    | yes    | Inspector user ids from kpi-parameters     |
 
 ### Keep
 
@@ -151,6 +152,7 @@ After implementing:
   "warehouses": [{ "value": "1", "label": "FI13 - Pune NDC" }],
   "plants": [{ "value": "1", "label": "PI01 - Factory-FRO" }],
   "product_category": [{ "value": "AC|SPLIT", "label": "AC - SPLIT" }],
+  "users": [{ "value": "1", "label": "Arun Dev Kumar - arun@whirlpool.com" }],
   "gradings": [{ "value": "DGR", "label": "DGR" }]
 }
 ```
@@ -158,3 +160,4 @@ After implementing:
 - `warehouses[].value` → `warehouse_ids[]`
 - `plants[].value` → `plant_ids[]`
 - `product_category[].value` → `product_category[]`
+- `users[].value` → `user_ids[]`

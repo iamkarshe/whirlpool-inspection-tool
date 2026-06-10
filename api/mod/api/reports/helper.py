@@ -4,6 +4,10 @@ from fastapi import HTTPException, Request
 from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session, aliased
 
+from mod.api.reports.kpi_parameters_cache import (
+    get_kpi_parameters_snapshot,
+    product_category_pair_value,
+)
 from mod.api.reports.request import OperationsAnalyticsRequest
 from mod.api.reports.response import (
     DefectsMixItem,
@@ -26,7 +30,6 @@ from mod.model import (
     DamageGrading,
     Inspection,
     InspectionInput,
-    InspectionInputReviewStatus,
     InspectionReviewStatus,
     InspectionType,
     Plant,
@@ -34,24 +37,12 @@ from mod.model import (
     Warehouse,
 )
 from utils.common import YES_NO_FAIL_VALUES, utc_end_exclusive_day_range
-from utils.roles import filter_warehouse_ids_for_request, intersect_requested_warehouse_codes
+from utils.roles import (
+    filter_warehouse_ids_for_request,
+    intersect_requested_warehouse_codes,
+)
 
 PRODUCT_CATEGORY_PAIR_SEP = "|"
-
-productCategoryPairsCache: list[tuple[str, str]] | None = None
-
-
-def clear_product_category_pairs_cache() -> None:
-    global productCategoryPairsCache
-    productCategoryPairsCache = None
-
-
-def product_category_pair_value(category_type: str, sub_category_type: str) -> str:
-    return f"{category_type}{PRODUCT_CATEGORY_PAIR_SEP}{sub_category_type}"
-
-
-def product_category_pair_label(category_type: str, sub_category_type: str) -> str:
-    return f"{category_type} - {sub_category_type}"
 
 
 def parse_product_category_pair(value: str) -> tuple[str, str]:
@@ -65,40 +56,17 @@ def parse_product_category_pair(value: str) -> tuple[str, str]:
 
 
 def load_product_category_pairs(db: Session) -> list[tuple[str, str]]:
-    global productCategoryPairsCache
-    if productCategoryPairsCache is not None:
-        return productCategoryPairsCache
-    rows = (
-        db.query(ProductCategory.category_type, ProductCategory.sub_category_type)
-        .filter(ProductCategory.is_active.is_(True))
-        .distinct()
-        .order_by(
-            ProductCategory.category_type.asc(),
-            ProductCategory.sub_category_type.asc(),
-        )
-        .all()
-    )
-    productCategoryPairsCache = [
-        (row.category_type, row.sub_category_type) for row in rows
-    ]
-    return productCategoryPairsCache
+    snapshot = get_kpi_parameters_snapshot(db)
+    return list(snapshot.product_category_pairs)
 
 
 def build_kpi_parameters(db: Session, request: Request) -> KpiParametersResponse:
-    warehouse_rows = (
-        db.query(Warehouse.id, Warehouse.warehouse_code, Warehouse.name)
-        .filter(Warehouse.is_active.is_(True))
-        .order_by(Warehouse.warehouse_code.asc())
-        .all()
+    snapshot = get_kpi_parameters_snapshot(db)
+    warehouse_rows = filter_warehouse_ids_for_request(
+        db,
+        request,
+        snapshot.warehouse_rows,
     )
-    warehouse_rows = filter_warehouse_ids_for_request(db, request, warehouse_rows)
-    plant_rows = (
-        db.query(Plant.id, Plant.plant_code, Plant.name)
-        .filter(Plant.is_active.is_(True))
-        .order_by(Plant.plant_code.asc())
-        .all()
-    )
-    category_pairs = load_product_category_pairs(db)
     return KpiParametersResponse(
         warehouses=[
             ReportsDropdownOption(
@@ -107,24 +75,10 @@ def build_kpi_parameters(db: Session, request: Request) -> KpiParametersResponse
             )
             for row in warehouse_rows
         ],
-        plants=[
-            ReportsDropdownOption(
-                value=str(row.id),
-                label=f"{row.plant_code} - {row.name}",
-            )
-            for row in plant_rows
-        ],
-        product_category=[
-            ReportsDropdownOption(
-                value=product_category_pair_value(category_type, sub_category_type),
-                label=product_category_pair_label(category_type, sub_category_type),
-            )
-            for category_type, sub_category_type in category_pairs
-        ],
-        gradings=[
-            ReportsDropdownOption(value=e.value, label=e.value)
-            for e in DamageGrading
-        ],
+        plants=list(snapshot.plants),
+        users=list(snapshot.users),
+        product_category=list(snapshot.product_category),
+        gradings=list(snapshot.gradings),
     )
 
 
@@ -455,7 +409,9 @@ def executive_defects_mix(
         .all()
     )
     counts_by_grading = {
-        row.grading: int(row.defect_count or 0) for row in rows if row.grading is not None
+        row.grading: int(row.defect_count or 0)
+        for row in rows
+        if row.grading is not None
     }
     total_defects = sum(counts_by_grading.values())
     items = []

@@ -114,17 +114,29 @@ def enforced_checklist_image_count(ch: Checklist, answer_value: str) -> int:
     return 0
 
 
-def resolve_inspector_user_ids(
-    db: Session, inspector_uuids: list[uuid.UUID]
-) -> list[int]:
-    if not inspector_uuids:
+def resolve_inspector_user_ids(db: Session, user_ids: list[int]) -> list[int]:
+    """Resolve active inspector ids from kpi-parameters ``users[].value``."""
+    if not user_ids:
         return []
-    return [
-        row[0]
-        for row in db.query(User.id)
-        .filter(User.uuid.in_(inspector_uuids), User.is_active.is_(True))
+    unique_ids = list(dict.fromkeys(user_ids))
+    rows = (
+        db.query(User.id)
+        .filter(User.id.in_(unique_ids), User.is_active.is_(True))
         .all()
-    ]
+    )
+    if len(rows) != len(unique_ids):
+        found = {row.id for row in rows}
+        missing = [user_id for user_id in unique_ids if user_id not in found]
+        raise HTTPException(status_code=422, detail=f"Unknown user id(s): {missing}")
+    return unique_ids
+
+
+def inspector_id_filter_clauses(inspector_ids: list[int] | None) -> list:
+    if not inspector_ids:
+        return []
+    if len(inspector_ids) == 1:
+        return [Inspection.inspector_id == inspector_ids[0]]
+    return [Inspection.inspector_id.in_(inspector_ids)]
 
 
 def validate_plant_filter_for_inspection_type(
@@ -231,16 +243,21 @@ def resolve_inspection_scope_from_query(
     warehouse_ids: list[int],
     plant_ids: list[int],
     product_category: list[str],
+    user_ids: list[int] | None = None,
     inspection_type: InspectionType | Literal["inbound", "outbound"] | None = None,
-) -> dict[str, list[str] | list[tuple[str, str]] | None]:
+) -> dict[str, list[str] | list[tuple[str, str]] | list[int] | None]:
     validate_plant_filter_for_inspection_type(inspection_type, plant_ids)
     warehouse_codes = resolve_warehouse_codes(db, warehouse_ids) if warehouse_ids else None
     plant_codes = resolve_plant_codes(db, plant_ids) if plant_ids else None
     product_category_pairs = resolve_product_category_pairs(db, product_category)
+    inspector_ids = (
+        resolve_inspector_user_ids(db, user_ids) if user_ids else None
+    )
     return {
         "warehouse_codes": warehouse_codes,
         "plant_codes": plant_codes,
         "product_category_pairs": product_category_pairs,
+        "inspector_ids": inspector_ids,
     }
 
 
@@ -253,6 +270,7 @@ def compute_inspection_analytics_kpis(
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None = None,
     product_category_pairs: list[tuple[str, str]] | None = None,
+    inspector_ids: list[int] | None = None,
     user_id: int,
     operator_mode: bool,
     approvals_rejections_any_reviewer: bool = False,
@@ -272,6 +290,7 @@ def compute_inspection_analytics_kpis(
         plant_codes=plant_codes,
         product_category_pairs=product_category_pairs,
     )
+    inspector_clauses = inspector_id_filter_clauses(inspector_ids)
 
     def _scope_filters():
         conds = [
@@ -282,6 +301,7 @@ def compute_inspection_analytics_kpis(
         if warehouse_codes is not None:
             conds.append(Inspection.warehouse_code.in_(warehouse_codes))
         conds.extend(scope_clauses)
+        conds.extend(inspector_clauses)
         return conds
 
     def _count(*extra) -> int:
@@ -321,6 +341,7 @@ def compute_inspection_analytics_kpis(
                     else []
                 ),
                 *scope_clauses,
+                *inspector_clauses,
             )
             .scalar()
             or 0
@@ -340,6 +361,7 @@ def compute_inspection_analytics_kpis(
                     else []
                 ),
                 *scope_clauses,
+                *inspector_clauses,
             )
             .scalar()
             or 0
@@ -367,6 +389,7 @@ def compute_inspection_analytics_kpis(
                     else []
                 ),
                 *scope_clauses,
+                *inspector_clauses,
             )
             .scalar()
             or 0
@@ -386,6 +409,7 @@ def compute_inspection_analytics_kpis(
                     else []
                 ),
                 *scope_clauses,
+                *inspector_clauses,
             )
             .scalar()
             or 0
@@ -921,7 +945,7 @@ def compute_inspection_kpis(
     warehouse_codes: list[str] | None = None,
     plant_codes: list[str] | None = None,
     product_category_pairs: list[tuple[str, str]] | None = None,
-    inspector_id: int | None = None,
+    inspector_ids: list[int] | None = None,
 ) -> dict[str, int]:
     start, end_exclusive = utc_end_exclusive_day_range(date_from, date_to)
     if warehouse_codes is not None and len(warehouse_codes) == 0:
@@ -952,8 +976,8 @@ def compute_inspection_kpis(
         product_category_pairs=product_category_pairs,
     ):
         query = query.filter(clause)
-    if inspector_id is not None:
-        query = query.filter(Inspection.inspector_id == inspector_id)
+    for clause in inspector_id_filter_clauses(inspector_ids):
+        query = query.filter(clause)
     inspections = query.all()
     inbound = InspectionType.inbound
     outbound = InspectionType.outbound
@@ -995,6 +1019,7 @@ def compute_manager_inspection_team_kpis(
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None = None,
     product_category_pairs: list[tuple[str, str]] | None = None,
+    inspector_ids: list[int] | None = None,
 ) -> dict[str, Any]:
     """Team overview counts for managers: warehouse scope, ``created_at`` window.
 
@@ -1029,6 +1054,8 @@ def compute_manager_inspection_team_kpis(
         plant_codes=plant_codes,
         product_category_pairs=product_category_pairs,
     )
+    for clause in inspector_id_filter_clauses(inspector_ids):
+        query = query.filter(clause)
     rows = query.all()
     inbound = InspectionType.inbound
     outbound = InspectionType.outbound

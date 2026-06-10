@@ -10,7 +10,7 @@ class ReportsDropdownOption(BaseModel):
         ...,
         description=(
             "Filter value sent back on analytics requests. "
-            "Warehouses and plants use numeric id strings. "
+            "Warehouses, plants, and users use numeric id strings. "
             'Product categories use "category_type|sub_category_type".'
         ),
         examples=["1", "AC|SPLIT"],
@@ -214,6 +214,9 @@ class KpiParametersResponse(BaseModel):
                         {"value": "1", "label": "WH01 - Mumbai DC"},
                     ],
                     "plants": [{"value": "1", "label": "P01 - Plant North"}],
+                    "users": [
+                        {"value": "12", "label": "Jane Doe - jane@example.com"},
+                    ],
                     "product_category": [
                         {"value": "AC|SPLIT", "label": "AC - SPLIT"},
                     ],
@@ -228,6 +231,10 @@ class KpiParametersResponse(BaseModel):
     )
     plants: list[ReportsDropdownOption] = Field(
         ..., description="Active plants (value is plant id)."
+    )
+    users: list[ReportsDropdownOption] = Field(
+        ...,
+        description="Active users (value is user id, label is name and email).",
     )
     product_category: list[ReportsDropdownOption] = Field(
         ...,

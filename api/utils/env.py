@@ -123,6 +123,19 @@ def get_resolve_ip_metadata_beat_interval_seconds() -> int:
     return seconds
 
 
+def get_kpi_parameters_cache_ttl_seconds() -> int:
+    raw = get_env_optional("KPI_PARAMETERS_CACHE_TTL_SECONDS", "3600") or "3600"
+    try:
+        seconds = int(raw)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"Invalid KPI_PARAMETERS_CACHE_TTL_SECONDS: {raw!r}"
+        ) from exc
+    if seconds < 60:
+        raise RuntimeError("KPI_PARAMETERS_CACHE_TTL_SECONDS must be at least 60")
+    return seconds
+
+
 def get_auto_approve_inspection_hours() -> int:
     raw = get_env_optional("AUTO_APPROVE_INSPECTION_HOURS", "6") or "6"
     try:

@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from mod.api.ip_metadata.helper import schedule_ip_metadata_lookup
+from mod.api.reports.kpi_parameters_cache import invalidate_kpi_parameters_cache
 from mod.model import Log, LogLevel
 
 ACTION_AUTH_LOGIN = "auth_login"
@@ -241,6 +242,8 @@ def audit_master_from_request(
         operation=operation,
         summary=summary,
     )
+
+    invalidate_kpi_parameters_cache()
 
 
 def log_integration_keys_updated(

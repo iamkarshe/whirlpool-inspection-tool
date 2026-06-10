@@ -44,7 +44,7 @@ from mod.api.inspection.helper import (
     apply_inspection_scope_filters_to_query,
     resolve_inspection_kpi_warehouse_codes,
     resolve_inspection_scope_from_query,
-    resolve_inspector_user_ids,
+    inspector_id_filter_clauses,
     validate_plant_filter_for_inspection_type,
     save_inspection_image_upload,
     update_inspection_review_status,
@@ -138,6 +138,7 @@ def get_inspection_kpis(
         warehouse_ids=scope.warehouse_ids,
         plant_ids=scope.plant_ids,
         product_category=scope.product_category,
+        user_ids=scope.user_ids,
     )
     warehouse_codes = resolve_inspection_kpi_warehouse_codes(
         db, request, scope.warehouse_ids
@@ -145,6 +146,7 @@ def get_inspection_kpis(
     uid = int(request.state.user_id)
     operator_only = request_is_operator_only(request)
     superadmin = request_has_superadmin(request)
+    inspector_ids = [uid] if operator_only else scope_filters["inspector_ids"]
     counts = compute_inspection_kpis(
         db,
         date_from,
@@ -154,7 +156,7 @@ def get_inspection_kpis(
         warehouse_codes=warehouse_codes,
         plant_codes=scope_filters["plant_codes"],
         product_category_pairs=scope_filters["product_category_pairs"],
-        inspector_id=uid if operator_only else None,
+        inspector_ids=inspector_ids,
     )
     analytics_counts = compute_inspection_analytics_kpis(
         db,
@@ -164,6 +166,7 @@ def get_inspection_kpis(
         warehouse_codes=warehouse_codes,
         plant_codes=scope_filters["plant_codes"],
         product_category_pairs=scope_filters["product_category_pairs"],
+        inspector_ids=inspector_ids,
         user_id=uid,
         operator_mode=operator_only,
         approvals_rejections_any_reviewer=superadmin and not operator_only,
@@ -221,6 +224,7 @@ def get_inspection_kpis_manager(
         warehouse_ids=scope.warehouse_ids,
         plant_ids=scope.plant_ids,
         product_category=scope.product_category,
+        user_ids=scope.user_ids,
     )
     warehouse_codes = resolve_inspection_kpi_warehouse_codes(
         db, request, scope.warehouse_ids
@@ -233,6 +237,7 @@ def get_inspection_kpis_manager(
         warehouse_codes=warehouse_codes,
         plant_codes=scope_filters["plant_codes"],
         product_category_pairs=scope_filters["product_category_pairs"],
+        inspector_ids=scope_filters["inspector_ids"],
     )
     return ManagerInspectionTeamKpisResponse(
         period=period_norm,
@@ -358,6 +363,7 @@ def get_inspections(
         warehouse_ids=query_params.warehouse_ids,
         plant_ids=query_params.plant_ids,
         product_category=query_params.product_category,
+        user_ids=query_params.user_ids,
         inspection_type=query_params.inspection_type,
     )
     warehouse_codes = scope_filters["warehouse_codes"] or []
@@ -378,17 +384,9 @@ def get_inspections(
     inspector_scope_id = getattr(request.state, "inspector_scope_user_id", None)
     if inspector_scope_id is not None:
         query = query.filter(Inspection.inspector_id == inspector_scope_id)
-    elif query_params.inspector_uuids:
-        inspector_ids = resolve_inspector_user_ids(db, query_params.inspector_uuids)
-        if not inspector_ids:
-            return InspectionListResponse(
-                data=[],
-                total=0,
-                page=params.page,
-                per_page=params.per_page,
-                total_pages=0,
-            )
-        query = query.filter(Inspection.inspector_id.in_(inspector_ids))
+    elif scope_filters["inspector_ids"]:
+        for clause in inspector_id_filter_clauses(scope_filters["inspector_ids"]):
+            query = query.filter(clause)
     query = apply_inspection_list_warehouse_scope(
         query, db, request, warehouse_codes or None
     )
