@@ -22,11 +22,15 @@ date_from?: string | null;
 date_to?: string | null;
 is_active?: boolean;
 /**
- * Optional filter by warehouse UUID
+ * Warehouse ids from kpi-parameters. Repeat param per value.
  */
-warehouse_uuid?: string | null;
+warehouse_ids?: number[] | null;
 /**
- * Optional filter by plant UUID
+ * Plant ids from kpi-parameters (inbound only). Repeat param per value.
  */
-plant_uuid?: string | null;
+plant_ids?: number[] | null;
+/**
+ * Category pair keys from kpi-parameters, e.g. AC|SPLIT.
+ */
+product_category?: string[] | null;
 };

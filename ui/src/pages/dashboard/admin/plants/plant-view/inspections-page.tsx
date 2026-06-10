@@ -72,7 +72,7 @@ export default function PlantViewInspectionsPage() {
         const { sort_by, sort_dir } = sortingStateToApiSortQuery(s, PLANT_INSPECTIONS_SORT);
         const res = await fetchPlantInspectionsPage(
           {
-            plant_uuid: plant.uuid,
+            plant_id: plant.id,
             page: p.pageIndex + 1,
             per_page: p.pageSize,
             search: q.length > 0 ? q : null,

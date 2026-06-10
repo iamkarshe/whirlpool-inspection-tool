@@ -28,5 +28,18 @@ const jobAutoApproveInspectionsJobsAutoApproveInspectionsGet = (
     },
       options);
     }
-  return {jobAutoApproveInspectionsJobsAutoApproveInspectionsGet}};
+  /**
+ * Scans login audit logs for client IPs, ensures rows exist in ip_address_metadata, and enqueues Celery resolve_ip_metadata tasks for pending or failed lookups (batch size IP_GEO_BATCH_LIMIT). Also runs on a Celery beat schedule when the worker uses --beat.
+ * @summary Enqueue IP geolocation lookups for unresolved addresses
+ */
+const jobResolvePendingIpMetadataJobsResolvePendingIpMetadataGet = (
+
+ options?: SecondParameter<typeof customInstance<JobExecutionResponse>>,) => {
+      return customInstance<JobExecutionResponse>(
+      {url: `/jobs/resolve-pending-ip-metadata`, method: 'GET'
+    },
+      options);
+    }
+  return {jobAutoApproveInspectionsJobsAutoApproveInspectionsGet,jobResolvePendingIpMetadataJobsResolvePendingIpMetadataGet}};
 export type JobAutoApproveInspectionsJobsAutoApproveInspectionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getJobs>['jobAutoApproveInspectionsJobsAutoApproveInspectionsGet']>>>
+export type JobResolvePendingIpMetadataJobsResolvePendingIpMetadataGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getJobs>['jobResolvePendingIpMetadataJobsResolvePendingIpMetadataGet']>>>

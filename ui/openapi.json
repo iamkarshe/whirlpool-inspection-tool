@@ -1314,7 +1314,7 @@
           "Logins"
         ],
         "summary": "Get Logins",
-        "description": "Get login activity list",
+        "description": "Paginated login activity with IP geolocation metadata and third-party investigation links (AbuseIPDB, IPinfo) per row.",
         "operationId": "get_logins_api_logins_get",
         "parameters": [
           {
@@ -1474,6 +1474,239 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LoginListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logins/ip-summary": {
+      "get": {
+        "tags": [
+          "Logins"
+        ],
+        "summary": "Get Login Ip Summary",
+        "description": "Paginated unique client IPs with login counts, geo metadata, abuse flags, and third-party investigation links.",
+        "operationId": "get_login_ip_summary_api_logins_ip_summary_get",
+        "parameters": [
+          {
+            "name": "abusive_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "When true, return only IPs matching suspicious-login heuristics.",
+              "default": false,
+              "title": "Abusive Only"
+            },
+            "description": "When true, return only IPs matching suspicious-login heuristics."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number (1-based).",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-based)."
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Rows per page (max 100).",
+              "default": 20,
+              "title": "Per Page"
+            },
+            "description": "Rows per page (max 100)."
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring search across route-specific columns.",
+              "title": "Search"
+            },
+            "description": "Case-insensitive substring search across route-specific columns."
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Sort column key; allowed values depend on the list endpoint.",
+              "default": "id",
+              "title": "Sort By"
+            },
+            "description": "Sort column key; allowed values depend on the list endpoint."
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort direction: asc or desc.",
+              "default": "asc",
+              "title": "Sort Dir"
+            },
+            "description": "Sort direction: asc or desc."
+          },
+          {
+            "name": "date_field",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date column key (e.g. created_at). See endpoint docs for allowed keys.",
+              "title": "Date Field"
+            },
+            "description": "Date column key (e.g. created_at). See endpoint docs for allowed keys."
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive UTC start date; set together with date_to.",
+              "title": "Date From"
+            },
+            "description": "Inclusive UTC start date; set together with date_to."
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive UTC end date; set together with date_from.",
+              "title": "Date To"
+            },
+            "description": "Inclusive UTC end date; set together with date_from."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginIpSummaryListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logins/ip/{ip_address}": {
+      "get": {
+        "tags": [
+          "Logins"
+        ],
+        "summary": "Get Login Ip Detail",
+        "description": "IP health summary, recent logins, and latest unique users. Queues a background geolocation job when metadata is missing or failed.",
+        "operationId": "get_login_ip_detail_api_logins_ip__ip_address__get",
+        "parameters": [
+          {
+            "name": "ip_address",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ip Address"
+            }
+          },
+          {
+            "name": "refresh_metadata",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "When true, queue a new geolocation lookup even if metadata was previously completed.",
+              "default": false,
+              "title": "Refresh Metadata"
+            },
+            "description": "When true, queue a new geolocation lookup even if metadata was previously completed."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginIpDetailResponse"
                 }
               }
             }
@@ -2723,42 +2956,67 @@
             }
           },
           {
-            "name": "warehouse_uuid",
+            "name": "warehouse_ids",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Optional filter by warehouse UUID",
-              "title": "Warehouse Uuid"
+              "description": "Warehouse ids from kpi-parameters. Repeat param per value.",
+              "title": "Warehouse Ids"
             },
-            "description": "Optional filter by warehouse UUID"
+            "description": "Warehouse ids from kpi-parameters. Repeat param per value."
           },
           {
-            "name": "plant_uuid",
+            "name": "plant_ids",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Optional filter by plant UUID",
-              "title": "Plant Uuid"
+              "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value.",
+              "title": "Plant Ids"
             },
-            "description": "Optional filter by plant UUID"
+            "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value."
+          },
+          {
+            "name": "product_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT.",
+              "title": "Product Category"
+            },
+            "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
           }
         ],
         "responses": {
@@ -2862,42 +3120,67 @@
             }
           },
           {
-            "name": "warehouse_uuid",
+            "name": "warehouse_ids",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Optional filter by warehouse UUID (superadmin or allowed scope)",
-              "title": "Warehouse Uuid"
+              "description": "Warehouse ids from kpi-parameters. Repeat param per value.",
+              "title": "Warehouse Ids"
             },
-            "description": "Optional filter by warehouse UUID (superadmin or allowed scope)"
+            "description": "Warehouse ids from kpi-parameters. Repeat param per value."
           },
           {
-            "name": "plant_uuid",
+            "name": "plant_ids",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Optional filter by plant UUID",
-              "title": "Plant Uuid"
+              "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value.",
+              "title": "Plant Ids"
             },
-            "description": "Optional filter by plant UUID"
+            "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value."
+          },
+          {
+            "name": "product_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT.",
+              "title": "Product Category"
+            },
+            "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
           }
         ],
         "responses": {
@@ -3001,42 +3284,67 @@
             }
           },
           {
-            "name": "warehouse_uuid",
+            "name": "warehouse_ids",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Optional filter by warehouse UUID (must be in the operator's scope)",
-              "title": "Warehouse Uuid"
+              "description": "Warehouse ids from kpi-parameters. Repeat param per value.",
+              "title": "Warehouse Ids"
             },
-            "description": "Optional filter by warehouse UUID (must be in the operator's scope)"
+            "description": "Warehouse ids from kpi-parameters. Repeat param per value."
           },
           {
-            "name": "plant_uuid",
+            "name": "plant_ids",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "Optional filter by plant UUID",
-              "title": "Plant Uuid"
+              "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value.",
+              "title": "Plant Ids"
             },
-            "description": "Optional filter by plant UUID"
+            "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value."
+          },
+          {
+            "name": "product_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT.",
+              "title": "Product Category"
+            },
+            "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
           }
         ],
         "responses": {
@@ -3105,69 +3413,6 @@
               "title": "Inspection Type"
             },
             "description": "inbound or outbound. Omit for All."
-          },
-          {
-            "name": "warehouse_uuids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Warehouse UUIDs (multi-select). Repeat param per value. Omit for All.",
-              "title": "Warehouse Uuids"
-            },
-            "description": "Warehouse UUIDs (multi-select). Repeat param per value. Omit for All."
-          },
-          {
-            "name": "plant_uuid",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Plant UUID. Omit for All.",
-              "title": "Plant Uuid"
-            },
-            "description": "Plant UUID. Omit for All."
-          },
-          {
-            "name": "product_category_uuids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Product category UUIDs (multi-select). Repeat param per value. Omit for All.",
-              "title": "Product Category Uuids"
-            },
-            "description": "Product category UUIDs (multi-select). Repeat param per value. Omit for All."
           },
           {
             "name": "inspector_uuids",
@@ -3322,6 +3567,69 @@
               "title": "Date To"
             },
             "description": "Inclusive UTC end date; set together with date_from."
+          },
+          {
+            "name": "warehouse_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Warehouse ids from kpi-parameters. Repeat param per value.",
+              "title": "Warehouse Ids"
+            },
+            "description": "Warehouse ids from kpi-parameters. Repeat param per value."
+          },
+          {
+            "name": "plant_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value.",
+              "title": "Plant Ids"
+            },
+            "description": "Plant ids from kpi-parameters (inbound only). Repeat param per value."
+          },
+          {
+            "name": "product_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT.",
+              "title": "Product Category"
+            },
+            "description": "Category pair keys from kpi-parameters, e.g. AC|SPLIT."
           }
         ],
         "responses": {
@@ -5858,6 +6166,64 @@
         "summary": "Auto-approve stale inspections",
         "description": "Approves active inspections still in PENDING or IN_REVIEW when created more than AUTO_APPROVE_INSPECTION_HOURS ago (default 6). Sets is_auto_approved and reviewed_comment. Also runs every 15 minutes via Celery beat when the worker uses --beat.",
         "operationId": "job_auto_approve_inspections_jobs_auto_approve_inspections_get",
+        "parameters": [
+          {
+            "name": "x-job-execute-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Shared secret from JOB_EXECUTE_TOKEN env var.",
+              "title": "X-Job-Execute-Token"
+            },
+            "description": "Shared secret from JOB_EXECUTE_TOKEN env var."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobExecutionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid x-job-execute-token."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          }
+        }
+      }
+    },
+    "/jobs/resolve-pending-ip-metadata": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Enqueue IP geolocation lookups for unresolved addresses",
+        "description": "Scans login audit logs for client IPs, ensures rows exist in ip_address_metadata, and enqueues Celery resolve_ip_metadata tasks for pending or failed lookups (batch size IP_GEO_BATCH_LIMIT). Also runs on a Celery beat schedule when the worker uses --beat.",
+        "operationId": "job_resolve_pending_ip_metadata_jobs_resolve_pending_ip_metadata_get",
         "parameters": [
           {
             "name": "x-job-execute-token",
@@ -9402,6 +9768,42 @@
             ],
             "title": "Email"
           },
+          "attempted_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempted Email",
+            "description": "Email submitted at login time (including failed attempts)."
+          },
+          "login_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Login Method",
+            "description": "Authentication method, e.g. password or SSO token exchange."
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason",
+            "description": "Present when status is failed; explains why login was rejected."
+          },
           "logged_at": {
             "type": "string",
             "format": "date-time",
@@ -9416,7 +9818,8 @@
                 "type": "null"
               }
             ],
-            "title": "Ip Address"
+            "title": "Ip Address",
+            "description": "Client IP captured from the login request."
           },
           "proxy_ip_address": {
             "anyOf": [
@@ -9427,7 +9830,30 @@
                 "type": "null"
               }
             ],
-            "title": "Proxy Ip Address"
+            "title": "Proxy Ip Address",
+            "description": "Raw X-Forwarded-For value when the request passed through a proxy."
+          },
+          "ip_metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginIpMetadataResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cached geolocation for ip_address from ip_address_metadata."
+          },
+          "external_links": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginIpExternalLinksResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ready-to-open AbuseIPDB and IPinfo URLs for ip_address. Null when this login row has no client IP."
           },
           "device_source": {
             "type": "string",
@@ -9446,7 +9872,11 @@
           },
           "status": {
             "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "description": "Login outcome: successful or failed.",
+            "examples": [
+              "successful"
+            ]
           },
           "device_info": {
             "title": "Device Info"
@@ -9471,10 +9901,7 @@
           "user_name",
           "email",
           "logged_at",
-          "ip_address",
-          "proxy_ip_address",
           "device_source",
-          "user_agent",
           "status",
           "device_info",
           "inspections_done",
@@ -9574,6 +10001,422 @@
         ],
         "title": "LoginInspectionResponse"
       },
+      "LoginIpDetailResponse": {
+        "properties": {
+          "health": {
+            "$ref": "#/components/schemas/LoginIpHealthResponse"
+          },
+          "recent_logins": {
+            "items": {
+              "$ref": "#/components/schemas/LoginListItemResponse"
+            },
+            "type": "array",
+            "title": "Recent Logins",
+            "description": "Up to 100 most recent login events from this IP."
+          },
+          "recent_users": {
+            "items": {
+              "$ref": "#/components/schemas/LoginIpRecentUserResponse"
+            },
+            "type": "array",
+            "title": "Recent Users",
+            "description": "Up to 10 distinct users by most recent login from this IP."
+          },
+          "metadata_refresh_queued": {
+            "type": "boolean",
+            "title": "Metadata Refresh Queued",
+            "description": "True when this request queued a background resolve_ip_metadata task. Poll again after a few seconds for updated country/ISP fields.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "health",
+          "recent_logins",
+          "recent_users"
+        ],
+        "title": "LoginIpDetailResponse"
+      },
+      "LoginIpExternalLinksResponse": {
+        "properties": {
+          "abuseipdb": {
+            "type": "string",
+            "title": "Abuseipdb",
+            "description": "AbuseIPDB check URL for this IP. Open in a new browser tab to view abuse reports, confidence score, and ISP/country summary.",
+            "examples": [
+              "https://www.abuseipdb.com/check/203.0.113.10"
+            ]
+          },
+          "ipinfo": {
+            "type": "string",
+            "title": "Ipinfo",
+            "description": "IPinfo lookup URL for this IP. Open in a new browser tab to view geolocation, ASN, company, and hosted domains.",
+            "examples": [
+              "https://ipinfo.io/203.0.113.10"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "abuseipdb",
+          "ipinfo"
+        ],
+        "title": "LoginIpExternalLinksResponse",
+        "description": "Third-party pages to manually investigate a client IP address."
+      },
+      "LoginIpHealthResponse": {
+        "properties": {
+          "ip_address": {
+            "type": "string",
+            "title": "Ip Address"
+          },
+          "health_status": {
+            "type": "string",
+            "title": "Health Status",
+            "description": "healthy, suspicious, or abusive based on login patterns for this IP.",
+            "examples": [
+              "suspicious"
+            ]
+          },
+          "total_logins": {
+            "type": "integer",
+            "title": "Total Logins"
+          },
+          "successful_logins": {
+            "type": "integer",
+            "title": "Successful Logins"
+          },
+          "failed_logins": {
+            "type": "integer",
+            "title": "Failed Logins"
+          },
+          "unique_users": {
+            "type": "integer",
+            "title": "Unique Users"
+          },
+          "first_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Seen At"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "ip_metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginIpMetadataResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cached geolocation for this IP from ip_address_metadata."
+          },
+          "is_abusive": {
+            "type": "boolean",
+            "title": "Is Abusive",
+            "description": "True when the IP matches one or more suspicious-login heuristics."
+          },
+          "abusive_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Abusive Reasons",
+            "description": "Heuristic codes when is_abusive is true: high_failed_attempts, high_failure_rate, high_volume_suspicious, or only_failures."
+          },
+          "external_links": {
+            "$ref": "#/components/schemas/LoginIpExternalLinksResponse",
+            "description": "Third-party URLs to manually investigate this IP on AbuseIPDB and IPinfo."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ip_address",
+          "health_status",
+          "total_logins",
+          "successful_logins",
+          "failed_logins",
+          "unique_users",
+          "is_abusive",
+          "external_links"
+        ],
+        "title": "LoginIpHealthResponse"
+      },
+      "LoginIpMetadataResponse": {
+        "properties": {
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code",
+            "description": "ISO 3166-1 alpha-2 country code when lookup completed.",
+            "examples": [
+              "IN"
+            ]
+          },
+          "country_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Name",
+            "description": "Human-readable country name when lookup completed.",
+            "examples": [
+              "India"
+            ]
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region",
+            "description": "Region or state name from the geo provider.",
+            "examples": [
+              "Maharashtra"
+            ]
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City",
+            "description": "City name from the geo provider.",
+            "examples": [
+              "Pune"
+            ]
+          },
+          "isp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isp",
+            "description": "Internet service provider or organization name.",
+            "examples": [
+              "Example ISP Pvt Ltd"
+            ]
+          },
+          "lookup_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookup Status",
+            "description": "Geo lookup state: pending (queued), completed, failed, or skipped (private/local IP).",
+            "examples": [
+              "completed"
+            ]
+          }
+        },
+        "type": "object",
+        "title": "LoginIpMetadataResponse",
+        "description": "Geolocation and ISP data resolved asynchronously for a client IP."
+      },
+      "LoginIpRecentUserResponse": {
+        "properties": {
+          "user_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Uuid"
+          },
+          "user_name": {
+            "type": "string",
+            "title": "User Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "last_login_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Login At"
+          },
+          "login_count": {
+            "type": "integer",
+            "title": "Login Count",
+            "description": "Number of login events from this IP for this user."
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_name",
+          "last_login_at",
+          "login_count"
+        ],
+        "title": "LoginIpRecentUserResponse"
+      },
+      "LoginIpSummaryItemResponse": {
+        "properties": {
+          "ip_address": {
+            "type": "string",
+            "title": "Ip Address",
+            "description": "Distinct client IP aggregated from login audit logs."
+          },
+          "total_logins": {
+            "type": "integer",
+            "title": "Total Logins"
+          },
+          "successful_logins": {
+            "type": "integer",
+            "title": "Successful Logins"
+          },
+          "failed_logins": {
+            "type": "integer",
+            "title": "Failed Logins"
+          },
+          "unique_users": {
+            "type": "integer",
+            "title": "Unique Users"
+          },
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Seen At"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen At"
+          },
+          "ip_metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginIpMetadataResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cached geolocation for this IP from ip_address_metadata."
+          },
+          "is_abusive": {
+            "type": "boolean",
+            "title": "Is Abusive",
+            "description": "True when the IP matches one or more suspicious-login heuristics."
+          },
+          "abusive_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Abusive Reasons",
+            "description": "Heuristic codes when is_abusive is true: high_failed_attempts, high_failure_rate, high_volume_suspicious, or only_failures."
+          },
+          "external_links": {
+            "$ref": "#/components/schemas/LoginIpExternalLinksResponse",
+            "description": "Third-party URLs to manually investigate this IP on AbuseIPDB and IPinfo."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ip_address",
+          "total_logins",
+          "successful_logins",
+          "failed_logins",
+          "unique_users",
+          "first_seen_at",
+          "last_seen_at",
+          "is_abusive",
+          "external_links"
+        ],
+        "title": "LoginIpSummaryItemResponse"
+      },
+      "LoginIpSummaryListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/LoginIpSummaryItemResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "per_page",
+          "total_pages"
+        ],
+        "title": "LoginIpSummaryListResponse"
+      },
       "LoginKpiResponse": {
         "properties": {
           "total": {
@@ -9632,6 +10475,42 @@
             ],
             "title": "Email"
           },
+          "attempted_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempted Email",
+            "description": "Email submitted at login time (including failed attempts)."
+          },
+          "login_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Login Method",
+            "description": "Authentication method, e.g. password or SSO token exchange."
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason",
+            "description": "Present when status is failed; explains why login was rejected."
+          },
           "logged_at": {
             "type": "string",
             "format": "date-time",
@@ -9646,7 +10525,42 @@
                 "type": "null"
               }
             ],
-            "title": "Ip Address"
+            "title": "Ip Address",
+            "description": "Client IP captured from the login request."
+          },
+          "proxy_ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proxy Ip Address",
+            "description": "Raw X-Forwarded-For value when the request passed through a proxy."
+          },
+          "ip_metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginIpMetadataResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cached geolocation for ip_address from ip_address_metadata."
+          },
+          "external_links": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginIpExternalLinksResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ready-to-open AbuseIPDB and IPinfo URLs for ip_address. Null when this login row has no client IP."
           },
           "device_source": {
             "type": "string",
@@ -9654,7 +10568,11 @@
           },
           "status": {
             "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "description": "Login outcome: successful or failed.",
+            "examples": [
+              "successful"
+            ]
           }
         },
         "type": "object",
@@ -9665,7 +10583,6 @@
           "user_name",
           "email",
           "logged_at",
-          "ip_address",
           "device_source",
           "status"
         ],

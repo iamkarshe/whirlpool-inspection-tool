@@ -1,14 +1,17 @@
 import { isAxiosError } from "axios";
 
 import { getLogins } from "@/api/generated/logins/logins";
+import type { GetLoginIpSummaryApiLoginsIpSummaryGetParams } from "@/api/generated/model/getLoginIpSummaryApiLoginsIpSummaryGetParams";
 import type { GetLoginsApiLoginsGetParams } from "@/api/generated/model/getLoginsApiLoginsGetParams";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { LoginDetailResponse } from "@/api/generated/model/loginDetailResponse";
+import type { LoginIpDetailResponse } from "@/api/generated/model/loginIpDetailResponse";
 import type { LoginListItemResponse } from "@/api/generated/model/loginListItemResponse";
 import type { LoginKpiResponse } from "@/api/generated/model/loginKpiResponse";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 import type {
   LoginActivity,
+  LoginIpSummaryRow,
   LoginKpis,
 } from "@/pages/dashboard/admin/logins/login-types";
 
@@ -25,6 +28,19 @@ export type LoginsListParams = Pick<
   | "status"
 >;
 
+export type LoginIpSummaryListParams = Pick<
+  GetLoginIpSummaryApiLoginsIpSummaryGetParams,
+  | "page"
+  | "per_page"
+  | "search"
+  | "sort_by"
+  | "sort_dir"
+  | "date_field"
+  | "date_from"
+  | "date_to"
+  | "abusive_only"
+>;
+
 function rowSuccess(status: string): boolean {
   return status.toLowerCase() === "successful";
 }
@@ -36,8 +52,14 @@ export function mapLoginListItem(row: LoginListItemResponse): LoginActivity {
     reference_id: row.reference_id,
     user_name: row.user_name,
     email: row.email ?? "",
+    attempted_email: row.attempted_email,
+    login_method: row.login_method,
+    failure_reason: row.failure_reason,
     logged_at: row.logged_at,
     ip_address: row.ip_address ?? "",
+    proxy_ip_address: row.proxy_ip_address,
+    ip_metadata: row.ip_metadata,
+    external_links: row.external_links,
     device_info: row.device_source ?? "",
     status: row.status,
     success: rowSuccess(row.status),
@@ -47,17 +69,9 @@ export function mapLoginListItem(row: LoginListItemResponse): LoginActivity {
 function kpiToCards(k: LoginKpiResponse): LoginKpis {
   return {
     totalLogins: k.total,
-    totalChange: "0%",
-    totalChangeType: "positive",
     successfulLogins: k.successful,
-    successChange: "0%",
-    successChangeType: "positive",
     failedLogins: k.failed,
-    failedChange: "0%",
-    failedChangeType: "positive",
     uniqueUsers: k.unique_users,
-    usersChange: "0%",
-    usersChangeType: "positive",
   };
 }
 
@@ -105,6 +119,42 @@ export async function fetchLoginDetail(
     logUuid,
     request?.signal ? { signal: request.signal } : undefined,
   );
+}
+
+export async function fetchLoginIpDetail(
+  ipAddress: string,
+  request?: { signal?: AbortSignal; refresh_metadata?: boolean },
+): Promise<LoginIpDetailResponse> {
+  const ip = ipAddress.trim();
+  if (!ip) throw new Error("IP address is required.");
+  const api = getLogins();
+  return api.getLoginIpDetailApiLoginsIpIpAddressGet(
+    ip,
+    request?.refresh_metadata ? { refresh_metadata: true } : undefined,
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
+export async function fetchLoginIpSummaryPage(
+  params: LoginIpSummaryListParams,
+  request?: { signal?: AbortSignal },
+): Promise<{ data: LoginIpSummaryRow[]; total: number }> {
+  const api = getLogins();
+  const res = await api.getLoginIpSummaryApiLoginsIpSummaryGet(
+    {
+      page: params.page ?? 1,
+      per_page: params.per_page ?? DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
+      search: params.search?.trim() ? params.search : null,
+      sort_by: params.sort_by ?? "last_seen_at",
+      sort_dir: params.sort_dir ?? "desc",
+      date_field: params.date_field ?? null,
+      date_from: params.date_from ?? null,
+      date_to: params.date_to ?? null,
+      abusive_only: params.abusive_only ?? false,
+    },
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+  return { data: res.data, total: res.total };
 }
 
 export async function fetchLoginsByUserHints(

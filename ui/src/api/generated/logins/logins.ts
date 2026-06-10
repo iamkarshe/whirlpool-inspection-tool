@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.6.0
  */
 import type {
+  GetLoginIpDetailApiLoginsIpIpAddressGetParams,
+  GetLoginIpSummaryApiLoginsIpSummaryGetParams,
   GetLoginsApiLoginsGetParams,
   LoginDetailResponse,
+  LoginIpDetailResponse,
+  LoginIpSummaryListResponse,
   LoginKpiResponse,
   LoginListResponse
 } from '../model';
@@ -32,7 +36,7 @@ const getLoginsKpiApiLoginsKpiGet = (
       options);
     }
   /**
- * Get login activity list
+ * Paginated login activity with IP geolocation metadata and third-party investigation links (AbuseIPDB, IPinfo) per row.
  * @summary Get Logins
  */
 const getLoginsApiLoginsGet = (
@@ -40,6 +44,33 @@ const getLoginsApiLoginsGet = (
  options?: SecondParameter<typeof customInstance<LoginListResponse>>,) => {
       return customInstance<LoginListResponse>(
       {url: `/api/logins`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
+ * Paginated unique client IPs with login counts, geo metadata, abuse flags, and third-party investigation links.
+ * @summary Get Login Ip Summary
+ */
+const getLoginIpSummaryApiLoginsIpSummaryGet = (
+    params?: GetLoginIpSummaryApiLoginsIpSummaryGetParams,
+ options?: SecondParameter<typeof customInstance<LoginIpSummaryListResponse>>,) => {
+      return customInstance<LoginIpSummaryListResponse>(
+      {url: `/api/logins/ip-summary`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
+ * IP health summary, recent logins, and latest unique users. Queues a background geolocation job when metadata is missing or failed.
+ * @summary Get Login Ip Detail
+ */
+const getLoginIpDetailApiLoginsIpIpAddressGet = (
+    ipAddress: string,
+    params?: GetLoginIpDetailApiLoginsIpIpAddressGetParams,
+ options?: SecondParameter<typeof customInstance<LoginIpDetailResponse>>,) => {
+      return customInstance<LoginIpDetailResponse>(
+      {url: `/api/logins/ip/${ipAddress}`, method: 'GET',
         params
     },
       options);
@@ -56,7 +87,9 @@ const getLoginDetailApiLoginsLogUuidGet = (
     },
       options);
     }
-  return {getLoginsKpiApiLoginsKpiGet,getLoginsApiLoginsGet,getLoginDetailApiLoginsLogUuidGet}};
+  return {getLoginsKpiApiLoginsKpiGet,getLoginsApiLoginsGet,getLoginIpSummaryApiLoginsIpSummaryGet,getLoginIpDetailApiLoginsIpIpAddressGet,getLoginDetailApiLoginsLogUuidGet}};
 export type GetLoginsKpiApiLoginsKpiGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogins>['getLoginsKpiApiLoginsKpiGet']>>>
 export type GetLoginsApiLoginsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogins>['getLoginsApiLoginsGet']>>>
+export type GetLoginIpSummaryApiLoginsIpSummaryGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogins>['getLoginIpSummaryApiLoginsIpSummaryGet']>>>
+export type GetLoginIpDetailApiLoginsIpIpAddressGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogins>['getLoginIpDetailApiLoginsIpIpAddressGet']>>>
 export type GetLoginDetailApiLoginsLogUuidGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogins>['getLoginDetailApiLoginsLogUuidGet']>>>

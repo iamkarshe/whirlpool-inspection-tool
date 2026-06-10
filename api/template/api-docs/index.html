@@ -70,7 +70,10 @@
     <script>
       Scalar.createApiReference("#app", {
         url: "{{ api_spec_url }}",
-        showToolbar: "never",
+        showDeveloperTools: false,
+        agent: {
+          disabled: true,
+        },
       });
     </script>
   </body>

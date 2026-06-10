@@ -5,6 +5,8 @@
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
  * OpenAPI spec version: 1.6.0
  */
+import type { LoginIpExternalLinksResponse } from './loginIpExternalLinksResponse';
+import type { LoginIpMetadataResponse } from './loginIpMetadataResponse';
 
 export interface LoginListItemResponse {
   id: number;
@@ -12,8 +14,22 @@ export interface LoginListItemResponse {
   reference_id: string;
   user_name: string;
   email: string | null;
+  /** Email submitted at login time (including failed attempts). */
+  attempted_email?: string | null;
+  /** Authentication method, e.g. password or SSO token exchange. */
+  login_method?: string | null;
+  /** Present when status is failed; explains why login was rejected. */
+  failure_reason?: string | null;
   logged_at: string;
-  ip_address: string | null;
+  /** Client IP captured from the login request. */
+  ip_address?: string | null;
+  /** Raw X-Forwarded-For value when the request passed through a proxy. */
+  proxy_ip_address?: string | null;
+  /** Cached geolocation for ip_address from ip_address_metadata. */
+  ip_metadata?: LoginIpMetadataResponse | null;
+  /** Ready-to-open AbuseIPDB and IPinfo URLs for ip_address. Null when this login row has no client IP. */
+  external_links?: LoginIpExternalLinksResponse | null;
   device_source: string;
+  /** Login outcome: successful or failed. */
   status: string;
 }

@@ -5,21 +5,12 @@
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
  * OpenAPI spec version: 1.6.0
  */
-import type { GetInspectionsApiInspectionsGetInspectionType } from './getInspectionsApiInspectionsGetInspectionType';
 
-export type GetInspectionsApiInspectionsGetParams = {
+export type GetLoginIpSummaryApiLoginsIpSummaryGetParams = {
 /**
- * When false, include soft-deleted inspections.
+ * When true, return only IPs matching suspicious-login heuristics.
  */
-is_active?: boolean;
-/**
- * inbound or outbound. Omit for All.
- */
-inspection_type?: GetInspectionsApiInspectionsGetInspectionType;
-/**
- * Inspector user UUIDs (multi-select). Repeat param per value. Omit for All.
- */
-inspector_uuids?: string[] | null;
+abusive_only?: boolean;
 /**
  * Page number (1-based).
  * @minimum 1
@@ -55,16 +46,4 @@ date_from?: string | null;
  * Inclusive UTC end date; set together with date_from.
  */
 date_to?: string | null;
-/**
- * Warehouse ids from kpi-parameters. Repeat param per value.
- */
-warehouse_ids?: number[] | null;
-/**
- * Plant ids from kpi-parameters (inbound only). Repeat param per value.
- */
-plant_ids?: number[] | null;
-/**
- * Category pair keys from kpi-parameters, e.g. AC|SPLIT.
- */
-product_category?: string[] | null;
 };

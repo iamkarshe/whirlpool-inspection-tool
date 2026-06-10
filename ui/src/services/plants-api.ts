@@ -1,6 +1,5 @@
 import { isAxiosError } from "axios";
-import { getInspections } from "@/api/generated/inspections/inspections";
-import type { GetInspectionsApiInspectionsGetParams } from "@/api/generated/model/getInspectionsApiInspectionsGetParams";
+import { fetchInspectionsListResponse } from "@/services/inspections-api";
 import type { GetPlantsApiPlantsGetParams } from "@/api/generated/model/getPlantsApiPlantsGetParams";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
@@ -28,20 +27,18 @@ export type PlantsListParams = Pick<
   | "is_active"
 >;
 
-export type PlantInspectionsListParams = Pick<
-  GetInspectionsApiInspectionsGetParams,
-  | "page"
-  | "per_page"
-  | "search"
-  | "sort_by"
-  | "sort_dir"
-  | "date_field"
-  | "date_from"
-  | "date_to"
-  | "is_active"
-  | "inspection_type"
-> & {
-  plant_uuid: string;
+export type PlantInspectionsListParams = {
+  plant_id: number;
+  page?: number;
+  per_page?: number;
+  search?: string | null;
+  sort_by?: string | null;
+  sort_dir?: string;
+  inspection_type?: string | null;
+  is_active?: boolean;
+  date_field?: string | null;
+  date_from?: string | null;
+  date_to?: string | null;
 };
 
 export type PlantInfoViewData = {
@@ -114,22 +111,25 @@ export async function fetchPlantInspectionsPage(
   params: PlantInspectionsListParams,
   request?: { signal?: AbortSignal },
 ): Promise<InspectionListResponse> {
-  const api = getInspections();
-  return api.getInspectionsApiInspectionsGet(
+  const inspectionType = params.inspection_type?.trim();
+  return fetchInspectionsListResponse(
     {
-      plant_uuid: params.plant_uuid,
+      plant_ids: [params.plant_id],
       page: params.page ?? 1,
       per_page: params.per_page ?? DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE,
       search: params.search?.trim() ? params.search : null,
       sort_by: params.sort_by ?? "created_at",
       sort_dir: params.sort_dir ?? "desc",
-      inspection_type: params.inspection_type ?? null,
+      inspection_type:
+        inspectionType === "inbound" || inspectionType === "outbound"
+          ? inspectionType
+          : undefined,
       is_active: params.is_active,
       date_field: params.date_field ?? null,
       date_from: params.date_from ?? null,
       date_to: params.date_to ?? null,
     },
-    request?.signal ? { signal: request.signal } : undefined,
+    request,
   );
 }
 
