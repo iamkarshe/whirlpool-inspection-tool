@@ -1,10 +1,15 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import and_, func
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
+from mod.api.ip_metadata.helper import get_ip_metadata_by_addresses
 from mod.api.login.helper import (
+    apply_login_status_filter,
+    is_login_event_query,
+    is_login_payload,
+    is_successful_login_payload,
     map_login_detail,
     map_login_inspection,
     map_login_list_item,
@@ -16,14 +21,15 @@ from mod.api.login.response import (
     LoginListResponse,
 )
 from mod.api.middleware import auth_dependency
+from mod.api.log.audit import ACTION_AUTH_LOGIN
 from mod.model import Device, Inspection, Log, User
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
-    build_paginated_response,
     get_pagination_params,
+    paginate_query,
 )
 
 router = APIRouter(
@@ -31,18 +37,6 @@ router = APIRouter(
     dependencies=[Depends(auth_dependency)],
     prefix="/api",
 )
-
-
-def is_login_event_query(query):
-    return query.filter(
-        and_(
-            Log.is_active.is_(True),
-            (
-                Log.log_value.ilike('%"event": "login"%')
-                | Log.log_value.ilike('%"event": "login_failed"%')
-            ),
-        )
-    )
 
 
 @router.get(
@@ -60,8 +54,8 @@ def get_logins_kpi(
     base_query = is_login_event_query(db.query(Log))
 
     total = base_query.count()
-    successful = base_query.filter(Log.log_value.ilike('%"event": "login"%')).count()
-    failed = base_query.filter(Log.log_value.ilike('%"event": "login_failed"%')).count()
+    successful = apply_login_status_filter(base_query, "successful").count()
+    failed = apply_login_status_filter(base_query, "failed").count()
     unique_users = (
         base_query.filter(Log.user_id.isnot(None))
         .with_entities(func.count(func.distinct(Log.user_id)))
@@ -80,7 +74,7 @@ def get_logins_kpi(
 @router.get(
     "/logins",
     name="get_logins",
-    description="Get login activity list",
+    description="Paginated login activity with IP geolocation metadata",
     response_model=LoginListResponse,
 )
 @exception_handler_decorator
@@ -97,11 +91,7 @@ def get_logins(
         .outerjoin(Device, Log.device_id == Device.id)
     )
     query = is_login_event_query(query)
-
-    if status == "successful":
-        query = query.filter(Log.log_value.ilike('%"event": "login"%'))
-    elif status == "failed":
-        query = query.filter(Log.log_value.ilike('%"event": "login_failed"%'))
+    query = apply_login_status_filter(query, status)
 
     query = apply_standard_filters(
         query=query,
@@ -119,15 +109,36 @@ def get_logins(
         default_sort_field="created_at",
     )
 
-    def mapper(row):
-        log, user, device = row
-        return map_login_list_item(log=log, user=user, device=device)
+    total = query.count()
+    page = params.page if params.page >= 1 else 1
+    per_page = params.per_page if params.per_page >= 1 else 1
+    rows = paginate_query(query, page=page, per_page=per_page).all()
 
-    return build_paginated_response(
-        query=query,
-        page=params.page,
-        per_page=params.per_page,
-        mapper=mapper,
+    ip_addresses = [
+        str(parse_log_payload(log.log_value).get("ip") or "").strip()
+        for log, _, _ in rows
+    ]
+    metadata_by_ip = get_ip_metadata_by_addresses(db, ip_addresses)
+
+    data = []
+    for log, user, device in rows:
+        ip_address = str(parse_log_payload(log.log_value).get("ip") or "").strip() or None
+        data.append(
+            map_login_list_item(
+                log=log,
+                user=user,
+                device=device,
+                ip_metadata=metadata_by_ip.get(ip_address) if ip_address else None,
+            )
+        )
+
+    total_pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+    return LoginListResponse(
+        data=data,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
     )
 
 
@@ -156,13 +167,19 @@ def get_login_detail(
 
     log, user, device = row
     payload = parse_log_payload(log.log_value)
-    event = str(payload.get("event", "")).strip().lower()
-    if event not in {"login", "login_failed"}:
+    if not is_login_payload(payload):
         raise HTTPException(status_code=404, detail="Login record not found")
 
-    response = map_login_detail(log=log, user=user, device=device)
+    ip_address = str(payload.get("ip") or "").strip() or None
+    metadata_by_ip = get_ip_metadata_by_addresses(db, [ip_address] if ip_address else [])
+    response = map_login_detail(
+        log=log,
+        user=user,
+        device=device,
+        ip_metadata=metadata_by_ip.get(ip_address) if ip_address else None,
+    )
 
-    if event == "login" and log.device_id is not None:
+    if is_successful_login_payload(payload) and log.device_id is not None:
         next_login = (
             db.query(Log)
             .filter(
@@ -170,7 +187,7 @@ def get_login_detail(
                 Log.created_at > log.created_at,
                 Log.device_id == log.device_id,
                 Log.user_id == log.user_id,
-                Log.log_value.ilike('%"event": "login"%'),
+                Log.log_value.ilike(f'%"action": "{ACTION_AUTH_LOGIN}"%'),
             )
             .order_by(Log.created_at.asc())
             .first()

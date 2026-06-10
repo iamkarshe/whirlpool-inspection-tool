@@ -24,6 +24,7 @@ def get_celery_app():
         include=["mod.tasks.worker", "mod.jobs.celery_tasks"],
     )
     from mod.jobs.helper import AUTO_APPROVE_BEAT_INTERVAL_SECONDS
+    from utils.env import get_resolve_ip_metadata_beat_interval_seconds
 
     app.conf.update(
         task_track_started=True,
@@ -51,6 +52,11 @@ def get_celery_app():
             "auto_approve_inspections_every_15_minutes": {
                 "task": "mod.jobs.celery_tasks.auto_approve_inspections",
                 "schedule": AUTO_APPROVE_BEAT_INTERVAL_SECONDS,
+                "options": {"queue": DEFAULT_TASK_QUEUE},
+            },
+            "resolve_pending_ip_metadata_hourly": {
+                "task": "mod.jobs.celery_tasks.resolve_pending_ip_metadata",
+                "schedule": get_resolve_ip_metadata_beat_interval_seconds(),
                 "options": {"queue": DEFAULT_TASK_QUEUE},
             },
         },

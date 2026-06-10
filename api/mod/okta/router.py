@@ -43,7 +43,15 @@ def okta_sso_login(
         f"&nonce={nonce}"
         f"&state={state}"
     )
-    return RedirectResponse(okta_login_url)
+
+    return RedirectResponse(
+        url=okta_login_url,
+        status_code=302,
+        headers={
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+        },
+    )
 
 
 @router.get("/authorization-code/callback")

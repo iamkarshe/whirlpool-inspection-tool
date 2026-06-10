@@ -11,6 +11,7 @@ from mod.api.inspection.review_notifications import (
 )
 from mod.model import Task
 from mod.tasks.email_send import resolve_smtp_config_from_payload, send_task_email
+from mod.tasks.ip_geo import execute_resolve_ip_metadata
 from mod.tasks.service import update_task_progress
 
 Handler = Callable[[Session, Task], dict[str, Any]]
@@ -51,6 +52,14 @@ def handle_send_email(db: Session, task: Task) -> dict[str, Any]:
     }
 
 
+def handle_resolve_ip_metadata(db: Session, task: Task) -> dict[str, Any]:
+    update_task_progress(db, task, 20, "Resolving IP geolocation")
+    payload = dict(task.payload or {})
+    result = execute_resolve_ip_metadata(db, payload)
+    update_task_progress(db, task, 100, "IP geolocation resolved")
+    return result
+
+
 def handle_notify_inspection_review_managers(db: Session, task: Task) -> dict[str, Any]:
     update_task_progress(db, task, 20, "Loading inspection and managers")
     payload = dict(task.payload or {})
@@ -61,6 +70,7 @@ def handle_notify_inspection_review_managers(db: Session, task: Task) -> dict[st
 
 TASK_HANDLERS: dict[str, Handler] = {
     "send_email": handle_send_email,
+    "resolve_ip_metadata": handle_resolve_ip_metadata,
     "notify_inspection_review_managers": handle_notify_inspection_review_managers,
     "generate_report": handle_generate_report,
     "process_file": handle_process_file,

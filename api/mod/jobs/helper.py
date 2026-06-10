@@ -19,10 +19,19 @@ from mod.model import (
     Role,
     User,
 )
-from utils.env import get_auto_approve_inspection_hours, get_job_execute_token
+from mod.api.ip_metadata.helper import (
+    enqueue_unresolved_ip_metadata_lookups,
+    seed_ips_from_auth_login_logs,
+)
+from utils.env import (
+    get_auto_approve_inspection_hours,
+    get_ip_geo_batch_limit,
+    get_job_execute_token,
+)
 
 AUTO_APPROVE_JOB_NAME = "auto_approve_inspections"
 AUTO_APPROVE_BEAT_INTERVAL_SECONDS = 15 * 60
+RESOLVE_PENDING_IP_METADATA_JOB_NAME = "resolve_pending_ip_metadata"
 def auto_approve_review_comment(hours: int) -> str:
     return (
         f"Automatically approved after {hours} hours with no manual review."
@@ -186,6 +195,63 @@ def execute_auto_approve_inspections(db: Session) -> JobRunResult:
             metadata={"error_type": exc.__class__.__name__},
         )
         raise
+
+
+def execute_resolve_pending_ip_metadata(db: Session) -> JobRunResult:
+    job_name = RESOLVE_PENDING_IP_METADATA_JOB_NAME
+    rows_updated = 0
+    try:
+        batch_limit = get_ip_geo_batch_limit()
+        seeded = seed_ips_from_auth_login_logs(db, limit=batch_limit)
+        outcome = enqueue_unresolved_ip_metadata_lookups(db, limit=batch_limit)
+        rows_updated = int(outcome.get("enqueued", 0))
+        failure_count = len(outcome.get("failures", []))
+        message = (
+            f"Seeded {seeded} login IP(s); enqueued {rows_updated} lookup task(s); "
+            f"skipped {outcome.get('skipped', 0)}; enqueue errors {failure_count}."
+        )
+        job_status = JobLogStatus.failed if rows_updated == 0 and failure_count > 0 else JobLogStatus.success
+        logged = persist_job_log(
+            db,
+            job_name=job_name,
+            status=job_status,
+            rows_updated=rows_updated,
+            message=message,
+            metadata={
+                "seeded_from_login_logs": seeded,
+                **outcome,
+            },
+        )
+        return JobRunResult(
+            job_name=job_name,
+            rows_updated=rows_updated,
+            message=message,
+            logged=logged,
+        )
+    except Exception as exc:
+        db.rollback()
+        message = str(exc)
+        persist_job_log(
+            db,
+            job_name=job_name,
+            status=JobLogStatus.failed,
+            rows_updated=rows_updated,
+            message=message,
+            metadata={"error_type": exc.__class__.__name__},
+        )
+        raise
+
+
+def run_resolve_pending_ip_metadata(db: Session) -> JobRunResult:
+    try:
+        return execute_resolve_pending_ip_metadata(db)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        ) from exc
 
 
 def run_auto_approve_inspections(db: Session) -> JobRunResult:

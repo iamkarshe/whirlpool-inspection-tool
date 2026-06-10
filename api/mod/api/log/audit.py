@@ -7,6 +7,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from mod.api.ip_metadata.helper import schedule_ip_metadata_lookup
 from mod.model import Log, LogLevel
 
 ACTION_AUTH_LOGIN = "auth_login"
@@ -120,6 +121,7 @@ def log_auth_login_success(
         device_imei=device_imei,
         **details,
     )
+    schedule_ip_metadata_lookup(db, client_ip)
 
 
 def log_auth_login_failed(
@@ -157,6 +159,7 @@ def log_auth_login_failed(
         email=email or normalized_attempt,
         **details,
     )
+    schedule_ip_metadata_lookup(db, client_ip)
 
 
 def log_user_added(

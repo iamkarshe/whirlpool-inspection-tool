@@ -63,6 +63,16 @@ def append_task_log(
     )
 
 
+def task_job_log_metadata(task: Task) -> dict[str, Any]:
+    payload = dict(task.payload or {})
+    metadata: dict[str, Any] = {}
+    if task.task_type == "resolve_ip_metadata":
+        ip_address = payload.get("ip_address")
+        if ip_address:
+            metadata["ip_address"] = str(ip_address)
+    return metadata
+
+
 def persist_task_job_log(
     db: Session,
     *,
@@ -79,6 +89,7 @@ def persist_task_job_log(
         else str(task.status),
         "attempts": task.attempts,
         "max_attempts": task.max_attempts,
+        **task_job_log_metadata(task),
     }
     if metadata:
         payload.update(metadata)
@@ -204,12 +215,15 @@ def mark_task_failed(
         message="Task failed permanently" if permanent else "Task failed",
         context={"error": error_message[:500]},
     )
+    failure_metadata: dict[str, Any] = {"permanent": permanent}
+    if task.task_type == "resolve_ip_metadata":
+        failure_metadata["lookup_error"] = error_message[:500]
     persist_task_job_log(
         db,
         task=task,
         job_status=JobLogStatus.failed,
         message=error_message[:4000],
-        metadata={"permanent": permanent},
+        metadata=failure_metadata,
     )
     db.commit()
 

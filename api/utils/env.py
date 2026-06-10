@@ -97,6 +97,32 @@ def is_celery_broker_configured() -> bool:
     return get_env_optional("REDIS_URL") is not None
 
 
+def get_ip_geo_batch_limit() -> int:
+    raw = get_env_optional("IP_GEO_BATCH_LIMIT", "40") or "40"
+    try:
+        limit = int(raw)
+    except ValueError as exc:
+        raise RuntimeError(f"Invalid IP_GEO_BATCH_LIMIT: {raw!r}") from exc
+    if limit < 1 or limit > 500:
+        raise RuntimeError("IP_GEO_BATCH_LIMIT must be between 1 and 500")
+    return limit
+
+
+def get_resolve_ip_metadata_beat_interval_seconds() -> int:
+    raw = get_env_optional("RESOLVE_IP_METADATA_BEAT_INTERVAL_SECONDS", "3600") or "3600"
+    try:
+        seconds = int(raw)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"Invalid RESOLVE_IP_METADATA_BEAT_INTERVAL_SECONDS: {raw!r}"
+        ) from exc
+    if seconds < 300:
+        raise RuntimeError(
+            "RESOLVE_IP_METADATA_BEAT_INTERVAL_SECONDS must be at least 300"
+        )
+    return seconds
+
+
 def get_auto_approve_inspection_hours() -> int:
     raw = get_env_optional("AUTO_APPROVE_INSPECTION_HOURS", "6") or "6"
     try:

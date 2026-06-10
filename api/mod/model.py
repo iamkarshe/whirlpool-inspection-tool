@@ -215,7 +215,15 @@ class TaskStatus(str, enum.Enum):
     cancelled = "cancelled"
 
 
+class IpLookupStatus(str, enum.Enum):
+    pending = "pending"
+    completed = "completed"
+    failed = "failed"
+    skipped = "skipped"
+
+
 TASK_STATUS_DB = pg_str_enum(TaskStatus, name="task_status", length=30)
+IP_LOOKUP_STATUS_DB = pg_str_enum(IpLookupStatus, name="ip_lookup_status", length=20)
 
 
 class TimestampSoftDeleteMixin:
@@ -1089,6 +1097,41 @@ class InspectionImage(TimestampSoftDeleteMixin, Base):
     inspection: Mapped["Inspection"] = relationship(back_populates="images")
     checklist: Mapped["Checklist | None"] = relationship(
         back_populates="inspection_images"
+    )
+
+
+class IpAddressMetadata(Base):
+    __tablename__ = "ip_address_metadata"
+    __table_args__ = (UniqueConstraint("ip_address", name="uq_ip_address_metadata_ip"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ip_address: Mapped[str] = mapped_column(INET, nullable=False, index=True)
+    country_code: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    country_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    region: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    isp: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    lookup_status: Mapped[IpLookupStatus] = mapped_column(
+        IP_LOOKUP_STATUS_DB,
+        nullable=False,
+        default=IpLookupStatus.pending,
+    )
+    lookup_source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    lookup_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_response: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    looked_up_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
 
