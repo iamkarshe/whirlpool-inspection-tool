@@ -3,15 +3,30 @@ import type { PlantResponse } from "@/api/generated/model/plantResponse";
 import { PAGES } from "@/endpoints";
 import {
   Building2,
+  CheckCircle,
   ClipboardCheck,
   MapPin,
   MapPinned,
   Smartphone,
   Users,
+  XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const linkBadgeClass = `${BADGE_ICON_CLASS} cursor-pointer transition-colors hover:bg-primary/15 hover:text-primary`;
+
+export function PlantStatusBadge({ isActive }: { isActive: boolean }) {
+  const Icon = isActive ? CheckCircle : XCircle;
+  return (
+    <Badge
+      variant={isActive ? "success" : "destructive"}
+      className={BADGE_ICON_CLASS}
+    >
+      <Icon />
+      {isActive ? "ACTIVE" : "INACTIVE"}
+    </Badge>
+  );
+}
 
 export function PlantCodeBadge({ code }: { code: string }) {
   return (

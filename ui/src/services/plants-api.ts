@@ -5,6 +5,8 @@ import type { GetPlantsApiPlantsGetParams } from "@/api/generated/model/getPlant
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
 import type { InspectionListResponse } from "@/api/generated/model/inspectionListResponse";
 import type { PlantCreateRequest } from "@/api/generated/model/plantCreateRequest";
+import type { PlantPermanentDeleteResponse } from "@/api/generated/model/plantPermanentDeleteResponse";
+import type { PlantUpdateRequest } from "@/api/generated/model/plantUpdateRequest";
 import type { DeviceResponse } from "@/api/generated/model/deviceResponse";
 import type { PlantListResponse } from "@/api/generated/model/plantListResponse";
 import type { PlantResponse } from "@/api/generated/model/plantResponse";
@@ -139,6 +141,33 @@ export async function createPlant(
     payload,
     request?.signal ? { signal: request.signal } : undefined,
   );
+}
+
+export async function updatePlant(
+  plantUuid: string,
+  payload: PlantUpdateRequest,
+  request?: { signal?: AbortSignal },
+): Promise<PlantResponse> {
+  const api = getPlants();
+  return api.updatePlantApiPlantsPlantUuidPut(
+    plantUuid,
+    payload,
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
+export async function deletePlantPermanently(
+  plantUuid: string,
+  criticalAdminDeleteToken: string,
+  request?: { signal?: AbortSignal },
+): Promise<PlantPermanentDeleteResponse> {
+  const api = getPlants();
+  return api.deletePlantPermanentlyApiPlantsPlantUuidDelete(plantUuid, {
+    headers: {
+      "x-critical-admin-delete-token": criticalAdminDeleteToken,
+    },
+    ...(request?.signal ? { signal: request.signal } : {}),
+  });
 }
 
 export async function uploadPlantsCsv(

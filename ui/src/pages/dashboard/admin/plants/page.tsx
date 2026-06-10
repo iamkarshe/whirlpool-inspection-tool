@@ -18,7 +18,9 @@ import {
   plantsApiErrorMessage,
   uploadPlantsCsv,
 } from "@/services/plants-api";
+import { DeletePlantDialog } from "./delete-plant-dialog";
 import PlantsDataTable from "./data-table";
+import { EditPlantDialog } from "./edit-plant-dialog";
 
 type PlantFormValues = {
   name: string;
@@ -31,7 +33,13 @@ type PlantFormValues = {
 };
 
 const PLANT_LIST_SORT = {
-  allowedColumns: ["id", "name", "plant_code", "created_at", "updated_at"] as const,
+  allowedColumns: [
+    "id",
+    "name",
+    "plant_code",
+    "created_at",
+    "updated_at",
+  ] as const,
   defaultSort: { sort_by: "id", sort_dir: "desc" as const },
 };
 
@@ -47,13 +55,20 @@ export default function PlantsPage() {
   });
   const [isCreating, setIsCreating] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [plantToEdit, setPlantToEdit] = useState<PlantResponse | null>(null);
+  const [plantToDelete, setPlantToDelete] = useState<PlantResponse | null>(
+    null,
+  );
   const { rows, isLoading, error, serverSide } =
     useControlledServerTable<PlantResponse>({
       initialSorting: [{ id: "id", desc: true }],
       refreshKey: reloadKey,
       errorMessage: "Failed to load plants.",
       load: async ({ signal, pagination: p, searchQuery: q, sorting: s }) => {
-        const { sort_by, sort_dir } = sortingStateToApiSortQuery(s, PLANT_LIST_SORT);
+        const { sort_by, sort_dir } = sortingStateToApiSortQuery(
+          s,
+          PLANT_LIST_SORT,
+        );
         const res = await fetchPlantsPage(
           {
             page: p.pageIndex + 1,
@@ -119,7 +134,7 @@ export default function PlantsPage() {
 
   return (
     <div className="space-y-6">
-      <PageActionBar title="Plants" description="Manage master data for all plants.">
+      <PageActionBar title="Plants" description="Manage plant master data.">
         <CsvUploadDialog
           title="Upload Plants"
           description="Select a CSV file containing plants to import."
@@ -227,7 +242,31 @@ export default function PlantsPage() {
         <p className="text-destructive text-sm">{error}</p>
       ) : null}
 
-      <PlantsDataTable data={rows} serverSide={serverSide} isLoading={isLoading} />
+      <PlantsDataTable
+        data={rows}
+        serverSide={serverSide}
+        isLoading={isLoading}
+        onEditPlant={setPlantToEdit}
+        onDeletePlant={setPlantToDelete}
+      />
+
+      <EditPlantDialog
+        open={plantToEdit !== null}
+        onOpenChange={(open) => {
+          if (!open) setPlantToEdit(null);
+        }}
+        plant={plantToEdit}
+        onSaved={() => setReloadKey((v) => v + 1)}
+      />
+
+      <DeletePlantDialog
+        open={plantToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPlantToDelete(null);
+        }}
+        plant={plantToDelete}
+        onDeleted={() => setReloadKey((v) => v + 1)}
+      />
     </div>
   );
 }

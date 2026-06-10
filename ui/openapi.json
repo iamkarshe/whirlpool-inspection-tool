@@ -12,7 +12,7 @@
       "name": "Proprietary - Internal Use Only",
       "url": "https://scoptanalytics.com/terms"
     },
-    "version": "1.5.1"
+    "version": "1.6.0"
   },
   "paths": {
     "/auth/login": {
@@ -43,6 +43,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -52,9 +55,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -88,6 +88,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -97,9 +100,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -132,6 +132,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -141,9 +144,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -486,6 +486,9 @@
           "404": {
             "description": "User not found."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -495,9 +498,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -538,6 +538,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -547,9 +550,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -590,6 +590,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -599,9 +602,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -645,6 +645,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -654,9 +657,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -2096,6 +2096,48 @@
         }
       }
     },
+    "/api/integrations/smtp/test-gateway": {
+      "post": {
+        "tags": [
+          "App Integration"
+        ],
+        "summary": "Test Smtp Gateway Connection",
+        "description": "Gateway SMTP test matching swaks: --port 25 --tls --tls-verify with no auth. Uses subject/body 'SMTP TLS verification test'. Provide host/from_email or saved SMTP.",
+        "operationId": "test_smtp_gateway_connection_api_integrations_smtp_test_gateway_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmtpGatewayTestConnectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmtpTestConnectionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/warehouses": {
       "get": {
         "tags": [
@@ -2110,12 +2152,18 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "boolean",
-              "description": "Filter by active status",
-              "default": true,
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by active status; omit to return all warehouses.",
               "title": "Is Active"
             },
-            "description": "Filter by active status"
+            "description": "Filter by active status; omit to return all warehouses."
           },
           {
             "name": "page",
@@ -2403,9 +2451,9 @@
         "tags": [
           "Warehouses"
         ],
-        "summary": "Delete Warehouse",
-        "description": "Delete (deactivate) warehouse",
-        "operationId": "delete_warehouse_api_warehouses__warehouse_uuid__delete",
+        "summary": "Delete Warehouse Permanently",
+        "description": "Permanently delete warehouse (requires x-critical-admin-delete-token).",
+        "operationId": "delete_warehouse_permanently_api_warehouses__warehouse_uuid__delete",
         "parameters": [
           {
             "name": "warehouse_uuid",
@@ -2416,6 +2464,24 @@
               "format": "uuid",
               "title": "Warehouse Uuid"
             }
+          },
+          {
+            "name": "x-critical-admin-delete-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Shared secret from CRITICAL_ADMIN_DELETE_TOKEN env var.",
+              "title": "X-Critical-Admin-Delete-Token"
+            },
+            "description": "Shared secret from CRITICAL_ADMIN_DELETE_TOKEN env var."
           }
         ],
         "responses": {
@@ -2424,10 +2490,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WarehouseResponse"
+                  "$ref": "#/components/schemas/WarehousePermanentDeleteResponse"
                 }
               }
             }
+          },
+          "401": {
+            "description": "Invalid or missing x-critical-admin-delete-token."
+          },
+          "409": {
+            "description": "Warehouse is referenced by inspections."
+          },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           },
           "422": {
             "description": "Validation Error",
@@ -3582,12 +3657,18 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "boolean",
-              "description": "Filter by active status",
-              "default": true,
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by active status; omit to return all plants.",
               "title": "Is Active"
             },
-            "description": "Filter by active status"
+            "description": "Filter by active status; omit to return all plants."
           },
           {
             "name": "page",
@@ -3875,9 +3956,9 @@
         "tags": [
           "Plants"
         ],
-        "summary": "Delete Plant",
-        "description": "Delete (deactivate) plant",
-        "operationId": "delete_plant_api_plants__plant_uuid__delete",
+        "summary": "Delete Plant Permanently",
+        "description": "Permanently delete plant (requires x-critical-admin-delete-token).",
+        "operationId": "delete_plant_permanently_api_plants__plant_uuid__delete",
         "parameters": [
           {
             "name": "plant_uuid",
@@ -3888,6 +3969,24 @@
               "format": "uuid",
               "title": "Plant Uuid"
             }
+          },
+          {
+            "name": "x-critical-admin-delete-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Shared secret from CRITICAL_ADMIN_DELETE_TOKEN env var.",
+              "title": "X-Critical-Admin-Delete-Token"
+            },
+            "description": "Shared secret from CRITICAL_ADMIN_DELETE_TOKEN env var."
           }
         ],
         "responses": {
@@ -3896,10 +3995,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlantResponse"
+                  "$ref": "#/components/schemas/PlantPermanentDeleteResponse"
                 }
               }
             }
+          },
+          "401": {
+            "description": "Invalid or missing x-critical-admin-delete-token."
+          },
+          "409": {
+            "description": "Plant is referenced by inspections."
+          },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           },
           "422": {
             "description": "Validation Error",
@@ -5564,7 +5672,7 @@
           "Jobs"
         ],
         "summary": "Auto-approve stale inspections",
-        "description": "Approves active inspections still in PENDING or IN_REVIEW when created more than AUTO_APPROVE_INSPECTION_HOURS ago (default 6). Sets is_auto_approved and reviewed_comment. Intended for Ubuntu crontab.",
+        "description": "Approves active inspections still in PENDING or IN_REVIEW when created more than AUTO_APPROVE_INSPECTION_HOURS ago (default 6). Sets is_auto_approved and reviewed_comment. Also runs every 15 minutes via Celery beat when the worker uses --beat.",
         "operationId": "job_auto_approve_inspections_jobs_auto_approve_inspections_get",
         "parameters": [
           {
@@ -5600,6 +5708,9 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5609,9 +5720,156 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "List recent background tasks",
+        "description": "Returns the 50 most recently created tasks, newest first.",
+        "operationId": "list_tasks_api_tasks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponse"
+                }
+              }
+            }
           },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
+          "403": {
+            "description": "Caller is not superadmin."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Queue a background task",
+        "operationId": "create_task_api_tasks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/sample-send-email": {
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Queue a sample send_email background task",
+        "description": "Uses configured SMTP credentials (credential_key default_smtp) and returns task_uuid immediately.",
+        "operationId": "queue_sample_send_email_task_api_tasks_sample_send_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleSendEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_uuid}": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Get background task status and result",
+        "description": "Returns task status, timing, result flags, and display_fields as tagged rows for React detail screens.",
+        "operationId": "get_task_api_tasks__task_uuid__get",
+        "parameters": [
+          {
+            "name": "task_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -6337,7 +6595,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Id"
           },
           "value": {
@@ -8786,6 +9044,19 @@
             ],
             "title": "Message"
           },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata",
+            "description": "Structured context (task_uuid, thresholds, login correlation, etc.)."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -9819,7 +10090,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -9870,6 +10141,29 @@
           "total_pages"
         ],
         "title": "PlantListResponse"
+      },
+      "PlantPermanentDeleteResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "plant_code": {
+            "type": "string",
+            "title": "Plant Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "plant_code"
+        ],
+        "title": "PlantPermanentDeleteResponse"
       },
       "PlantResponse": {
         "properties": {
@@ -10010,7 +10304,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -10767,6 +11061,56 @@
         ],
         "title": "ResolveDevicesResponse"
       },
+      "SampleSendEmailRequest": {
+        "properties": {
+          "to_email": {
+            "type": "string",
+            "format": "email",
+            "title": "To Email"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Subject",
+            "default": "Whirlpool Inspection Tool — sample background email"
+          },
+          "body_text": {
+            "type": "string",
+            "maxLength": 8000,
+            "title": "Body Text",
+            "default": "This message was sent via the background task queue."
+          },
+          "body_html": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body Html"
+          },
+          "credential_key": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Credential Key",
+            "default": "default_smtp"
+          },
+          "queue_name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Queue Name",
+            "default": "default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to_email"
+        ],
+        "title": "SampleSendEmailRequest"
+      },
       "SkuListResponse": {
         "properties": {
           "data": {
@@ -10889,8 +11233,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "default": 587
           },
@@ -10905,6 +11249,11 @@
             ],
             "title": "Encryption",
             "default": "starttls"
+          },
+          "auth_enabled": {
+            "type": "boolean",
+            "title": "Auth Enabled",
+            "default": true
           },
           "username": {
             "type": "string",
@@ -10929,8 +11278,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -10946,6 +11295,100 @@
           "none"
         ],
         "title": "SmtpEncryption"
+      },
+      "SmtpGatewayTestConnectionRequest": {
+        "properties": {
+          "host": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host",
+            "description": "SMTP server (swaks --server). Omit to use saved smtp.host."
+          },
+          "port": {
+            "type": "integer",
+            "maximum": 65535.0,
+            "minimum": 1.0,
+            "title": "Port",
+            "description": "SMTP port (swaks --port 25).",
+            "default": 25
+          },
+          "encryption": {
+            "$ref": "#/components/schemas/SmtpEncryption",
+            "description": "Must be starttls (swaks --tls on port 25, not implicit SSL).",
+            "default": "starttls"
+          },
+          "tls_verify": {
+            "type": "boolean",
+            "title": "Tls Verify",
+            "description": "Verify server TLS certificate (swaks --tls-verify).",
+            "default": true
+          },
+          "auth_enabled": {
+            "type": "boolean",
+            "title": "Auth Enabled",
+            "description": "Must be false; gateway does not use SMTP AUTH.",
+            "default": false
+          },
+          "to_email": {
+            "type": "string",
+            "format": "email",
+            "title": "To Email",
+            "description": "Recipient (swaks --to)."
+          },
+          "from_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Email",
+            "description": "Sender (swaks --from); omit to use saved smtp.from_email."
+          },
+          "from_name": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "From Name",
+            "description": "Ignored for gateway test (swaks uses plain --from address only).",
+            "default": ""
+          },
+          "ehlo_hostname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ehlo Hostname",
+            "description": "Optional EHLO/HELO name (swaks --ehlo). Default: domain part of from_email."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 300.0,
+            "minimum": 1.0,
+            "title": "Timeout Seconds",
+            "default": 30
+          }
+        },
+        "type": "object",
+        "required": [
+          "to_email"
+        ],
+        "title": "SmtpGatewayTestConnectionRequest",
+        "description": "Internal SMTP gateway test aligned with swaks:\n--port 25 --tls --tls-verify --from ... --to ... (no --auth-user)."
       },
       "SmtpProvider": {
         "type": "string",
@@ -11069,14 +11512,20 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "default": 587
           },
           "encryption": {
             "$ref": "#/components/schemas/SmtpEncryption",
             "default": "starttls"
+          },
+          "auth_enabled": {
+            "type": "boolean",
+            "title": "Auth Enabled",
+            "description": "When false, SMTP login is skipped (internal relay / gateway).",
+            "default": true
           },
           "username": {
             "type": "string",
@@ -11087,8 +11536,8 @@
           "password": {
             "type": "string",
             "maxLength": 2048,
-            "minLength": 1,
-            "title": "Password"
+            "title": "Password",
+            "default": ""
           },
           "from_email": {
             "type": "string",
@@ -11103,8 +11552,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -11112,7 +11561,6 @@
         "type": "object",
         "required": [
           "provider",
-          "password",
           "from_email"
         ],
         "title": "SmtpUpdateRequest"
@@ -11142,13 +11590,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -11238,7 +11686,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10,
+            "minimum": 10.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -11297,18 +11745,24 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Truck Number"
           },
           "dock_number": {
@@ -11363,8 +11817,15 @@
             ]
           },
           "truck_docking_time": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Truck Docking Time"
           },
           "outer_packaging_side_images": {
@@ -11393,7 +11854,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -11411,14 +11872,388 @@
           "warehouse_code",
           "lat",
           "lng",
-          "truck_number",
-          "truck_docking_time",
           "outer_packaging_side_images",
           "inner_packaging_side_images",
           "product_side_images",
           "device_time_taken"
         ],
         "title": "StartOutboundInspectionRequest"
+      },
+      "TaskCreateRequest": {
+        "properties": {
+          "task_type": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Task Type"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "queue_name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Queue Name",
+            "default": "default"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Max Attempts",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_type"
+        ],
+        "title": "TaskCreateRequest"
+      },
+      "TaskCreateResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "task_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Uuid"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_uuid",
+          "status"
+        ],
+        "title": "TaskCreateResponse"
+      },
+      "TaskDetailResponse": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "task_type": {
+            "type": "string",
+            "title": "Task Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "queue_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queue Name"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "progress_percent": {
+            "type": "integer",
+            "title": "Progress Percent"
+          },
+          "progress_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Message"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "title": "Max Attempts"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "failed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed At"
+          },
+          "result_ready": {
+            "type": "boolean",
+            "title": "Result Ready",
+            "description": "True when the task reached a terminal state (completed, failed, cancelled)."
+          },
+          "result_success": {
+            "type": "boolean",
+            "title": "Result Success",
+            "description": "True only when status is completed and the handler finished successfully."
+          },
+          "result_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Message",
+            "description": "Short summary when the result is not ready or the task failed."
+          },
+          "display_fields": {
+            "items": {
+              "$ref": "#/components/schemas/TaskDisplayField"
+            },
+            "type": "array",
+            "title": "Display Fields",
+            "description": "Ordered label/value rows for React detail views."
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "task_type",
+          "status",
+          "progress_percent",
+          "attempts",
+          "max_attempts",
+          "created_at",
+          "updated_at",
+          "result_ready",
+          "result_success"
+        ],
+        "title": "TaskDetailResponse"
+      },
+      "TaskDisplayField": {
+        "properties": {
+          "tag": {
+            "type": "string",
+            "title": "Tag",
+            "description": "Human-readable label for the UI."
+          },
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Stable identifier for React list keys."
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Pre-formatted value safe to render as text."
+          },
+          "group": {
+            "type": "string",
+            "enum": [
+              "status",
+              "timing",
+              "result",
+              "error",
+              "payload"
+            ],
+            "title": "Group",
+            "description": "Section hint: status, timing, result, error, or payload.",
+            "default": "status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tag",
+          "key",
+          "value"
+        ],
+        "title": "TaskDisplayField"
+      },
+      "TaskListItemResponse": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "task_type": {
+            "type": "string",
+            "title": "Task Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "queue_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queue Name"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "progress_percent": {
+            "type": "integer",
+            "title": "Progress Percent"
+          },
+          "progress_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Message"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "title": "Max Attempts"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "task_type",
+          "status",
+          "progress_percent",
+          "attempts",
+          "max_attempts",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TaskListItemResponse"
+      },
+      "TaskListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TaskListItemResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Number of tasks returned (at most 50)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total"
+        ],
+        "title": "TaskListResponse"
       },
       "UserCreateRequest": {
         "properties": {
@@ -12039,6 +12874,30 @@
             "type": "boolean",
             "title": "Can Login Multiple Devices",
             "description": "Whether the API allows multiple active device sessions per user. When false, login may require device selection via requires_device_selection."
+          },
+          "public_ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Ip Address",
+            "description": "Client IP Address observed by the API."
+          },
+          "vpn_server": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vpn Server",
+            "description": "Corporate VPN endpoint hostname."
           }
         },
         "type": "object",
@@ -12121,7 +12980,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -12196,6 +13055,29 @@
           "total_pages"
         ],
         "title": "WarehouseListResponse"
+      },
+      "WarehousePermanentDeleteResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "warehouse_code": {
+            "type": "string",
+            "title": "Warehouse Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "warehouse_code"
+        ],
+        "title": "WarehousePermanentDeleteResponse"
       },
       "WarehouseResponse": {
         "properties": {
@@ -12336,7 +13218,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {
