@@ -1320,7 +1320,7 @@ export function OpsInspectionStartForm({
         if (heldLock) {
           await releaseOpsInspectionBarcodeLock(heldLock).catch(() => {});
         }
-        toast.success("Inbound inspection started.");
+        toast.success("Inbound inspection submitted and waiting for approval.");
         allowNavigationWithoutLeavePromptRef.current = true;
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
       } else {
@@ -1346,7 +1346,9 @@ export function OpsInspectionStartForm({
         if (heldLock) {
           await releaseOpsInspectionBarcodeLock(heldLock).catch(() => {});
         }
-        toast.success("Outbound inspection started.");
+        toast.success(
+          "Outbound inspection submitted and waiting for approval.",
+        );
         allowNavigationWithoutLeavePromptRef.current = true;
         navigate(PAGES.opsInspectionDetailPath(res.uuid), { replace: true });
       }
@@ -2013,7 +2015,9 @@ export function OpsInspectionStartForm({
                                     : "border-blue-500/40 bg-blue-500/15 text-blue-800 dark:text-blue-200",
                                 )}
                               >
-                                {slot.required === false ? "Optional" : "Required"}
+                                {slot.required === false
+                                  ? "Optional"
+                                  : "Required"}
                               </span>
                             </Button>
                           )}

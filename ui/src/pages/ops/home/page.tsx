@@ -211,7 +211,7 @@ export default function OpsHomePage() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">Search Inspection</p>
             <p className="text-[11px] text-muted-foreground">
-              Scan or enter the unit barcode to open existing inspections.
+              Scan the unit barcode to open existing inspections.
             </p>
           </div>
         </button>

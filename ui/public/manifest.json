@@ -60,6 +60,10 @@
   "protocol_handlers": [
     {
       "protocol": "web+whirlpoolpdi",
+      "url": "/ops/new-inspection/unit/%s"
+    },
+    {
+      "protocol": "web+whirlpoolpdi",
       "url": "/ops/new-inspection?barcode=%s"
     }
   ],

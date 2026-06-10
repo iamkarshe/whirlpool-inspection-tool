@@ -94,13 +94,13 @@ export default function OpsNewInspectionPage() {
         <p className="text-sm text-muted-foreground">
           {searchMode ? (
             <>
-              Scan or enter the {OPS_BARCODE_LEN}-character barcode to find the
-              unit and view its inspections.
+              Scan the {OPS_BARCODE_LEN}-character barcode to find the unit and
+              view its inspections.
             </>
           ) : (
             <>
-              Scan or enter the {OPS_BARCODE_LEN}-character barcode to continue.
-              Next, confirm the product and choose inbound or outbound.
+              Scan the {OPS_BARCODE_LEN}-character barcode to continue. Next,
+              confirm the product and choose inbound or outbound.
             </>
           )}
         </p>
