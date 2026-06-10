@@ -45,7 +45,7 @@ from utils.vpn_access import VpnAccessMiddleware, client_can_access_app
 setup_logging()
 
 app_name = "Whirlpool PDI Tool API"
-app_version = "1.6.0"
+app_version = "1.7.1"
 
 app = FastAPI(
     title=app_name,
@@ -141,6 +141,13 @@ app.mount(
 templates = Jinja2Templates(directory="template")
 
 
+# Public text cache headers
+PUBLIC_TEXT_CACHE_HEADERS = {
+    "Cache-Control": "public, max-age=3600",
+    "X-Content-Type-Options": "nosniff",
+}
+
+
 # Health check
 @app.get("/health")
 def health():
@@ -202,7 +209,15 @@ async def api_spec(
 
 # VAPT Report
 @app.get("/vapt-report", include_in_schema=False)
-async def vapt_report() -> Response:
+async def vapt_report(
+    request: Request,
+    token: str | None = Query(
+        None,
+        description="Authorization bearer.",
+    ),
+    db: Session = Depends(get_db),
+) -> Response:
+    require_superadmin_for_api_docs(request, db, token)
     content = """
     <html>
         <body>
@@ -229,6 +244,7 @@ def sitemap_xml() -> Response:
     return Response(
         content=content,
         media_type="application/xml",
+        headers=PUBLIC_TEXT_CACHE_HEADERS,
     )
 
 
@@ -238,6 +254,7 @@ def robots_txt() -> PlainTextResponse:
     return PlainTextResponse(
         content="User-agent: *\nDisallow: /\n",
         media_type="text/plain",
+        headers=PUBLIC_TEXT_CACHE_HEADERS,
     )
 
 
