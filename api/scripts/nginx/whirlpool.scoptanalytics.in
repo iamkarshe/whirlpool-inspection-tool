@@ -18,9 +18,6 @@ server {
 
   add_header X-Frame-Options "DENY" always;
   add_header X-Content-Type-Options "nosniff" always;
-  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-  add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()" always;
-  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://whirlpool.scoptanalytics.in; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;" always;
 
   error_page 405 = @method_not_allowed;
 
@@ -36,9 +33,6 @@ server {
     add_header Allow "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD" always;
     add_header X-Frame-Options "DENY" always;
     add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://whirlpool.scoptanalytics.in; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;" always;
     return 405;
   }
 
@@ -47,38 +41,39 @@ server {
     allow all;
   }
 
+  location ~* ^/(?:\.env|\.git|\.svn|\.hg|\.bzr|composer\.(?:json|lock)|package-lock\.json|pnpm-lock\.yaml|yarn\.lock|Dockerfile|docker-compose\.ya?ml|backup|backups|dump|database|db|config|settings|secrets)(?:/|$) {
+    return 404;
+  }
+
   {{settings}}
 
   include /etc/nginx/global_settings;
 
   index index.html;
 
-  location /uwsgi {
-    include uwsgi_params;
-    uwsgi_read_timeout 3600;
-    uwsgi_pass 127.0.0.1:{{app_port}};
-  }
-
   location / {
     proxy_pass http://127.0.0.1:{{app_port}}/;
     proxy_http_version 1.1;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Forwarded-Server $host;
+
+    proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Server $host;
+
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "Upgrade";
+
     proxy_pass_request_headers on;
-    proxy_max_temp_file_size 0;
+
     proxy_connect_timeout 900;
     proxy_send_timeout 900;
     proxy_read_timeout 900;
+
     proxy_buffer_size 128k;
     proxy_buffers 4 256k;
     proxy_busy_buffers_size 256k;
-    proxy_temp_file_write_size 256k;
   }
 
   location ^~ /uploads/ {
@@ -88,28 +83,7 @@ server {
     expires 30d;
     access_log off;
 
-    add_header Access-Control-Allow-Origin "*" always;
     add_header X-Frame-Options "DENY" always;
     add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://whirlpool.scoptanalytics.in; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;" always;
-  }
-
-  location ~* ^.+\.(css|js|jpg|jpeg|gif|png|ico|gz|svg|svgz|ttf|otf|woff|woff2|eot|mp4|ogg|ogv|webm|webp|zip|swf)$ {
-    expires max;
-    access_log on;
-
-    add_header Access-Control-Allow-Origin "*" always;
-    add_header alt-svc 'h3=":443"; ma=86400' always;
-    add_header X-Frame-Options "DENY" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://whirlpool.scoptanalytics.in; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;" always;
-  }
-
-  if (-f $request_filename) {
-    break;
   }
 }
