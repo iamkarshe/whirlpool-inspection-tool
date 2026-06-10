@@ -1,7 +1,9 @@
-import { Globe, Smartphone, Tag } from "lucide-react";
+import { Globe, Network, Server, Smartphone, Tag } from "lucide-react";
+import type { ComponentProps } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import type { VersionResponse } from "@/api/generated/model/versionResponse";
 import { BrandLogo } from "@/components/brand-logo";
 import { CopyDebugDetailsDialog } from "@/components/dialog-copy-debug-details";
 import { NavMain } from "@/components/layout/sidebar/nav-main";
@@ -22,32 +24,19 @@ import {
 } from "@/components/ui/sidebar";
 import { PAGES } from "@/endpoints";
 import { getOrCreatePersistentDeviceId } from "@/lib/device-fingerprint";
+import { fetchAppVersion } from "@/services/app-version";
 
 const RELEASE_CODE = `v${import.meta.env.VITE_APP_BUILD}`;
 const LAST_UPDATED = "2026-03-05";
-let clientIpCache: string | null = null;
-let clientIpRequest: Promise<string> | null = null;
 
-function fetchClientIpOnce(): Promise<string> {
-  if (clientIpCache) return Promise.resolve(clientIpCache);
-  if (!clientIpRequest) {
-    clientIpRequest = fetch("https://api.ipify.org?format=json")
-      .then((res) => res.json() as Promise<{ ip: string }>)
-      .then((data) => {
-        clientIpCache = data.ip;
-        return data.ip;
-      })
-      .catch(() => {
-        clientIpCache = "—";
-        return "—";
-      });
-  }
-  return clientIpRequest;
+function formatSidebarValue(value: string | null | undefined): string {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : "—";
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const { setOpenMobile, isMobile } = useSidebar();
-  const [clientIp, setClientIp] = useState<string | null>(null);
+  const [versionInfo, setVersionInfo] = useState<VersionResponse | null>(null);
   const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(
     () => {
       if (typeof window === "undefined") return null;
@@ -67,9 +56,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   useEffect(() => {
     let cancelled = false;
-    void fetchClientIpOnce().then((ip) => {
-      if (!cancelled) setClientIp(ip);
-    });
+    void fetchAppVersion()
+      .then((version) => {
+        if (!cancelled) setVersionInfo(version);
+      })
+      .catch(() => {
+        if (!cancelled) setVersionInfo(null);
+      });
     return () => {
       cancelled = true;
     };
@@ -97,8 +90,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       device: {
         fingerprint: deviceFingerprint,
       },
+      api: {
+        version: versionInfo?.version ?? null,
+        public_ip_address: versionInfo?.public_ip_address ?? null,
+        vpn_server: versionInfo?.vpn_server ?? null,
+        can_access_app: versionInfo?.can_access_app ?? null,
+      },
       network: {
-        ip: clientIp,
         online: navigator.onLine,
         userAgent: navigator.userAgent,
         language: navigator.language,
@@ -110,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     };
 
     return JSON.stringify(payload, null, 2);
-  }, [clientIp, deviceFingerprint]);
+  }, [deviceFingerprint, versionInfo]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -150,10 +148,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <Tag className="h-3.5 w-3.5 shrink-0" />
                 Release
               </span>
-              <span className="inline-flex min-w-0 items-center rounded-md bg-emerald-500/10 px-2 py-0.5 o text-foreground leading-none">
+              <span className="inline-flex min-w-0 items-center rounded-md bg-emerald-500/10 px-2 py-0.5 text-foreground leading-none">
                 {RELEASE_CODE}
               </span>
             </Link>
+
+            <div className="flex items-center justify-between gap-2 rounded-md py-1 text-[11px]">
+              <span className="text-muted-foreground flex items-center gap-1.5 leading-none">
+                <Server className="h-3.5 w-3.5 shrink-0" />
+                API
+              </span>
+              <span
+                className="max-w-[120px] overflow-hidden whitespace-nowrap rounded-md bg-sky-500/10 px-2 py-0.5 text-foreground leading-none"
+                title={formatSidebarValue(versionInfo?.version)}
+              >
+                {formatSidebarValue(versionInfo?.version)}
+              </span>
+            </div>
 
             <button
               type="button"
@@ -178,10 +189,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 IP Address
               </span>
               <span
-                className="max-w-[120px] overflow-hidden whitespace-nowrap rounded-md bg-amber-500/10 px-2 py-0.5 o text-foreground leading-none"
-                title={clientIp ?? "—"}
+                className="max-w-[120px] overflow-hidden whitespace-nowrap rounded-md bg-amber-500/10 px-2 py-0.5 text-foreground leading-none"
+                title={formatSidebarValue(versionInfo?.public_ip_address)}
               >
-                {clientIp ?? "—"}
+                {formatSidebarValue(versionInfo?.public_ip_address)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 rounded-md py-1 text-[11px]">
+              <span className="text-muted-foreground flex items-center gap-1.5 leading-none">
+                <Network className="h-3.5 w-3.5 shrink-0" />
+                VPN Server
+              </span>
+              <span
+                className="max-w-[120px] overflow-hidden whitespace-nowrap rounded-md bg-indigo-500/10 px-2 py-0.5 text-foreground leading-none"
+                title={formatSidebarValue(versionInfo?.vpn_server)}
+              >
+                {formatSidebarValue(versionInfo?.vpn_server)}
               </span>
             </div>
           </div>
