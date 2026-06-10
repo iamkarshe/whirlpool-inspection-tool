@@ -34,6 +34,7 @@ from utils.auth_rate_limit import (
     AUTH_ATTEMPT_REMAINING_HEADER,
     AuthAttemptRemainingMiddleware,
 )
+from utils.block_sensitive_probe_paths import BlockSensitiveProbePathsMiddleware
 from utils.cors import get_cors_config
 from utils.db import get_db
 from utils.env import get_allow_multi_login, get_env_optional
@@ -97,6 +98,9 @@ app.add_middleware(
     allow_headers=cors_config.allow_headers,
     expose_headers=cors_config.expose_headers,
 )
+
+# Block sensitive probe paths middleware
+app.add_middleware(BlockSensitiveProbePathsMiddleware)
 
 # Security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
