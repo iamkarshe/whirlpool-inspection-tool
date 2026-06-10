@@ -1630,7 +1630,7 @@ export function OpsInspectionStartForm({
                 Files / Gallery
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpg,image/jpeg,image/png"
                   multiple={imagePickerAllowsMultiple}
                   className="sr-only"
                   onChange={(e) => {
@@ -1646,7 +1646,7 @@ export function OpsInspectionStartForm({
                 Camera
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpg,image/jpeg,image/png"
                   capture="environment"
                   className="sr-only"
                   onChange={(e) => {
