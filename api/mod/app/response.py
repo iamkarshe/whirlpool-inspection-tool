@@ -16,3 +16,11 @@ class VersionResponse(BaseModel):
             "When false, login may require device selection via requires_device_selection."
         ),
     )
+    public_ip_address: str | None = Field(
+        default=None,
+        description=("Client IP Address observed by the API."),
+    )
+    vpn_server: str | None = Field(
+        default=None,
+        description=("Corporate VPN endpoint hostname."),
+    )

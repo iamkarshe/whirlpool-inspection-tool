@@ -20,19 +20,20 @@ from mod.api.inspection.checklist_inspection import (
     map_inspection_with_checklist_inputs,
     map_latest_inbound_outbound_for_product_unit,
 )
+from mod.api.inspection.media import build_url, compress_image, upload_media
 from mod.api.inspection.response import (
     ActiveChecklistGroupedResponse,
+    BarcodeLockResponse,
     BarcodeParseResponse,
     BarcodeParseSegments,
     BarcodeParseUnitResponse,
     ChecklistGroupBlock,
     InspectionDetailResponse,
-    BarcodeLockResponse,
+    InspectionDropdownOption,
     InspectionFullResponse,
     InspectionImageUploadResponse,
-    InspectionMetadataResponse,
-    InspectionDropdownOption,
     InspectionListItemResponse,
+    InspectionMetadataResponse,
     InspectionPassFailCounts,
     InspectionProductForPrint,
     InspectionReviewHistoryItem,
@@ -40,21 +41,24 @@ from mod.api.inspection.response import (
     StartInboundInspectionRequest,
     StartOutboundInspectionRequest,
 )
+from mod.api.inspection.review_notifications import (
+    schedule_inspection_review_manager_notifications,
+)
 from mod.api.plant.helper import get_plant_by_uuid_or_404
 from mod.api.product.helper import map_product
 from mod.api.product_category.helper import map_product_category
 from mod.api.warehouse.helper import get_warehouse_by_uuid_or_404
-from mod.api.inspection.media import build_url, compress_image, upload_media
-from mod.api.inspection.review_notifications import (
-    schedule_inspection_review_manager_notifications,
-)
 from mod.model import (
+    BarcodeLock,
     Checklist,
     ChecklistFieldType,
     ChecklistGroup,
     ChecklistPhotoUploadRule,
+    DamageGrading,
+    DamageLikelyCause,
+    DamageSeverity,
+    DamageType,
     Device,
-    BarcodeLock,
     Inspection,
     InspectionImage,
     InspectionInput,
@@ -64,11 +68,6 @@ from mod.model import (
     Plant,
     Product,
     ProductUnit,
-    Role,
-    DamageGrading,
-    DamageLikelyCause,
-    DamageSeverity,
-    DamageType,
     User,
     Warehouse,
 )
@@ -82,6 +81,7 @@ from utils.common import (
     parse_yes_no_outcome,
     utc_end_exclusive_day_range,
 )
+from utils.ip_address import get_client_ip_address
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,9 @@ def resolve_inspection_scope_filters(
     return warehouse_code, plant_code
 
 
-def apply_inspection_list_warehouse_scope(query, db: Session, request: Request, warehouse_code: str | None):
+def apply_inspection_list_warehouse_scope(
+    query, db: Session, request: Request, warehouse_code: str | None
+):
     from utils.roles import user_warehouse_codes_for_request
 
     allowed = user_warehouse_codes_for_request(db, request)
@@ -757,7 +759,9 @@ def save_inspection_image_upload(
     return InspectionImageUploadResponse(path=path, url=build_url(path))
 
 
-def map_inspection_product_for_print(inspection: Inspection) -> InspectionProductForPrint:
+def map_inspection_product_for_print(
+    inspection: Inspection,
+) -> InspectionProductForPrint:
     unit = inspection.product_unit
     product = inspection.product
     category = product.product_category if product else None
@@ -784,11 +788,11 @@ def embed_inspection_media_urls(
     inner_layer_urls = [
         build_url(path) for path in (inspection.inner_packaging_side_images or [])
     ]
-    product_layer_urls = [build_url(path) for path in (inspection.product_side_images or [])]
+    product_layer_urls = [
+        build_url(path) for path in (inspection.product_side_images or [])
+    ]
     inputs_out = [
-        inp.model_copy(
-            update={"image_urls": [build_url(u) for u in inp.image_urls]}
-        )
+        inp.model_copy(update={"image_urls": [build_url(u) for u in inp.image_urls]})
         for inp in body.inputs
     ]
     return inputs_out, outer_layer_urls, inner_layer_urls, product_layer_urls
@@ -805,14 +809,16 @@ def present_inspection_full(inspection: Inspection) -> InspectionFullResponse:
     outer_input_urls: list[str] = []
     inner_input_urls: list[str] = []
     product_input_urls: list[str] = []
-    for img in (inspection.images or []):
+    for img in inspection.images or []:
         if not img.is_active or not img.image_url:
             continue
         ch = img.checklist
         if ch is None:
             continue
         group_label = (
-            ch.group_name.value if hasattr(ch.group_name, "value") else str(ch.group_name)
+            ch.group_name.value
+            if hasattr(ch.group_name, "value")
+            else str(ch.group_name)
         )
         layer = checklist_inspection_layer_key(group_label)
         if layer == "outer":
@@ -1050,17 +1056,14 @@ def compute_operator_inspection_kpis(
             "inbound": empty_direction,
             "outbound": empty_direction,
         }
-    query = (
-        db.query(
-            Inspection.inspection_type,
-            Inspection.review_status,
-        )
-        .filter(
-            Inspection.is_active.is_(is_active),
-            Inspection.inspector_id == int(inspector_user_id),
-            Inspection.created_at >= start,
-            Inspection.created_at < end_exclusive,
-        )
+    query = db.query(
+        Inspection.inspection_type,
+        Inspection.review_status,
+    ).filter(
+        Inspection.is_active.is_(is_active),
+        Inspection.inspector_id == int(inspector_user_id),
+        Inspection.created_at >= start,
+        Inspection.created_at < end_exclusive,
     )
     if warehouse_codes is not None:
         query = query.filter(Inspection.warehouse_code.in_(warehouse_codes))
@@ -1640,7 +1643,7 @@ def create_inspection(
                     )
 
         by_id = {c.id: c for c in checklist_rows}
-        client_ip = request.client.host if request.client else None
+        client_ip = get_client_ip_address(request)
         serial_number = fields["serial_number"]
         manufactured_year = 2000 + int(fields["manufacturing_year"])
 

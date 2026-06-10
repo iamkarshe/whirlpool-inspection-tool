@@ -27,6 +27,7 @@ from mod.auth.session import create_user_session, deregister_device
 from mod.model import Device, User
 from utils.common import normalize_login_email
 from utils.env import get_allow_multi_login
+from utils.ip_address import get_client_ip_address
 from utils.jwt import ALGORITHM, SECRET_KEY, create_access_token
 
 LOGIN_USER_LOAD_OPTIONS = (
@@ -57,7 +58,7 @@ def get_user_for_login(db: Session, email: str) -> User | None:
 
 def get_request_client_context(request: Request) -> RequestClientContext:
     return RequestClientContext(
-        client_ip=request.client.host if request.client else None,
+        client_ip=get_client_ip_address(request),
         proxy_ip=request.headers.get("X-Forwarded-For"),
         user_agent=request.headers.get("User-Agent"),
     )
@@ -304,7 +305,9 @@ def get_user_device_by_uuid_or_404(
         .first()
     )
     if device is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Device not found"
+        )
     return device
 
 

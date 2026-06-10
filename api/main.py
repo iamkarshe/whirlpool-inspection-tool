@@ -38,6 +38,7 @@ from utils.auth_rate_limit import (
     AuthAttemptRemainingMiddleware,
 )
 from utils.vpn_access import VpnAccessMiddleware, client_can_access_app
+from utils.ip_address import get_client_ip_address
 
 setup_logging()
 
@@ -126,11 +127,15 @@ def health():
 # API Version
 @app.get("/version", response_model=VersionResponse)
 def version(request: Request) -> VersionResponse:
+    client_ip_address = get_client_ip_address(request)
+
     return VersionResponse(
         message=app_name,
         version=app_version,
         can_access_app=client_can_access_app(request),
         can_login_multiple_devices=get_allow_multi_login(),
+        public_ip_address=client_ip_address,
+        vpn_server=None,
     )
 
 
