@@ -176,7 +176,7 @@ export function MultiSelectFiltersDialog({
                   )}
                   <MultiSelectCombobox
                     label={section.label}
-                    options={section.options}
+                    options={section.options ?? []}
                     value={selected}
                     onChange={(next) =>
                       setDraft((prev) => ({ ...prev, [section.key]: next }))

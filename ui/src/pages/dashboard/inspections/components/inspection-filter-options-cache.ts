@@ -1,8 +1,12 @@
-import type { InspectionFilterOptionsSource } from "@/pages/dashboard/inspections/components/inspection-filter-options-types";
+import {
+  isCompleteInspectionFilterOptionsSource,
+  normalizeInspectionFilterOptionsSource,
+  type InspectionFilterOptionsSource,
+} from "@/pages/dashboard/inspections/components/inspection-filter-options-types";
 import { SESSION_USER_PAYLOAD_KEY } from "@/lib/clear-authenticated-session-storage";
 
 /** Bump when filter metadata shape or fetch strategy changes (invalidates session cache). */
-const CACHE_VERSION = 4;
+const CACHE_VERSION = 6;
 const CACHE_KEY_PREFIX = `whirlpool.inspection-filter-options:v${CACHE_VERSION}:`;
 
 function inspectionFilterOptionsCacheKey(): string | null {
@@ -28,7 +32,11 @@ export function readCachedInspectionFilterOptions(): InspectionFilterOptionsSour
   try {
     const raw = window.sessionStorage.getItem(key);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as InspectionFilterOptionsSource;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isCompleteInspectionFilterOptionsSource(parsed)) {
+      window.sessionStorage.removeItem(key);
+      return null;
+    }
     memoryCache = parsed;
     return parsed;
   } catch {
@@ -39,11 +47,12 @@ export function readCachedInspectionFilterOptions(): InspectionFilterOptionsSour
 export function writeCachedInspectionFilterOptions(
   source: InspectionFilterOptionsSource,
 ): void {
-  memoryCache = source;
+  const normalized = normalizeInspectionFilterOptionsSource(source);
+  memoryCache = normalized;
   const key = inspectionFilterOptionsCacheKey();
   if (!key || typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(key, JSON.stringify(source));
+    window.sessionStorage.setItem(key, JSON.stringify(normalized));
   } catch {
     // Quota or private mode — in-memory cache still applies for this tab.
   }
@@ -52,9 +61,17 @@ export function writeCachedInspectionFilterOptions(
 export function clearInspectionFilterOptionsCache(): void {
   memoryCache = null;
   inflight = null;
+  if (typeof window === "undefined") return;
+
   const key = inspectionFilterOptionsCacheKey();
-  if (key && typeof window !== "undefined") {
-    window.sessionStorage.removeItem(key);
+  if (key) window.sessionStorage.removeItem(key);
+
+  // Also sweep any versioned keys (e.g. logout clears user payload before this runs).
+  for (let i = window.sessionStorage.length - 1; i >= 0; i -= 1) {
+    const storageKey = window.sessionStorage.key(i);
+    if (storageKey?.startsWith("whirlpool.inspection-filter-options:")) {
+      window.sessionStorage.removeItem(storageKey);
+    }
   }
 }
 

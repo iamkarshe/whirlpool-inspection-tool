@@ -56,7 +56,7 @@ export default function InspectionsPage() {
 
   const filterSections = useMemo(() => {
     if (!filterOptions) return [];
-    return buildInspectionFilterSections(filterOptions);
+    return buildInspectionFilterSections(filterOptions, { hasUser: true });
   }, [filterOptions]);
 
   useEffect(() => {
@@ -99,6 +99,7 @@ export default function InspectionsPage() {
             value={filtersValue}
             onApply={setFiltersValue}
             triggerLabel="Filters"
+            optionsLoading={!filterOptions}
           />
         </div>
       </div>

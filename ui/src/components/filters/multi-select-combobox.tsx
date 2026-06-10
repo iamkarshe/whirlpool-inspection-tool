@@ -28,7 +28,7 @@ export function MultiSelectCombobox({
   disabled = false,
 }: {
   label: string;
-  options: MultiSelectComboboxOption[];
+  options?: MultiSelectComboboxOption[];
   value: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
@@ -36,17 +36,18 @@ export function MultiSelectCombobox({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const safeOptions = options ?? [];
 
   const valueSet = useMemo(() => new Set(value), [value]);
   const selectedCount = value.length;
 
   const buttonText = useMemo(() => {
     if (selectedCount === 0) return placeholder;
-    const first = options.find((o) => o.id === value[0])?.label;
+    const first = safeOptions.find((o) => o.id === value[0])?.label;
     if (!first) return `${selectedCount} selected`;
     if (selectedCount === 1) return first;
     return `${first} +${selectedCount - 1}`;
-  }, [options, placeholder, selectedCount, value]);
+  }, [safeOptions, placeholder, selectedCount, value]);
 
   function toggle(id: string) {
     const next = new Set(value);
@@ -82,7 +83,7 @@ export function MultiSelectCombobox({
             <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
             <CommandList className="max-h-64">
               <CommandEmpty>No results.</CommandEmpty>
-              {options.map((opt) => {
+              {safeOptions.map((opt) => {
                 const checked = valueSet.has(opt.id);
                 return (
                   <CommandItem

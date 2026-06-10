@@ -10,11 +10,11 @@ export const SESSION_ROLE_LEGACY_KEY = "whirlpool.role";
 /** Clears persisted session keys (no Axios). */
 export function clearAuthenticatedSessionStorage(): void {
   if (typeof window === "undefined") return;
+  clearInspectionFilterOptionsCache();
   window.localStorage.removeItem(SESSION_ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(SESSION_TOKEN_TYPE_KEY);
   window.localStorage.removeItem(SESSION_USER_PAYLOAD_KEY);
   window.localStorage.removeItem(SESSION_ROLE_LEGACY_KEY);
   clearServerDeviceUuid();
-  clearInspectionFilterOptionsCache();
   window.dispatchEvent(new Event(WHIRLPOOL_SESSION_CHANGED_EVENT));
 }

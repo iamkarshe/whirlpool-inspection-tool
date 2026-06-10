@@ -16,8 +16,8 @@ export type InspectionListFilterParams = {
   plant_ids?: number[] | null;
   /** Category pair keys from kpi-parameters, e.g. `AC|SPLIT`. */
   product_category?: string[] | null;
-  /** Inspector user UUIDs (when user filter is added to metadata). */
-  inspector_uuids?: string[] | null;
+  /** Inspector user ids from kpi-parameters `users[].value`. */
+  user_ids?: number[] | null;
 };
 
 export type InspectionsPageParams = InspectionListFilterParams & {
@@ -40,10 +40,11 @@ export type InspectionKpisQueryParams = {
   warehouse_ids?: number[] | null;
   plant_ids?: number[] | null;
   product_category?: string[] | null;
+  user_ids?: number[] | null;
 };
 
-/** Parses kpi-parameters warehouse `value` strings into positive integers. */
-export function parseWarehouseIdsFromFilterValues(
+/** Parses kpi-parameters numeric `value` strings (warehouse, plant, user ids). */
+export function parseNumericIdsFromFilterValues(
   values: string[] | undefined,
 ): number[] {
   const seen = new Set<number>();
@@ -56,6 +57,9 @@ export function parseWarehouseIdsFromFilterValues(
   }
   return out;
 }
+
+/** @deprecated Use {@link parseNumericIdsFromFilterValues}. */
+export const parseWarehouseIdsFromFilterValues = parseNumericIdsFromFilterValues;
 
 export function parseProductCategoryKeysFromFilterValues(
   values: string[] | undefined,
@@ -93,7 +97,7 @@ export function serializeInspectionListQueryParams(
   assignArrayParam(q, "warehouse_ids", params.warehouse_ids);
   assignArrayParam(q, "plant_ids", params.plant_ids);
   assignArrayParam(q, "product_category", params.product_category);
-  assignArrayParam(q, "inspector_uuids", params.inspector_uuids);
+  assignArrayParam(q, "user_ids", params.user_ids);
 
   return q;
 }
@@ -109,5 +113,6 @@ export function serializeInspectionKpisQueryParams(
   assignArrayParam(q, "warehouse_ids", params.warehouse_ids);
   assignArrayParam(q, "plant_ids", params.plant_ids);
   assignArrayParam(q, "product_category", params.product_category);
+  assignArrayParam(q, "user_ids", params.user_ids);
   return q;
 }

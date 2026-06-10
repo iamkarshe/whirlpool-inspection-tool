@@ -6,8 +6,8 @@ import type { Inspection } from "@/pages/dashboard/inspections/inspection-types"
 import type { InspectionReviewLane } from "@/pages/dashboard/inspections/utils/inspection-review-filter";
 import { inspectionMatchesReviewLane } from "@/pages/dashboard/inspections/utils/inspection-review-filter";
 import {
+  parseNumericIdsFromFilterValues,
   parseProductCategoryKeysFromFilterValues,
-  parseWarehouseIdsFromFilterValues,
   type InspectionKpisQueryParams,
   type InspectionsPageParams,
 } from "@/services/inspection-list-api-params";
@@ -52,11 +52,19 @@ export function inspectionFiltersToServerParams(
   scope?: InspectionListServerScope,
 ): Pick<
   InspectionsPageParams,
-  "inspection_type" | "warehouse_ids" | "product_category" | "plant_ids"
+  | "inspection_type"
+  | "warehouse_ids"
+  | "plant_ids"
+  | "product_category"
+  | "user_ids"
 > {
-  const warehouseIds = parseWarehouseIdsFromFilterValues(
+  const warehouseIds = parseNumericIdsFromFilterValues(
     nonEmpty(filtersValue?.warehouse),
   );
+  const plantIds = parseNumericIdsFromFilterValues(
+    nonEmpty(filtersValue?.plant),
+  );
+  const userIds = parseNumericIdsFromFilterValues(nonEmpty(filtersValue?.user));
   const productCategory = parseProductCategoryKeysFromFilterValues(
     nonEmpty(filtersValue?.product_category),
   );
@@ -72,8 +80,9 @@ export function inspectionFiltersToServerParams(
   return {
     inspection_type: inspectionType,
     warehouse_ids: warehouseIds.length > 0 ? warehouseIds : null,
+    plant_ids: plantIds.length > 0 ? plantIds : null,
     product_category: productCategory.length > 0 ? productCategory : null,
-    plant_ids: null,
+    user_ids: userIds.length > 0 ? userIds : null,
   };
 }
 
@@ -108,8 +117,14 @@ export function buildInspectionKpisApiParams(input: {
     from: input.dateRange?.from,
     to: input.dateRange?.to,
   });
-  const warehouseIds = parseWarehouseIdsFromFilterValues(
+  const warehouseIds = parseNumericIdsFromFilterValues(
     nonEmpty(input.filtersValue?.warehouse),
+  );
+  const plantIds = parseNumericIdsFromFilterValues(
+    nonEmpty(input.filtersValue?.plant),
+  );
+  const userIds = parseNumericIdsFromFilterValues(
+    nonEmpty(input.filtersValue?.user),
   );
   const productCategory = parseProductCategoryKeysFromFilterValues(
     nonEmpty(input.filtersValue?.product_category),
@@ -118,14 +133,15 @@ export function buildInspectionKpisApiParams(input: {
   return {
     ...dateParams,
     warehouse_ids: warehouseIds.length > 0 ? warehouseIds : null,
+    plant_ids: plantIds.length > 0 ? plantIds : null,
     product_category: productCategory.length > 0 ? productCategory : null,
-    plant_ids: null,
+    user_ids: userIds.length > 0 ? userIds : null,
   };
 }
 
 /**
  * Scoped-route refinements not yet on `GET /api/inspections` (review lane, checklist preset).
- * Warehouse and category filters are applied server-side via kpi-parameters values.
+ * Warehouse, plant, category, and inspector filters are applied server-side via kpi-parameters values.
  */
 export function refineInspectionListPageRows(
   rows: Inspection[],

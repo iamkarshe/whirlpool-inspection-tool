@@ -13,7 +13,7 @@ export async function fetchKpiParameters(opts?: {
 }
 
 export function mapKpiDropdownOptions(
-  options: ReportsDropdownOption[],
+  options: ReportsDropdownOption[] | null | undefined,
 ): Array<{ id: string; label: string }> {
-  return options.map((o) => ({ id: o.value, label: o.label }));
+  return (options ?? []).map((o) => ({ id: o.value, label: o.label }));
 }
