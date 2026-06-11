@@ -243,7 +243,8 @@ export default function OpsNewInspectionPage() {
           </DialogHeader>
           <div className="text-muted-foreground text-sm">
             Check camera permissions and ensure no other app is using the
-            camera. You can continue with manual code entry.
+            camera. If issue persists, try reloading the page or connect with
+            support team.
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setScanErrorOpen(false)}>
