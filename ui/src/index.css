@@ -148,8 +148,9 @@ nav {
   }
 }
 
-[data-sonner-toaster] {
-  font-family: inherit;
+[data-sonner-toaster],
+[data-sonner-toaster] * {
+  font-family: var(--font-sans);
 }
 
 .font-title {
