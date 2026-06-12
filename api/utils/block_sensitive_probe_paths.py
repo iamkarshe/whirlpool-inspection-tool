@@ -13,6 +13,8 @@ BLOCKED_EXACT_PATHS = {
     "/.svn",
     "/.hg",
     "/.DS_Store",
+    "/.CSNews.cgi",
+    "/CSNews.cgi",
     "/composer.json",
     "/composer.lock",
     "/package-lock.json",
@@ -36,6 +38,8 @@ BLOCKED_PREFIXES = (
     "/dump/",
     "/database/",
     "/db/",
+    "/settings/",
+    "/secrets/",
 )
 
 
