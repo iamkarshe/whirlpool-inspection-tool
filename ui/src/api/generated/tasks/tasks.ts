@@ -3,13 +3,15 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 import type {
+  ListTasksApiTasksGetParams,
   SampleSendEmailRequest,
   TaskCreateRequest,
   TaskCreateResponse,
   TaskDetailResponse,
+  TaskFiltersResponse,
   TaskListResponse
 } from '../model';
 
@@ -21,14 +23,15 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getTasks = () => {
 /**
- * Returns the 50 most recently created tasks, newest first.
+ * Returns the 50 most recently created tasks, newest first. Optional filters: task_type, status (see GET /api/tasks/filters).
  * @summary List recent background tasks
  */
 const listTasksApiTasksGet = (
-
+    params?: ListTasksApiTasksGetParams,
  options?: SecondParameter<typeof customInstance<TaskListResponse>>,) => {
       return customInstance<TaskListResponse>(
-      {url: `/api/tasks`, method: 'GET'
+      {url: `/api/tasks`, method: 'GET',
+        params
     },
       options);
     }
@@ -42,6 +45,18 @@ const createTaskApiTasksPost = (
       {url: `/api/tasks`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: taskCreateRequest
+    },
+      options);
+    }
+  /**
+ * Returns task_type values for segmented filter tabs on the Tasks page. Pass value to GET /api/tasks?task_type=.
+ * @summary Task type filter tabs
+ */
+const getTaskFiltersApiTasksFiltersGet = (
+
+ options?: SecondParameter<typeof customInstance<TaskFiltersResponse>>,) => {
+      return customInstance<TaskFiltersResponse>(
+      {url: `/api/tasks/filters`, method: 'GET'
     },
       options);
     }
@@ -71,8 +86,9 @@ const getTaskApiTasksTaskUuidGet = (
     },
       options);
     }
-  return {listTasksApiTasksGet,createTaskApiTasksPost,queueSampleSendEmailTaskApiTasksSampleSendEmailPost,getTaskApiTasksTaskUuidGet}};
+  return {listTasksApiTasksGet,createTaskApiTasksPost,getTaskFiltersApiTasksFiltersGet,queueSampleSendEmailTaskApiTasksSampleSendEmailPost,getTaskApiTasksTaskUuidGet}};
 export type ListTasksApiTasksGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTasks>['listTasksApiTasksGet']>>>
 export type CreateTaskApiTasksPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTasks>['createTaskApiTasksPost']>>>
+export type GetTaskFiltersApiTasksFiltersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTasks>['getTaskFiltersApiTasksFiltersGet']>>>
 export type QueueSampleSendEmailTaskApiTasksSampleSendEmailPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTasks>['queueSampleSendEmailTaskApiTasksSampleSendEmailPost']>>>
 export type GetTaskApiTasksTaskUuidGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getTasks>['getTaskApiTasksTaskUuidGet']>>>

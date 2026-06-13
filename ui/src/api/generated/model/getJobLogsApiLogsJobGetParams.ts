@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 
 export type GetJobLogsApiLogsJobGetParams = {
@@ -11,6 +11,10 @@ export type GetJobLogsApiLogsJobGetParams = {
  * Filter by job status: success or failed.
  */
 status?: string | null;
+/**
+ * Filter by exact job_name (see GET /api/logs/job/filters).
+ */
+job_name?: string | null;
 /**
  * Page number (1-based).
  * @minimum 1

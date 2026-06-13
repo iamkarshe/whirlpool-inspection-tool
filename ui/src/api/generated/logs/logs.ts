@@ -3,12 +3,14 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 import type {
+  ApplicationLogFiltersResponse,
   ApplicationLogListResponse,
   GetApplicationLogsApiLogsGetParams,
   GetJobLogsApiLogsJobGetParams,
+  JobLogFiltersResponse,
   JobLogListResponse
 } from '../model';
 
@@ -20,6 +22,30 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getLogs = () => {
 /**
+ * Returns source values for segmented filter tabs on the Logs page. Pass value to GET /api/logs?source=.
+ * @summary Application log source filter tabs
+ */
+const getApplicationLogFiltersApiLogsFiltersGet = (
+
+ options?: SecondParameter<typeof customInstance<ApplicationLogFiltersResponse>>,) => {
+      return customInstance<ApplicationLogFiltersResponse>(
+      {url: `/api/logs/filters`, method: 'GET'
+    },
+      options);
+    }
+  /**
+ * Returns job_name values for segmented filter tabs on the Job Logs page. Pass value to GET /api/logs/job?job_name=.
+ * @summary Job log name filter tabs
+ */
+const getJobLogFiltersApiLogsJobFiltersGet = (
+
+ options?: SecondParameter<typeof customInstance<JobLogFiltersResponse>>,) => {
+      return customInstance<JobLogFiltersResponse>(
+      {url: `/api/logs/job/filters`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * Paginated cron job outcomes (failures and runs that updated rows). Filter by date_field=created_at, search, status, and job_name sort.
  * @summary List job logs
  */
@@ -45,6 +71,8 @@ const getApplicationLogsApiLogsGet = (
     },
       options);
     }
-  return {getJobLogsApiLogsJobGet,getApplicationLogsApiLogsGet}};
+  return {getApplicationLogFiltersApiLogsFiltersGet,getJobLogFiltersApiLogsJobFiltersGet,getJobLogsApiLogsJobGet,getApplicationLogsApiLogsGet}};
+export type GetApplicationLogFiltersApiLogsFiltersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogs>['getApplicationLogFiltersApiLogsFiltersGet']>>>
+export type GetJobLogFiltersApiLogsJobFiltersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogs>['getJobLogFiltersApiLogsJobFiltersGet']>>>
 export type GetJobLogsApiLogsJobGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogs>['getJobLogsApiLogsJobGet']>>>
 export type GetApplicationLogsApiLogsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getLogs>['getApplicationLogsApiLogsGet']>>>

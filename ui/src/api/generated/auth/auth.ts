@@ -3,16 +3,21 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 import type {
   ActiveDeviceListResponse,
+  ChangePasswordOtpResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
   DeregisterDeviceResponse,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginRequest,
   LoginResponse,
   LoginTokenRequest,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
   ResolveDevicesRequest,
   ResolveDevicesResponse
 } from '../model';
@@ -52,7 +57,8 @@ const loginTokenAuthLoginTokenPost = (
       options);
     }
   /**
- * @summary Forgot Password
+ * Starts a password reset for non-superadmin active users. Always returns the same success message to prevent email enumeration. When APP_ENV=dev, `debug.email_sent` and `debug.is_disallowed` indicate whether a token was issued and email queued. Subject to auth rate limiting and forgot-password IP blocking (12h after too many requests).
+ * @summary Request password reset email
  */
 const forgotPasswordAuthForgotPasswordPost = (
     forgotPasswordRequest: ForgotPasswordRequest,
@@ -61,6 +67,46 @@ const forgotPasswordAuthForgotPasswordPost = (
       {url: `/auth/forgot-password`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: forgotPasswordRequest
+    },
+      options);
+    }
+  /**
+ * Sets a new password using the token from the forgot-password email link. Validates password strength with zxcvbn (score >= 3). Revokes all active sessions for the user on success.
+ * @summary Complete password reset
+ */
+const resetPasswordAuthResetPasswordPost = (
+    resetPasswordRequest: ResetPasswordRequest,
+ options?: SecondParameter<typeof customInstance<ResetPasswordResponse>>,) => {
+      return customInstance<ResetPasswordResponse>(
+      {url: `/auth/reset-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resetPasswordRequest
+    },
+      options);
+    }
+  /**
+ * Sends a one-time verification code to the authenticated user's email. Required before POST /auth/change-password when CHANGE_PASSWORD_ONBOARDING_OTP_REQUIRED (first login / forced rotation) or CHANGE_PASSWORD_OTP_REQUIRED (voluntary account password change) is enabled.
+ * @summary Request change-password email OTP
+ */
+const requestChangePasswordOtpAuthChangePasswordRequestOtpPost = (
+
+ options?: SecondParameter<typeof customInstance<ChangePasswordOtpResponse>>,) => {
+      return customInstance<ChangePasswordOtpResponse>(
+      {url: `/auth/change-password/request-otp`, method: 'POST'
+    },
+      options);
+    }
+  /**
+ * Authenticated password change for onboarding temp passwords and periodic rotation. Validates zxcvbn strength and rejects reuse of the current or last 3 passwords. After onboarding (must_change_password=false), email OTP is required by default — call POST /auth/change-password/request-otp first. First login after onboard (must_change_password=true) skips OTP unless CHANGE_PASSWORD_ONBOARDING_OTP_REQUIRED=true. Clears must_change_password and password_expired flags.
+ * @summary Change password
+ */
+const changePasswordAuthChangePasswordPost = (
+    changePasswordRequest: ChangePasswordRequest,
+ options?: SecondParameter<typeof customInstance<ChangePasswordResponse>>,) => {
+      return customInstance<ChangePasswordResponse>(
+      {url: `/auth/change-password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: changePasswordRequest
     },
       options);
     }
@@ -102,10 +148,13 @@ const deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost = (
     },
       options);
     }
-  return {loginAuthLoginPost,loginTokenAuthLoginTokenPost,forgotPasswordAuthForgotPasswordPost,listActiveAuthDevicesAuthDevicesActiveGet,resolveAuthDevicesAuthDevicesResolvePost,deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost}};
+  return {loginAuthLoginPost,loginTokenAuthLoginTokenPost,forgotPasswordAuthForgotPasswordPost,resetPasswordAuthResetPasswordPost,requestChangePasswordOtpAuthChangePasswordRequestOtpPost,changePasswordAuthChangePasswordPost,listActiveAuthDevicesAuthDevicesActiveGet,resolveAuthDevicesAuthDevicesResolvePost,deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost}};
 export type LoginAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginAuthLoginPost']>>>
 export type LoginTokenAuthLoginTokenPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginTokenAuthLoginTokenPost']>>>
 export type ForgotPasswordAuthForgotPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['forgotPasswordAuthForgotPasswordPost']>>>
+export type ResetPasswordAuthResetPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resetPasswordAuthResetPasswordPost']>>>
+export type RequestChangePasswordOtpAuthChangePasswordRequestOtpPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['requestChangePasswordOtpAuthChangePasswordRequestOtpPost']>>>
+export type ChangePasswordAuthChangePasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['changePasswordAuthChangePasswordPost']>>>
 export type ListActiveAuthDevicesAuthDevicesActiveGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listActiveAuthDevicesAuthDevicesActiveGet']>>>
 export type ResolveAuthDevicesAuthDevicesResolvePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resolveAuthDevicesAuthDevicesResolvePost']>>>
 export type DeregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost']>>>

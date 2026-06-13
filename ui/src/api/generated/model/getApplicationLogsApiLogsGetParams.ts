@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 
 export type GetApplicationLogsApiLogsGetParams = {
@@ -12,7 +12,7 @@ export type GetApplicationLogsApiLogsGetParams = {
  */
 level?: string | null;
 /**
- * Filter by source: AUTH, USER ADD, USER UPDATE, MASTER UPDATE, INTEGRATION KEY UPDATED (spaces optional).
+ * Filter by source: AUTH, USER ADD, USER ONBOARD, USER UPDATE, MASTER UPDATE, INTEGRATION KEY UPDATED, EMAIL (spaces optional).
  */
 source?: string | null;
 /**

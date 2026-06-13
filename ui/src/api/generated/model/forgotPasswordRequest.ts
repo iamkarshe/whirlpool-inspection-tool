@@ -3,9 +3,13 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 
+/**
+ * Body for POST /auth/forgot-password.
+ */
 export interface ForgotPasswordRequest {
+  /** Account email. Superadmin accounts cannot use self-service reset. */
   email: string;
 }

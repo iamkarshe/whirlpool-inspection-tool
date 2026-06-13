@@ -3,9 +3,13 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
+import type { ForgotPasswordDebugResponse } from './forgotPasswordDebugResponse';
 
 export interface ForgotPasswordResponse {
+  /** Always returned for every request to avoid email enumeration. Check debug.email_sent / debug.is_disallowed in dev to inspect outcome. */
   message: string;
+  /** Dev-only diagnostic block (APP_ENV=dev). Omitted in production. Use email_sent and is_disallowed to drive UI toasts without leaking tokens. */
+  debug?: ForgotPasswordDebugResponse | null;
 }

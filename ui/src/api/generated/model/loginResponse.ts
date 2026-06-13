@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 import type { ActiveDeviceResponse } from './activeDeviceResponse';
 
@@ -23,4 +23,10 @@ export interface LoginResponse {
   allow_multi_login?: boolean;
   requires_device_selection?: boolean;
   active_devices?: ActiveDeviceResponse[];
+  /** True when the user must change their password (onboarding temp password or missing password_changed_at). Frontend should route to change-password. */
+  must_change_password?: boolean;
+  /** True when PASSWORD_MAX_AGE_DAYS elapsed since password_changed_at. Frontend should route to change-password. */
+  password_expired?: boolean;
+  /** True when POST /auth/change-password requires an email OTP. False on first login (must_change_password); true after onboarding when CHANGE_PASSWORD_OTP_REQUIRED is enabled (default true). */
+  change_password_otp_required?: boolean;
 }

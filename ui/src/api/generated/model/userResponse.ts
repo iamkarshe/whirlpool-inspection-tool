@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 
 /**
@@ -38,4 +38,8 @@ export interface UserResponse {
   vpn_device_type?: string | null;
   /** UTC time when the current VPN profile was created. */
   vpn_provisioned_at?: string | null;
+  /** True when the user must set a new password before using the app. */
+  must_change_password?: boolean;
+  /** True when the password exceeded PASSWORD_MAX_AGE_DAYS and must be rotated. */
+  password_expired?: boolean;
 }

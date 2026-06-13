@@ -3,13 +3,14 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
 import type {
   GetUsersApiUsersGetParams,
   UserCreateRequest,
   UserGenerateVpnRequest,
   UserListResponse,
+  UserOnboardResponse,
   UserResponse,
   UserUpdateRequest
 } from '../model';
@@ -35,7 +36,7 @@ const getUsersApiUsersGet = (
       options);
     }
   /**
- * Creates an active user with hashed password and facility scope. Roles allowed: operator, manager, biz-admin.
+ * Creates an active user with hashed password and facility scope. Roles allowed: operator, manager, biz-admin. Does not send a welcome email — call POST /api/users/{user_uuid}/onboard after creation to email a temporary password and login URL.
  * @summary Create user
  */
 const createUserApiUsersPost = (
@@ -45,6 +46,18 @@ const createUserApiUsersPost = (
       {url: `/api/users`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: userCreateRequest
+    },
+      options);
+    }
+  /**
+ * Superadmin-only: generates a new temporary password for an existing user, sets must_change_password, and sends a welcome email with the login URL and temporary credentials (VPN instructions are not included). The user must change their password on first login before accessing the application. Safe to call again to resend onboarding email with a fresh temporary password.
+ * @summary Send onboarding welcome email
+ */
+const onboardUserApiUsersUserUuidOnboardPost = (
+    userUuid: string,
+ options?: SecondParameter<typeof customInstance<UserOnboardResponse>>,) => {
+      return customInstance<UserOnboardResponse>(
+      {url: `/api/users/${userUuid}/onboard`, method: 'POST'
     },
       options);
     }
@@ -115,9 +128,10 @@ const updateUserApiUsersUserUuidPut = (
     },
       options);
     }
-  return {getUsersApiUsersGet,createUserApiUsersPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,revokeUserVpnApiUsersUserUuidVpnRevokeGet,updateUserApiUsersUserUuidPut}};
+  return {getUsersApiUsersGet,createUserApiUsersPost,onboardUserApiUsersUserUuidOnboardPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,revokeUserVpnApiUsersUserUuidVpnRevokeGet,updateUserApiUsersUserUuidPut}};
 export type GetUsersApiUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['getUsersApiUsersGet']>>>
 export type CreateUserApiUsersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['createUserApiUsersPost']>>>
+export type OnboardUserApiUsersUserUuidOnboardPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['onboardUserApiUsersUserUuidOnboardPost']>>>
 export type GenerateUserVpnApiUsersGenerateVpnPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['generateUserVpnApiUsersGenerateVpnPost']>>>
 export type DownloadUserVpnConfigApiUsersUserUuidVpnConfigGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnConfigApiUsersUserUuidVpnConfigGet']>>>
 export type DownloadUserVpnQrApiUsersUserUuidVpnQrGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnQrApiUsersUserUuidVpnQrGet']>>>

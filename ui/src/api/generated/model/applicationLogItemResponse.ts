@@ -3,8 +3,9 @@
  * Do not edit manually.
  * Whirlpool PDI Tool API
  * Whirlpool PDI Tool API APIs developed by Scopt Analytics.
- * OpenAPI spec version: 1.6.0
+ * OpenAPI spec version: 1.7.1
  */
+import type { ApplicationLogItemResponseDetails } from './applicationLogItemResponseDetails';
 
 export interface ApplicationLogItemResponse {
   id: number;
@@ -12,8 +13,10 @@ export interface ApplicationLogItemResponse {
   /** INFO, WARN, or ERROR. */
   level: string;
   message: string;
-  /** AUTH, USER ADD, USER UPDATE, MASTER UPDATE, or INTEGRATION KEY UPDATED. */
+  /** AUTH, USER ADD, USER ONBOARD, USER UPDATE, MASTER UPDATE, INTEGRATION KEY UPDATED, or EMAIL. */
   source: string;
+  /** Structured audit payload. Email logs include to_email, subject, body_text, and body_html for SuperAdmin debugging. */
+  details?: ApplicationLogItemResponseDetails;
   /** Event time (UTC). */
   created_at: string;
 }
