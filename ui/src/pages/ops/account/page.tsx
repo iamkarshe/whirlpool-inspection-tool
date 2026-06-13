@@ -1,6 +1,7 @@
 import {
   BellRing,
   DownloadCloud,
+  KeyRound,
   Loader2,
   LogOut,
   Send,
@@ -411,6 +412,23 @@ export default function OpsAccountPage() {
       </section>
 
       <OpsActiveDevicesSection />
+
+      <section className="space-y-2 rounded-3xl border bg-card/80 p-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <KeyRound className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Password</p>
+            <p className="text-xs text-muted-foreground">
+              Update your account password and review strength recommendations.
+            </p>
+          </div>
+        </div>
+        <Button asChild variant="outline" className="w-full justify-start">
+          <Link to={PAGES.CHANGE_PASSWORD}>Change password</Link>
+        </Button>
+      </section>
 
       <OpsSettingsContent />
 

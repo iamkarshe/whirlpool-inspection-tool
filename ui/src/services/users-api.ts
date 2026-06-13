@@ -5,6 +5,7 @@ import type { UserCreateRequest } from "@/api/generated/model/userCreateRequest"
 import type { UserUpdateRequest } from "@/api/generated/model/userUpdateRequest";
 import { UserCreateRequestRole } from "@/api/generated/model/userCreateRequestRole";
 import type { UserListResponse } from "@/api/generated/model/userListResponse";
+import type { UserOnboardResponse } from "@/api/generated/model/userOnboardResponse";
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import { getUsers } from "@/api/generated/users/users";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
@@ -143,6 +144,27 @@ export async function fetchUserByUuid(
 
 export function isUserVpnProvisioned(user: UserResponse): boolean {
   return Boolean(user.vpn_device_uuid?.trim());
+}
+
+export function isUserPendingOnboard(user: UserResponse): boolean {
+  if (isSuperadminRoleName(user.role)) return false;
+  return user.must_change_password !== true;
+}
+
+export function isUserOnboardEmailSent(user: UserResponse): boolean {
+  if (isSuperadminRoleName(user.role)) return false;
+  return user.must_change_password === true;
+}
+
+export async function onboardUser(
+  userUuid: string,
+  request?: { signal?: AbortSignal },
+): Promise<UserOnboardResponse> {
+  const api = getUsers();
+  return api.onboardUserApiUsersUserUuidOnboardPost(
+    userUuid,
+    request?.signal ? { signal: request.signal } : undefined,
+  );
 }
 
 export function vpnConfigDownloadFilename(email: string): string {

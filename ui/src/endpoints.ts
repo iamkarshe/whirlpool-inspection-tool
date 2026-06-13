@@ -1,6 +1,7 @@
 export const PAGES = {
   CHECK_APP: "/",
   LOGIN: "/login",
+  CHANGE_PASSWORD: "/change-password",
   FORGOT_PASSWORD: "/forgot-password",
   REGISTER: "/register",
   RESET_PASSWORD: "/reset-password",

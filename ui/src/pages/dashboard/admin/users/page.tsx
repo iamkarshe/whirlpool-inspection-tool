@@ -9,6 +9,7 @@ import type {
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
+import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import PageActionBar from "@/components/page-action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import { DeactivateUserDialog } from "@/pages/dashboard/admin/users/deactivate-user-dialog";
+import { DialogResendOnboard } from "@/pages/dashboard/admin/users/dialog-resend-onboard";
 import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
 import { RevokeUserVpnDialog } from "@/pages/dashboard/admin/users/revoke-user-vpn-dialog";
@@ -36,12 +38,14 @@ import {
 } from "@/pages/dashboard/admin/users/vpn-instructions";
 import { ASSIGNABLE_USER_ROLES } from "@/pages/dashboard/admin/users/user-form-roles";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
+import { isPasswordFormValid } from "@/lib/password-strength";
 import {
   createUser,
   downloadUserVpnConfig,
   downloadUserVpnQr,
   fetchUsersPage,
   generateUserVpn,
+  onboardUser,
   revokeUserVpn,
   updateUser,
   userApiErrorMessage,
@@ -85,6 +89,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const [warehousesError, setWarehousesError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [passwordStrengthValid, setPasswordStrengthValid] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +129,17 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       );
       return;
     }
+    if (
+      !isPasswordFormValid(formValues.password, formValues.password, [
+        formValues.email,
+        formValues.name,
+        mobile,
+      ]) ||
+      !passwordStrengthValid
+    ) {
+      setCreateError("Choose a stronger password before creating this user.");
+      return;
+    }
     const payload: UserCreateRequest = {
       name: formValues.name.trim(),
       email: formValues.email.trim(),
@@ -138,7 +154,9 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
     setIsCreating(true);
     try {
       await createUser(payload);
-      toast.success("User created.");
+      toast.success(
+        "User created. Send the onboarding email from the user menu.",
+      );
       setFormValues({
         name: "",
         email: "",
@@ -203,6 +221,16 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
           onChange={handleInputChange}
           required
         />
+        <PasswordStrengthMeter
+          password={formValues.password}
+          userInputs={[
+            formValues.email,
+            formValues.name,
+            formValues.mobile_number,
+          ]}
+          showConfirmMismatch={false}
+          onValidityChange={setPasswordStrengthValid}
+        />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -265,7 +293,18 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         </Alert>
       ) : null}
       <DialogFooter>
-        <Button type="submit" disabled={isCreating}>
+        <Button
+          type="submit"
+          disabled={
+            isCreating ||
+            !passwordStrengthValid ||
+            !isPasswordFormValid(formValues.password, formValues.password, [
+              formValues.email,
+              formValues.name,
+              formValues.mobile_number,
+            ])
+          }
+        >
           {isCreating ? "Saving..." : "Save user"}
         </Button>
       </DialogFooter>
@@ -285,6 +324,12 @@ export default function UsersPage() {
   const [vpnBusyAction, setVpnBusyAction] = useState<
     "setup" | "config" | "qr" | "revoke" | "email" | null
   >(null);
+  const [onboardUserTarget, setOnboardUserTarget] = useState<UserResponse | null>(
+    null,
+  );
+  const [onboardBusyUserUuid, setOnboardBusyUserUuid] = useState<string | null>(
+    null,
+  );
   const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
 
   const applyUserActiveState = useCallback(
@@ -380,6 +425,28 @@ export default function UsersPage() {
 
   const onVpnShowInstructions = useCallback((user: UserResponse) => {
     setVpnInstallUser(user);
+  }, []);
+
+  const onOnboardUser = useCallback((user: UserResponse) => {
+    setOnboardUserTarget(user);
+  }, []);
+
+  const applyOnboardUser = useCallback(async (user: UserResponse) => {
+    setOnboardBusyUserUuid(user.uuid);
+    try {
+      const response = await onboardUser(user.uuid);
+      toast.success(
+        response.welcome_email_sent
+          ? "Onboarding email sent."
+          : "Onboarding queued.",
+      );
+      setReloadKey((v) => v + 1);
+      setOnboardUserTarget(null);
+    } catch (e: unknown) {
+      toast.error(userApiErrorMessage(e, "Could not send onboarding email."));
+    } finally {
+      setOnboardBusyUserUuid(null);
+    }
   }, []);
 
   const sendVpnInstructionsEmail = useCallback(async (user: UserResponse) => {
@@ -518,6 +585,7 @@ export default function UsersPage() {
         onEditUser={onEditUser}
         onToggleUserActive={onToggleUserActive}
         togglingUserUuid={togglingUserUuid}
+        onOnboardUser={onOnboardUser}
         onVpnSetup={onVpnSetup}
         onVpnDownloadConfig={onVpnDownloadConfig}
         onVpnDownloadQr={onVpnDownloadQr}
@@ -595,6 +663,18 @@ export default function UsersPage() {
             applyVpnRevoke(revokeVpnUser)
           : Promise.resolve(false)
         }
+      />
+      <DialogResendOnboard
+        open={onboardUserTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setOnboardUserTarget(null);
+        }}
+        user={onboardUserTarget}
+        isLoading={
+          onboardUserTarget !== null &&
+          onboardBusyUserUuid === onboardUserTarget.uuid
+        }
+        onConfirm={applyOnboardUser}
       />
     </div>
   );

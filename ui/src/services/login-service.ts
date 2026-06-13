@@ -15,8 +15,13 @@ import {
 } from "@/lib/clear-authenticated-session-storage";
 import { setServerDeviceUuidFromLogin } from "@/lib/session-device-uuid";
 import { WHIRLPOOL_SESSION_CHANGED_EVENT } from "@/lib/session-events";
+import {
+  persistPasswordFlagsFromLogin,
+} from "@/lib/session-password-flags";
 import { PAGES } from "@/endpoints";
 import { isAxiosError } from "axios";
+
+export { requiresPasswordChange } from "@/lib/session-password-flags";
 
 export const LOGIN_PASSWORD_MIN_LENGTH = 6;
 export const LOGIN_PASSWORD_MAX_LENGTH = 128;
@@ -46,6 +51,12 @@ function extractApiDetailMessage(data: unknown): string | null {
 
 export function shouldShowDeviceSelection(login: LoginResponse): boolean {
   return login.requires_device_selection === true;
+}
+
+export function loginRequiresPasswordChange(login: LoginResponse): boolean {
+  return (
+    login.must_change_password === true || login.password_expired === true
+  );
 }
 
 export function canCallDeviceResolve(allowMultiLogin: boolean): boolean {
@@ -123,6 +134,7 @@ export function persistAuthenticatedSession(login: LoginResponse): void {
   );
   setServerDeviceUuidFromLogin(login.device_uuid);
   apiClient.defaults.headers.common.Authorization = `${tokenType} ${token}`;
+  persistPasswordFlagsFromLogin(login);
 
   const target = resolvePostLoginHref(login.role);
   window.localStorage.setItem(

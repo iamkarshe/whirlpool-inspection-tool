@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Download,
   Eye,
+  Mail,
   MoreHorizontal,
   Network,
   Pencil,
@@ -42,6 +43,7 @@ import {
 import { PAGES } from "@/endpoints";
 import { getAvatarImage } from "@/lib/utils";
 import {
+  UserOnboardBadge,
   UserRoleBadge,
   UserStatusBadge,
 } from "@/pages/dashboard/admin/users/user-badge";
@@ -54,6 +56,7 @@ function buildUserColumns(
   onEditUser: (user: UserResponse) => void,
   onToggleUserActive: (user: UserResponse) => void,
   togglingUserUuid: string | null,
+  onOnboardUser: (user: UserResponse) => void,
   onVpnSetup: (user: UserResponse) => void,
   onVpnDownloadConfig: (user: UserResponse) => void,
   onVpnDownloadQr: (user: UserResponse) => void,
@@ -140,6 +143,18 @@ function buildUserColumns(
         if (filterValue === "true") return v === true;
         if (filterValue === "false") return v === false;
         return true;
+      },
+    },
+    {
+      id: "onboard",
+      header: "Onboard",
+      cell: ({ row }) => {
+        if (isSuperadminRoleName(row.original.role)) return "—";
+        return (
+          <UserOnboardBadge
+            mustChangePassword={row.original.must_change_password}
+          />
+        );
       },
     },
     {
@@ -295,6 +310,18 @@ function buildUserColumns(
                       className="flex items-center"
                       onSelect={(e) => {
                         e.preventDefault();
+                        onOnboardUser(user);
+                      }}
+                    >
+                      <Mail className="mr-2 h-4 w-4" />
+                      {user.must_change_password
+                        ? "Resend onboarding email"
+                        : "Send onboarding email"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="flex items-center"
+                      onSelect={(e) => {
+                        e.preventDefault();
                         onEditUser(user);
                       }}
                     >
@@ -362,6 +389,7 @@ interface UsersDataTableProps {
   onEditUser: (user: UserResponse) => void;
   onToggleUserActive: (user: UserResponse) => void;
   togglingUserUuid?: string | null;
+  onOnboardUser: (user: UserResponse) => void;
   onVpnSetup: (user: UserResponse) => void;
   onVpnDownloadConfig: (user: UserResponse) => void;
   onVpnDownloadQr: (user: UserResponse) => void;
@@ -378,6 +406,7 @@ export default function UsersDataTable({
   onEditUser,
   onToggleUserActive,
   togglingUserUuid = null,
+  onOnboardUser,
   onVpnSetup,
   onVpnDownloadConfig,
   onVpnDownloadQr,
@@ -392,6 +421,7 @@ export default function UsersDataTable({
         onEditUser,
         onToggleUserActive,
         togglingUserUuid,
+        onOnboardUser,
         onVpnSetup,
         onVpnDownloadConfig,
         onVpnDownloadQr,
@@ -404,6 +434,7 @@ export default function UsersDataTable({
       onEditUser,
       onToggleUserActive,
       togglingUserUuid,
+      onOnboardUser,
       onVpnSetup,
       onVpnDownloadConfig,
       onVpnDownloadQr,

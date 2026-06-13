@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 import {
   Briefcase,
   CheckCircle,
+  Clock,
   HardHat,
+  Mail,
   Shield,
   UserCog,
   XCircle,
@@ -98,6 +100,27 @@ export function UserStatusBadge({ isActive }: { isActive: boolean }) {
     <Badge variant={isActive ? "success" : "destructive"} className={BADGE_ICON_CLASS}>
       <Icon />
       {isActive ? "ACTIVE" : "INACTIVE"}
+    </Badge>
+  );
+}
+
+export function UserOnboardBadge({
+  mustChangePassword,
+}: {
+  mustChangePassword?: boolean;
+}) {
+  if (mustChangePassword === true) {
+    return (
+      <Badge variant="info" className={BADGE_ICON_CLASS}>
+        <Mail />
+        ONBOARD SENT
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="warning" className={BADGE_ICON_CLASS}>
+      <Clock />
+      PENDING ONBOARD
     </Badge>
   );
 }

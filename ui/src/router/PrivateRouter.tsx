@@ -7,6 +7,7 @@ import {
   normalizeAppRole,
   resolveAppHomeHref,
 } from "@/lib/app-roles";
+import { requiresPasswordChange } from "@/lib/session-password-flags";
 import { Navigate, useLocation } from "react-router-dom";
 
 const ACCESS_TOKEN_KEY = "whirlpool.access_token";
@@ -24,6 +25,10 @@ export default function PrivateRouter() {
     return (
       <Navigate to={PAGES.LOGIN} replace state={{ from: location.pathname }} />
     );
+  }
+
+  if (requiresPasswordChange()) {
+    return <Navigate to={PAGES.CHANGE_PASSWORD} replace />;
   }
 
   if (sessionUser && isOpsRole(role)) {

@@ -34,12 +34,14 @@ import {
   authenticateWithEmailPassword,
   authenticateWithSsoExchangeToken,
   clearAuthenticatedSession,
+  loginRequiresPasswordChange,
   persistAuthenticatedSession,
   resolvePostLoginHref,
   shouldShowDeviceSelection,
 } from "@/services/login-service";
+import { persistPendingLoginForPasswordChange } from "@/lib/pending-login-state";
 
-const ALLOW_FORGOT_PASSWORD = false;
+const ALLOW_FORGOT_PASSWORD = true;
 
 type AccessGateState = "checking" | "allowed" | "blocked" | "error";
 
@@ -95,6 +97,13 @@ export default function LoginPage() {
     (login: LoginResponse) => {
       persistAuthenticatedSession(login);
 
+      if (loginRequiresPasswordChange(login)) {
+        persistPendingLoginForPasswordChange(login);
+        toast.info("Set a new password to continue.");
+        navigate(PAGES.CHANGE_PASSWORD, { replace: true });
+        return;
+      }
+
       if (shouldShowDeviceSelection(login)) {
         setPendingLogin(login);
         setDeviceDialogOpen(true);
@@ -103,7 +112,7 @@ export default function LoginPage() {
 
       finishLoginNavigation(login);
     },
-    [finishLoginNavigation],
+    [finishLoginNavigation, navigate],
   );
 
   const handleDeviceSelectionResolved = useCallback(() => {

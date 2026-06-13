@@ -20,6 +20,7 @@ const ForgotPasswordPage = lazy(() => import("@/pages/auth/forgot-password"));
 const ResetPasswordConfirmationPage = lazy(
   () => import("@/pages/auth/reset-password"),
 );
+const ChangePasswordPage = lazy(() => import("@/pages/auth/change-password"));
 // Auth Pages ENDS
 
 // Root splash / connection check
@@ -512,6 +513,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <ResetPasswordConfirmationPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "change-password",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ChangePasswordPage />
           </Suspense>
         ),
       },

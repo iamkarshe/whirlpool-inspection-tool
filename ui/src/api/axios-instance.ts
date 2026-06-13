@@ -84,6 +84,33 @@ function isPublicAuthRequest(url: string): boolean {
   );
 }
 
+function isChangePasswordRequest(url: string): boolean {
+  const path = url.split("?")[0] ?? "";
+  return (
+    path.endsWith("/auth/change-password") ||
+    path.endsWith("/auth/change-password/request-otp")
+  );
+}
+
+function isPasswordChangeRequiredDetail(data: unknown): boolean {
+  if (typeof data !== "object" || data === null || !("detail" in data)) {
+    return false;
+  }
+  const detail = (data as { detail?: unknown }).detail;
+  return (
+    typeof detail === "string" &&
+    detail.includes("Password change required before using the application")
+  );
+}
+
+let handlingPasswordChangeRedirect = false;
+
+function redirectToChangePassword(): void {
+  if (typeof window === "undefined" || handlingPasswordChangeRedirect) return;
+  handlingPasswordChangeRedirect = true;
+  window.location.replace(PAGES.CHANGE_PASSWORD);
+}
+
 let handlingSessionRevoked = false;
 
 function redirectToLoginRevoked(): void {
@@ -99,22 +126,31 @@ function redirectToLoginRevoked(): void {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (
-      isAxiosError(error) &&
-      error.response?.status === 401 &&
-      typeof window !== "undefined"
-    ) {
+    if (isAxiosError(error) && typeof window !== "undefined") {
       const requestUrl = String(error.config?.url ?? "");
-      const hadSession = Boolean(
-        window.localStorage.getItem(SESSION_ACCESS_TOKEN_KEY)?.trim(),
-      );
+      const status = error.response?.status;
 
       if (
-        hadSession &&
-        !isPublicAuthRequest(requestUrl) &&
-        !error.config?.skipSessionRevokedRedirect
+        status === 403 &&
+        isPasswordChangeRequiredDetail(error.response?.data)
       ) {
-        redirectToLoginRevoked();
+        redirectToChangePassword();
+        return Promise.reject(error);
+      }
+
+      if (status === 401) {
+        const hadSession = Boolean(
+          window.localStorage.getItem(SESSION_ACCESS_TOKEN_KEY)?.trim(),
+        );
+
+        if (
+          hadSession &&
+          !isPublicAuthRequest(requestUrl) &&
+          !isChangePasswordRequest(requestUrl) &&
+          !error.config?.skipSessionRevokedRedirect
+        ) {
+          redirectToLoginRevoked();
+        }
       }
     }
 
