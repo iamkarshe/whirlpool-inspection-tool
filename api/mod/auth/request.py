@@ -1,7 +1,16 @@
 import uuid
 from typing import Any, Dict
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+FORGOT_PASSWORD_REQUEST_EXAMPLE = {"email": "operator@whirlpool.com"}
+
+RESET_PASSWORD_REQUEST_EXAMPLE = {
+    "token": "paste-token-from-email-link-query-param",
+    "password": "NewSecurePass123!",
+    "confirm_password": "NewSecurePass123!",
+}
 
 
 class LoginDeviceInfo(BaseModel):
@@ -37,10 +46,36 @@ class ResolveDevicesRequest(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    """Body for POST /auth/forgot-password."""
+
+    model_config = ConfigDict(json_schema_extra={"examples": [FORGOT_PASSWORD_REQUEST_EXAMPLE]})
+
+    email: EmailStr = Field(
+        description="Account email. Superadmin accounts cannot use self-service reset.",
+        examples=["operator@whirlpool.com"],
+    )
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str = Field(min_length=16, max_length=512)
-    password: str = Field(min_length=6, max_length=128)
-    confirm_password: str = Field(min_length=6, max_length=128)
+    """Body for POST /auth/reset-password."""
+
+    model_config = ConfigDict(json_schema_extra={"examples": [RESET_PASSWORD_REQUEST_EXAMPLE]})
+
+    token: str = Field(
+        min_length=16,
+        max_length=512,
+        description="Plain reset token from the email magic link (`?token=` query param).",
+        examples=["paste-token-from-email-link-query-param"],
+    )
+    password: str = Field(
+        min_length=6,
+        max_length=128,
+        description="New password. Validated with zxcvbn (minimum score 3).",
+        examples=["NewSecurePass123!"],
+    )
+    confirm_password: str = Field(
+        min_length=6,
+        max_length=128,
+        description="Must match `password` exactly.",
+        examples=["NewSecurePass123!"],
+    )

@@ -30,6 +30,9 @@ router = APIRouter(
         "Supports search on email/IP, sort, and created_at date filters."
     ),
     response_model=PasswordResetRequestListResponse,
+    responses={
+        403: {"description": "Caller is not superadmin."},
+    },
 )
 @exception_handler_decorator
 @check_api_role(["superadmin"])

@@ -16,6 +16,10 @@ from mod.auth.helper import (
     log_user_not_found_and_raise,
     verify_sso_login_token,
 )
+from mod.auth.openapi_responses import (
+    FORGOT_PASSWORD_OPENAPI_RESPONSES,
+    RESET_PASSWORD_OPENAPI_RESPONSES,
+)
 from mod.auth.password_reset_helper import process_forgot_password, process_reset_password
 from mod.auth.request import (
     ForgotPasswordRequest,
@@ -160,7 +164,20 @@ def login_token(
     return login_response
 
 
-@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+@router.post(
+    "/forgot-password",
+    name="forgot_password",
+    summary="Request password reset email",
+    description=(
+        "Starts a password reset for non-superadmin active users. Always returns the "
+        "same success message to prevent email enumeration. When APP_ENV=dev, "
+        "`debug.email_sent` and `debug.is_disallowed` indicate whether a token was "
+        "issued and email queued. Subject to auth rate limiting and forgot-password "
+        "IP blocking (12h after too many requests)."
+    ),
+    response_model=ForgotPasswordResponse,
+    responses=FORGOT_PASSWORD_OPENAPI_RESPONSES,
+)
 def forgot_password(
     request: Request,
     payload: ForgotPasswordRequest,
@@ -181,7 +198,18 @@ def forgot_password(
     return ForgotPasswordResponse(message=result.message, debug=debug)
 
 
-@router.post("/reset-password", response_model=ResetPasswordResponse)
+@router.post(
+    "/reset-password",
+    name="reset_password",
+    summary="Complete password reset",
+    description=(
+        "Sets a new password using the token from the forgot-password email link. "
+        "Validates password strength with zxcvbn (score >= 3). Revokes all active "
+        "sessions for the user on success."
+    ),
+    response_model=ResetPasswordResponse,
+    responses=RESET_PASSWORD_OPENAPI_RESPONSES,
+)
 def reset_password(
     request: Request,
     payload: ResetPasswordRequest,
