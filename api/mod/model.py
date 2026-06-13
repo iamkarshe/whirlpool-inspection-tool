@@ -304,6 +304,13 @@ class User(TimestampSoftDeleteMixin, Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    password_changed_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     role: Mapped["Role"] = relationship(back_populates="users")
     devices: Mapped[list["Device"]] = relationship(back_populates="user")
@@ -351,6 +358,10 @@ class User(TimestampSoftDeleteMixin, Base):
         back_populates="users_with_plant_access",
     )
     password_reset_requests: Mapped[list["PasswordResetRequest"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    password_history: Mapped[list["UserPasswordHistory"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -1137,6 +1148,32 @@ class IpAddressMetadata(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+class UserPasswordHistory(Base):
+    __tablename__ = "user_password_history"
+    __table_args__ = (
+        Index("ix_user_password_history_user_id", "user_id"),
+        Index(
+            "ix_user_password_history_user_created_at",
+            "user_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="password_history")
 
 
 class PasswordResetRequest(TimestampSoftDeleteMixin, Base):

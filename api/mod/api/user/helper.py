@@ -12,6 +12,7 @@ from mod.api.vpn.helper import (
     revoke_vpn_device,
 )
 from mod.model import Plant, User, Warehouse
+from utils.password_policy import resolve_password_change_flags
 
 
 def forbid_superadmin_role_assignment(role_row: object) -> None:
@@ -38,6 +39,7 @@ def user_with_role_and_scope(db: Session, user_uuid: uuid.UUID) -> User | None:
 
 
 def map_user_response(user: User) -> UserResponse:
+    must_change_password, password_expired = resolve_password_change_flags(user)
     return UserResponse(
         id=user.id,
         uuid=user.uuid,
@@ -53,6 +55,8 @@ def map_user_response(user: User) -> UserResponse:
         vpn_device_name=user.vpn_device_name,
         vpn_device_type=user.vpn_device_type,
         vpn_provisioned_at=user.vpn_provisioned_at,
+        must_change_password=must_change_password,
+        password_expired=password_expired,
     )
 
 

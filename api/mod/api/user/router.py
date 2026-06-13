@@ -1,11 +1,9 @@
 import uuid
 
-import bcrypt
-
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from mod.api.log.audit import log_user_added, log_user_updated
+from mod.api.log.audit import log_user_added, log_user_onboarded, log_user_updated
 from mod.api.middleware import auth_dependency
 from mod.api.user.helper import (
     apply_user_facility_scope,
@@ -23,8 +21,11 @@ from mod.api.user.request import (
     UserGenerateVpnRequest,
     UserUpdateRequest,
 )
-from mod.api.user.response import UserListResponse, UserResponse
+from mod.api.user.response import UserListResponse, UserOnboardResponse, UserResponse
+from mod.api.user.onboard_helper import onboard_existing_user
+from mod.auth.onboarding_email import deliver_welcome_onboarding_email_after_commit
 from mod.model import Role, User
+from utils.common import ensure_allowed_registration_email
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
@@ -100,7 +101,9 @@ def get_users(
     summary="Create user",
     description=(
         "Creates an active user with hashed password and facility scope. "
-        "Roles allowed: operator, manager, biz-admin."
+        "Roles allowed: operator, manager, biz-admin. "
+        "Does not send a welcome email — call POST /api/users/{user_uuid}/onboard "
+        "after creation to email a temporary password and login URL."
     ),
     response_model=UserResponse,
     responses={
@@ -115,6 +118,8 @@ def create_user(
     payload: UserCreateRequest,
     db: Session = Depends(get_db),
 ):
+    ensure_allowed_registration_email(str(payload.email))
+
     existing = db.query(User).filter(User.email == str(payload.email)).first()
     if existing is not None:
         raise HTTPException(status_code=409, detail="Email already exists")
@@ -130,19 +135,25 @@ def create_user(
         raise HTTPException(status_code=422, detail="Invalid role")
     forbid_superadmin_role_assignment(role)
 
-    password_hash_str = bcrypt.hashpw(
-        payload.password.encode("utf-8"),
-        bcrypt.gensalt(),
-    ).decode("utf-8")
+    from utils.password import hash_password
+    from utils.password_policy import utc_now
+    from utils.password_strength import validate_password_strength
+
+    validate_password_strength(
+        payload.password,
+        user_inputs=[str(payload.email), payload.name, payload.mobile_number],
+    )
 
     user = User(
         name=payload.name,
         email=str(payload.email),
         mobile_number=payload.mobile_number,
         designation=payload.designation,
-        password=password_hash_str,
+        password=hash_password(payload.password),
         role_id=role.id,
         is_active=True,
+        must_change_password=False,
+        password_changed_at=utc_now(),
     )
     db.add(user)
     db.flush()
@@ -169,6 +180,59 @@ def create_user(
     if loaded is None:
         raise HTTPException(status_code=500, detail="User reload failed")
     return map_user_response(loaded)
+
+
+@router.post(
+    "/users/{user_uuid}/onboard",
+    name="onboard_user",
+    summary="Send onboarding welcome email",
+    description=(
+        "Superadmin-only: generates a new temporary password for an existing user, "
+        "sets must_change_password, and sends a welcome email with the login URL and "
+        "temporary credentials (VPN instructions are not included). The user must change "
+        "their password on first login before accessing the application. Safe to call "
+        "again to resend onboarding email with a fresh temporary password."
+    ),
+    response_model=UserOnboardResponse,
+    responses={
+        403: {"description": "Target user is superadmin or inactive."},
+        404: {"description": "User not found."},
+    },
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def onboard_user(
+    request: Request,
+    user_uuid: uuid.UUID = Path(..., description="User UUID from POST /api/users."),
+    db: Session = Depends(get_db),
+):
+    result = onboard_existing_user(
+        db,
+        user_uuid=user_uuid,
+    )
+    invalidate_kpi_parameters_cache()
+    db.commit()
+
+    welcome_email_sent = deliver_welcome_onboarding_email_after_commit(
+        to_email=result.user.email,
+        user_name=result.user.name,
+        temporary_password=result.temporary_password,
+    )
+    log_user_onboarded(
+        db,
+        actor_user_id=int(request.state.user_id),
+        target_user_uuid=str(result.user.uuid),
+        target_email=result.user.email,
+        target_name=result.user.name,
+        target_role=result.target_role,
+        welcome_email_sent=welcome_email_sent,
+    )
+    db.commit()
+
+    return UserOnboardResponse(
+        user=map_user_response(result.user),
+        welcome_email_sent=welcome_email_sent,
+    )
 
 
 @router.post(
@@ -324,6 +388,7 @@ def update_user(
         raise HTTPException(status_code=403, detail="Cannot modify superadmin accounts")
 
     if payload.email is not None and str(payload.email) != user.email:
+        ensure_allowed_registration_email(str(payload.email))
         clash = (
             db.query(User)
             .filter(User.email == str(payload.email), User.id != user.id)
@@ -356,10 +421,15 @@ def update_user(
         user.is_active = payload.is_active
 
     if payload.password is not None:
-        user.password = bcrypt.hashpw(
-            payload.password.encode("utf-8"),
-            bcrypt.gensalt(),
-        ).decode("utf-8")
+        from utils.password_policy import apply_user_password_change
+
+        apply_user_password_change(
+            db,
+            user,
+            payload.password,
+            user_inputs=[user.email, user.name, user.mobile_number],
+        )
+        user.must_change_password = True
 
     if payload.role is not None:
         role = db.query(Role).filter(Role.role == payload.role).first()

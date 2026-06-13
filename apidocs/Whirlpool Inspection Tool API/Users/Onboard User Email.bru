@@ -1,12 +1,12 @@
 meta {
-  name: Create User
+  name: Onboard User Email
   type: http
-  seq: 2
+  seq: 8
 }
 
 post {
-  url: {{baseUrl}}/api/users
-  body: json
+  url: {{baseUrl}}/api/users/42d0bcb0-36fe-4efc-a13e-1dbabf5ed795/onboard
+  body: none
   auth: inherit
 }
 

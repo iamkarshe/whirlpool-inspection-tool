@@ -13,6 +13,59 @@ from utils.env import get_env_optional
 YES_NO_PASS_VALUES: frozenset[str] = frozenset({"yes", "y", "pass", "true", "1", "ok"})
 YES_NO_FAIL_VALUES: frozenset[str] = frozenset({"no", "n", "fail", "false", "0"})
 
+ALLOWED_REGISTRATION_EMAIL_DOMAINS_DEFAULT = ("*.whirlpool.in",)
+
+
+def allowed_registration_email_domains() -> tuple[str, ...]:
+    raw = get_env_optional("REGISTRATION_EMAIL_DOMAIN_WHITELIST")
+    if raw is None:
+        return ALLOWED_REGISTRATION_EMAIL_DOMAINS_DEFAULT
+    domains = tuple(
+        item.strip().lower() for item in raw.split(",") if item.strip()
+    )
+    return domains or ALLOWED_REGISTRATION_EMAIL_DOMAINS_DEFAULT
+
+
+def registration_email_domain(email: str) -> str:
+    normalized = normalize_login_email(email)
+    if "@" not in normalized:
+        return ""
+    return normalized.rsplit("@", 1)[1]
+
+
+def registration_domain_matches_pattern(domain: str, pattern: str) -> bool:
+    normalized_domain = domain.strip().lower()
+    normalized_pattern = pattern.strip().lower()
+    if not normalized_domain or not normalized_pattern:
+        return False
+    if normalized_pattern.startswith("*."):
+        base_domain = normalized_pattern[2:]
+        domain_suffix = f".{base_domain}"
+        return normalized_domain == base_domain or normalized_domain.endswith(
+            domain_suffix
+        )
+    return normalized_domain == normalized_pattern
+
+
+def is_allowed_registration_email(email: str) -> bool:
+    domain = registration_email_domain(email)
+    if not domain:
+        return False
+    return any(
+        registration_domain_matches_pattern(domain, pattern)
+        for pattern in allowed_registration_email_domains()
+    )
+
+
+def ensure_allowed_registration_email(email: str) -> None:
+    if is_allowed_registration_email(email):
+        return
+    allowed = ", ".join(allowed_registration_email_domains())
+    raise HTTPException(
+        status_code=422,
+        detail=f"Email domain is not allowed. Permitted domains: {allowed}",
+    )
+
 
 def normalize_login_email(email: str) -> str:
     return email.strip().lower()

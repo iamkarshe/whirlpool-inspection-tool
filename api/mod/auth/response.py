@@ -75,6 +75,20 @@ class LoginResponse(BaseModel):
     allow_multi_login: bool = True
     requires_device_selection: bool = False
     active_devices: list[ActiveDeviceResponse] = Field(default_factory=list)
+    must_change_password: bool = Field(
+        default=False,
+        description=(
+            "True when the user must change their password (onboarding temp password "
+            "or missing password_changed_at). Frontend should route to change-password."
+        ),
+    )
+    password_expired: bool = Field(
+        default=False,
+        description=(
+            "True when PASSWORD_MAX_AGE_DAYS elapsed since password_changed_at. "
+            "Frontend should route to change-password."
+        ),
+    )
 
 
 class ResolveDevicesResponse(BaseModel):
@@ -137,5 +151,12 @@ class ForgotPasswordResponse(BaseModel):
 class ResetPasswordResponse(BaseModel):
     message: str = Field(
         description="Password was updated and all active sessions were revoked.",
+        examples=["Password updated successfully"],
+    )
+
+
+class ChangePasswordResponse(BaseModel):
+    message: str = Field(
+        description="Password was updated. User may access the application.",
         examples=["Password updated successfully"],
     )

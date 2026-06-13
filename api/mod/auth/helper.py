@@ -25,6 +25,7 @@ from mod.auth.response import (
 )
 from mod.auth.session import create_user_session, deregister_device
 from mod.model import Device, User
+from utils.password_policy import resolve_password_change_flags
 from utils.common import normalize_login_email
 from utils.env import get_allow_multi_login
 from utils.ip_address import get_client_ip_address
@@ -105,6 +106,7 @@ def build_login_response(
     requires_device_selection: bool,
     active_devices: list[ActiveDeviceResponse],
 ) -> LoginResponse:
+    must_change_password, password_expired = resolve_password_change_flags(user)
     return LoginResponse(
         id=user.id,
         uuid=user.uuid,
@@ -119,6 +121,8 @@ def build_login_response(
         allow_multi_login=allow_multi_login,
         requires_device_selection=requires_device_selection,
         active_devices=active_devices,
+        must_change_password=must_change_password,
+        password_expired=password_expired,
     )
 
 

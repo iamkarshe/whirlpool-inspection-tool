@@ -16,12 +16,15 @@ ACTION_AUTH_LOGIN_FAILED = "auth_login_failed"
 ACTION_AUTH_FORGOT_PASSWORD = "auth_forgot_password"
 ACTION_AUTH_FORGOT_PASSWORD_BLOCKED = "auth_forgot_password_blocked"
 ACTION_AUTH_PASSWORD_RESET = "auth_password_reset"
+ACTION_AUTH_PASSWORD_CHANGED = "auth_password_changed"
+ACTION_USER_ONBOARD = "user_onboard"
 ACTION_USER_ADD = "user_add"
 ACTION_USER_UPDATE = "user_update"
 ACTION_MASTER_UPDATE = "master_update"
 ACTION_INTEGRATION_KEY_UPDATED = "integration_key_updated"
 
 SOURCE_AUTH = "AUTH"
+SOURCE_USER_ONBOARD = "USER_ONBOARD"
 SOURCE_USER_ADD = "USER_ADD"
 SOURCE_USER_UPDATE = "USER_UPDATE"
 SOURCE_MASTER_UPDATE = "MASTER_UPDATE"
@@ -30,6 +33,7 @@ SOURCE_INTEGRATION_KEY_UPDATED = "INTEGRATION_KEY_UPDATED"
 SOURCE_DISPLAY_LABELS: dict[str, str] = {
     SOURCE_AUTH: "AUTH",
     SOURCE_USER_ADD: "USER ADD",
+    SOURCE_USER_ONBOARD: "USER ONBOARD",
     SOURCE_USER_UPDATE: "USER UPDATE",
     SOURCE_MASTER_UPDATE: "MASTER UPDATE",
     SOURCE_INTEGRATION_KEY_UPDATED: "INTEGRATION KEY UPDATED",
@@ -41,6 +45,8 @@ ACTION_TO_SOURCE: dict[str, str] = {
     ACTION_AUTH_FORGOT_PASSWORD: SOURCE_AUTH,
     ACTION_AUTH_FORGOT_PASSWORD_BLOCKED: SOURCE_AUTH,
     ACTION_AUTH_PASSWORD_RESET: SOURCE_AUTH,
+    ACTION_AUTH_PASSWORD_CHANGED: SOURCE_AUTH,
+    ACTION_USER_ONBOARD: SOURCE_USER_ONBOARD,
     ACTION_USER_ADD: SOURCE_USER_ADD,
     ACTION_USER_UPDATE: SOURCE_USER_UPDATE,
     ACTION_MASTER_UPDATE: SOURCE_MASTER_UPDATE,
@@ -53,6 +59,8 @@ DEFAULT_ACTION_MESSAGES: dict[str, str] = {
     ACTION_AUTH_FORGOT_PASSWORD: "Password reset requested",
     ACTION_AUTH_FORGOT_PASSWORD_BLOCKED: "Password reset IP blocked",
     ACTION_AUTH_PASSWORD_RESET: "Password reset completed",
+    ACTION_AUTH_PASSWORD_CHANGED: "Password changed",
+    ACTION_USER_ONBOARD: "User onboarded with welcome email",
     ACTION_USER_ADD: "User account created",
     ACTION_USER_UPDATE: "User account updated",
     ACTION_MASTER_UPDATE: "Master data updated",
@@ -258,6 +266,53 @@ def log_auth_password_reset_completed(
         password_reset_request_uuid=password_reset_request_uuid,
     )
     schedule_ip_metadata_lookup(db, client_ip)
+
+
+def log_auth_password_changed(
+    db: Session,
+    *,
+    user_id: int,
+    client_ip: str | None,
+    proxy_ip: str | None,
+    user_agent: str | None,
+    change_reason: str,
+) -> None:
+    record_application_log(
+        db,
+        actor_user_id=user_id,
+        level=LogLevel.info,
+        action=ACTION_AUTH_PASSWORD_CHANGED,
+        message=DEFAULT_ACTION_MESSAGES[ACTION_AUTH_PASSWORD_CHANGED],
+        ip=client_ip,
+        proxy_ip=proxy_ip,
+        user_agent=user_agent,
+        change_reason=change_reason,
+    )
+    schedule_ip_metadata_lookup(db, client_ip)
+
+
+def log_user_onboarded(
+    db: Session,
+    *,
+    actor_user_id: int,
+    target_user_uuid: str,
+    target_email: str,
+    target_name: str,
+    target_role: str,
+    welcome_email_sent: bool,
+) -> None:
+    record_application_log(
+        db,
+        actor_user_id=actor_user_id,
+        level=LogLevel.info,
+        action=ACTION_USER_ONBOARD,
+        message=DEFAULT_ACTION_MESSAGES[ACTION_USER_ONBOARD],
+        target_user_uuid=target_user_uuid,
+        target_email=target_email,
+        target_name=target_name,
+        target_role=target_role,
+        welcome_email_sent=welcome_email_sent,
+    )
 
 
 def log_user_added(

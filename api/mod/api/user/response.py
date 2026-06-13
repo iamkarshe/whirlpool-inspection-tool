@@ -71,6 +71,21 @@ class UserResponse(BaseModel):
         default=None,
         description="UTC time when the current VPN profile was created.",
     )
+    must_change_password: bool = Field(
+        default=False,
+        description="True when the user must set a new password before using the app.",
+    )
+    password_expired: bool = Field(
+        default=False,
+        description="True when the password exceeded PASSWORD_MAX_AGE_DAYS and must be rotated.",
+    )
+
+
+class UserOnboardResponse(BaseModel):
+    user: UserResponse
+    welcome_email_sent: bool = Field(
+        description="True when the welcome onboarding email was queued or sent.",
+    )
 
 
 class UserListResponse(BaseModel):

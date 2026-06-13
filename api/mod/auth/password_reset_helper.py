@@ -31,8 +31,7 @@ from utils.forgot_password_limit import (
     raise_forgot_password_ip_blocked,
     utc_now,
 )
-from utils.password import hash_password
-from utils.password_strength import validate_password_strength
+from utils.password_policy import apply_user_password_change
 from utils.roles import ROLE_SUPERADMIN
 
 logger = logging.getLogger(__name__)
@@ -377,12 +376,12 @@ def process_reset_password(
             detail="Invalid or expired password reset link",
         )
 
-    validate_password_strength(
+    apply_user_password_change(
+        db,
+        user,
         password,
         user_inputs=[user.email, user.name, user.mobile_number],
     )
-
-    user.password = hash_password(password)
     reset_request.is_completed = True
     reset_request.completed_at = utc_now()
     revoke_all_sessions_for_user(db, user.id)
