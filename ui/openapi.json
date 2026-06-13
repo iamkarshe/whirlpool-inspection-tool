@@ -43,6 +43,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -52,9 +55,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -88,6 +88,9 @@
               }
             }
           },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -97,9 +100,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -133,16 +133,6 @@
               }
             }
           },
-          "422": {
-            "description": "Request body failed Pydantic validation (e.g. invalid email format). Parse `error` for a summary and `details` for field-level messages.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthRequestValidationErrorResponse"
-                }
-              }
-            }
-          },
           "429": {
             "description": "Rate limited. Either auth route attempts exceeded (AUTH_RATE_LIMIT_*) or forgot-password IP block (FORGOT_PASSWORD_*). Read `detail` and Retry-After header.",
             "headers": {
@@ -169,6 +159,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpDetailErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request body failed Pydantic validation (e.g. invalid email format). Parse `error` for a summary and `details` for field-level messages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthRequestValidationErrorResponse"
                 }
               }
             }
@@ -205,26 +205,6 @@
               }
             }
           },
-          "400": {
-            "description": "Reset token is invalid, expired, already used, or belongs to a disallowed account (e.g. superadmin).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed. Malformed JSON body returns { success, error, details }. Password mismatch or weak password (zxcvbn score < 3) returns { detail }.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
-                }
-              }
-            }
-          },
           "429": {
             "description": "Too many auth attempts from this IP (shared auth rate limiter).",
             "headers": {
@@ -254,6 +234,54 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Reset token is invalid, expired, already used, or belongs to a disallowed account (e.g. superadmin).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed. Malformed JSON body returns { success, error, details }. Password mismatch or weak password (zxcvbn score < 3) returns { detail }.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/release-notes": {
+      "get": {
+        "tags": [
+          "App"
+        ],
+        "summary": "List application release notes",
+        "description": "Returns deploy release notes from `release.json` for authenticated dashboard users.\n\n**React usage**\n- Call with `Authorization: Bearer <access_token>`.\n- Response field names are snake_case (`released_at`); map to camelCase in the UI (`releasedAt`).\n- Render `notes[]` as the release table: `version`, `released_at`, `title`, feature count.\n- Detail dialog: `title`, `version`, `released_at`, and `features[]` with `text`, optional `type` badge, optional `hash`.\n- `features[].type` is one of: `feature`, `fix`, `improvement`, `chore` (or omitted).\n- Notes are ordered newest first.\n\n**Auth errors**\n- `401` missing/invalid token\n- `403` password change required (same as other `/api/*` routes)",
+        "operationId": "get_release_notes_api_release_notes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseNotesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token."
+          },
+          "403": {
+            "description": "Password change required before using the application."
           }
         }
       }
@@ -752,6 +780,9 @@
           "404": {
             "description": "User not found."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -761,9 +792,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -804,6 +832,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -813,9 +844,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -856,6 +884,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -865,9 +896,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -911,6 +939,9 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
+          "503": {
+            "description": "VPN provision service not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -920,9 +951,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "VPN provision service not configured."
           }
         }
       }
@@ -3327,6 +3355,9 @@
           "409": {
             "description": "Warehouse is referenced by inspections."
           },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -3336,9 +3367,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           }
         }
       }
@@ -5043,6 +5071,9 @@
           "409": {
             "description": "Plant is referenced by inspections."
           },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5052,9 +5083,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           }
         }
       }
@@ -6786,6 +6814,9 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -6795,9 +6826,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
           }
         }
       }
@@ -6844,6 +6872,9 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -6853,9 +6884,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
           }
         }
       }
@@ -8022,7 +8050,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Id"
           },
           "value": {
@@ -12399,7 +12427,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -12613,7 +12641,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -13296,6 +13324,141 @@
         ],
         "title": "PushUserSendRequest"
       },
+      "ReleaseFeatureResponse": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Human-readable change description for the UI list."
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "feature",
+                  "fix",
+                  "improvement",
+                  "chore"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type",
+            "description": "Optional badge type for React pills: feature, fix, improvement, or chore. Omit or null when the source commit had no [feature]/[fix]/… tag."
+          },
+          "hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hash",
+            "description": "Short git commit hash (deploy-generated entries). Optional."
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ReleaseFeatureResponse",
+        "description": "One change bullet inside a release note."
+      },
+      "ReleaseNoteResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Stable id for detail routes and React row keys (e.g. date or version slug)."
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Version label shown in the table badge column."
+          },
+          "released_at": {
+            "type": "string",
+            "title": "Released At",
+            "description": "Release date in YYYY-MM-DD format. Map to releasedAt in React."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Release title shown in the list and detail dialog."
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/ReleaseFeatureResponse"
+            },
+            "type": "array",
+            "title": "Features",
+            "description": "Ordered change bullets for the detail dialog."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "released_at",
+          "title"
+        ],
+        "title": "ReleaseNoteResponse",
+        "description": "Release note group for one deploy/version.",
+        "examples": [
+          {
+            "features": [
+              {
+                "hash": "2148dbd",
+                "text": "Add release notes API backed by release.json",
+                "type": "feature"
+              }
+            ],
+            "id": "2026-06-14",
+            "released_at": "2026-06-14",
+            "title": "Deploy 2026-06-14",
+            "version": "2026-06-14"
+          }
+        ]
+      },
+      "ReleaseNotesResponse": {
+        "properties": {
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/ReleaseNoteResponse"
+            },
+            "type": "array",
+            "title": "Notes",
+            "description": "Release notes newest first. Render as a sortable table; open detail dialog by id with features[] bullets and optional type badges."
+          }
+        },
+        "type": "object",
+        "title": "ReleaseNotesResponse",
+        "description": "GET /api/release-notes response.",
+        "examples": [
+          {
+            "notes": [
+              {
+                "features": [
+                  {
+                    "hash": "2148dbd",
+                    "text": "Add release notes API backed by release.json",
+                    "type": "feature"
+                  }
+                ],
+                "id": "2026-06-14",
+                "released_at": "2026-06-14",
+                "title": "Deploy 2026-06-14",
+                "version": "2026-06-14"
+              }
+            ]
+          }
+        ]
+      },
       "ReportsDropdownOption": {
         "properties": {
           "value": {
@@ -13608,8 +13771,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "default": 587
           },
@@ -13653,8 +13816,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -13688,8 +13851,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "description": "SMTP port (swaks --port 25).",
             "default": 25
@@ -13752,8 +13915,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -13887,8 +14050,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535,
-            "minimum": 1,
+            "maximum": 65535.0,
+            "minimum": 1.0,
             "title": "Port",
             "default": 587
           },
@@ -13927,8 +14090,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300,
-            "minimum": 1,
+            "maximum": 300.0,
+            "minimum": 1.0,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -13965,13 +14128,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -14061,7 +14224,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10,
+            "minimum": 10.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -14120,13 +14283,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6,
+            "minimum": 6.0,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68,
+            "minimum": 68.0,
             "title": "Lng"
           },
           "truck_number": {
@@ -14229,7 +14392,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -14275,8 +14438,8 @@
           },
           "max_attempts": {
             "type": "integer",
-            "maximum": 5,
-            "minimum": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
             "title": "Max Attempts",
             "default": 3
           }
@@ -15402,7 +15565,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           }
         },
@@ -15640,7 +15803,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -15664,6 +15827,10 @@
     {
       "name": "Auth",
       "description": "Endpoints related to authentication, authorization, user login, token management, and access control mechanisms within the system."
+    },
+    {
+      "name": "App",
+      "description": "Application metadata for authenticated clients: release notes and related dashboard information."
     }
   ]
 }

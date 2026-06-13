@@ -1,4 +1,26 @@
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+ReleaseFeatureType = Literal["feature", "fix", "improvement", "chore"]
+
+RELEASE_FEATURE_EXAMPLE = {
+    "text": "Add release notes API backed by release.json",
+    "type": "feature",
+    "hash": "2148dbd",
+}
+
+RELEASE_NOTE_EXAMPLE = {
+    "id": "2026-06-14",
+    "version": "2026-06-14",
+    "released_at": "2026-06-14",
+    "title": "Deploy 2026-06-14",
+    "features": [RELEASE_FEATURE_EXAMPLE],
+}
+
+RELEASE_NOTES_RESPONSE_EXAMPLE = {
+    "notes": [RELEASE_NOTE_EXAMPLE],
+}
 
 
 class VersionResponse(BaseModel):
@@ -27,30 +49,54 @@ class VersionResponse(BaseModel):
 
 
 class ReleaseFeatureResponse(BaseModel):
-    text: str = Field(description="Release note bullet text.")
-    type: str | None = Field(
+    """One change bullet inside a release note."""
+
+    text: str = Field(description="Human-readable change description for the UI list.")
+    type: ReleaseFeatureType | None = Field(
         default=None,
-        description="feature, fix, improvement, or chore.",
+        description=(
+            "Optional badge type for React pills: feature, fix, improvement, or chore. "
+            "Omit or null when the source commit had no [feature]/[fix]/… tag."
+        ),
     )
     hash: str | None = Field(
         default=None,
-        description="Short git commit hash for this change.",
+        description="Short git commit hash (deploy-generated entries). Optional.",
     )
 
 
 class ReleaseNoteResponse(BaseModel):
-    id: str = Field(description="Stable release note id.")
-    version: str = Field(description="Displayed version label.")
-    released_at: str = Field(description="Release date (YYYY-MM-DD).")
-    title: str = Field(description="Release title.")
+    """Release note group for one deploy/version."""
+
+    model_config = ConfigDict(json_schema_extra={"examples": [RELEASE_NOTE_EXAMPLE]})
+
+    id: str = Field(
+        description="Stable id for detail routes and React row keys (e.g. date or version slug).",
+    )
+    version: str = Field(
+        description="Version label shown in the table badge column.",
+    )
+    released_at: str = Field(
+        description="Release date in YYYY-MM-DD format. Map to releasedAt in React.",
+    )
+    title: str = Field(description="Release title shown in the list and detail dialog.")
     features: list[ReleaseFeatureResponse] = Field(
         default_factory=list,
-        description="Change bullets for this release.",
+        description="Ordered change bullets for the detail dialog.",
     )
 
 
 class ReleaseNotesResponse(BaseModel):
+    """GET /api/release-notes response."""
+
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [RELEASE_NOTES_RESPONSE_EXAMPLE]},
+    )
+
     notes: list[ReleaseNoteResponse] = Field(
         default_factory=list,
-        description="Release notes, newest first when sorted in release.json.",
+        description=(
+            "Release notes newest first. Render as a sortable table; "
+            "open detail dialog by id with features[] bullets and optional type badges."
+        ),
     )

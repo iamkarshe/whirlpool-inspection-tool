@@ -16,9 +16,24 @@ router = APIRouter(
     "/release-notes",
     name="get_release_notes",
     summary="List application release notes",
-    description="Returns release notes from release.json for authenticated users.",
+    description=(
+        "Returns deploy release notes from `release.json` for authenticated dashboard users.\n\n"
+        "**React usage**\n"
+        "- Call with `Authorization: Bearer <access_token>`.\n"
+        "- Response field names are snake_case (`released_at`); map to camelCase in the UI (`releasedAt`).\n"
+        "- Render `notes[]` as the release table: `version`, `released_at`, `title`, feature count.\n"
+        "- Detail dialog: `title`, `version`, `released_at`, and `features[]` with `text`, optional `type` badge, optional `hash`.\n"
+        "- `features[].type` is one of: `feature`, `fix`, `improvement`, `chore` (or omitted).\n"
+        "- Notes are ordered newest first.\n\n"
+        "**Auth errors**\n"
+        "- `401` missing/invalid token\n"
+        "- `403` password change required (same as other `/api/*` routes)"
+    ),
     response_model=ReleaseNotesResponse,
-    responses={401: {"description": "Missing or invalid access token."}},
+    responses={
+        401: {"description": "Missing or invalid access token."},
+        403: {"description": "Password change required before using the application."},
+    },
 )
 @exception_handler_decorator
 def get_release_notes() -> ReleaseNotesResponse:
