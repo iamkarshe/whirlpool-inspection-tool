@@ -130,6 +130,7 @@ export default function JobLogsPage() {
       <SegmentedFilterGroup
         options={jobOptions}
         value={activeJobName}
+        kind="job"
         disabled={filtersLoading}
         onChange={(value) => {
           setActiveJobName(value);
@@ -143,6 +144,8 @@ export default function JobLogsPage() {
       <SegmentedFilterGroup
         options={STATUS_FILTER_OPTIONS}
         value={activeStatus}
+        kind="status"
+        size="compact"
         allLabel="All statuses"
         onChange={(value) => {
           setActiveStatus(value);

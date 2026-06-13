@@ -102,6 +102,7 @@ export default function TasksPage() {
       <SegmentedFilterGroup
         options={taskTypeOptions}
         value={activeTaskType}
+        kind="task"
         disabled={filtersLoading}
         onChange={(value) => {
           setListLoading(true);
@@ -112,6 +113,8 @@ export default function TasksPage() {
       <SegmentedFilterGroup
         options={STATUS_FILTER_OPTIONS}
         value={activeStatus}
+        kind="status"
+        size="compact"
         allLabel="All statuses"
         onChange={(value) => {
           setListLoading(true);

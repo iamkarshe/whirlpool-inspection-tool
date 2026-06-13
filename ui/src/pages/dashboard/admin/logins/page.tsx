@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
-import { List, Network } from "lucide-react";
 
 import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { SegmentedFilterGroup } from "@/components/filters/segmented-filter-group";
 import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import type { FilterOption } from "@/api/generated/model/filterOption";
 import { LoginStatCards } from "@/pages/dashboard/admin/logins/components/login-stat-cards";
 import { LoginsActivitySection } from "@/pages/dashboard/admin/logins/logins-activity-section";
 import { LoginsIpSummarySection } from "@/pages/dashboard/admin/logins/logins-ip-summary-section";
@@ -14,6 +14,11 @@ import type { LoginKpiFilter, LoginKpis } from "@/pages/dashboard/admin/logins/l
 import { getLoginKpis } from "@/pages/dashboard/admin/logins/login-service";
 
 type LoginsView = "activity" | "ip-summary";
+
+const LOGIN_VIEW_OPTIONS: FilterOption[] = [
+  { value: "activity", label: "Login activity" },
+  { value: "ip-summary", label: "IP summary" },
+];
 
 export default function LoginsPage() {
   const [view, setView] = useState<LoginsView>("activity");
@@ -52,24 +57,15 @@ export default function LoginsPage() {
         </div>
       </div>
 
-      <ToggleGroup
-        type="single"
-        variant="outline"
-        size="sm"
+      <SegmentedFilterGroup
+        includeAll={false}
+        options={LOGIN_VIEW_OPTIONS}
         value={view}
-        onValueChange={(value) => {
-          if (value === "activity" || value === "ip-summary") setView(value);
+        kind="view"
+        onChange={(next) => {
+          if (next === "activity" || next === "ip-summary") setView(next);
         }}
-      >
-        <ToggleGroupItem value="activity" className="gap-1.5 px-3">
-          <List className="h-3.5 w-3.5" />
-          Login activity
-        </ToggleGroupItem>
-        <ToggleGroupItem value="ip-summary" className="gap-1.5 px-3">
-          <Network className="h-3.5 w-3.5" />
-          IP summary
-        </ToggleGroupItem>
-      </ToggleGroup>
+      />
 
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-12">

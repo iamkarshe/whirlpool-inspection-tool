@@ -135,6 +135,7 @@ export default function LogsPage() {
       <SegmentedFilterGroup
         options={sourceOptions}
         value={activeSource}
+        kind="source"
         disabled={filtersLoading}
         onChange={(value) => {
           setActiveSource(value);
