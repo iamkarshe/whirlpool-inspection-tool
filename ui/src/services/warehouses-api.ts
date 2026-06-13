@@ -198,7 +198,15 @@ export async function uploadWarehousesCsv(
   );
 }
 
-export async function fetchAllWarehouses(request?: {
+let warehousesListMemoryCache: WarehouseResponse[] | null = null;
+let warehousesListInflight: Promise<WarehouseResponse[]> | null = null;
+
+export function clearWarehousesListCache(): void {
+  warehousesListMemoryCache = null;
+  warehousesListInflight = null;
+}
+
+async function fetchAllWarehousesUncached(request?: {
   signal?: AbortSignal;
 }): Promise<WarehouseResponse[]> {
   const api = getWarehouses();
@@ -216,6 +224,35 @@ export async function fetchAllWarehouses(request?: {
     page += 1;
   }
   return rows;
+}
+
+/** Paginated warehouse list for selects; dedupes in-flight calls and caches per tab. */
+export async function fetchAllWarehouses(request?: {
+  signal?: AbortSignal;
+  force?: boolean;
+}): Promise<WarehouseResponse[]> {
+  if (request?.force) {
+    clearWarehousesListCache();
+  }
+
+  if (warehousesListMemoryCache) {
+    return warehousesListMemoryCache;
+  }
+
+  if (warehousesListInflight) {
+    return warehousesListInflight;
+  }
+
+  warehousesListInflight = fetchAllWarehousesUncached()
+    .then((rows) => {
+      warehousesListMemoryCache = rows;
+      return rows;
+    })
+    .finally(() => {
+      warehousesListInflight = null;
+    });
+
+  return warehousesListInflight;
 }
 
 export function warehouseApiErrorMessage(

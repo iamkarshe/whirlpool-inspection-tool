@@ -1,4 +1,5 @@
 import { clearInspectionFilterOptionsCache } from "@/pages/dashboard/inspections/components/inspection-filter-options-cache";
+import { clearWarehousesListCache } from "@/services/warehouses-api";
 import { clearPendingLoginState } from "@/lib/pending-login-state";
 import { clearPasswordFlags } from "@/lib/session-password-flags";
 import { clearServerDeviceUuid } from "@/lib/session-device-uuid";
@@ -13,6 +14,7 @@ export const SESSION_ROLE_LEGACY_KEY = "whirlpool.role";
 export function clearAuthenticatedSessionStorage(): void {
   if (typeof window === "undefined") return;
   clearInspectionFilterOptionsCache();
+  clearWarehousesListCache();
   window.localStorage.removeItem(SESSION_ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(SESSION_TOKEN_TYPE_KEY);
   window.localStorage.removeItem(SESSION_USER_PAYLOAD_KEY);

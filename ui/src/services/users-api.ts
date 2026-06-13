@@ -156,6 +156,14 @@ export function isUserOnboardEmailSent(user: UserResponse): boolean {
   return user.must_change_password === true;
 }
 
+/** Placeholder for POST /api/users — replaced when onboarding email is sent. */
+export function generateInternalCreatePassword(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID().replace(/-/g, "").slice(0, 32);
+  }
+  return `Wpd${Date.now()}${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export async function onboardUser(
   userUuid: string,
   request?: { signal?: AbortSignal },

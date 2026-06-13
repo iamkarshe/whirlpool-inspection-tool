@@ -9,7 +9,6 @@ import type {
 import type { UserResponse } from "@/api/generated/model/userResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
-import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import PageActionBar from "@/components/page-action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -38,12 +37,12 @@ import {
 } from "@/pages/dashboard/admin/users/vpn-instructions";
 import { ASSIGNABLE_USER_ROLES } from "@/pages/dashboard/admin/users/user-form-roles";
 import { UserWarehouseSelect } from "@/pages/dashboard/admin/users/user-warehouse-select";
-import { isPasswordFormValid } from "@/lib/password-strength";
 import {
   createUser,
   downloadUserVpnConfig,
   downloadUserVpnQr,
   fetchUsersPage,
+  generateInternalCreatePassword,
   generateUserVpn,
   onboardUser,
   revokeUserVpn,
@@ -54,13 +53,12 @@ import {
   fetchAllWarehouses,
   warehouseApiErrorMessage,
 } from "@/services/warehouses-api";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Mail } from "lucide-react";
 
 type UserFormValues = {
   name: string;
   email: string;
   mobile_number: string;
-  password: string;
   role: UserCreateRequestRole | "";
   designation: string;
   allowed_warehouse_codes: string[];
@@ -80,7 +78,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
     name: "",
     email: "",
     mobile_number: "",
-    password: "",
     role: "",
     designation: "",
     allowed_warehouse_codes: [],
@@ -89,7 +86,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
   const [warehousesError, setWarehousesError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [passwordStrengthValid, setPasswordStrengthValid] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -129,22 +125,11 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       );
       return;
     }
-    if (
-      !isPasswordFormValid(formValues.password, formValues.password, [
-        formValues.email,
-        formValues.name,
-        mobile,
-      ]) ||
-      !passwordStrengthValid
-    ) {
-      setCreateError("Choose a stronger password before creating this user.");
-      return;
-    }
     const payload: UserCreateRequest = {
       name: formValues.name.trim(),
       email: formValues.email.trim(),
       mobile_number: mobile,
-      password: formValues.password,
+      password: generateInternalCreatePassword(),
       role: formValues.role || undefined,
       designation: formValues.designation.trim() || undefined,
       ...(formValues.allowed_warehouse_codes.length > 0 ?
@@ -155,13 +140,12 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
     try {
       await createUser(payload);
       toast.success(
-        "User created. Send the onboarding email from the user menu.",
+        "User created. Send the onboarding email to deliver login credentials.",
       );
       setFormValues({
         name: "",
         email: "",
         mobile_number: "",
-        password: "",
         role: "",
         designation: "",
         allowed_warehouse_codes: [],
@@ -209,27 +193,6 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
           value={formValues.mobile_number}
           onChange={handleInputChange}
           required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          value={formValues.password}
-          onChange={handleInputChange}
-          required
-        />
-        <PasswordStrengthMeter
-          password={formValues.password}
-          userInputs={[
-            formValues.email,
-            formValues.name,
-            formValues.mobile_number,
-          ]}
-          showConfirmMismatch={false}
-          onValidityChange={setPasswordStrengthValid}
         />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -285,6 +248,16 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         warehouses={warehouses}
         disabled={Boolean(warehousesError)}
       />
+      <Alert className="border-sky-500/30 bg-sky-500/10 text-sky-950 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-50 [&>svg]:text-sky-600 dark:[&>svg]:text-sky-400">
+        <Mail className="h-4 w-4" />
+        <AlertTitle>Password sent by email</AlertTitle>
+        <AlertDescription>
+          You do not set a password here. After saving, use{" "}
+          <span className="font-medium">Send onboarding email</span> from the
+          user menu — the system auto-generates a temporary password and emails
+          login instructions to the user.
+        </AlertDescription>
+      </Alert>
       {createError ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -293,18 +266,7 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
         </Alert>
       ) : null}
       <DialogFooter>
-        <Button
-          type="submit"
-          disabled={
-            isCreating ||
-            !passwordStrengthValid ||
-            !isPasswordFormValid(formValues.password, formValues.password, [
-              formValues.email,
-              formValues.name,
-              formValues.mobile_number,
-            ])
-          }
-        >
+        <Button type="submit" disabled={isCreating}>
           {isCreating ? "Saving..." : "Save user"}
         </Button>
       </DialogFooter>
@@ -567,12 +529,14 @@ export default function UsersPage() {
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
         >
-          <CreateUserForm
-            onCreated={() => {
-              setReloadKey((v) => v + 1);
-              setCreateDialogOpen(false);
-            }}
-          />
+          {createDialogOpen ? (
+            <CreateUserForm
+              onCreated={() => {
+                setReloadKey((v) => v + 1);
+                setCreateDialogOpen(false);
+              }}
+            />
+          ) : null}
         </CreateEntryDialog>
       </PageActionBar>
       {error && !isLoading ? (
