@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from mod.api.middleware import auth_dependency
 from mod.api.tasks.filter_metadata import build_task_filters
 from mod.api.tasks.helper import (
-    get_task_by_uuid_or_404,
     list_recent_tasks,
     map_task_detail,
     queue_sample_send_email_task,
@@ -19,6 +18,7 @@ from mod.api.tasks.response import (
     TaskFiltersResponse,
     TaskListResponse,
 )
+from mod.tasks.service import get_task_by_uuid_or_404
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 

@@ -220,9 +220,10 @@ def package_assets(
     assets: list[str],
     zip_path: Path,
     *,
-    flatten_dir: str | None = None,
+    flatten_dirs: set[str] | None = None,
     dry_run: bool = False,
 ) -> None:
+    flatten_dirs = flatten_dirs or set()
     missing = [asset for asset in assets if not (source_dir / asset).exists()]
     if missing:
         if dry_run:
@@ -230,9 +231,10 @@ def package_assets(
             return
         raise DeployError(f"Missing assets under {source_dir}: {', '.join(missing)}")
 
+    flattened = [asset for asset in assets if asset in flatten_dirs]
     label = f"zip {zip_path.name} <- {', '.join(assets)}"
-    if flatten_dir:
-        label += f" (flatten {flatten_dir})"
+    if flattened:
+        label += f" (contents of {', '.join(flattened)})"
     print(label)
     if dry_run:
         return
@@ -241,32 +243,22 @@ def package_assets(
         for asset in assets:
             path = source_dir / asset
             if path.is_file():
-                arcname = path.relative_to(source_dir).as_posix()
-                if flatten_dir and arcname.startswith(f"{flatten_dir}/"):
-                    arcname = arcname.removeprefix(f"{flatten_dir}/")
-                archive.write(path, arcname=arcname)
+                archive.write(path, arcname=path.relative_to(source_dir).as_posix())
                 continue
 
             for file_path in sorted(path.rglob("*")):
                 if not file_path.is_file():
                     continue
-                if flatten_dir and (path == source_dir / flatten_dir):
+                if asset in flatten_dirs:
                     arcname = file_path.relative_to(path).as_posix()
                 else:
                     arcname = file_path.relative_to(source_dir).as_posix()
                 archive.write(file_path, arcname=arcname)
 
 
-def ui_flatten_dir(assets: list[str], ui_dir: str) -> str | None:
-    if len(assets) != 1:
-        return None
-    asset = assets[0]
-    if Path(asset).name != Path(ui_dir).name:
-        return None
-    source = Path(asset)
-    if source.suffix:
-        return None
-    return asset
+def ui_flatten_dirs(source_dir: Path, assets: list[str]) -> set[str]:
+    """Pack directory assets by their contents (local dist/ -> index.html at zip root)."""
+    return {asset for asset in assets if (source_dir / asset).is_dir()}
 
 
 def remote_shell(script_lines: list[str]) -> str:
@@ -280,6 +272,7 @@ def deploy_zip(
     remote_dir: str,
     *,
     after_extract: list[str] | None = None,
+    clean_before_extract: bool = False,
     dry_run: bool,
 ) -> None:
     ssh = site["ssh"]
@@ -289,14 +282,16 @@ def deploy_zip(
     ssh_run(ssh, f"mkdir -p {shlex.quote(staging_dir)}", dry_run=dry_run)
     scp_upload(ssh, local_zip, remote_zip, dry_run=dry_run)
 
-    extract_script = remote_shell(
+    extract_steps = [f"mkdir -p {shlex.quote(remote_dir)}"]
+    if clean_before_extract:
+        extract_steps.append(f"rm -rf {shlex.quote(remote_dir)}/*")
+    extract_steps.extend(
         [
-            f"mkdir -p {shlex.quote(remote_dir)}",
             f"cd {shlex.quote(remote_dir)}",
             f"unzip -o {shlex.quote(remote_zip)}",
         ]
     )
-    ssh_run(ssh, extract_script, dry_run=dry_run)
+    ssh_run(ssh, remote_shell(extract_steps), dry_run=dry_run)
 
     if after_extract:
         hook_script = remote_shell([f"cd {shlex.quote(remote_dir)}", *after_extract])
@@ -343,12 +338,11 @@ def deploy_site(
 
             ui_zip = temp_path / UI_ZIP_NAME
             ui_dir = str(site["remote"]["ui_dir"])
-            flatten = ui_flatten_dir(ui_assets, ui_dir)
             package_assets(
                 ui_source,
                 ui_assets,
                 ui_zip,
-                flatten_dir=flatten,
+                flatten_dirs=ui_flatten_dirs(ui_source, ui_assets),
                 dry_run=dry_run,
             )
             if dry_run or ui_zip.is_file():
@@ -357,6 +351,7 @@ def deploy_site(
                     ui_zip,
                     UI_ZIP_NAME,
                     ui_dir,
+                    clean_before_extract=True,
                     dry_run=dry_run,
                 )
 

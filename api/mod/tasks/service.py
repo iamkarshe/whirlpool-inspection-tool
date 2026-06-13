@@ -29,9 +29,7 @@ def safe_queue_name(value: str | None) -> str:
 
 def load_task_by_uuid(db: Session, task_uuid: uuid.UUID) -> Task | None:
     return (
-        db.query(Task)
-        .filter(Task.uuid == task_uuid, Task.is_active.is_(True))
-        .first()
+        db.query(Task).filter(Task.uuid == task_uuid, Task.is_active.is_(True)).first()
     )
 
 
