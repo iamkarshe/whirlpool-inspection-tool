@@ -226,16 +226,13 @@ async def vapt_report(
     db: Session = Depends(get_db),
 ) -> Response:
     require_superadmin_for_api_docs(request, db, token)
-    content = """
-    <html>
-        <body>
-            <code>Report coming soon</code>
-        </body>
-    </html>
-    """
+    latest_vapt_report = "vapt-reports/uat-v1-report.html"
+    if Path(latest_vapt_report).exists():
+        return FileResponse(latest_vapt_report)
     return Response(
-        content=content,
+        content="Report not found",
         media_type="text/html",
+        status_code=404,
     )
 
 
