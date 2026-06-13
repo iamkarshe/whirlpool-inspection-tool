@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
@@ -13,8 +13,15 @@ class ApplicationLogItemResponse(BaseModel):
     source: str = Field(
         ...,
         description=(
-            "AUTH, USER ADD, USER UPDATE, MASTER UPDATE, "
-            "or INTEGRATION KEY UPDATED."
+            "AUTH, USER ADD, USER ONBOARD, USER UPDATE, MASTER UPDATE, "
+            "INTEGRATION KEY UPDATED, or EMAIL."
+        ),
+    )
+    details: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "Structured audit payload. Email logs include to_email, subject, "
+            "body_text, and body_html for SuperAdmin debugging."
         ),
     )
     created_at: datetime = Field(..., description="Event time (UTC).")

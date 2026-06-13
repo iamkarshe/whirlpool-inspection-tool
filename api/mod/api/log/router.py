@@ -107,8 +107,8 @@ def get_application_logs(
     source: str | None = Query(
         None,
         description=(
-            "Filter by source: AUTH, USER ADD, USER UPDATE, MASTER UPDATE, "
-            "INTEGRATION KEY UPDATED (spaces optional)."
+            "Filter by source: AUTH, USER ADD, USER ONBOARD, USER UPDATE, "
+            "MASTER UPDATE, INTEGRATION KEY UPDATED, EMAIL (spaces optional)."
         ),
     ),
     db: Session = Depends(get_db),

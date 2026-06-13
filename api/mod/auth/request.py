@@ -85,6 +85,7 @@ CHANGE_PASSWORD_REQUEST_EXAMPLE = {
     "current_password": "TemporaryPass123",
     "new_password": "NewSecurePass123!",
     "confirm_password": "NewSecurePass123!",
+    "otp_code": "123456",
 }
 
 
@@ -109,4 +110,15 @@ class ChangePasswordRequest(BaseModel):
         min_length=6,
         max_length=128,
         description="Must match `new_password` exactly.",
+    )
+    otp_code: str | None = Field(
+        default=None,
+        min_length=4,
+        max_length=12,
+        description=(
+            "Email verification code from POST /auth/change-password/request-otp. "
+            "Required when CHANGE_PASSWORD_ONBOARDING_OTP_REQUIRED or "
+            "CHANGE_PASSWORD_OTP_REQUIRED is enabled."
+        ),
+        examples=["123456"],
     )

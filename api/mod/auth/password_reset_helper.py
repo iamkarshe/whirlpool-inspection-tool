@@ -20,7 +20,10 @@ from mod.auth.helper import LOGIN_USER_LOAD_OPTIONS, RequestClientContext
 from mod.auth.session import revoke_all_sessions_for_user
 from mod.model import PasswordResetRequest, User
 from mod.tasks.constants import CREDENTIAL_KEY_DEFAULT_SMTP
-from mod.tasks.email_send import send_task_email
+from mod.tasks.email_delivery import (
+    EMAIL_KIND_PASSWORD_RESET,
+    send_and_log_task_email,
+)
 from mod.tasks.queue import try_enqueue_background_task
 from utils.common import normalize_login_email
 from utils.env import get_frontend_base_url
@@ -177,7 +180,14 @@ def queue_or_send_password_reset_email(
         return True
 
     try:
-        send_task_email(smtp_config, message)
+        send_and_log_task_email(
+            db,
+            smtp_config,
+            message,
+            email_kind=EMAIL_KIND_PASSWORD_RESET,
+            delivery_mode="direct",
+            created_by="auth_forgot_password",
+        )
         return True
     except Exception:
         logger.exception("Direct password reset email delivery failed for %s", to_email)

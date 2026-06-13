@@ -541,6 +541,8 @@ def send_smtp_test_email(credentials: dict[str, Any], to_email: str) -> None:
 
 def test_smtp_connection(
     payload: SmtpTestConnectionRequest,
+    db: Session | None = None,
+    actor_user_id: int | None = None,
 ) -> SmtpTestConnectionResponse:
     credentials = resolve_smtp_credentials(payload.smtp)
     to_email = str(payload.to_email)
@@ -562,6 +564,29 @@ def test_smtp_connection(
 
     try:
         send_smtp_test_email(credentials, to_email)
+        if db is not None:
+            from mod.api.log.audit import log_email_delivery
+            from mod.tasks.email_delivery import EMAIL_KIND_SMTP_TEST
+
+            from_email = str(credentials.get("from_email", "") or "").strip()
+            subject = "SMTP configuration test — Whirlpool Inspection Tool"
+            body_text = (
+                "This is a test email from the Whirlpool Inspection Tool.\n\n"
+                "If you received this message, your SMTP integration settings are working."
+            )
+            log_email_delivery(
+                db,
+                actor_user_id=actor_user_id,
+                email_kind=EMAIL_KIND_SMTP_TEST,
+                to_email=to_email,
+                from_email=from_email,
+                subject=subject,
+                body_text=body_text,
+                delivery_mode="direct",
+                success=True,
+                created_by="smtp_test_connection",
+            )
+            db.commit()
     except Exception as exc:
         return SmtpTestConnectionResponse(
             success=False,

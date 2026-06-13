@@ -8,6 +8,8 @@ from mod.auth.helper import RequestClientContext
 from mod.model import User
 from utils.password import verify_password
 from utils.password_policy import apply_user_password_change
+from mod.auth.password_change_otp_helper import verify_change_password_otp
+from utils.change_password_otp import is_change_password_otp_required_for_user
 
 
 def process_change_password(
@@ -17,6 +19,7 @@ def process_change_password(
     current_password: str,
     new_password: str,
     confirm_password: str,
+    otp_code: str | None = None,
     ctx: RequestClientContext,
     change_reason: str = "user_initiated",
 ) -> str:
@@ -37,6 +40,14 @@ def process_change_password(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="New password must be different from your current password",
         )
+
+    if is_change_password_otp_required_for_user(user):
+        if not otp_code or not otp_code.strip():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Email verification code is required",
+            )
+        verify_change_password_otp(db, user=user, otp_code=otp_code)
 
     apply_user_password_change(
         db,

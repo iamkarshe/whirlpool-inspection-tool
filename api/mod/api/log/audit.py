@@ -22,6 +22,8 @@ ACTION_USER_ADD = "user_add"
 ACTION_USER_UPDATE = "user_update"
 ACTION_MASTER_UPDATE = "master_update"
 ACTION_INTEGRATION_KEY_UPDATED = "integration_key_updated"
+ACTION_EMAIL_SENT = "email_sent"
+ACTION_EMAIL_FAILED = "email_failed"
 
 SOURCE_AUTH = "AUTH"
 SOURCE_USER_ONBOARD = "USER_ONBOARD"
@@ -29,6 +31,7 @@ SOURCE_USER_ADD = "USER_ADD"
 SOURCE_USER_UPDATE = "USER_UPDATE"
 SOURCE_MASTER_UPDATE = "MASTER_UPDATE"
 SOURCE_INTEGRATION_KEY_UPDATED = "INTEGRATION_KEY_UPDATED"
+SOURCE_EMAIL = "EMAIL"
 
 SOURCE_DISPLAY_LABELS: dict[str, str] = {
     SOURCE_AUTH: "AUTH",
@@ -37,6 +40,7 @@ SOURCE_DISPLAY_LABELS: dict[str, str] = {
     SOURCE_USER_UPDATE: "USER UPDATE",
     SOURCE_MASTER_UPDATE: "MASTER UPDATE",
     SOURCE_INTEGRATION_KEY_UPDATED: "INTEGRATION KEY UPDATED",
+    SOURCE_EMAIL: "EMAIL",
 }
 
 ACTION_TO_SOURCE: dict[str, str] = {
@@ -51,6 +55,8 @@ ACTION_TO_SOURCE: dict[str, str] = {
     ACTION_USER_UPDATE: SOURCE_USER_UPDATE,
     ACTION_MASTER_UPDATE: SOURCE_MASTER_UPDATE,
     ACTION_INTEGRATION_KEY_UPDATED: SOURCE_INTEGRATION_KEY_UPDATED,
+    ACTION_EMAIL_SENT: SOURCE_EMAIL,
+    ACTION_EMAIL_FAILED: SOURCE_EMAIL,
 }
 
 DEFAULT_ACTION_MESSAGES: dict[str, str] = {
@@ -65,6 +71,8 @@ DEFAULT_ACTION_MESSAGES: dict[str, str] = {
     ACTION_USER_UPDATE: "User account updated",
     ACTION_MASTER_UPDATE: "Master data updated",
     ACTION_INTEGRATION_KEY_UPDATED: "Integration credentials updated",
+    ACTION_EMAIL_SENT: "Email sent",
+    ACTION_EMAIL_FAILED: "Email delivery failed",
 }
 
 APPLICATION_LOG_SOURCE_CODES = frozenset(SOURCE_DISPLAY_LABELS.keys())
@@ -411,4 +419,50 @@ def log_integration_keys_updated(
         action=ACTION_INTEGRATION_KEY_UPDATED,
         message=f"{integration} integration credentials updated",
         integration=integration,
+    )
+
+
+def log_email_delivery(
+    db: Session,
+    *,
+    actor_user_id: int | None,
+    email_kind: str,
+    to_email: str,
+    from_email: str,
+    subject: str,
+    body_text: str,
+    body_html: str | None = None,
+    delivery_mode: str,
+    success: bool,
+    error_message: str | None = None,
+    task_uuid: str | None = None,
+    created_by: str | None = None,
+) -> None:
+    summary = f"Email sent to {to_email}: {subject}" if success else (
+        f"Email failed to {to_email}: {subject}"
+    )
+    if error_message:
+        summary = f"{summary} ({error_message[:200]})"
+
+    details: dict[str, Any] = {
+        "email_kind": email_kind,
+        "to_email": to_email,
+        "from_email": from_email,
+        "subject": subject,
+        "body_text": body_text,
+        "body_html": body_html or "",
+        "delivery_mode": delivery_mode,
+        "task_uuid": task_uuid,
+        "created_by": created_by,
+    }
+    if error_message:
+        details["error_message"] = error_message[:2000]
+
+    record_application_log(
+        db,
+        actor_user_id=actor_user_id,
+        level=LogLevel.info if success else LogLevel.error,
+        action=ACTION_EMAIL_SENT if success else ACTION_EMAIL_FAILED,
+        message=summary,
+        **details,
     )

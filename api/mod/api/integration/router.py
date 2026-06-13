@@ -103,8 +103,13 @@ def post_aws_s3_test_connection(
 def post_smtp_test_connection(
     request: Request,
     payload: SmtpTestConnectionRequest,
+    db: Session = Depends(get_db),
 ):
-    return test_smtp_connection(payload)
+    return test_smtp_connection(
+        payload,
+        db=db,
+        actor_user_id=int(request.state.user_id),
+    )
 
 
 @router.post(

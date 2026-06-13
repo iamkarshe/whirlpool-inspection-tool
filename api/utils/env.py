@@ -22,6 +22,14 @@ def get_env_optional(key: str, default: str | None = None) -> str | None:
     return value
 
 
+def parse_env_bool_optional(key: str, *, default: bool = False) -> bool:
+    raw = (
+        get_env_optional(key, "true" if default else "false")
+        or ("true" if default else "false")
+    ).strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
 def get_frontend_base_url() -> str | None:
     return get_env_optional("FRONTEND_BASE_URL")
 

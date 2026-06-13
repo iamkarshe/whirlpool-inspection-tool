@@ -7,7 +7,10 @@ from sqlalchemy.orm import Session
 
 from mod.api.integration.helper import load_credentials_payload
 from mod.tasks.constants import CREDENTIAL_KEY_DEFAULT_SMTP
-from mod.tasks.email_send import send_task_email
+from mod.tasks.email_delivery import (
+    EMAIL_KIND_WELCOME_ONBOARDING,
+    send_and_log_task_email,
+)
 from mod.tasks.queue import enqueue_background_task
 from utils.db import SessionLocal
 from utils.env import get_frontend_base_url, is_celery_broker_configured
@@ -125,7 +128,15 @@ def queue_or_send_welcome_onboarding_email(
             )
 
     try:
-        send_task_email(smtp_config, message)
+        send_and_log_task_email(
+            None,
+            smtp_config,
+            message,
+            email_kind=EMAIL_KIND_WELCOME_ONBOARDING,
+            delivery_mode="direct",
+            created_by="user_onboard",
+            commit_log=True,
+        )
         logger.info("Welcome onboarding email sent directly via SMTP to %s", to_email)
         return True
     except Exception:

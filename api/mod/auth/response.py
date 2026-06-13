@@ -89,6 +89,14 @@ class LoginResponse(BaseModel):
             "Frontend should route to change-password."
         ),
     )
+    change_password_otp_required: bool = Field(
+        default=False,
+        description=(
+            "True when POST /auth/change-password requires an email OTP. "
+            "False on first login (must_change_password); true after onboarding "
+            "when CHANGE_PASSWORD_OTP_REQUIRED is enabled (default true)."
+        ),
+    )
 
 
 class ResolveDevicesResponse(BaseModel):
@@ -159,4 +167,31 @@ class ChangePasswordResponse(BaseModel):
     message: str = Field(
         description="Password was updated. User may access the application.",
         examples=["Password updated successfully"],
+    )
+
+
+class ChangePasswordOtpDebugResponse(BaseModel):
+    otp_required: bool = Field(
+        description="Dev-only: whether OTP is required for this user right now.",
+    )
+    email_sent: bool = Field(
+        description="Dev-only: whether the OTP email was queued or sent.",
+    )
+
+
+class ChangePasswordOtpResponse(BaseModel):
+    message: str = Field(
+        description="Verification code request result.",
+        examples=["Verification code sent to your email"],
+    )
+    otp_required: bool = Field(
+        description="False when CHANGE_PASSWORD_*_OTP_REQUIRED is disabled for this user.",
+    )
+    expires_in_minutes: int = Field(
+        description="OTP validity window in minutes.",
+        examples=[10],
+    )
+    debug: ChangePasswordOtpDebugResponse | None = Field(
+        default=None,
+        description="Present when APP_ENV=dev.",
     )

@@ -7,17 +7,22 @@ from sqlalchemy.orm import Query
 from mod.api.log.audit import (
     ACTION_AUTH_LOGIN,
     ACTION_AUTH_LOGIN_FAILED,
+    ACTION_EMAIL_FAILED,
+    ACTION_EMAIL_SENT,
     ACTION_INTEGRATION_KEY_UPDATED,
     ACTION_MASTER_UPDATE,
     ACTION_USER_ADD,
+    ACTION_USER_ONBOARD,
     ACTION_USER_UPDATE,
     APPLICATION_LOG_SOURCE_CODES,
     DEFAULT_ACTION_MESSAGES,
     SOURCE_AUTH,
     SOURCE_DISPLAY_LABELS,
+    SOURCE_EMAIL,
     SOURCE_INTEGRATION_KEY_UPDATED,
     SOURCE_MASTER_UPDATE,
     SOURCE_USER_ADD,
+    SOURCE_USER_ONBOARD,
     SOURCE_USER_UPDATE,
     source_display_label,
 )
@@ -54,8 +59,12 @@ def resolve_application_log_source(_log: Log, payload: dict[str, Any]) -> str:
         return source_display_label(SOURCE_AUTH)
     if action == ACTION_USER_ADD:
         return source_display_label(SOURCE_USER_ADD)
+    if action == ACTION_USER_ONBOARD:
+        return source_display_label(SOURCE_USER_ONBOARD)
     if action == ACTION_USER_UPDATE:
         return source_display_label(SOURCE_USER_UPDATE)
+    if action in {ACTION_EMAIL_SENT, ACTION_EMAIL_FAILED}:
+        return source_display_label(SOURCE_EMAIL)
     if action == ACTION_MASTER_UPDATE:
         return source_display_label(SOURCE_MASTER_UPDATE)
     if action == ACTION_INTEGRATION_KEY_UPDATED:
@@ -89,6 +98,12 @@ def format_application_log_message(_log: Log, payload: dict[str, Any]) -> str:
             attempted = payload.get("attempted_email") or payload.get("login_email")
             if isinstance(attempted, str) and attempted.strip():
                 return f"User login successful ({attempted.strip()})"
+        if action in {ACTION_EMAIL_SENT, ACTION_EMAIL_FAILED}:
+            to_email = payload.get("to_email")
+            subject = payload.get("subject")
+            if isinstance(to_email, str) and isinstance(subject, str):
+                prefix = "Email sent" if action == ACTION_EMAIL_SENT else "Email failed"
+                return f"{prefix} to {to_email.strip()}: {subject.strip()}"
         return default
 
     event = str(payload.get("event", "")).strip().lower()
@@ -116,6 +131,7 @@ def map_application_log_item(log: Log) -> ApplicationLogItemResponse:
         level=format_log_level(log.log_level),
         message=format_application_log_message(log, payload),
         source=resolve_application_log_source(log, payload),
+        details=payload or None,
         created_at=log.created_at,
     )
 
@@ -188,6 +204,13 @@ def apply_application_log_source_filter(query: Query, source: str | None) -> Que
                 Log.log_value.ilike(f'%"action": "{ACTION_USER_ADD}"%'),
             )
         )
+    if key == SOURCE_USER_ONBOARD:
+        return query.filter(
+            or_(
+                *_source_json_match(SOURCE_USER_ONBOARD),
+                Log.log_value.ilike(f'%"action": "{ACTION_USER_ONBOARD}"%'),
+            )
+        )
     if key == SOURCE_USER_UPDATE:
         return query.filter(
             or_(
@@ -207,6 +230,14 @@ def apply_application_log_source_filter(query: Query, source: str | None) -> Que
             or_(
                 *_source_json_match(SOURCE_INTEGRATION_KEY_UPDATED),
                 Log.log_value.ilike(f'%"action": "{ACTION_INTEGRATION_KEY_UPDATED}"%'),
+            )
+        )
+    if key == SOURCE_EMAIL:
+        return query.filter(
+            or_(
+                *_source_json_match(SOURCE_EMAIL),
+                Log.log_value.ilike(f'%"action": "{ACTION_EMAIL_SENT}"%'),
+                Log.log_value.ilike(f'%"action": "{ACTION_EMAIL_FAILED}"%'),
             )
         )
     return query

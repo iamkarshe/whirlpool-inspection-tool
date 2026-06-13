@@ -365,6 +365,10 @@ class User(TimestampSoftDeleteMixin, Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    password_change_otps: Mapped[list["PasswordChangeOtp"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def allowed_warehouse(self) -> list[str]:
@@ -1249,6 +1253,45 @@ class PasswordResetIpBlock(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+class PasswordChangeOtp(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "password_change_otps"
+    __table_args__ = (
+        Index("ix_password_change_otps_user_id", "user_id"),
+        Index(
+            "ix_password_change_otps_user_purpose_consumed",
+            "user_id",
+            "purpose",
+            "is_consumed",
+        ),
+        Index("ix_password_change_otps_expires_at", "expires_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    purpose: Mapped[str] = mapped_column(String(32), nullable=False)
+    otp_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+    proxy_ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_consumed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    consumed_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    expires_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    email_sent: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+
+    user: Mapped["User"] = relationship(back_populates="password_change_otps")
 
 
 class Log(TimestampSoftDeleteMixin, Base):

@@ -10,7 +10,8 @@ from mod.api.inspection.review_notifications import (
     execute_inspection_review_manager_notifications,
 )
 from mod.model import Task
-from mod.tasks.email_send import resolve_smtp_config_from_payload, send_task_email
+from mod.tasks.email_send import resolve_smtp_config_from_payload
+from mod.tasks.email_delivery import send_and_log_task_email
 from mod.tasks.ip_geo import execute_resolve_ip_metadata
 from mod.tasks.service import update_task_progress
 
@@ -42,7 +43,14 @@ def handle_send_email(db: Session, task: Task) -> dict[str, Any]:
     smtp_config = resolve_smtp_config_from_payload(payload)
 
     update_task_progress(db, task, 60, "Sending email")
-    send_task_email(smtp_config, message)
+    send_and_log_task_email(
+        db,
+        smtp_config,
+        message,
+        delivery_mode="celery",
+        task_uuid=str(task.uuid),
+        created_by=task.created_by,
+    )
 
     to_email = str(message.get("to_email", "") or "").strip()
     return {

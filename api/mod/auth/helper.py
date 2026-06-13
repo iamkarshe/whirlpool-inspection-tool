@@ -26,6 +26,7 @@ from mod.auth.response import (
 from mod.auth.session import create_user_session, deregister_device
 from mod.model import Device, User
 from utils.password_policy import resolve_password_change_flags
+from utils.change_password_otp import is_change_password_otp_required_for_user
 from utils.common import normalize_login_email
 from utils.env import get_allow_multi_login
 from utils.ip_address import get_client_ip_address
@@ -123,6 +124,7 @@ def build_login_response(
         active_devices=active_devices,
         must_change_password=must_change_password,
         password_expired=password_expired,
+        change_password_otp_required=is_change_password_otp_required_for_user(user),
     )
 
 

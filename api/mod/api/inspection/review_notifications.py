@@ -11,7 +11,11 @@ from mod.push_notification.config import vapid_send_credentials_optional
 from mod.push_notification.helper import send_user_push_notifications
 from mod.push_notification.request import PushSendPayload
 from mod.tasks.constants import CREDENTIAL_KEY_DEFAULT_SMTP
-from mod.tasks.email_send import resolve_smtp_config_from_payload, send_task_email
+from mod.tasks.email_delivery import (
+    EMAIL_KIND_INSPECTION_REVIEW,
+    send_and_log_task_email,
+)
+from mod.tasks.email_send import resolve_smtp_config_from_payload
 from mod.tasks.queue import try_enqueue_background_task
 from utils.env import get_frontend_base_url, is_celery_broker_configured
 
@@ -217,7 +221,15 @@ def execute_inspection_review_manager_notifications(
                     smtp_from_email=smtp_from_email,
                     smtp_from_name=smtp_from_name,
                 )
-                send_task_email(smtp_config, email_message)
+                send_and_log_task_email(
+                    db,
+                    smtp_config,
+                    email_message,
+                    email_kind=EMAIL_KIND_INSPECTION_REVIEW,
+                    actor_user_id=manager.id,
+                    delivery_mode="direct",
+                    created_by="inspection_review_notification",
+                )
                 emails_sent += 1
             except Exception:
                 emails_failed += 1
