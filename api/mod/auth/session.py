@@ -146,3 +146,18 @@ def deregister_device(
     revoke_sessions_for_device(db, device.id)
     deactivate_push_subscriptions_for_device(db, device.id)
     db.flush()
+
+
+def revoke_all_sessions_for_user(db: Session, user_id: int) -> int:
+    sessions = (
+        db.query(UserSession)
+        .filter(
+            UserSession.user_id == user_id,
+            UserSession.is_active.is_(True),
+        )
+        .all()
+    )
+    for session in sessions:
+        session.is_active = False
+    db.flush()
+    return len(sessions)

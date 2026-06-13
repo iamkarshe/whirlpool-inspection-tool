@@ -13,6 +13,9 @@ from mod.model import Log, LogLevel
 
 ACTION_AUTH_LOGIN = "auth_login"
 ACTION_AUTH_LOGIN_FAILED = "auth_login_failed"
+ACTION_AUTH_FORGOT_PASSWORD = "auth_forgot_password"
+ACTION_AUTH_FORGOT_PASSWORD_BLOCKED = "auth_forgot_password_blocked"
+ACTION_AUTH_PASSWORD_RESET = "auth_password_reset"
 ACTION_USER_ADD = "user_add"
 ACTION_USER_UPDATE = "user_update"
 ACTION_MASTER_UPDATE = "master_update"
@@ -35,6 +38,9 @@ SOURCE_DISPLAY_LABELS: dict[str, str] = {
 ACTION_TO_SOURCE: dict[str, str] = {
     ACTION_AUTH_LOGIN: SOURCE_AUTH,
     ACTION_AUTH_LOGIN_FAILED: SOURCE_AUTH,
+    ACTION_AUTH_FORGOT_PASSWORD: SOURCE_AUTH,
+    ACTION_AUTH_FORGOT_PASSWORD_BLOCKED: SOURCE_AUTH,
+    ACTION_AUTH_PASSWORD_RESET: SOURCE_AUTH,
     ACTION_USER_ADD: SOURCE_USER_ADD,
     ACTION_USER_UPDATE: SOURCE_USER_UPDATE,
     ACTION_MASTER_UPDATE: SOURCE_MASTER_UPDATE,
@@ -44,6 +50,9 @@ ACTION_TO_SOURCE: dict[str, str] = {
 DEFAULT_ACTION_MESSAGES: dict[str, str] = {
     ACTION_AUTH_LOGIN: "User login successful",
     ACTION_AUTH_LOGIN_FAILED: "Login failed",
+    ACTION_AUTH_FORGOT_PASSWORD: "Password reset requested",
+    ACTION_AUTH_FORGOT_PASSWORD_BLOCKED: "Password reset IP blocked",
+    ACTION_AUTH_PASSWORD_RESET: "Password reset completed",
     ACTION_USER_ADD: "User account created",
     ACTION_USER_UPDATE: "User account updated",
     ACTION_MASTER_UPDATE: "Master data updated",
@@ -159,6 +168,94 @@ def log_auth_login_failed(
         user_agent=user_agent,
         email=email or normalized_attempt,
         **details,
+    )
+    schedule_ip_metadata_lookup(db, client_ip)
+
+
+def log_auth_forgot_password_request(
+    db: Session,
+    *,
+    user_id: int | None,
+    client_ip: str | None,
+    proxy_ip: str | None,
+    user_agent: str | None,
+    attempted_email: str | None,
+    password_reset_request_uuid: str | None,
+    email_sent: bool,
+    skipped_reason: str | None = None,
+) -> None:
+    details: dict[str, Any] = {
+        "attempted_email": attempted_email,
+        "password_reset_request_uuid": password_reset_request_uuid,
+        "email_sent": email_sent,
+    }
+    if skipped_reason:
+        details["skipped_reason"] = skipped_reason
+    record_application_log(
+        db,
+        actor_user_id=user_id,
+        level=LogLevel.info if email_sent else LogLevel.warning,
+        action=ACTION_AUTH_FORGOT_PASSWORD,
+        message=DEFAULT_ACTION_MESSAGES[ACTION_AUTH_FORGOT_PASSWORD],
+        ip=client_ip,
+        proxy_ip=proxy_ip,
+        user_agent=user_agent,
+        **details,
+    )
+    schedule_ip_metadata_lookup(db, client_ip)
+
+
+def log_auth_forgot_password_blocked(
+    db: Session,
+    *,
+    client_ip: str | None,
+    proxy_ip: str | None,
+    user_agent: str | None,
+    attempted_email: str | None,
+    blocked_until: str,
+    trigger_request_count: int,
+    rejection_reason: str | None = None,
+) -> None:
+    details: dict[str, Any] = {
+        "attempted_email": attempted_email,
+        "blocked_until": blocked_until,
+        "trigger_request_count": trigger_request_count,
+    }
+    if rejection_reason:
+        details["rejection_reason"] = rejection_reason
+    record_application_log(
+        db,
+        actor_user_id=None,
+        level=LogLevel.error,
+        action=ACTION_AUTH_FORGOT_PASSWORD_BLOCKED,
+        message=DEFAULT_ACTION_MESSAGES[ACTION_AUTH_FORGOT_PASSWORD_BLOCKED],
+        ip=client_ip,
+        proxy_ip=proxy_ip,
+        user_agent=user_agent,
+        **details,
+    )
+    schedule_ip_metadata_lookup(db, client_ip)
+
+
+def log_auth_password_reset_completed(
+    db: Session,
+    *,
+    user_id: int,
+    client_ip: str | None,
+    proxy_ip: str | None,
+    user_agent: str | None,
+    password_reset_request_uuid: str,
+) -> None:
+    record_application_log(
+        db,
+        actor_user_id=user_id,
+        level=LogLevel.info,
+        action=ACTION_AUTH_PASSWORD_RESET,
+        message=DEFAULT_ACTION_MESSAGES[ACTION_AUTH_PASSWORD_RESET],
+        ip=client_ip,
+        proxy_ip=proxy_ip,
+        user_agent=user_agent,
+        password_reset_request_uuid=password_reset_request_uuid,
     )
     schedule_ip_metadata_lookup(db, client_ip)
 

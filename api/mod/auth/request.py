@@ -38,3 +38,9 @@ class ResolveDevicesRequest(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=16, max_length=512)
+    password: str = Field(min_length=6, max_length=128)
+    confirm_password: str = Field(min_length=6, max_length=128)

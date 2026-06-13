@@ -350,6 +350,10 @@ class User(TimestampSoftDeleteMixin, Base):
         secondary=user_allowed_plants_tbl,
         back_populates="users_with_plant_access",
     )
+    password_reset_requests: Mapped[list["PasswordResetRequest"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def allowed_warehouse(self) -> list[str]:
@@ -1121,6 +1125,81 @@ class IpAddressMetadata(Base):
     raw_response: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     looked_up_at: Mapped[Any | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class PasswordResetRequest(TimestampSoftDeleteMixin, Base):
+    __tablename__ = "password_reset_requests"
+    __table_args__ = (
+        Index("ix_password_reset_requests_user_id", "user_id"),
+        Index("ix_password_reset_requests_ip_address", "ip_address"),
+        Index(
+            "ix_password_reset_requests_ip_created_at",
+            "ip_address",
+            "created_at",
+        ),
+        Index(
+            "ix_password_reset_requests_user_completed",
+            "user_id",
+            "is_completed",
+        ),
+        Index("ix_password_reset_requests_token_hash", "token_hash"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    attempted_email: Mapped[str] = mapped_column(String(180), nullable=False, index=True)
+    token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+    proxy_ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_completed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    completed_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    expires_at: Mapped[Any] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    email_sent: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    is_disallowed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+
+    user: Mapped["User | None"] = relationship(back_populates="password_reset_requests")
+
+
+class PasswordResetIpBlock(Base):
+    __tablename__ = "password_reset_ip_blocks"
+    __table_args__ = (
+        UniqueConstraint("ip_address", name="uq_password_reset_ip_blocks_ip"),
+        Index("ix_password_reset_ip_blocks_blocked_until", "blocked_until"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ip_address: Mapped[str] = mapped_column(INET, nullable=False)
+    blocked_until: Mapped[Any] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    trigger_request_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
     )
     created_at: Mapped[Any] = mapped_column(
         DateTime(timezone=True),

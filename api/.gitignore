@@ -11,6 +11,7 @@ wheels/
 
 # Credentials
 credentials.json
+credentials.prod.json
 
 # Redis
 *.rdb

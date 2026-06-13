@@ -26,6 +26,11 @@ def get_frontend_base_url() -> str | None:
     return get_env_optional("FRONTEND_BASE_URL")
 
 
+def is_development_environment() -> bool:
+    raw = (get_env_optional("APP_ENV", "dev") or "dev").strip().lower()
+    return raw == "dev"
+
+
 def get_media_base_url() -> str | None:
     """Base URL for inspection media (``build_url``). ``MEDIA_BASE_URL`` wins, else ``CDN_BASE_URL``."""
     return get_env_optional("MEDIA_BASE_URL") or get_env_optional("CDN_BASE_URL")

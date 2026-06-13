@@ -50,5 +50,18 @@ class DeregisterDeviceResponse(BaseModel):
     message: str = "Device deregistered and sessions revoked"
 
 
+class ForgotPasswordDebugResponse(BaseModel):
+    email_sent: bool = False
+    is_disallowed: bool = False
+
+
 class ForgotPasswordResponse(BaseModel):
+    message: str
+    debug: ForgotPasswordDebugResponse | None = Field(
+        default=None,
+        description="Present when APP_ENV=dev for local API debugging.",
+    )
+
+
+class ResetPasswordResponse(BaseModel):
     message: str

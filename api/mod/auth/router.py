@@ -16,10 +16,22 @@ from mod.auth.helper import (
     log_user_not_found_and_raise,
     verify_sso_login_token,
 )
-from mod.auth.request import ForgotPasswordRequest, LoginRequest, LoginTokenRequest
-from mod.auth.response import ForgotPasswordResponse, LoginResponse
+from mod.auth.password_reset_helper import process_forgot_password, process_reset_password
+from mod.auth.request import (
+    ForgotPasswordRequest,
+    LoginRequest,
+    LoginTokenRequest,
+    ResetPasswordRequest,
+)
+from mod.auth.response import (
+    ForgotPasswordDebugResponse,
+    ForgotPasswordResponse,
+    LoginResponse,
+    ResetPasswordResponse,
+)
 from mod.model import User
 from utils.db import get_db
+from utils.env import is_development_environment
 from utils.password import verify_password
 
 router = APIRouter(
@@ -150,14 +162,37 @@ def login_token(
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
 def forgot_password(
-    payload: ForgotPasswordRequest, db: Session = Depends(get_db)
+    request: Request,
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
 ) -> ForgotPasswordResponse:
-    user: User | None = db.query(User).filter(User.email == str(payload.email)).first()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Invalid email",
+    ctx = get_request_client_context(request)
+    result = process_forgot_password(
+        db,
+        email=str(payload.email),
+        ctx=ctx,
+    )
+    debug = None
+    if is_development_environment():
+        debug = ForgotPasswordDebugResponse(
+            email_sent=result.email_sent,
+            is_disallowed=result.is_disallowed,
         )
+    return ForgotPasswordResponse(message=result.message, debug=debug)
 
-    return ForgotPasswordResponse(message="Password reset request accepted")
+
+@router.post("/reset-password", response_model=ResetPasswordResponse)
+def reset_password(
+    request: Request,
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+) -> ResetPasswordResponse:
+    ctx = get_request_client_context(request)
+    message = process_reset_password(
+        db,
+        token=payload.token,
+        password=payload.password,
+        confirm_password=payload.confirm_password,
+        ctx=ctx,
+    )
+    return ResetPasswordResponse(message=message)

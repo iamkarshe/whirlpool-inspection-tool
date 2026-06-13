@@ -79,6 +79,7 @@ function isPublicAuthRequest(url: string): boolean {
     path.endsWith("/auth/login") ||
     path.endsWith("/auth/login-token") ||
     path.endsWith("/auth/forgot-password") ||
+    path.endsWith("/auth/reset-password") ||
     path.includes("/sso")
   );
 }
