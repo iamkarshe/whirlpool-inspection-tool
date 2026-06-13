@@ -1,0 +1,15 @@
+meta {
+  name: Filters
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/tasks/filters
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-job-execute-token: {{job_trigger_key}}
+}

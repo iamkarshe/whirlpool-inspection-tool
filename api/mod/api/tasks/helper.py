@@ -456,11 +456,33 @@ def map_task_detail(task: Task) -> TaskDetailResponse:
     )
 
 
-def list_recent_tasks(db: Session) -> TaskListResponse:
+def list_recent_tasks(
+    db: Session,
+    *,
+    task_type: str | None = None,
+    status: str | None = None,
+) -> TaskListResponse:
+    query = db.query(Task).filter(Task.is_active.is_(True))
+
+    if task_type is not None:
+        normalized_type = task_type.strip()
+        if normalized_type:
+            query = query.filter(Task.task_type == normalized_type)
+
+    if status is not None:
+        normalized_status = status.strip().lower()
+        if normalized_status:
+            try:
+                status_enum = TaskStatus(normalized_status)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid task status: {status}",
+                )
+            query = query.filter(Task.status == status_enum)
+
     rows = (
-        db.query(Task)
-        .filter(Task.is_active.is_(True))
-        .order_by(Task.created_at.desc())
+        query.order_by(Task.created_at.desc())
         .limit(TASK_LIST_LIMIT)
         .all()
     )

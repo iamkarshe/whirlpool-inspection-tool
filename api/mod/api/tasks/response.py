@@ -4,6 +4,8 @@ from typing import Any, List, Literal
 
 from pydantic import BaseModel, Field
 
+from mod.api.log.response import FilterOption
+
 TaskDisplayGroup = Literal["status", "timing", "result", "error", "payload"]
 
 
@@ -75,3 +77,10 @@ class TaskCreateResponse(BaseModel):
 class TaskListResponse(BaseModel):
     data: List[TaskListItemResponse]
     total: int = Field(..., description="Number of tasks returned (at most 50).")
+
+
+class TaskFiltersResponse(BaseModel):
+    task_types: List[FilterOption] = Field(
+        ...,
+        description="Tab options for GET /api/tasks?task_type=.",
+    )

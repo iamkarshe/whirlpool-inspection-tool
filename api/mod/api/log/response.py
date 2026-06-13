@@ -55,3 +55,22 @@ class JobLogListResponse(BaseModel):
     page: int
     per_page: int
     total_pages: int
+
+
+class FilterOption(BaseModel):
+    value: str = Field(..., description="Pass as the list endpoint filter query value.")
+    label: str = Field(..., description="Display label for segmented filter tabs.")
+
+
+class ApplicationLogFiltersResponse(BaseModel):
+    sources: List[FilterOption] = Field(
+        ...,
+        description="Tab options for GET /api/logs?source=.",
+    )
+
+
+class JobLogFiltersResponse(BaseModel):
+    job_names: List[FilterOption] = Field(
+        ...,
+        description="Tab options for GET /api/logs/job?job_name=.",
+    )

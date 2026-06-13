@@ -3,13 +3,22 @@
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
+from mod.api.log.filter_metadata import (
+    build_application_log_filters,
+    build_job_log_filters,
+)
 from mod.api.log.helper import (
     apply_application_log_level_filter,
     apply_application_log_source_filter,
     map_application_log_item,
     map_job_log_item,
 )
-from mod.api.log.response import ApplicationLogListResponse, JobLogListResponse
+from mod.api.log.response import (
+    ApplicationLogFiltersResponse,
+    ApplicationLogListResponse,
+    JobLogFiltersResponse,
+    JobLogListResponse,
+)
 from mod.api.middleware import auth_dependency
 from mod.model import JobLog, JobLogStatus, Log
 from utils.db import get_db
@@ -26,6 +35,41 @@ router = APIRouter(
     dependencies=[Depends(auth_dependency)],
     prefix="/api",
 )
+
+
+@router.get(
+    "/logs/filters",
+    name="get_application_log_filters",
+    summary="Application log source filter tabs",
+    description=(
+        "Returns source values for segmented filter tabs on the Logs page. "
+        "Pass value to GET /api/logs?source=."
+    ),
+    response_model=ApplicationLogFiltersResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def get_application_log_filters(request: Request) -> ApplicationLogFiltersResponse:
+    return build_application_log_filters()
+
+
+@router.get(
+    "/logs/job/filters",
+    name="get_job_log_filters",
+    summary="Job log name filter tabs",
+    description=(
+        "Returns job_name values for segmented filter tabs on the Job Logs page. "
+        "Pass value to GET /api/logs/job?job_name=."
+    ),
+    response_model=JobLogFiltersResponse,
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def get_job_log_filters(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> JobLogFiltersResponse:
+    return build_job_log_filters(db)
 
 
 @router.get(
@@ -47,6 +91,10 @@ def get_job_logs(
         None,
         description="Filter by job status: success or failed.",
     ),
+    job_name: str | None = Query(
+        None,
+        description="Filter by exact job_name (see GET /api/logs/job/filters).",
+    ),
     db: Session = Depends(get_db),
 ):
     query = db.query(JobLog).filter(JobLog.is_active.is_(True))
@@ -57,6 +105,11 @@ def get_job_logs(
             query = query.filter(JobLog.status == JobLogStatus.success)
         elif normalized == JobLogStatus.failed.value:
             query = query.filter(JobLog.status == JobLogStatus.failed)
+
+    if job_name is not None:
+        normalized_job_name = job_name.strip()
+        if normalized_job_name:
+            query = query.filter(JobLog.job_name == normalized_job_name)
 
     query = apply_standard_filters(
         query=query,

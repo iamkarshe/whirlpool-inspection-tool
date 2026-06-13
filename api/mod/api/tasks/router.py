@@ -1,9 +1,10 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from mod.api.middleware import auth_dependency
+from mod.api.tasks.filter_metadata import build_task_filters
 from mod.api.tasks.helper import (
     get_task_by_uuid_or_404,
     list_recent_tasks,
@@ -15,6 +16,7 @@ from mod.api.tasks.request import SampleSendEmailRequest, TaskCreateRequest
 from mod.api.tasks.response import (
     TaskCreateResponse,
     TaskDetailResponse,
+    TaskFiltersResponse,
     TaskListResponse,
 )
 from utils.db import get_db
@@ -33,7 +35,10 @@ router = APIRouter(
     "/tasks",
     name="list_tasks",
     summary="List recent background tasks",
-    description="Returns the 50 most recently created tasks, newest first.",
+    description=(
+        "Returns the 50 most recently created tasks, newest first. "
+        "Optional filters: task_type, status (see GET /api/tasks/filters)."
+    ),
     response_model=TaskListResponse,
     responses={403: {"description": "Caller is not superadmin."}},
 )
@@ -41,9 +46,34 @@ router = APIRouter(
 @check_api_role(TASK_API_ROLES)
 def list_tasks(
     request: Request,
+    task_type: str | None = Query(
+        None,
+        description="Filter by task_type (e.g. send_email).",
+    ),
+    status: str | None = Query(
+        None,
+        description="Filter by status: queued, processing, completed, failed, retrying, cancelled.",
+    ),
     db: Session = Depends(get_db),
 ) -> TaskListResponse:
-    return list_recent_tasks(db)
+    return list_recent_tasks(db, task_type=task_type, status=status)
+
+
+@router.get(
+    "/tasks/filters",
+    name="get_task_filters",
+    summary="Task type filter tabs",
+    description=(
+        "Returns task_type values for segmented filter tabs on the Tasks page. "
+        "Pass value to GET /api/tasks?task_type=."
+    ),
+    response_model=TaskFiltersResponse,
+    responses={403: {"description": "Caller is not superadmin."}},
+)
+@exception_handler_decorator
+@check_api_role(TASK_API_ROLES)
+def get_task_filters(request: Request) -> TaskFiltersResponse:
+    return build_task_filters()
 
 
 @router.post(
