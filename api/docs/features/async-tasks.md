@@ -118,14 +118,9 @@ Start with these task types:
 
 ```text
 send_email
-generate_report
-process_file
-send_webhook
+notify_inspection_review_managers
+resolve_ip_metadata
 ```
-
-Only `send_email` must be implemented first.
-
-Other handlers can be simple placeholders for now.
 
 ## Task Model
 
@@ -477,15 +472,10 @@ Create a simple handler map:
 ```python
 TASK_HANDLERS = {
     "send_email": handle_send_email,
-    "generate_report": handle_generate_report,
-    "process_file": handle_process_file,
-    "send_webhook": handle_send_webhook,
+    "resolve_ip_metadata": handle_resolve_ip_metadata,
+    "notify_inspection_review_managers": handle_notify_inspection_review_managers,
 }
 ```
-
-Only `handle_send_email` needs real implementation now.
-
-The other handlers can return placeholder results.
 
 ## Email Handler Behavior
 

@@ -10,9 +10,6 @@ TASK_TYPE_LABELS: dict[str, str] = {
     "send_email": "send email",
     "notify_inspection_review_managers": "inspection review notifications",
     "resolve_ip_metadata": "resolve ip metadata",
-    "generate_report": "generate report",
-    "process_file": "process file",
-    "send_webhook": "send webhook",
 }
 
 

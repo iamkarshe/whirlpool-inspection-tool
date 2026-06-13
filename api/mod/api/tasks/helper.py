@@ -25,7 +25,6 @@ from mod.tasks.service import (
     attach_celery_task_id,
     create_task_record,
     dispatch_task,
-    get_task_by_uuid_or_404,
     safe_queue_name,
 )
 from utils.env import is_celery_broker_configured
@@ -223,18 +222,6 @@ TASK_RESULT_FIELD_TAGS: dict[str, dict[str, str]] = {
         "emails_failed": "Emails Failed",
         "managers_push_notified": "Push Notified",
     },
-    "generate_report": {
-        "status": "Status",
-        "task_type": "Task Type",
-    },
-    "process_file": {
-        "status": "Status",
-        "task_type": "Task Type",
-    },
-    "send_webhook": {
-        "status": "Status",
-        "task_type": "Task Type",
-    },
 }
 
 PAYLOAD_MESSAGE_FIELD_TAGS: dict[str, str] = {
@@ -325,13 +312,17 @@ def build_task_result_display_fields(task: Task) -> list[TaskDisplayField]:
 
 
 def build_task_display_fields(task: Task) -> list[TaskDisplayField]:
-    status_value = task.status.value if hasattr(task.status, "value") else str(task.status)
+    status_value = (
+        task.status.value if hasattr(task.status, "value") else str(task.status)
+    )
     fields: list[TaskDisplayField] = []
 
     append_display_field(
         fields, tag="Task Type", key="task_type", value=task.task_type, group="status"
     )
-    append_display_field(fields, tag="Status", key="status", value=status_value, group="status")
+    append_display_field(
+        fields, tag="Status", key="status", value=status_value, group="status"
+    )
     append_display_field(
         fields,
         tag="Progress",
@@ -350,7 +341,11 @@ def build_task_display_fields(task: Task) -> list[TaskDisplayField]:
         fields, tag="Queue", key="queue_name", value=task.queue_name, group="status"
     )
     append_display_field(
-        fields, tag="Created By", key="created_by", value=task.created_by, group="status"
+        fields,
+        tag="Created By",
+        key="created_by",
+        value=task.created_by,
+        group="status",
     )
     append_display_field(
         fields,
@@ -361,13 +356,25 @@ def build_task_display_fields(task: Task) -> list[TaskDisplayField]:
     )
 
     append_display_field(
-        fields, tag="Created At", key="created_at", value=task.created_at, group="timing"
+        fields,
+        tag="Created At",
+        key="created_at",
+        value=task.created_at,
+        group="timing",
     )
     append_display_field(
-        fields, tag="Updated At", key="updated_at", value=task.updated_at, group="timing"
+        fields,
+        tag="Updated At",
+        key="updated_at",
+        value=task.updated_at,
+        group="timing",
     )
     append_display_field(
-        fields, tag="Started At", key="started_at", value=task.started_at, group="timing"
+        fields,
+        tag="Started At",
+        key="started_at",
+        value=task.started_at,
+        group="timing",
     )
     append_display_field(
         fields,
@@ -406,7 +413,9 @@ def task_result_message(task: Task, status_value: str) -> str | None:
 
 
 def map_task_list_item(task: Task) -> TaskListItemResponse:
-    status_value = task.status.value if hasattr(task.status, "value") else str(task.status)
+    status_value = (
+        task.status.value if hasattr(task.status, "value") else str(task.status)
+    )
     return TaskListItemResponse(
         uuid=task.uuid,
         task_type=task.task_type,
@@ -424,7 +433,9 @@ def map_task_list_item(task: Task) -> TaskListItemResponse:
 
 
 def map_task_detail(task: Task) -> TaskDetailResponse:
-    status_value = task.status.value if hasattr(task.status, "value") else str(task.status)
+    status_value = (
+        task.status.value if hasattr(task.status, "value") else str(task.status)
+    )
     terminal_statuses = {
         TaskStatus.completed.value,
         TaskStatus.failed.value,
@@ -481,11 +492,7 @@ def list_recent_tasks(
                 )
             query = query.filter(Task.status == status_enum)
 
-    rows = (
-        query.order_by(Task.created_at.desc())
-        .limit(TASK_LIST_LIMIT)
-        .all()
-    )
+    rows = query.order_by(Task.created_at.desc()).limit(TASK_LIST_LIMIT).all()
     return TaskListResponse(
         data=[map_task_list_item(task) for task in rows],
         total=len(rows),

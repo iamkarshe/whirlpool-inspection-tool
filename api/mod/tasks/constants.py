@@ -3,9 +3,6 @@ SUPPORTED_TASK_TYPES = frozenset(
         "send_email",
         "notify_inspection_review_managers",
         "resolve_ip_metadata",
-        "generate_report",
-        "process_file",
-        "send_webhook",
     }
 )
 

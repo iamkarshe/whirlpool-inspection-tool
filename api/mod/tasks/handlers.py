@@ -18,21 +18,6 @@ from mod.tasks.service import update_task_progress
 Handler = Callable[[Session, Task], dict[str, Any]]
 
 
-def handle_generate_report(db: Session, task: Task) -> dict[str, Any]:
-    update_task_progress(db, task, 50, "Report handler placeholder")
-    return {"status": "not_implemented", "task_type": "generate_report"}
-
-
-def handle_process_file(db: Session, task: Task) -> dict[str, Any]:
-    update_task_progress(db, task, 50, "File handler placeholder")
-    return {"status": "not_implemented", "task_type": "process_file"}
-
-
-def handle_send_webhook(db: Session, task: Task) -> dict[str, Any]:
-    update_task_progress(db, task, 50, "Webhook handler placeholder")
-    return {"status": "not_implemented", "task_type": "send_webhook"}
-
-
 def handle_send_email(db: Session, task: Task) -> dict[str, Any]:
     payload = dict(task.payload or {})
     message = payload.get("message")
@@ -80,7 +65,4 @@ TASK_HANDLERS: dict[str, Handler] = {
     "send_email": handle_send_email,
     "resolve_ip_metadata": handle_resolve_ip_metadata,
     "notify_inspection_review_managers": handle_notify_inspection_review_managers,
-    "generate_report": handle_generate_report,
-    "process_file": handle_process_file,
-    "send_webhook": handle_send_webhook,
 }
