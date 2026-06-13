@@ -1,0 +1,70 @@
+{
+  "assets": {
+    "api": [
+      "migrations",
+      "mod",
+      "template",
+      "utils",
+      "alembic.ini",
+      "main.py",
+      "pyproject.toml",
+      "requirements.txt"
+    ],
+    "ui": ["dist"]
+  },
+  "sites": [
+    {
+      "id": "scopt-direct",
+      "label": "Scopt production (direct)",
+      "enabled": true,
+      "api": ".",
+      "ui": "../ui",
+      "ssh": {
+        "host": "whirlpool.scoptanalytics.in",
+        "user": "scoptanalytics-whirlpool",
+        "port": 22,
+        "auth": "password",
+        "password": "your-scopt-password"
+      },
+      "remote": {
+        "api_dir": "/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in",
+        "ui_dir": "/home/scoptanalytics-whirlpool/htdocs/whirlpool.scoptanalytics.in/dist",
+        "staging_dir": "/tmp/whirlpool-deploy"
+      },
+      "after_api_extract": [
+        ".venv/bin/pip install -r requirements.txt -q",
+        "sudo systemctl restart whirlpool-api.target"
+      ]
+    },
+    {
+      "id": "client-vpn",
+      "label": "Client site (SSH jump)",
+      "enabled": false,
+      "api": ".",
+      "ui": "../ui",
+      "ssh": {
+        "host": "10.0.0.5",
+        "user": "app",
+        "port": 22,
+        "auth": "key",
+        "key": "~/.ssh/client_deploy_key",
+        "jump": {
+          "host": "bastion.example.com",
+          "user": "deploy",
+          "port": 22,
+          "auth": "key",
+          "key": "~/.ssh/client_deploy_key"
+        }
+      },
+      "remote": {
+        "api_dir": "/opt/whirlpool/api",
+        "ui_dir": "/var/www/whirlpool",
+        "staging_dir": "/tmp/whirlpool-deploy"
+      },
+      "after_api_extract": [
+        ".venv/bin/pip install -r requirements.txt -q",
+        "sudo systemctl restart whirlpool-api.target"
+      ]
+    }
+  ]
+}

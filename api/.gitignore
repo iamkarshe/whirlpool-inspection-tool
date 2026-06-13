@@ -15,3 +15,6 @@ credentials.prod.json
 
 # Redis
 *.rdb
+
+# Deploy config (site-specific hosts/paths)
+deploy-sites.json
