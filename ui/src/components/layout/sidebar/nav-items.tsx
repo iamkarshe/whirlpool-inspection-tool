@@ -166,6 +166,11 @@ export const navItems: NavGroup[] = [
             roles: SUPERADMIN_APP_ROLES,
           },
           {
+            title: "Tasks",
+            href: PAGES.DASHBOARD_ADMIN_TASKS,
+            roles: SUPERADMIN_APP_ROLES,
+          },
+          {
             title: "Knowledge Base",
             href: PAGES.DASHBOARD_ADMIN_KNOWLEDGE_BASE,
             roles: SUPERADMIN_APP_ROLES,

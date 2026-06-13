@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   DataTable,
-  type DataTableFilter,
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
 import { formatDate } from "@/lib/core";
@@ -18,11 +17,23 @@ import type { JobLogRow } from "@/services/logs-api";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
+function formatMetadata(metadata: JobLogRow["metadata"]): string {
+  if (!metadata) return "—";
+  try {
+    return JSON.stringify(metadata, null, 2);
+  } catch {
+    return String(metadata);
+  }
+}
+
 function buildJobLogColumns(
+  activeJobName: string | null,
   onView: (log: JobLogRow) => void,
 ): ColumnDef<JobLogRow>[] {
-  return [
-    {
+  const columns: ColumnDef<JobLogRow>[] = [];
+
+  if (!activeJobName) {
+    columns.push({
       accessorKey: "job_name",
       header: ({ column }) => (
         <Button
@@ -35,11 +46,14 @@ function buildJobLogColumns(
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="block max-w-[140px] truncate font-medium">
+        <span className="block max-w-[180px] truncate font-medium">
           {row.original.job_name}
         </span>
       ),
-    },
+    });
+  }
+
+  columns.push(
     {
       accessorKey: "status",
       header: ({ column }) => (
@@ -80,7 +94,7 @@ function buildJobLogColumns(
         const text = row.original.message?.trim() || "—";
         return (
           <span
-            className="block max-w-[200px] truncate text-sm text-muted-foreground"
+            className="block max-w-[240px] truncate text-sm text-muted-foreground"
             title={text !== "—" ? text : undefined}
           >
             {text}
@@ -118,37 +132,31 @@ function buildJobLogColumns(
             variant="ghost"
             size="sm"
             onClick={() => onView(row.original)}
-            aria-label="View job log details"
           >
             View
           </Button>
         </div>
       ),
     },
-  ];
-}
+  );
 
-const jobLogFilters: DataTableFilter<JobLogRow>[] = [
-  {
-    id: "status",
-    title: "Status",
-    options: [
-      { value: "success", label: "Success" },
-      { value: "failed", label: "Failed" },
-    ],
-  },
-];
+  return columns;
+}
 
 interface JobLogsDataTableProps {
   data: JobLogRow[];
   serverSide: DataTableServerSideConfig;
   isLoading?: boolean;
+  activeJobName: string | null;
+  emptyMessage?: string;
 }
 
 function JobLogsDataTable({
   data,
   serverSide,
   isLoading,
+  activeJobName,
+  emptyMessage,
 }: JobLogsDataTableProps) {
   const [selectedLog, setSelectedLog] = useState<JobLogRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -158,38 +166,36 @@ function JobLogsDataTable({
     setDialogOpen(true);
   };
 
-  const columns = buildJobLogColumns(handleView);
+  const columns = useMemo(
+    () => buildJobLogColumns(activeJobName, handleView),
+    [activeJobName],
+  );
+
+  const showEmptyHint =
+    !isLoading && data.length === 0 && emptyMessage && emptyMessage.length > 0;
 
   return (
     <>
       <DataTable<JobLogRow>
         columns={columns}
         data={data}
-        filters={jobLogFilters}
         rangeLabel="job logs"
         isLoading={isLoading ?? false}
         serverSide={serverSide}
         showDateRangePicker={false}
       />
+      {showEmptyHint ? (
+        <p className="text-muted-foreground py-6 text-center text-sm">
+          {emptyMessage}
+        </p>
+      ) : null}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Job log details</DialogTitle>
           </DialogHeader>
           {selectedLog ? (
             <div className="grid gap-3 py-2 text-sm">
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">ID</span>
-                <span className="font-mono text-xs tabular-nums">
-                  {selectedLog.id}
-                </span>
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">UUID</span>
-                <span className="font-mono text-xs break-all">
-                  {selectedLog.uuid}
-                </span>
-              </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">Job</span>
                 <span className="font-medium break-words">
@@ -217,6 +223,14 @@ function JobLogsDataTable({
                 <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                   {selectedLog.message?.trim() || "—"}
                 </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                  Metadata
+                </p>
+                <pre className="max-h-64 overflow-auto rounded-md border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
+                  {formatMetadata(selectedLog.metadata)}
+                </pre>
               </div>
             </div>
           ) : null}

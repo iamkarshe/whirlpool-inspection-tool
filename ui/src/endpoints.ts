@@ -103,6 +103,7 @@ export const PAGES = {
   integrationsSmtpPath: () => `${PAGES.DASHBOARD_ADMIN_INTEGRATIONS}/smtp`,
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
   DASHBOARD_ADMIN_JOB_LOGS: "/dashboard/admin/job-logs",
+  DASHBOARD_ADMIN_TASKS: "/dashboard/admin/tasks",
   DASHBOARD_ADMIN_KNOWLEDGE_BASE: "/dashboard/admin/knowledge-base",
 
   OPS_HOME: "/ops",

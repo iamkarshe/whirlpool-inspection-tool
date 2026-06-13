@@ -1,10 +1,12 @@
 import { isAxiosError } from "axios";
 
 import { getLogs } from "@/api/generated/logs/logs";
+import type { ApplicationLogFiltersResponse } from "@/api/generated/model/applicationLogFiltersResponse";
 import type { ApplicationLogItemResponse } from "@/api/generated/model/applicationLogItemResponse";
 import type { GetApplicationLogsApiLogsGetParams } from "@/api/generated/model/getApplicationLogsApiLogsGetParams";
 import type { GetJobLogsApiLogsJobGetParams } from "@/api/generated/model/getJobLogsApiLogsJobGetParams";
 import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationError";
+import type { JobLogFiltersResponse } from "@/api/generated/model/jobLogFiltersResponse";
 import type { JobLogItemResponse } from "@/api/generated/model/jobLogItemResponse";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 
@@ -41,6 +43,7 @@ export type JobLogsListParams = Pick<
   | "date_from"
   | "date_to"
   | "status"
+  | "job_name"
 >;
 
 export function toApiDate(d: Date): string {
@@ -85,6 +88,24 @@ export function logsApiErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+export async function fetchApplicationLogFilters(
+  request?: { signal?: AbortSignal },
+): Promise<ApplicationLogFiltersResponse> {
+  const api = getLogs();
+  return api.getApplicationLogFiltersApiLogsFiltersGet(
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
+export async function fetchJobLogFilters(
+  request?: { signal?: AbortSignal },
+): Promise<JobLogFiltersResponse> {
+  const api = getLogs();
+  return api.getJobLogFiltersApiLogsJobFiltersGet(
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
 export async function fetchApplicationLogsPage(
   params: ApplicationLogsListParams,
   request?: { signal?: AbortSignal },
@@ -127,6 +148,7 @@ export async function fetchJobLogsPage(
       date_from: params.date_from ?? null,
       date_to: params.date_to ?? null,
       status: params.status ?? null,
+      job_name: params.job_name ?? null,
     },
     request?.signal ? { signal: request.signal } : undefined,
   );

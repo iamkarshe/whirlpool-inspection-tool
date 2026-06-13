@@ -1,27 +1,47 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DataTable,
   type DataTableFilter,
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
 import { formatDate } from "@/lib/core";
+import { DialogApplicationLogDetail } from "@/pages/dashboard/admin/log/dialog-application-log-detail";
 import { LogLevelBadge, LogSourceBadge } from "@/pages/dashboard/admin/log/log-badge";
+import {
+  readLogDetailBoolean,
+  readLogDetailString,
+  sourceTabMatchesRow,
+} from "@/pages/dashboard/admin/log/log-details-utils";
 import type { ApplicationLogRow } from "@/pages/dashboard/admin/log/log-types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
+function detailColumn(
+  id: string,
+  header: string,
+  key: string,
+): ColumnDef<ApplicationLogRow> {
+  return {
+    id,
+    header,
+    cell: ({ row }) => {
+      const value = readLogDetailString(row.original.details, key);
+      return (
+        <span className="block max-w-[180px] truncate text-sm" title={value ?? undefined}>
+          {value ?? "—"}
+        </span>
+      );
+    },
+  };
+}
+
 function buildLogColumns(
+  activeSource: string | null,
   onView: (log: ApplicationLogRow) => void,
 ): ColumnDef<ApplicationLogRow>[] {
-  return [
+  const columns: ColumnDef<ApplicationLogRow>[] = [
     {
       accessorKey: "level",
       meta: { align: "left" },
@@ -58,7 +78,10 @@ function buildLogColumns(
         </span>
       ),
     },
-    {
+  ];
+
+  if (!activeSource) {
+    columns.push({
       accessorKey: "source",
       header: ({ column }) => (
         <Button
@@ -71,7 +94,51 @@ function buildLogColumns(
         </Button>
       ),
       cell: ({ row }) => <LogSourceBadge source={row.original.source} />,
-    },
+    });
+  }
+
+  if (activeSource && sourceTabMatchesRow(activeSource, "AUTH")) {
+    columns.push(
+      detailColumn("attempted_email", "Email", "attempted_email"),
+      detailColumn("ip", "IP", "ip"),
+      detailColumn("login_method", "Method", "login_method"),
+    );
+  }
+
+  if (activeSource && sourceTabMatchesRow(activeSource, "EMAIL")) {
+    columns.push(
+      detailColumn("to_email", "To", "to_email"),
+      detailColumn("subject", "Subject", "subject"),
+    );
+  }
+
+  if (activeSource && sourceTabMatchesRow(activeSource, "USER_ONBOARD")) {
+    columns.push(
+      detailColumn("target_email", "User", "target_email"),
+      {
+        id: "welcome_email_sent",
+        header: "Welcome email",
+        cell: ({ row }) => {
+          const sent = readLogDetailBoolean(row.original.details, "welcome_email_sent");
+          if (sent === null) return "—";
+          return sent ? "Sent" : "Not sent";
+        },
+      },
+    );
+  }
+
+  if (
+    activeSource &&
+    (sourceTabMatchesRow(activeSource, "USER_ADD") ||
+      sourceTabMatchesRow(activeSource, "USER_UPDATE"))
+  ) {
+    columns.push(
+      detailColumn("target_email", "User", "target_email"),
+      detailColumn("target_role", "Role", "target_role"),
+    );
+  }
+
+  columns.push(
     {
       accessorKey: "created_at",
       meta: { align: "right" },
@@ -102,14 +169,15 @@ function buildLogColumns(
             variant="ghost"
             size="sm"
             onClick={() => onView(row.original)}
-            aria-label="View log details"
           >
             View
           </Button>
         </div>
       ),
     },
-  ];
+  );
+
+  return columns;
 }
 
 const logFilters: DataTableFilter<ApplicationLogRow>[] = [
@@ -122,32 +190,22 @@ const logFilters: DataTableFilter<ApplicationLogRow>[] = [
       { value: "error", label: "Error" },
     ],
   },
-  {
-    id: "source",
-    title: "Source",
-    options: [
-      { value: "AUTH", label: "Auth" },
-      { value: "USER ADD", label: "User add" },
-      { value: "USER UPDATE", label: "User update" },
-      { value: "MASTER UPDATE", label: "Master update" },
-      {
-        value: "INTEGRATION KEY UPDATED",
-        label: "Integration key updated",
-      },
-    ],
-  },
 ];
 
 interface LogsDataTableProps {
   data: ApplicationLogRow[];
   serverSide: DataTableServerSideConfig;
   isLoading?: boolean;
+  activeSource: string | null;
+  emptyMessage?: string;
 }
 
 function LogsDataTable({
   data,
   serverSide,
   isLoading,
+  activeSource,
+  emptyMessage,
 }: LogsDataTableProps) {
   const [selectedLog, setSelectedLog] = useState<ApplicationLogRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -157,7 +215,13 @@ function LogsDataTable({
     setDialogOpen(true);
   };
 
-  const columns = buildLogColumns(handleView);
+  const columns = useMemo(
+    () => buildLogColumns(activeSource, handleView),
+    [activeSource],
+  );
+
+  const showEmptyHint =
+    !isLoading && data.length === 0 && emptyMessage && emptyMessage.length > 0;
 
   return (
     <>
@@ -170,49 +234,17 @@ function LogsDataTable({
         serverSide={serverSide}
         showDateRangePicker={false}
       />
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Log details</DialogTitle>
-          </DialogHeader>
-          {selectedLog ? (
-            <div className="grid gap-3 py-2 text-sm">
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">ID</span>
-                <span className="font-mono text-xs tabular-nums">
-                  {selectedLog.id}
-                </span>
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">UUID</span>
-                <span className="font-mono text-xs break-all">
-                  {selectedLog.uuid}
-                </span>
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">Level</span>
-                <LogLevelBadge level={selectedLog.levelKey} />
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">Source</span>
-                <LogSourceBadge source={selectedLog.source} />
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">Time</span>
-                <span className="font-mono text-xs">
-                  {formatDate(selectedLog.created_at)}
-                </span>
-              </div>
-              <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">Message</span>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {selectedLog.message}
-                </p>
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      {showEmptyHint ? (
+        <p className="text-muted-foreground py-6 text-center text-sm">
+          {emptyMessage}
+        </p>
+      ) : null}
+      <DialogApplicationLogDetail
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        log={selectedLog}
+        activeSource={activeSource}
+      />
     </>
   );
 }
