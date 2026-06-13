@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import {
   LoginIpBadge,
   LoginStatusBadge,
@@ -140,11 +140,11 @@ export default function LoginIpDetailDialog({
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-muted-foreground">First seen </span>
-                    {health.first_seen_at ? formatDate(health.first_seen_at) : "—"}
+                    <TimeDisplay iso={health.first_seen_at} />
                   </div>
                   <div>
                     <span className="text-muted-foreground">Last seen </span>
-                    {health.last_seen_at ? formatDate(health.last_seen_at) : "—"}
+                    <TimeDisplay iso={health.last_seen_at} />
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -194,7 +194,7 @@ export default function LoginIpDetailDialog({
                     >
                       <span className="font-medium">{row.user_name}</span>
                       <span className="text-muted-foreground">
-                        {formatDate(row.logged_at)}
+                      <TimeDisplay iso={row.logged_at} />
                       </span>
                       <LoginStatusBadge
                         success={row.status.toLowerCase() === "successful"}

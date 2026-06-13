@@ -4,7 +4,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { PAGES } from "@/endpoints";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { fetchPlantInspectionsPage } from "@/services/plants-api";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
@@ -57,7 +57,7 @@ const columns: ColumnDef<InspectionListItemResponse>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => formatDate(row.original.created_at),
+    cell: ({ row }) => <TimeDisplay iso={row.original.created_at} />,
   },
 ];
 

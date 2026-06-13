@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { ChecksSummaryDialog } from "@/pages/dashboard/inspections/components/checks-summary-dialog";
 import {
   InspectionIdLinkBadge,
@@ -498,7 +498,7 @@ export default function InspectionsDataTable({
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => formatDate(row.original.created_at),
+      cell: ({ row }) => <TimeDisplay iso={row.original.created_at} />,
     },
     {
       id: "actions",

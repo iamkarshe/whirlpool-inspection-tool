@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { InspectionIssueRow } from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { formatIssueStatus } from "@/pages/dashboard/inspections/components/view-tabs/inspection-issue-presenters";
 
 type Props = {
@@ -49,8 +49,8 @@ export function InspectionImageIssuesDialog({
                         {formatIssueStatus(issue.status)}
                       </Badge>
                     </div>
-                    <div className="text-muted-foreground mt-2 text-xs">
-                      {formatDate(issue.createdAt)}
+                    <div className="mt-2">
+                      <TimeDisplay iso={issue.createdAt} />
                     </div>
                     <div className="mt-2">
                       <Button

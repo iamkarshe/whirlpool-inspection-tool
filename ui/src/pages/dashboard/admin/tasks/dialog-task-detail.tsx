@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { TaskStatusBadge } from "@/pages/dashboard/admin/tasks/task-badge";
 import { fetchTaskDetail, tasksApiErrorMessage } from "@/services/tasks-api";
 
@@ -74,6 +74,32 @@ function TaskDetailBody({ taskUuid }: { taskUuid: string }) {
         </span>
       </div>
       <div className="grid grid-cols-[120px_1fr] gap-2">
+        <span className="text-muted-foreground">Date</span>
+        <TimeDisplay iso={detail.created_at} />
+      </div>
+      <div className="grid grid-cols-[120px_1fr] gap-2">
+        <span className="text-muted-foreground">Updated</span>
+        <TimeDisplay iso={detail.updated_at} />
+      </div>
+      {detail.started_at ? (
+        <div className="grid grid-cols-[120px_1fr] gap-2">
+          <span className="text-muted-foreground">Started</span>
+          <TimeDisplay iso={detail.started_at} />
+        </div>
+      ) : null}
+      {detail.completed_at ? (
+        <div className="grid grid-cols-[120px_1fr] gap-2">
+          <span className="text-muted-foreground">Completed</span>
+          <TimeDisplay iso={detail.completed_at} />
+        </div>
+      ) : null}
+      {detail.failed_at ? (
+        <div className="grid grid-cols-[120px_1fr] gap-2">
+          <span className="text-muted-foreground">Failed</span>
+          <TimeDisplay iso={detail.failed_at} />
+        </div>
+      ) : null}
+      <div className="grid grid-cols-[120px_1fr] gap-2">
         <span className="text-muted-foreground">Created by</span>
         <span>{detail.created_by?.trim() || "—"}</span>
       </div>
@@ -132,7 +158,11 @@ export function DialogTaskDetail({
           <DialogTitle>Task details</DialogTitle>
           {task ? (
             <DialogDescription>
-              {task.task_type} · {formatDate(task.created_at)}
+              {task.task_type} ·{" "}
+              <TimeDisplay
+                iso={task.created_at}
+                className="inline text-inherit"
+              />
             </DialogDescription>
           ) : null}
         </DialogHeader>

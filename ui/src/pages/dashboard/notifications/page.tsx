@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import { useAppNotifications } from "@/contexts/use-app-notifications";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import type { AppNotification } from "@/services/app-notifications-service";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
@@ -87,11 +87,7 @@ export default function NotificationsPage() {
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">
-          {formatDate(row.original.createdAt)}
-        </span>
-      ),
+      cell: ({ row }) => <TimeDisplay iso={row.original.createdAt} />,
     },
     {
       id: "actions",

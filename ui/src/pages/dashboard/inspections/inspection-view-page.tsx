@@ -26,7 +26,8 @@ import {
   type InspectionRelationship,
   type InspectionQuestionResult,
 } from "@/pages/dashboard/inspections/inspection-service";
-import { formatDate, setPageTitle } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
+import { setPageTitle } from "@/lib/core";
 import { inspectionsApiErrorMessage } from "@/services/inspections-api";
 import { isAxiosError } from "axios";
 import { InspectionOverviewTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-overview-tab";
@@ -404,7 +405,7 @@ export default function InspectionViewPage() {
               <InspectionAutoApprovedBadge />
             ) : null}
             <Badge variant="outline" className="text-xs font-normal">
-              {formatDate(inspection.created_at)}
+              <TimeDisplay iso={inspection.created_at} className="text-inherit" />
             </Badge>
             <InspectionContextBadges
               hasOpenIssues={issueRows.some((i) => i.status === "open")}

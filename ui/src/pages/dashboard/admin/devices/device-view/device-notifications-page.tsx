@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { DeviceNotification } from "./notification-service";
 import {
@@ -85,9 +85,7 @@ const columns: ColumnDef<DeviceNotification>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{formatDate(row.original.sent_at)}</span>
-    ),
+    cell: ({ row }) => <TimeDisplay iso={row.original.sent_at} />,
   },
 ];
 

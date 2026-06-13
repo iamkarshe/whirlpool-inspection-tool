@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { PAGES } from "@/endpoints";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { cn } from "@/lib/utils";
 import { InspectionReviewStatusBadge } from "@/pages/dashboard/inspections/components/inspection-detail-presenters";
 import { InspectionIdLinkBadge } from "@/pages/dashboard/inspections/inspection-badge";
@@ -114,7 +114,7 @@ function FlowJourneyBar({
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">Inbound</p>
             <p className="text-sm font-medium text-foreground">
-              {inbound ? formatDate(inbound.scannedAt) : "Not recorded"}
+              {inbound ? <TimeDisplay iso={inbound.scannedAt} /> : "Not recorded"}
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ function FlowJourneyBar({
               Outbound
             </p>
             <p className="text-sm font-medium text-foreground">
-              {outbound ? formatDate(outbound.scannedAt) : "Not recorded"}
+              {outbound ? <TimeDisplay iso={outbound.scannedAt} /> : "Not recorded"}
             </p>
           </div>
         </div>
@@ -266,9 +266,7 @@ function ScanSideCard({
               <DetailRow label="Scanned">
                 <span className="inline-flex items-center gap-1.5 font-medium">
                   <Calendar className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                  <time dateTime={scan.scannedAt}>
-                    {formatDate(scan.scannedAt)}
-                  </time>
+                  <TimeDisplay iso={scan.scannedAt} />
                 </span>
               </DetailRow>
               {scan.plantCode || scan.warehouseCode ? (

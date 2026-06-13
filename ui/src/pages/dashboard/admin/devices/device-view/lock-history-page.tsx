@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import SkeletonTable from "@/components/skeleton7";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import type { Device } from "@/pages/dashboard/admin/devices/device-service";
 import type { DeviceLockHistoryEvent } from "./lock-history-service";
 import { getDeviceLockHistoryByDeviceId } from "./lock-history-service";
@@ -52,9 +52,7 @@ const columns: ColumnDef<DeviceLockHistoryEvent>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">{formatDate(row.original.occurred_at)}</span>
-    ),
+    cell: ({ row }) => <TimeDisplay iso={row.original.occurred_at} />,
   },
   {
     accessorKey: "reason",

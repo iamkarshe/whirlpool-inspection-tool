@@ -15,7 +15,7 @@ import {
   type DataTableFilter,
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import LoginIpDetailDialog from "@/pages/dashboard/admin/logins/components/login-ip-detail-dialog";
 import {
   LoginIpBadge,
@@ -96,11 +96,7 @@ function buildIpSummaryColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <span className="font-mono text-xs">
-          {formatDate(row.original.last_seen_at)}
-        </span>
-      ),
+      cell: ({ row }) => <TimeDisplay iso={row.original.last_seen_at} />,
     },
     {
       id: "risk",

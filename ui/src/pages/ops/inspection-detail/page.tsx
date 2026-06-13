@@ -49,7 +49,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { PAGES } from "@/endpoints";
-import { formatDate, setPageTitle } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
+import { setPageTitle } from "@/lib/core";
 import { cn } from "@/lib/utils";
 import { formatInspectionReviewerLabel } from "@/pages/dashboard/inspections/components/inspection-detail-presenters";
 import {
@@ -831,7 +832,7 @@ export default function OpsInspectionDetailPage() {
       <section className="space-y-3 rounded-3xl border bg-card/80 p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="text-[11px] font-normal">
-            {formatDate(inspection.created_at)}
+            <TimeDisplay iso={inspection.created_at} className="text-inherit text-[11px]" />
           </Badge>
           <OpsReviewStatusBadge status={inspection.review_status} />
         </div>
@@ -912,7 +913,7 @@ export default function OpsInspectionDetailPage() {
                 Inspection date
               </th>
               <td className="py-2 font-medium text-foreground">
-                {formatDate(inspection.created_at)}
+                <TimeDisplay iso={inspection.created_at} />
               </td>
             </tr>
             {inspection.reviewer_name?.trim() ||
@@ -938,9 +939,7 @@ export default function OpsInspectionDetailPage() {
                     Reviewed
                   </th>
                   <td className="py-2 font-medium text-foreground">
-                    {inspection.reviewed_at?.trim()
-                      ? formatDate(inspection.reviewed_at.trim())
-                      : "—"}
+                    <TimeDisplay iso={inspection.reviewed_at?.trim()} />
                   </td>
                 </tr>
                 {inspection.reviewed_comment?.trim() ? (
@@ -1114,9 +1113,7 @@ export default function OpsInspectionDetailPage() {
                     Docking time
                   </th>
                   <td className="py-2 text-[13px] font-medium text-foreground">
-                    {inspection.truck_docking_time?.trim()
-                      ? formatDate(inspection.truck_docking_time.trim())
-                      : "—"}
+                    <TimeDisplay iso={inspection.truck_docking_time?.trim()} />
                   </td>
                 </tr>
 
@@ -1564,7 +1561,7 @@ export default function OpsInspectionDetailPage() {
                         {issue.type.replaceAll("_", " ")}
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
-                        {formatDate(issue.createdAt)}
+                        <TimeDisplay iso={issue.createdAt} className="text-inherit text-[10px]" />
                       </Badge>
                     </div>
                     <div className="flex gap-1.5 pt-0.5">

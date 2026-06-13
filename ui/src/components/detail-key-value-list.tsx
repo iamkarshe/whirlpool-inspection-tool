@@ -1,8 +1,11 @@
+import { TimeDisplay } from "@/components/time-display";
+
 export type DetailKeyValueEntry = {
   key: string;
   label: string;
   value: string;
   multiline?: boolean;
+  isoDate?: string;
 };
 
 type DetailKeyValueListProps = {
@@ -18,9 +21,11 @@ export function DetailKeyValueList({
 }: DetailKeyValueListProps) {
   return (
     <div className="space-y-2 rounded-lg border p-3">
-      <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-        {title}
-      </p>
+      {title ? (
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+          {title}
+        </p>
+      ) : null}
       {entries.length === 0 ? (
         <p className="text-muted-foreground text-sm">{emptyText}</p>
       ) : (
@@ -38,7 +43,11 @@ export function DetailKeyValueList({
                     : "break-words leading-relaxed"
                 }
               >
-                {entry.value}
+                {entry.isoDate ? (
+                  <TimeDisplay iso={entry.isoDate} />
+                ) : (
+                  entry.value
+                )}
               </dd>
             </div>
           ))}

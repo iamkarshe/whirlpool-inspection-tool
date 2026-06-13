@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableFilter } from "@/components/ui/data-table";
 import { PAGES } from "@/endpoints";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import {
   buildInspectionFilterSections,
   defaultFlaggedInspectionFilters,
@@ -334,7 +334,7 @@ export default function FlaggedImagesPage() {
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => formatDate(row.original.created_at),
+      cell: ({ row }) => <TimeDisplay iso={row.original.created_at} />,
     },
     {
       id: "actions",

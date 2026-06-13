@@ -1,0 +1,15 @@
+wapiti \
+  -u https://whirlpool.scoptanalytics.in/ \
+  --scope domain \
+  -c chrome \
+  --headless both \
+  --wait 2 \
+  -m all \
+  -l 2 \
+  -S aggressive \
+  --tasks 10 \
+  -d 10 \
+  -v 2 \
+  -dr 1 \
+  -f html \
+  -o wapiti-uat-auth-report

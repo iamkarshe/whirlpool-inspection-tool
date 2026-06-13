@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { cn } from "@/lib/utils";
 import {
   InspectionDetailField,
@@ -85,9 +85,11 @@ export function InspectionDetailInfoSections({
         <InspectionDetailField label="Docking time">
           <span className="inline-flex items-center gap-1.5">
             <CalendarClock className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-            {inspection.truck_docking_time?.trim()
-              ? formatDate(inspection.truck_docking_time.trim())
-              : "—"}
+            {inspection.truck_docking_time?.trim() ? (
+              <TimeDisplay iso={inspection.truck_docking_time.trim()} />
+            ) : (
+              "—"
+            )}
           </span>
         </InspectionDetailField>
         <InspectionDetailField label="Time on device">
@@ -125,9 +127,11 @@ export function InspectionDetailInfoSections({
               </span>
             </InspectionDetailField>
             <InspectionDetailField label="Reviewed at">
-              {inspection.reviewed_at?.trim()
-                ? formatDate(inspection.reviewed_at.trim())
-                : "—"}
+              {inspection.reviewed_at?.trim() ? (
+                <TimeDisplay iso={inspection.reviewed_at.trim()} />
+              ) : (
+                "—"
+              )}
             </InspectionDetailField>
             <InspectionDetailField label="Status">
               <InspectionReviewStatusBadge status={inspection.review_status} />

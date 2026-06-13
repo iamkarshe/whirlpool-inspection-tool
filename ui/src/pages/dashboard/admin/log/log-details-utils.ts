@@ -1,4 +1,5 @@
 import type { ApplicationLogItemResponseDetails } from "@/api/generated/model/applicationLogItemResponseDetails";
+import { formatDateHumanized } from "@/lib/core";
 
 export function readLogDetailString(
   details: ApplicationLogItemResponseDetails | undefined,
@@ -40,13 +41,16 @@ export function formatLogDetailKey(key: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function formatLogDetailValue(value: unknown): string {
+export function formatLogDetailValue(value: unknown, key?: string): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   if (typeof value === "string") {
     const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : "—";
+    if (trimmed.length === 0) return "—";
+    const iso = parseIsoDateValue(trimmed, key);
+    if (iso) return formatDateHumanized(iso);
+    return trimmed;
   }
   if (typeof value === "object") {
     try {
@@ -58,11 +62,26 @@ export function formatLogDetailValue(value: unknown): string {
   return String(value);
 }
 
+function parseIsoDateValue(value: string, key?: string): string | null {
+  const looksLikeDateKey =
+    Boolean(key) &&
+    (key!.endsWith("_at") ||
+      key!.endsWith("_date") ||
+      key!.includes("timestamp"));
+  const looksLikeIso = /^\d{4}-\d{2}-\d{2}T/.test(value);
+  if (!looksLikeDateKey && !looksLikeIso) return null;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return value;
+}
+
 export type LogDetailEntry = {
   key: string;
   label: string;
   value: string;
   multiline: boolean;
+  isoDate?: string;
 };
 
 export function listLogDetailEntries(
@@ -73,17 +92,23 @@ export function listLogDetailEntries(
   return Object.entries(details)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => {
-      const formatted = formatLogDetailValue(value);
+      const isoDate = parseIsoDateValue(
+        typeof value === "string" ? value : "",
+        key,
+      );
+      const formatted = formatLogDetailValue(value, key);
       const multiline =
-        formatted.includes("\n") ||
-        (typeof value === "object" && value !== null) ||
-        formatted.length > 120;
+        !isoDate &&
+        (formatted.includes("\n") ||
+          (typeof value === "object" && value !== null) ||
+          formatted.length > 120);
 
       return {
         key,
         label: formatLogDetailKey(key),
         value: formatted,
         multiline,
+        isoDate: isoDate ?? undefined,
       };
     });
 }

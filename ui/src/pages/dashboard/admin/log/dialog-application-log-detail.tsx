@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 
 export type DialogApplicationLogDetailProps = {
   open: boolean;
@@ -67,7 +67,11 @@ export function DialogApplicationLogDetail({
           <DialogTitle>Log details</DialogTitle>
           {log ? (
             <DialogDescription>
-              {log.source} · {formatDate(log.created_at)}
+              {log.source} ·{" "}
+              <TimeDisplay
+                iso={log.created_at}
+                className="inline text-inherit"
+              />
             </DialogDescription>
           ) : null}
         </DialogHeader>
@@ -83,6 +87,10 @@ export function DialogApplicationLogDetail({
                 <LogSourceBadge source={log.source} />
               </div>
             ) : null}
+            <div className="grid grid-cols-[120px_1fr] gap-2">
+              <span className="text-muted-foreground">Date</span>
+              <TimeDisplay iso={log.created_at} />
+            </div>
             <DetailRow label="Message" value={log.message} />
             <DetailRow
               label="Email"

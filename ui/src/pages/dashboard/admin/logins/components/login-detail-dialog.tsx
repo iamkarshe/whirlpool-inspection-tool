@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PAGES } from "@/endpoints";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import {
   LoginIdBadge,
   LoginIpBadge,
@@ -138,9 +138,7 @@ export default function LoginDetailDialog({
             ) : null}
             <div className="grid grid-cols-[120px_1fr] gap-2">
               <span className="text-muted-foreground">Logged at</span>
-              <span className="font-mono text-xs">
-                {formatDate(displayLogin.logged_at)}
-              </span>
+              <TimeDisplay iso={displayLogin.logged_at} />
             </div>
             <div className="grid grid-cols-[120px_1fr] gap-2">
               <span className="text-muted-foreground">IP address</span>

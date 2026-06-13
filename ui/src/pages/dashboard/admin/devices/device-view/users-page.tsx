@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import SkeletonTable from "@/components/skeleton7";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 
 type DeviceViewContext = { device: Device };
 
@@ -78,20 +78,14 @@ const columns: ColumnDef<DeviceUserAssignment>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">
-        {formatDate(row.original.assigned_at)}
-      </span>
-    ),
+    cell: ({ row }) => <TimeDisplay iso={row.original.assigned_at} />,
   },
   {
     accessorKey: "unassigned_at",
     header: "Unassigned at",
     cell: ({ row }) => {
       const v = row.original.unassigned_at;
-      return v ? (
-        <span className="font-mono text-xs">{formatDate(v)}</span>
-      ) : (
+      return v ? <TimeDisplay iso={v} /> : (
         <span className="text-muted-foreground">—</span>
       );
     },

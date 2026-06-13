@@ -11,7 +11,7 @@ import {
   DataTable,
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { JobLogStatusBadge } from "@/pages/dashboard/admin/job-logs/job-log-badge";
 import type { JobLogRow } from "@/services/logs-api";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -111,14 +111,15 @@ function buildJobLogColumns(
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Time
+          Date
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="block text-right font-mono text-xs tabular-nums whitespace-nowrap">
-          {formatDate(row.original.created_at)}
-        </span>
+        <TimeDisplay
+          iso={row.original.created_at}
+          className="block text-right"
+        />
       ),
     },
     {
@@ -213,10 +214,8 @@ function JobLogsDataTable({
                 </span>
               </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">
-                <span className="text-muted-foreground">Time</span>
-                <span className="font-mono text-xs">
-                  {formatDate(selectedLog.created_at)}
-                </span>
+                <span className="text-muted-foreground">Date</span>
+                <TimeDisplay iso={selectedLog.created_at} />
               </div>
               <div className="grid grid-cols-[120px_1fr] gap-2">
                 <span className="text-muted-foreground">Message</span>

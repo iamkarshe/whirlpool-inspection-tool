@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PAGES } from "@/endpoints";
 import { useAppNotifications } from "@/contexts/use-app-notifications";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import type { AppNotification } from "@/services/app-notifications-service";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BellIcon, Clock } from "lucide-react";
@@ -95,7 +95,7 @@ const Notifications = () => {
                   </div>
                   <div className="text-muted-foreground flex items-center gap-1 text-xs">
                     <Clock className="h-3 w-3 shrink-0" />
-                    {formatDate(item.createdAt)}
+                    <TimeDisplay iso={item.createdAt} className="text-xs" />
                   </div>
                 </DropdownMenuItem>
               ))

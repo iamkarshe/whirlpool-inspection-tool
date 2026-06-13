@@ -15,7 +15,7 @@ import {
   type DataTableFilter,
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import LoginDetailDialog from "@/pages/dashboard/admin/logins/components/login-detail-dialog";
 import LoginIpDetailDialog from "@/pages/dashboard/admin/logins/components/login-ip-detail-dialog";
 import {
@@ -91,9 +91,7 @@ function buildLoginColumns(
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="font-mono text-xs">
-          {formatDate(row.original.logged_at)}
-        </span>
+        <TimeDisplay iso={row.original.logged_at} />
       ),
     },
     {

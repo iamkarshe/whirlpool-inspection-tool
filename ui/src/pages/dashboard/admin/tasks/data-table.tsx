@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { DialogTaskDetail } from "@/pages/dashboard/admin/tasks/dialog-task-detail";
 import { TaskStatusBadge } from "@/pages/dashboard/admin/tasks/task-badge";
 import type { TaskRow } from "@/services/tasks-api";
@@ -81,12 +81,13 @@ function buildTaskColumns(
     },
     {
       accessorKey: "created_at",
-      header: "Created",
+      header: "Date",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="block text-right font-mono text-xs tabular-nums whitespace-nowrap">
-          {formatDate(row.original.created_at)}
-        </span>
+        <TimeDisplay
+          iso={row.original.created_at}
+          className="block text-right"
+        />
       ),
     },
     {

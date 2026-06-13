@@ -6,7 +6,7 @@ import {
   type DataTableFilter,
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import { DialogApplicationLogDetail } from "@/pages/dashboard/admin/log/dialog-application-log-detail";
 import { LogLevelBadge, LogSourceBadge } from "@/pages/dashboard/admin/log/log-badge";
 import {
@@ -148,14 +148,15 @@ function buildLogColumns(
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Time
+          Date
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="block text-right font-mono text-xs tabular-nums">
-          {formatDate(row.original.created_at)}
-        </span>
+        <TimeDisplay
+          iso={row.original.created_at}
+          className="block text-right"
+        />
       ),
     },
     {

@@ -5,7 +5,7 @@ import {
   type DataTableServerSideConfig,
 } from "@/components/ui/data-table";
 import { PAGES } from "@/endpoints";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -78,7 +78,7 @@ const columns: ColumnDef<ProductCategoryInspectionResponse>[] = [
         <ArrowUpDown className="ml-1 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => formatDate(row.original.created_at),
+    cell: ({ row }) => <TimeDisplay iso={row.original.created_at} />,
   },
 ];
 

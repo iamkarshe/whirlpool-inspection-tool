@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
-import { formatDate } from "@/lib/core";
+import { TimeDisplay } from "@/components/time-display";
 import type {
   IssueSeverity,
   IssueType,
@@ -128,7 +128,7 @@ export function InspectionFlagsTab({
     {
       accessorKey: "createdAt",
       header: "Created",
-      cell: ({ row }) => formatDate(row.original.createdAt),
+      cell: ({ row }) => <TimeDisplay iso={row.original.createdAt} />,
     },
     {
       id: "actions",
