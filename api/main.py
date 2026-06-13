@@ -25,6 +25,7 @@ from mod.api.vpn.router import router as vpn_router
 from mod.api.warehouse.router import router as warehouse_router
 from mod.app.helper import require_superadmin_for_api_docs
 from mod.app.response import VersionResponse
+from mod.app.router import router as app_router
 from mod.auth.device_router import router as auth_device_router
 from mod.auth.password_router import router as auth_password_router
 from mod.auth.router import router as auth_router
@@ -115,6 +116,7 @@ app.add_middleware(AuthAttemptRemainingMiddleware)
 
 # API routes
 app.include_router(auth_router)
+app.include_router(app_router)
 app.include_router(auth_password_router)
 app.include_router(auth_device_router)
 app.include_router(user_router)

@@ -1,9 +1,43 @@
+import json
+from pathlib import Path
+
 from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session, joinedload
 
+from mod.app.response import ReleaseNoteResponse, ReleaseNotesResponse
 from mod.auth.session import verify_user_session_active
 from mod.model import User
 from utils.jwt import decode_access_token_payload
+
+API_ROOT = Path(__file__).resolve().parent.parent.parent
+RELEASE_JSON_PATH = API_ROOT / "release.json"
+
+
+def load_release_notes() -> ReleaseNotesResponse:
+    if not RELEASE_JSON_PATH.is_file():
+        return ReleaseNotesResponse(notes=[])
+
+    raw_text = RELEASE_JSON_PATH.read_text(encoding="utf-8").strip()
+    if not raw_text:
+        return ReleaseNotesResponse(notes=[])
+
+    try:
+        payload = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="release.json is invalid JSON",
+        ) from exc
+
+    notes_raw = payload.get("notes", []) if isinstance(payload, dict) else payload
+    if not isinstance(notes_raw, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="release.json must contain a notes array",
+        )
+
+    notes = [ReleaseNoteResponse.model_validate(item) for item in notes_raw]
+    return ReleaseNotesResponse(notes=notes)
 
 
 def resolve_api_docs_bearer_token(request: Request, token_query: str | None) -> str:

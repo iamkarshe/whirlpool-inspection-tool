@@ -24,3 +24,29 @@ class VersionResponse(BaseModel):
         default=None,
         description=("Corporate VPN endpoint hostname."),
     )
+
+
+class ReleaseFeatureResponse(BaseModel):
+    text: str = Field(description="Release note bullet text.")
+    type: str | None = Field(
+        default=None,
+        description="feature, fix, improvement, or chore.",
+    )
+
+
+class ReleaseNoteResponse(BaseModel):
+    id: str = Field(description="Stable release note id.")
+    version: str = Field(description="Displayed version label.")
+    released_at: str = Field(description="Release date (YYYY-MM-DD).")
+    title: str = Field(description="Release title.")
+    features: list[ReleaseFeatureResponse] = Field(
+        default_factory=list,
+        description="Change bullets for this release.",
+    )
+
+
+class ReleaseNotesResponse(BaseModel):
+    notes: list[ReleaseNoteResponse] = Field(
+        default_factory=list,
+        description="Release notes, newest first when sorted in release.json.",
+    )
