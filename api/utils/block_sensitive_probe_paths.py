@@ -27,6 +27,7 @@ BLOCKED_EXACT_PATHS = {
     "/settings.json",
     "/secrets.json",
     "/credentials.json",
+    "/release.json",
 }
 
 BLOCKED_PREFIXES = (

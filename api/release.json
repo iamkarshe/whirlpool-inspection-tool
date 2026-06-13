@@ -1,6 +1,916 @@
 {
   "notes": [
     {
+      "id": "2026-06-14",
+      "version": "2026-06-14",
+      "released_at": "2026-06-14",
+      "title": "Deploy 2026-06-14",
+      "features": [
+        {
+          "text": "Implement password reset functionality; add routes for forgot and reset password, enhance logging for password reset actions, and update environment configuration for abuse protection.",
+          "hash": "c884b5c",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance password reset API: add detailed field descriptions and examples for request/response models, improve OpenAPI documentation, and implement response handling for superadmin restrictions.",
+          "hash": "a28c84d",
+          "type": "feature"
+        },
+        {
+          "text": "Implement password management enhancements: add password policy settings, user password history tracking, and onboarding email functionality; update user model and API responses to reflect password change requirements.",
+          "hash": "11a7bf6",
+          "type": "feature"
+        },
+        {
+          "text": "Implement change-password OTP functionality: add environment variables for OTP settings, enhance user model with password change OTP relationships, and update API routes for OTP request and validation during password changes.",
+          "hash": "ea1ebca",
+          "type": "feature"
+        },
+        {
+          "text": "Add log and task filtering capabilities: implement new API endpoints for application and job log filters, enhance task listing with optional filters for task type and status, and update response models to support filter options.",
+          "hash": "2702a6a",
+          "type": "feature"
+        },
+        {
+          "text": "Introduce user activity logging: implement logging for user actions across the application, enhance audit trail capabilities, and update API responses to include activity logs for better tracking and monitoring.",
+          "hash": "963df2a",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance user activity logging: improve logging granularity for user actions, add new endpoints for retrieving logs, and update API responses to include detailed activity information for better monitoring.",
+          "hash": "c5022a2",
+          "type": "feature"
+        },
+        {
+          "text": "OpenAPI doc updated.",
+          "hash": "895823a",
+          "type": "improvement"
+        },
+        {
+          "text": "Remove outdated React documentation and enhance password management: delete legacy React frontend logs and password onboarding documentation, add password strength validation, and implement onboarding email functionality for user management.",
+          "hash": "307ede2",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance session management and user creation process: add cache clearing for warehouses list, implement internal password generation for user onboarding, and update user creation form to streamline password handling via email notifications.",
+          "hash": "3667120",
+          "type": "feature"
+        },
+        {
+          "text": "Update change password form: enhance OTP handling with verification state, improve UI feedback for code requests, and refactor state management for better clarity.",
+          "hash": "3f3f5fa",
+          "type": "feature"
+        },
+        {
+          "text": "Add tasks page and enhance job log filtering: implement new tasks endpoint, integrate tasks into the sidebar navigation, and improve job logs page with job name and status filters for better data management.",
+          "hash": "4beefad",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance SegmentedFilterGroup component: refactor to use SegmentPill for better UI representation, add size and kind props for customization, and update job logs, logins, and tasks pages to utilize the new filtering capabilities.",
+          "hash": "efbe0ea",
+          "type": "feature"
+        },
+        {
+          "text": "Integrate TimeDisplay component across various pages: replace formatDate function with TimeDisplay for improved date handling in notifications, inspections, tasks, and logs, enhancing consistency and readability.",
+          "hash": "de9a49c",
+          "type": "feature"
+        },
+        {
+          "text": "Add CSV upload guidance dialog to product categories page: implement CsvUploadHowToDialog with detailed steps for uploading products, enhancing user experience and clarity in the product management process.",
+          "hash": "8a46956",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor async task handling: remove deprecated task types and handlers, introduce new task types for inspection review notifications and IP metadata resolution, and update documentation and constants accordingly for improved clarity and functionality.",
+          "hash": "ae4a04f",
+          "type": "feature"
+        },
+        {
+          "text": "Update .gitignore to include deploy configuration: add deploy-sites.json to ignore list for better management of site-specific deployment files.",
+          "hash": "3bb5226",
+          "type": "improvement"
+        },
+        {
+          "text": "Refactor asset packaging in deploy process: update flattening logic to support multiple directories, enhance zip labeling for clarity, and improve extraction script handling with optional cleanup before extraction.",
+          "hash": "11a5751",
+          "type": "feature"
+        },
+        {
+          "text": "Modify VAPT report endpoint: replace static HTML response with dynamic file response for existing report, and return 404 status with message when report is not found.",
+          "hash": "8a4eed7",
+          "type": "improvement"
+        },
+        {
+          "text": "Add release notes functionality: implement loading and validation of release notes from release.json, enhance response models for structured release note data, and integrate new router for app routes in main.py.",
+          "hash": "2148dbd",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-12",
+      "version": "2026-06-12",
+      "released_at": "2026-06-12",
+      "title": "Deploy 2026-06-12",
+      "features": [
+        {
+          "text": "`/CSNews.cgi` added as sensitive path.",
+          "hash": "34a72f5",
+          "type": "fix"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-11",
+      "version": "2026-06-11",
+      "released_at": "2026-06-11",
+      "title": "Deploy 2026-06-11",
+      "features": [
+        {
+          "text": "Update security headers to include fastly.jsdelivr.net for improved asset loading; enhance content security policy for media and script sources, and update user guidance in inspection page for better troubleshooting.",
+          "hash": "e3016ef",
+          "type": "feature"
+        },
+        {
+          "text": "[style] Update font family for Sonner toaster component to use variable font-sans; ensure consistent typography across nested elements.",
+          "hash": "5cb3f72"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-10",
+      "version": "2026-06-10",
+      "released_at": "2026-06-10",
+      "title": "Deploy 2026-06-10",
+      "features": [
+        {
+          "text": "Update StartOutboundInspectionRequest model to allow optional truck_number and truck_docking_time fields; adjust validation logic and update related UI components for improved flexibility in inspection requests.",
+          "hash": "834ed62",
+          "type": "feature"
+        },
+        {
+          "text": "Implement scheduled auto-approval inspections via Celery beat; update task execution logic, enhance README instructions, and modify systemd service for improved task management.",
+          "hash": "0b3f852",
+          "type": "feature"
+        },
+        {
+          "text": "Add web+whirlpoolpdi protocol handler, update inspection submission messages for clarity, and refine barcode scanning instructions in UI components.",
+          "hash": "75c7bdb",
+          "type": "feature"
+        },
+        {
+          "text": "Restrict file input types in OpsInspectionStartForm to specific image formats.",
+          "hash": "4939fb8",
+          "type": "chore"
+        },
+        {
+          "text": "[refactor] Update plant and warehouse query parameters to allow optional active status filtering; remove deprecated delete endpoints and clean up API documentation.",
+          "hash": "f425f94"
+        },
+        {
+          "text": "Implement permanent deletion for plants and warehouses with inspection reference checks; add corresponding API responses and environment variable support.",
+          "hash": "7b4147b",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance API responses by including client IP address and VPN server information; refactor related request handling for improved clarity and consistency.",
+          "hash": "f878177",
+          "type": "feature"
+        },
+        {
+          "text": "[deploy] Update OpenAPI spec to version 1.6.0; add new SMTP test gateway endpoint and enhance error responses for authentication attempts and service configuration.",
+          "hash": "893e82b"
+        },
+        {
+          "text": "Refactor warehouse data table to support editing and deletion; add status badge and enhance API integration for warehouse updates and permanent deletions.",
+          "hash": "8887687",
+          "type": "feature"
+        },
+        {
+          "text": "Introduce critical admin delete functionality for plants and warehouses; refactor deletion logic to handle API responses consistently and prevent session logout on 401 errors.",
+          "hash": "44c5919",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor API request handling to introduce SafeApiResult type; replace CriticalAdminDeleteResult with SafeApiResult for consistent error management and prevent session logout on 401 errors across various admin operations.",
+          "hash": "73db4ff",
+          "type": "feature"
+        },
+        {
+          "text": "Update AppSidebar to fetch and display application version and API details; refactor client IP handling and enhance sidebar layout with new API information.",
+          "hash": "eaa4e1f",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance inspection API with new helper functions for resolving user IDs, warehouse codes, and product category IDs; refactor inspection list response to use a paginated response model and update query parameters for improved filtering.",
+          "hash": "b90c816",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance API configuration with new environment variables for CORS and origin settings; implement middleware to block TRACE requests and improve CORS handling with dynamic origins based on environment settings.",
+          "hash": "6c33cfa",
+          "type": "feature"
+        },
+        {
+          "text": "Add sitemap XML endpoint and enhance inspection API with new scope filtering capabilities; refactor query parameters for inspections to support warehouse and plant IDs, and improve filtering logic for inspection queries.",
+          "hash": "c927218",
+          "type": "feature"
+        },
+        {
+          "text": "Implement IP geolocation functionality for login audits; add new environment variables for IP metadata resolution, enhance login API responses with IP metadata, and introduce a scheduled task for resolving pending IP lookups.",
+          "hash": "7f90c09",
+          "type": "feature"
+        },
+        {
+          "text": "Implement login IP summary functionality; add new helper methods for assessing abusive IPs, enhance login response models with IP summary details, and introduce a paginated endpoint for retrieving login IP statistics.",
+          "hash": "c02f795",
+          "type": "feature"
+        },
+        {
+          "text": "Add on-demand IP metadata refresh functionality; implement new endpoint for retrieving IP health details, enhance login response models with IP health information, and introduce logic for queuing metadata lookups based on login activity.",
+          "hash": "fbad695",
+          "type": "feature"
+        },
+        {
+          "text": "Add external links for IP checks in login responses; introduce new LoginIpExternalLinksResponse model and update relevant response models to include external links for abuseipdb and ipinfo.",
+          "hash": "6fd543d",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance login response models with IP address handling; add logic for stripping IP addresses, introduce external links for IP investigations, and update relevant response models to include new fields for IP metadata and external links.",
+          "hash": "59d0a0d",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance login and IP management functionality; add new endpoints for retrieving login IP summaries and details, update response models to include IP metadata and external links, and improve the login data table with additional IP-related information.",
+          "hash": "2efc313",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance inspection API with user ID filtering; replace inspector UUIDs with user IDs in query parameters, update related helper functions, and improve response models to include active users. Additionally, introduce KPI parameters caching configuration in the environment settings.",
+          "hash": "3ee9ec0",
+          "type": "feature"
+        },
+        {
+          "text": "Update inspection and report APIs to include user ID filtering; enhance descriptions for clarity, add user ID parameters to models, and improve OpenAPI documentation for KPI parameters and inspection queries.",
+          "hash": "8fe6dd8",
+          "type": "feature"
+        },
+        {
+          "text": "Update inspection filter options to include plants and users; normalize filter options structure, enhance caching logic, and improve API parameter handling for inspections.",
+          "hash": "47e8858",
+          "type": "feature"
+        },
+        {
+          "text": "Add VAPT report endpoint with placeholder content; implement a new HTML response for the report page to indicate that the report is coming soon.",
+          "hash": "2992672",
+          "type": "feature"
+        },
+        {
+          "text": "Update API version to 1.7.1; add public text cache headers for sitemap and robots endpoints; enhance VAPT report endpoint with request parameters for improved access control.",
+          "hash": "8e5aad7",
+          "type": "feature"
+        },
+        {
+          "text": "[refactor] Clean up Nginx configuration by removing redundant security headers and adding a new location block for sensitive files; streamline proxy settings and enhance request handling.",
+          "hash": "0cd97f7"
+        },
+        {
+          "text": "Add middleware to block sensitive probe paths; enhance security by preventing access to sensitive endpoints.",
+          "hash": "813b365",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-05",
+      "version": "2026-06-05",
+      "released_at": "2026-06-05",
+      "title": "Deploy 2026-06-05",
+      "features": [
+        {
+          "text": "[deploy] systemd service added.",
+          "hash": "3cbbc70"
+        },
+        {
+          "text": "[deploy] systemd service folder chore.",
+          "hash": "d01ea5f"
+        },
+        {
+          "text": "[deploy] production build `1.6.0`.",
+          "hash": "d2bf627"
+        },
+        {
+          "text": "[deploy] systemd service + target added.",
+          "hash": "932357a"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-03",
+      "version": "2026-06-03",
+      "released_at": "2026-06-03",
+      "title": "Deploy 2026-06-03",
+      "features": [
+        {
+          "text": "Integrate Celery for background task management.",
+          "hash": "ef1832f",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance background task management with detailed task display fields; update API routes for task listing and retrieval, and improve Celery configuration for better task handling.",
+          "hash": "c0e170d",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor inspection review notification system; replace direct notification calls with scheduled tasks, enhance payload validation, and update task handling for improved notification management.",
+          "hash": "70fe3bf",
+          "type": "feature"
+        },
+        {
+          "text": "Improve notification system for inspection reviews; implement scheduled task management, enhance payload validation, and refine task handling for better notification delivery.",
+          "hash": "670d93d",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-01",
+      "version": "2026-06-01",
+      "released_at": "2026-06-01",
+      "title": "Deploy 2026-06-01",
+      "features": [
+        {
+          "text": "[refactor] Update user data table to include 'email' in VPN busy action options; enhance inspection view error handling to account for null bundles; streamline error detail extraction in job API services.",
+          "hash": "27ef865"
+        },
+        {
+          "text": "Add SMTP integration support; implement credential management functions for SMTP settings, including parsing and validation, and enhance API routes for updating SMTP configurations.",
+          "hash": "9bad175",
+          "type": "feature"
+        },
+        {
+          "text": "Implement SMTP test connection functionality; add new API route for testing SMTP settings, including validation and error handling, and enhance credential management for improved user experience.",
+          "hash": "f68df5b",
+          "type": "feature"
+        },
+        {
+          "text": "Add SMTP integration routes and components; implement API calls for updating SMTP settings and testing connections, enhance UI navigation for SMTP management, and update OpenAPI documentation for new endpoints.",
+          "hash": "aba1f58",
+          "type": "feature"
+        },
+        {
+          "text": "Update SMTP integration to support gateway testing; modify SMTP settings to include 'auth_enabled' flag, change default port to 25, and enhance API routes for testing SMTP connections without authentication.",
+          "hash": "e7d11e3",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-31",
+      "version": "2026-05-31",
+      "released_at": "2026-05-31",
+      "title": "Deploy 2026-05-31",
+      "features": [
+        {
+          "text": "Enhance DataTable component with client-side search functionality; update searchKey and searchFields props for improved filtering, and refactor product inspection badges for better navigation in the admin dashboard.",
+          "hash": "6e7d3d5",
+          "type": "feature"
+        },
+        {
+          "text": "Add API base URL retrieval function and enhance Job Logs page with auto-approve job dialog; implement logs refresh mechanism and improve UI layout for better user experience.",
+          "hash": "e269b9f",
+          "type": "feature"
+        },
+        {
+          "text": "[refactor] Clean up DataTable components for plants, products, and warehouses; streamline imports, enhance link formatting, and improve badge rendering for better readability and maintainability.",
+          "hash": "3fac3cb"
+        },
+        {
+          "text": "Add VAPT report link to user menu; refactor API documentation URL functions for improved reusability and clarity.",
+          "hash": "60527f9",
+          "type": "feature"
+        },
+        {
+          "text": "[refactor] Update API documentation to use dynamic job trigger key; remove hardcoded tokens from job logs and logs documentation for improved security and maintainability.",
+          "hash": "7087826"
+        },
+        {
+          "text": "Enhance user management functionality by adding support for multiple allowed warehouse selections, updating user role handling, and improving the user interface for warehouse selection in the admin dashboard.",
+          "hash": "7aebe5b",
+          "type": "feature"
+        },
+        {
+          "text": "Integrate inspection filter options into the dashboard; enhance inspection filtering capabilities by adding product category fields, loading filter options from the API, and updating filter context management for improved user experience.",
+          "hash": "c6e148d",
+          "type": "feature"
+        },
+        {
+          "text": "Implement server-side data fetching for inspections; refactor inspection pages to utilize `useInspectionsServerTable` for improved performance and loading state management, enhancing user experience across the dashboard.",
+          "hash": "8d5cee2",
+          "type": "feature"
+        },
+        {
+          "text": "[refactor] Simplify inspection API calls and enhance data fetching; consolidate inspection detail retrieval into a single bundle function, improving performance and reducing redundancy in the inspection view page.",
+          "hash": "e97f5c3"
+        },
+        {
+          "text": "[refactor] Streamline inspection data handling by replacing deprecated API calls with server-side fetching; enhance inspection pages for improved performance and user experience across the dashboard.",
+          "hash": "1f2334d"
+        },
+        {
+          "text": "[refactor] Improve loading state management and variable naming in Flagged Images page; update table styling for better visual consistency.",
+          "hash": "cb2ccec"
+        },
+        {
+          "text": "Add auto-approval status to inspections; enhance inspection view with auto-approval badge and improve inspection overview layout for better user experience.",
+          "hash": "aeeabdd",
+          "type": "feature"
+        },
+        {
+          "text": "[refactor] Update inspection detail components for improved layout and readability; replace deprecated table structure with card-based design, enhancing user experience in inspection overview.",
+          "hash": "07d8c43"
+        },
+        {
+          "text": "Enhance inspection relationship data structure; add detailed checklist totals and review status to inspection relationships, improving data accuracy and user insights in the inspection overview.",
+          "hash": "fae3319",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-29",
+      "version": "2026-05-29",
+      "released_at": "2026-05-29",
+      "title": "Deploy 2026-05-29",
+      "features": [
+        {
+          "text": "Add VPN provisioning configuration to environment settings; include new API routes for VPN management and implement utility functions for VPN server and key retrieval.",
+          "hash": "e5da6b8",
+          "type": "feature"
+        },
+        {
+          "text": "Implement VPN profile management for users; add new API endpoints for generating VPN profiles, downloading configurations, and QR codes, along with necessary request and response models.",
+          "hash": "5faa514",
+          "type": "feature"
+        },
+        {
+          "text": "Add user VPN profile revocation functionality; implement clear_user_vpn_profile_fields and revoke_user_vpn_profile methods to manage user VPN states during updates.",
+          "hash": "edb27fb",
+          "type": "feature"
+        },
+        {
+          "text": "Integrate AWS S3 connectivity testing; add new endpoint and response model for testing S3 connection using stored or provided credentials, along with helper functions for credential resolution and error formatting.",
+          "hash": "24b1355",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance media handling in inspections; introduce MEDIA_TYPE and MEDIA_PRESIGNED_URL_TTL_SECONDS environment variables, update image upload response to include embeddable URLs, and refactor media upload logic for local and S3 storage options.",
+          "hash": "cbcc333",
+          "type": "feature"
+        },
+        {
+          "text": "Update environment configuration; refine MEDIA_PRESIGNED_URL_TTL_SECONDS and MEDIA_BASE_URL comments for clarity, remove obsolete user VPN profile documentation, and add new business admin user role in seed data.",
+          "hash": "dedf0cf",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor inspection and role management; implement warehouse scope filtering in inspection queries, update role checks to utilize centralized role definitions, and enhance user role options in user requests.",
+          "hash": "3af1226",
+          "type": "feature"
+        },
+        {
+          "text": "Revise user management API; enhance request and response models with detailed examples, improve field descriptions, and remove operations analytics references from the UI, streamlining the dashboard for executive analytics.",
+          "hash": "0f64830",
+          "type": "feature"
+        },
+        {
+          "text": "Add job management functionality; introduce job logging model and status enumeration, update environment configuration for job execution, and integrate job routes into the main application.",
+          "hash": "0429884",
+          "type": "feature"
+        },
+        {
+          "text": "Integrate job logging functionality; add JobLogStatus enumeration and corresponding database representation, include log router in main application, and update job approval sequence in API documentation.",
+          "hash": "a6b9e38",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance integration credential management; add logging for Okta SSO and AWS S3 credential updates, refactor log source handling, and improve application log response descriptions.",
+          "hash": "db667da",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance user management and logging functionality; add new API endpoints for VPN profile generation and configuration retrieval, improve user creation and update request models, and integrate job logging into the admin dashboard.",
+          "hash": "0615d68",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor job and application log components; implement dialog for log details, enhance data table structure, and remove obsolete log view page for improved user experience.",
+          "hash": "a10bdb1",
+          "type": "feature"
+        },
+        {
+          "text": "Implement AWS S3 connection testing functionality; add test connection button in the UI, create corresponding API endpoint, and enhance integration form with connection validation logic.",
+          "hash": "942778d",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance user management functionality; implement user activation/deactivation feature in the admin dashboard, refactor user edit dialog to remove manual status selection, and integrate corresponding API updates for user state management.",
+          "hash": "e6c45a0",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance user management by adding VPN setup and download options; implement VPN configuration and QR code download functionality in the admin dashboard, integrate new API endpoints for VPN operations, and improve user data table interactions.",
+          "hash": "377685b",
+          "type": "feature"
+        },
+        {
+          "text": "Add VPN profile revocation functionality; implement API endpoint for revoking user VPN profiles, enhance user management UI with revoke options, and integrate corresponding state management in the admin dashboard.",
+          "hash": "2cadc83",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance VPN management functionality; add email instructions for VPN setup, integrate new UI elements for sending VPN configuration and QR code via email, and update user role badges for improved clarity in the admin dashboard.",
+          "hash": "55b2741",
+          "type": "feature"
+        },
+        {
+          "text": "Add VPN admin page and sidebar navigation; integrate new route for VPN management and update sidebar items to include VPN peers for improved admin dashboard navigation.",
+          "hash": "4a8a041",
+          "type": "feature"
+        },
+        {
+          "text": "[refactor] Simplify DataTable component logic by removing server-side condition for row display; clean up ProductCategoriesDataTable by eliminating unused dropdown menu actions and related state management in ProductCategoriesPage.",
+          "hash": "c57ebe1"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-28",
+      "version": "2026-05-28",
+      "released_at": "2026-05-28",
+      "title": "Deploy 2026-05-28",
+      "features": [
+        {
+          "text": "Implement executive analytics and KPI parameters endpoints; enhance operations analytics with improved request handling and validation; refactor database queries for warehouse and product category resolution.",
+          "hash": "586285a",
+          "type": "feature"
+        },
+        {
+          "text": "Add executive defects pareto chart endpoint and response models; refactor helper functions for improved analytics processing.",
+          "hash": "14d2010",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance operations analytics request model with plant filtering; add validation for inbound inspection types and implement plant code resolution in helper functions.",
+          "hash": "7f40654",
+          "type": "feature"
+        },
+        {
+          "text": "Add executive defects mix endpoint and response models; implement helper function for defect grading analytics and enhance reports router for new functionality.",
+          "hash": "4c92e39",
+          "type": "feature"
+        },
+        {
+          "text": "Add executive defects warehouse endpoint and response models; implement helper function for warehouse defect analytics and update reports router for new functionality.",
+          "hash": "39ffe97",
+          "type": "feature"
+        },
+        {
+          "text": "Add executive defects plant endpoint and response models; implement helper function for plant defect analytics and update reports router for new functionality.",
+          "hash": "292ca20",
+          "type": "feature"
+        },
+        {
+          "text": "Introduce product category pair handling in reports; refactor related functions for improved caching and validation; update request models and API documentation to support string-based category pairs.",
+          "hash": "c7f55ca",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor reports helper to use ReportsDropdownOption for dropdowns; enhance OperationsAnalyticsRequest with detailed field descriptions and examples; update response models for improved clarity and usability.",
+          "hash": "85ce26f",
+          "type": "feature"
+        },
+        {
+          "text": "Update API documentation and models to reflect rebranding from Whirlpool Inspection Tool API to Whirlpool PDI Tool API; increment version to 1.5.1; enhance endpoint summaries and descriptions for clarity; remove deprecated operations analytics parameters.",
+          "hash": "fc7d792",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance executive analytics filters and service to support date range and inspection type; refactor KPI fetching logic to integrate new options; update UI components for improved data handling and display.",
+          "hash": "b7275b5",
+          "type": "feature"
+        },
+        {
+          "text": "Add 'showAllRows' prop to DataTable for displaying all rows without pagination; implement SortableHeader component for enhanced column sorting in ExecutiveWarehouseDefectsTable.",
+          "hash": "107ec1b",
+          "type": "feature"
+        },
+        {
+          "text": "Implement executive defects mix functionality in analytics service; add fetching logic and integrate new chart component in the dashboard for improved defect analysis.",
+          "hash": "6c86c68",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor DataTable loading state management; enhance executive analytics service to support abort signal for fetch requests; improve loading state handling in ExecutiveAnalyticsPage.",
+          "hash": "1090237",
+          "type": "feature"
+        },
+        {
+          "text": "[cleanup] Remove deprecated insert-inspection.sh script; streamline testing process by eliminating unused API call script.",
+          "hash": "cb7b04d"
+        },
+        {
+          "text": "Update inspection types in API documentation; modify DataTable to support conditional row highlighting; implement executive defects pareto fetching logic and integrate new chart component in ExecutiveAnalyticsPage for enhanced defect analysis.",
+          "hash": "b663c66",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance executive defects pareto chart logic to ensure cumulative percentage reaches 100% on the last category; update defect checklist handling in test scripts for improved defect analysis and reporting.",
+          "hash": "26186de",
+          "type": "feature"
+        },
+        {
+          "text": "Add functionality to fetch and display plant defect data in ExecutiveAnalyticsPage; integrate new API call and loading state management for enhanced defect analysis.",
+          "hash": "f1ffa0b",
+          "type": "feature"
+        },
+        {
+          "text": "Implement conditional rendering for plant defects in ExecutiveAnalyticsPage; enhance loading state management and UI responsiveness based on inspection type.",
+          "hash": "5df1662",
+          "type": "feature"
+        },
+        {
+          "text": "Add warehouse induced defect rate calculation to analytics service; enhance response model to include induced defect percentage for improved defect analysis.",
+          "hash": "eb47b01",
+          "type": "feature"
+        },
+        {
+          "text": "Add truck defect analytics functionality; implement new API endpoint and response models for detailed truck inspection data analysis.",
+          "hash": "9df4404",
+          "type": "feature"
+        },
+        {
+          "text": "[cleanup] Remove operations analytics and trend endpoints along with associated response models and documentation; streamline reports API for improved maintainability.",
+          "hash": "023e420"
+        },
+        {
+          "text": "Introduce executive analytics for truck defects; add new API endpoint, response models, and integrate data fetching in ExecutiveAnalyticsPage for comprehensive defect analysis.",
+          "hash": "6e93e17",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-27",
+      "version": "2026-05-27",
+      "released_at": "2026-05-27",
+      "title": "Deploy 2026-05-27",
+      "features": [
+        {
+          "text": "[cleanup] Remove deprecated API endpoints and associated documentation to improve code maintainability and reduce confusion for developers.",
+          "hash": "ce14821"
+        },
+        {
+          "text": "[infra] Implement infrastructure setup in main.py with network, security, storage, database, app server, and VPN server configurations; update .gitignore to include PEM files; modify Pulumi configuration for instance types and SSH key path; enhance README with EC2 access instructions.",
+          "hash": "0fcd66a"
+        },
+        {
+          "text": "Update VPN setup script to use dedicated NAT management scripts for improved clarity and maintainability; modify sysctl configuration for IP forwarding; add warehouse-user.conf to .gitignore.",
+          "hash": "74f0ea4",
+          "type": "feature"
+        },
+        {
+          "text": "[cleanup] Update sequence numbers in API documentation and remove obsolete Okta OAuth Login files to improve organization and maintainability.",
+          "hash": "5568fb2"
+        },
+        {
+          "text": "Update VPN provisioner API to include health check endpoint and refactor configuration for improved clarity; add new dependencies and enhance main application structure.",
+          "hash": "2eb08db",
+          "type": "feature"
+        },
+        {
+          "text": "[cleanup] Update API documentation for VPN Provision: modify device configuration endpoint, adjust sequence numbers, and remove obsolete QR endpoint to enhance organization and clarity.",
+          "hash": "e629129"
+        },
+        {
+          "text": "Update VPN provisioner configuration to include WG_SERVER_CIDR for improved network management; adjust allowed IPs and device IP range for enhanced flexibility.",
+          "hash": "235b228",
+          "type": "feature"
+        },
+        {
+          "text": "[cleanup] Enhance code documentation across various modules by adding comments to clarify function purposes and improve maintainability.",
+          "hash": "e645f2a"
+        },
+        {
+          "text": "Enhance VPN provisioner with debug mode support and improved error handling; update build command to include versioning, add debug flag to environment example, and refine API responses for better clarity.",
+          "hash": "c7ef57f",
+          "type": "feature"
+        },
+        {
+          "text": "Update VPN provisioner API endpoints for device configuration and QR code retrieval; increment version to 1.0.4 and enhance peer management functionality in host backend.",
+          "hash": "509baf9",
+          "type": "feature"
+        },
+        {
+          "text": "Introduce new logging functionality in VPN provisioner for enhanced monitoring and troubleshooting; update configuration files to support logging levels and formats.",
+          "hash": "a60eda1",
+          "type": "feature"
+        },
+        {
+          "text": "[cleanup] Remove hardcoded API keys from environment configuration files for improved security and maintainability.",
+          "hash": "472746e"
+        },
+        {
+          "text": "[cleanup] Refactor and enhance API documentation in readme.md for improved clarity and organization; update tables and diagrams to better represent service functionality and operational modes.",
+          "hash": "edc6d99"
+        },
+        {
+          "text": "[cleanup] Refine diagram formatting in readme.md for improved readability and consistency; enhance visual clarity of the VPN provisioner architecture.",
+          "hash": "db9d4b7"
+        },
+        {
+          "text": "[cleanup] Simplify section header in readme.md by removing redundant text; improve overall clarity of the documentation.",
+          "hash": "4390fb5"
+        },
+        {
+          "text": "[cleanup] Improve diagram formatting in readme.md for enhanced readability; update node labels for consistency in the VPN provisioner architecture.",
+          "hash": "71e7a5e"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-26",
+      "version": "2026-05-26",
+      "released_at": "2026-05-26",
+      "title": "Deploy 2026-05-26",
+      "features": [
+        {
+          "text": "Refactor Okta integration page by removing outdated configuration instructions and introducing a new setup guide accordion for improved user experience; enhance layout of integrations sidebar for better accessibility.",
+          "hash": "014f41c",
+          "type": "feature"
+        },
+        {
+          "text": "Implement authentication rate limiting in login routes; enhance API responses for too many requests; update environment configuration for rate limiting settings; add Redis support for session management.",
+          "hash": "6d348ea",
+          "type": "feature"
+        },
+        {
+          "text": "Add CORS support with dynamic origin configuration; enhance API documentation access with token-based authorization; introduce new API specification endpoint; update environment example for application origin.",
+          "hash": "86ff95d",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance user menu by adding API documentation link; update notifications and activity log items to be disabled; refactor dropdown item structure for improved user experience.",
+          "hash": "4bbd527",
+          "type": "feature"
+        },
+        {
+          "text": "Update application name in main.py; enhance API documentation by adding descriptions to active device routes and login token route for improved clarity.",
+          "hash": "c70786c",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance Nginx configuration for whirlpool.scoptanalytics.in by adding security headers, improving error handling for unsupported methods, and configuring upload directory settings for better resource management and security.",
+          "hash": "36977e1",
+          "type": "feature"
+        },
+        {
+          "text": "Update application version in main.py from 1.0.3 to 1.5.1 for improved functionality and performance.",
+          "hash": "9ac89c0",
+          "type": "feature"
+        },
+        {
+          "text": "[cleanup] Remove outdated CSV files for master data, including checklist, plants, SKUs, and warehouses, to streamline resource management and improve application performance.",
+          "hash": "f00fb3c"
+        },
+        {
+          "text": "[cleanup] Remove unused files from distribution script to streamline packaging process and reduce unnecessary bloat.",
+          "hash": "1ecc08e"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-25",
+      "version": "2026-05-25",
+      "released_at": "2026-05-25",
+      "title": "Deploy 2026-05-25",
+      "features": [
+        {
+          "text": "Okta SSO guide added.",
+          "hash": "32ad57b",
+          "type": "feature"
+        },
+        {
+          "text": "Add LoginTokenRequest model for SSO token handling; enhance login functionality with Okta SSO integration and improve user context management in authentication routes; update environment configuration for frontend URL.",
+          "hash": "443cb17",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance authentication and session management by adding support for multiple logins and VPN-only access; introduce UserSession model for tracking user sessions; update login response structure to include active devices and selection requirements; improve environment configuration for multi-login settings.",
+          "hash": "ce89f08",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance API documentation and push notification functionality; clarify router helper locations, document SQL deltas for model changes, and implement notification for inspections ready for review, notifying warehouse operators with relevant details.",
+          "hash": "c7cd5ee",
+          "type": "feature"
+        },
+        {
+          "text": "Update inspection notification system to notify warehouse managers instead of operators; clarify roles in API documentation and adjust related function names for consistency.",
+          "hash": "ff02113",
+          "type": "feature"
+        },
+        {
+          "text": "Introduce VPN access control for authentication routes; update environment configuration to specify allowed VPN IPs for enhanced security.",
+          "hash": "aac303e",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor authentication and device management; enhance user role loading with joined loading, streamline active device listing, and improve session handling for better performance and clarity.",
+          "hash": "a2d9b66",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance API version endpoint to include access control and multi-login settings; introduce VersionResponse model for structured version information and client access permissions.",
+          "hash": "a761d48",
+          "type": "feature"
+        },
+        {
+          "text": "Update OpenAPI specifications to use integer minimum values for various properties; enhance login page with SSO token handling and access checks; refactor login service for improved error handling and session management; update push notification service to use new API structure.",
+          "hash": "25b107e",
+          "type": "feature"
+        },
+        {
+          "text": "Implement theme management system with dynamic theme switching; update HTML meta tags for theme color and status bar; refactor CSS for improved color handling; enhance login and VPN access lock components with consistent branding; optimize app version fetching with request deduplication.",
+          "hash": "4e4e5f8",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance login functionality with device selection handling; refactor login service for improved authentication flow and error management; introduce active device management in account settings; update UI components for better user experience during login and device selection.",
+          "hash": "5329cc9",
+          "type": "feature"
+        },
+        {
+          "text": "Implement session revocation handling in API client; enhance login page with revoked session dialog for improved user experience; refactor session management in login service for better authentication flow.",
+          "hash": "a00725e",
+          "type": "feature"
+        },
+        {
+          "text": "Add redirect handling for Okta SSO login; prevent multiple redirects during login process; enhance button state management with loading indicator for improved user experience.",
+          "hash": "8627b92",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-21",
+      "version": "2026-05-21",
+      "released_at": "2026-05-21",
+      "title": "Deploy 2026-05-21",
+      "features": [
+        {
+          "text": "Integrate Okta SSO functionality by adding routes and credential management; enhance response models with validation and update environment configuration for Okta integration.",
+          "hash": "f90f7ab",
+          "type": "feature"
+        },
+        {
+          "text": "Implement Okta SSO callback functionality by adding routes for authorization code handling and user information retrieval; enhance error handling for authorization failures and improve response structure.",
+          "hash": "d8d8f1f",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-14",
+      "version": "2026-05-14",
+      "released_at": "2026-05-14",
+      "title": "Deploy 2026-05-14",
+      "features": [
+        {
+          "text": "Enhance UI and push notification handling by adding a new font (Jura) for improved typography; refactor notification payload structure for better clarity and consistency; update various components to utilize the new font and improve user experience.",
+          "hash": "bc15cdf",
+          "type": "feature"
+        },
+        {
+          "text": "Add functionality to send test push notifications from the OpsAccountPage; implement user feedback through toast notifications and enhance UI with a dedicated button for testing notifications.",
+          "hash": "9874eb9",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance push notification functionality by adding a welcome notification upon subscription setup; implement user role checks for sending notifications to other users, and update API documentation for clarity.",
+          "hash": "f79fe11",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor OpsKpiPeriodBanner and OpsLayout components for improved UI consistency; update conditional rendering and styling for better user experience.",
+          "hash": "03abf5b",
+          "type": "feature"
+        }
+      ]
+    },
+    {
       "id": "v0.0.3",
       "version": "v0.0.3",
       "released_at": "2026-05-13",
@@ -72,5 +982,6 @@
         }
       ]
     }
-  ]
+  ],
+  "last_commit": "2148dbd446fa2e94e9dabed396d0a5bf9f0d0135"
 }

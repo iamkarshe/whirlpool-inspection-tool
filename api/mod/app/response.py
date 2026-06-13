@@ -32,6 +32,10 @@ class ReleaseFeatureResponse(BaseModel):
         default=None,
         description="feature, fix, improvement, or chore.",
     )
+    hash: str | None = Field(
+        default=None,
+        description="Short git commit hash for this change.",
+    )
 
 
 class ReleaseNoteResponse(BaseModel):

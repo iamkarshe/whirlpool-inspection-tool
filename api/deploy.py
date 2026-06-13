@@ -15,22 +15,43 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+RELEASE_JSON_PATH = SCRIPT_DIR / "release.json"
 DEFAULT_CONFIG = SCRIPT_DIR / "deploy-sites.json"
 EXAMPLE_CONFIG = SCRIPT_DIR / "deploy-sites.example.json"
 
 API_ZIP_NAME = "api.zip"
 UI_ZIP_NAME = "ui.zip"
 UI_BUILD_COMMAND = ["pnpm", "build"]
+
+COMMIT_TYPE_PATTERN = re.compile(r"^\[(feature|fix|update|improvement|chore)\]\s*", re.IGNORECASE)
+COMMIT_TYPE_MAP = {
+    "feature": "feature",
+    "fix": "fix",
+    "update": "improvement",
+    "improvement": "improvement",
+    "chore": "chore",
+}
+
+
+@dataclass(frozen=True)
+class GitCommit:
+    full_hash: str
+    short_hash: str
+    committed_on: str
+    subject: str
 
 
 class DeployError(Exception):
@@ -63,6 +84,219 @@ def resolve_path(value: str, *, base: Path) -> Path:
 def require_tool(name: str) -> None:
     if shutil.which(name) is None:
         raise DeployError(f"Required command not found on PATH: {name}")
+
+
+def parse_commit_feature(subject: str) -> tuple[str, str | None]:
+    match = COMMIT_TYPE_PATTERN.match(subject.strip())
+    if not match:
+        return subject.strip(), None
+    commit_type = COMMIT_TYPE_MAP.get(match.group(1).lower())
+    text = subject[match.end() :].strip()
+    return text or subject.strip(), commit_type
+
+
+def run_git_log(repo_root: Path, *, since: str | None = None) -> list[GitCommit]:
+    command = [
+        "git",
+        "log",
+        "--format=%H%x00%h%x00%ad%x00%s",
+        "--date=short",
+    ]
+    if since:
+        command.append(f"{since}..HEAD")
+    result = subprocess.run(
+        command,
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    commits: list[GitCommit] = []
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            continue
+        full_hash, short_hash, committed_on, subject = line.split("\0", 3)
+        commits.append(
+            GitCommit(
+                full_hash=full_hash,
+                short_hash=short_hash,
+                committed_on=committed_on,
+                subject=subject,
+            )
+        )
+    return commits
+
+
+def git_head_hash(repo_root: Path) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def load_release_document(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {"notes": []}
+    raw_text = path.read_text(encoding="utf-8").strip()
+    if not raw_text:
+        return {"notes": []}
+    payload = json.loads(raw_text)
+    if not isinstance(payload, dict):
+        raise DeployError(f"{path.name} must be a JSON object")
+    payload.setdefault("notes", [])
+    if not isinstance(payload["notes"], list):
+        raise DeployError(f"{path.name} notes must be a list")
+    return payload
+
+
+def collect_known_hashes(notes: list[Any]) -> set[str]:
+    known: set[str] = set()
+    for note in notes:
+        if not isinstance(note, dict):
+            continue
+        for feature in note.get("features") or []:
+            if not isinstance(feature, dict):
+                continue
+            commit_hash = feature.get("hash")
+            if commit_hash:
+                known.add(str(commit_hash))
+    return known
+
+
+def newest_released_at(notes: list[Any]) -> str | None:
+    dates = [
+        str(note.get("released_at"))
+        for note in notes
+        if isinstance(note, dict) and note.get("released_at")
+    ]
+    return max(dates) if dates else None
+
+
+def select_new_commits(
+    commits: list[GitCommit],
+    *,
+    known_hashes: set[str],
+    cutoff_date: str | None,
+) -> list[GitCommit]:
+    selected: list[GitCommit] = []
+    for commit in commits:
+        if commit.short_hash in known_hashes or commit.full_hash in known_hashes:
+            continue
+        if cutoff_date and commit.committed_on <= cutoff_date:
+            continue
+        selected.append(commit)
+    selected.reverse()
+    return selected
+
+
+def group_commits_by_date(commits: list[GitCommit]) -> list[tuple[str, list[GitCommit]]]:
+    grouped: dict[str, list[GitCommit]] = {}
+    for commit in commits:
+        grouped.setdefault(commit.committed_on, []).append(commit)
+    return sorted(grouped.items(), key=lambda item: item[0], reverse=True)
+
+
+def build_feature_entry(commit: GitCommit) -> dict[str, Any]:
+    text, feature_type = parse_commit_feature(commit.subject)
+    entry: dict[str, Any] = {
+        "text": text,
+        "hash": commit.short_hash,
+    }
+    if feature_type:
+        entry["type"] = feature_type
+    return entry
+
+
+def find_note_index(notes: list[Any], released_on: str) -> int | None:
+    for index, note in enumerate(notes):
+        if isinstance(note, dict) and str(note.get("released_at")) == released_on:
+            return index
+    return None
+
+
+def append_commits_to_note(note: dict[str, Any], commits: list[GitCommit]) -> None:
+    features = note.setdefault("features", [])
+    if not isinstance(features, list):
+        raise DeployError("release note features must be a list")
+    existing_hashes = {
+        str(item.get("hash"))
+        for item in features
+        if isinstance(item, dict) and item.get("hash")
+    }
+    for commit in commits:
+        if commit.short_hash in existing_hashes:
+            continue
+        features.append(build_feature_entry(commit))
+        existing_hashes.add(commit.short_hash)
+
+
+def build_date_note(released_on: str, commits: list[GitCommit]) -> dict[str, Any]:
+    return {
+        "id": released_on,
+        "version": released_on,
+        "released_at": released_on,
+        "title": f"Deploy {released_on}",
+        "features": [build_feature_entry(commit) for commit in commits],
+    }
+
+
+def merge_release_notes(notes: list[Any], grouped_commits: list[tuple[str, list[GitCommit]]]) -> list[Any]:
+    merged = [note for note in notes if isinstance(note, dict)]
+    for released_on, commits in grouped_commits:
+        note_index = find_note_index(merged, released_on)
+        if note_index is None:
+            merged.insert(0, build_date_note(released_on, commits))
+            continue
+        append_commits_to_note(merged[note_index], commits)
+    merged.sort(key=lambda note: str(note.get("released_at", "")), reverse=True)
+    return merged
+
+
+def write_release_document(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def update_release_json(*, dry_run: bool = False) -> None:
+    if not shutil.which("git"):
+        raise DeployError("git is required to update release.json")
+    if not (REPO_ROOT / ".git").is_dir():
+        raise DeployError(f"Git repository not found at {REPO_ROOT}")
+
+    payload = load_release_document(RELEASE_JSON_PATH)
+    notes = payload["notes"]
+    known_hashes = collect_known_hashes(notes)
+    last_commit = payload.get("last_commit")
+    since = str(last_commit) if last_commit else None
+
+    commits = run_git_log(REPO_ROOT, since=since)
+    cutoff_date = None
+    if not since and not known_hashes:
+        cutoff_date = newest_released_at(notes)
+
+    new_commits = select_new_commits(
+        commits,
+        known_hashes=known_hashes,
+        cutoff_date=cutoff_date,
+    )
+    if not new_commits:
+        print("release.json: no new commits to append")
+        return
+
+    grouped = group_commits_by_date(new_commits)
+    payload["notes"] = merge_release_notes(notes, grouped)
+    payload["last_commit"] = git_head_hash(REPO_ROOT)
+
+    added = len(new_commits)
+    dates = ", ".join(released_on for released_on, _ in grouped)
+    print(f"release.json: append {added} commit(s) grouped by date [{dates}]")
+    if dry_run:
+        return
+
+    write_release_document(RELEASE_JSON_PATH, payload)
 
 
 def resolve_password(ssh: dict[str, Any]) -> str:
@@ -356,6 +590,7 @@ def deploy_site(
                 )
 
         if deploy_api_flag:
+            update_release_json(dry_run=dry_run)
             api_zip = temp_path / API_ZIP_NAME
             package_assets(api_source, api_assets, api_zip, dry_run=dry_run)
             if dry_run or api_zip.is_file():
@@ -414,7 +649,10 @@ def main(argv: list[str] | None = None) -> int:
         print("error: --api-only and --ui-only cannot be used together", file=sys.stderr)
         return 1
 
-    if not args.dry_run:
+    if not args.dry_run and not args.ui_only:
+        for tool in ("git", "ssh", "scp", "unzip"):
+            require_tool(tool)
+    elif not args.dry_run:
         for tool in ("ssh", "scp", "unzip"):
             require_tool(tool)
 
