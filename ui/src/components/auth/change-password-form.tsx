@@ -1,4 +1,4 @@
-import { Loader2, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react";
 import type { ChangeEvent, SubmitEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
 
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
+import { cn } from "@/lib/utils";
 import {
   isPasswordFormValid,
   PASSWORD_MAX_LENGTH,
@@ -18,7 +19,6 @@ import {
   type MappedPasswordError,
   requestChangePasswordOtp,
 } from "@/services/password-service";
-import { AlertCircle } from "lucide-react";
 
 export type ChangePasswordFormProps = {
   mode: "forced" | "voluntary";
@@ -52,6 +52,7 @@ export function ChangePasswordForm({
     null,
   );
   const [otpRequiredFromServer, setOtpRequiredFromServer] = useState(requireOtp);
+  const [verificationUnlocked, setVerificationUnlocked] = useState(!requireOtp);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<
@@ -60,9 +61,11 @@ export function ChangePasswordForm({
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [strengthValid, setStrengthValid] = useState(false);
 
-  const showOtpStep = otpRequiredFromServer;
+  const showOtpGate = otpRequiredFromServer;
+  const showPasswordStep = !showOtpGate || verificationUnlocked;
 
   const canSubmit = useMemo(() => {
+    if (!showPasswordStep) return false;
     if (!currentPassword || currentPassword.length < PASSWORD_MIN_LENGTH) {
       return false;
     }
@@ -72,7 +75,7 @@ export function ChangePasswordForm({
     ) {
       return false;
     }
-    if (showOtpStep && otpRequiredFromServer && !otpCode.trim()) {
+    if (showOtpGate && otpRequiredFromServer && otpCode.trim().length !== 6) {
       return false;
     }
     return true;
@@ -82,7 +85,8 @@ export function ChangePasswordForm({
     newPassword,
     otpCode,
     otpRequiredFromServer,
-    showOtpStep,
+    showOtpGate,
+    showPasswordStep,
     strengthValid,
     userInputs,
   ]);
@@ -106,6 +110,7 @@ export function ChangePasswordForm({
     try {
       const response = await requestChangePasswordOtp();
       setOtpRequiredFromServer(response.otp_required);
+      setVerificationUnlocked(true);
       if (!response.otp_required) {
         setOtpSent(false);
         return;
@@ -143,9 +148,7 @@ export function ChangePasswordForm({
         current_password: currentPassword,
         new_password: newPassword,
         confirm_password: confirmPassword,
-        ...(showOtpStep && otpCode.trim()
-          ? { otp_code: otpCode.trim() }
-          : {}),
+        ...(showOtpGate && otpCode.trim() ? { otp_code: otpCode.trim() } : {}),
       });
       onSuccess?.();
     } catch (err: unknown) {
@@ -194,14 +197,15 @@ export function ChangePasswordForm({
         </p>
       ) : null}
 
-      {showOtpStep ? (
+      {showOtpGate ? (
         <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">Email verification</p>
               <p className="text-muted-foreground text-xs">
-                Request a one-time code sent to your email before updating your
-                password.
+                {verificationUnlocked
+                  ? "Enter the code from your email, then update your password below."
+                  : "Request a one-time code sent to your email before updating your password."}
               </p>
             </div>
             <Button
@@ -221,115 +225,149 @@ export function ChangePasswordForm({
               ) : (
                 <>
                   <Mail className="h-4 w-4" />
-                  {otpSent ? "Resend code" : "Send code"}
+                  {verificationUnlocked ? "Resend code" : "Send code"}
                 </>
               )}
             </Button>
           </div>
-          {otpSent && otpExpiresMinutes !== null ? (
-            <p className="text-muted-foreground text-xs">
-              Code sent. It expires in {otpExpiresMinutes} minutes.
-            </p>
+
+          {verificationUnlocked && otpSent && otpExpiresMinutes !== null ? (
+            <div className="flex items-start gap-2 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-900 dark:text-emerald-100">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>
+                Verification code sent. It expires in {otpExpiresMinutes}{" "}
+                minutes.
+              </p>
+            </div>
           ) : null}
-          <div className="grid gap-2">
-            <Label htmlFor="otpCode">Verification code</Label>
-            <Input
-              id="otpCode"
-              name="otpCode"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              value={otpCode}
-              onChange={handleOtpChange}
-              maxLength={6}
-              placeholder="6-digit code"
-            />
-            {fieldErrors.otp ? (
-              <p className="text-destructive text-xs">{fieldErrors.otp}</p>
-            ) : null}
-          </div>
         </div>
       ) : null}
 
-      <div className="grid gap-2">
-        <Label htmlFor="currentPassword">Current password</Label>
-        <Input
-          id="currentPassword"
-          name="currentPassword"
-          type="password"
-          autoComplete="current-password"
-          value={currentPassword}
-          onChange={handleCurrentChange}
-          minLength={PASSWORD_MIN_LENGTH}
-          maxLength={PASSWORD_MAX_LENGTH}
-          required
-        />
-        {fieldErrors.current ? (
-          <p className="text-destructive text-xs">{fieldErrors.current}</p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="newPassword">New password</Label>
-        <Input
-          id="newPassword"
-          name="newPassword"
-          type="password"
-          autoComplete="new-password"
-          value={newPassword}
-          onChange={handleNewChange}
-          minLength={PASSWORD_MIN_LENGTH}
-          maxLength={PASSWORD_MAX_LENGTH}
-          required
-        />
-        {fieldErrors.new ? (
-          <p className="text-destructive text-xs">{fieldErrors.new}</p>
-        ) : null}
-        <PasswordStrengthMeter
-          password={newPassword}
-          confirmPassword={confirmPassword}
-          userInputs={userInputs}
-          onValidityChange={setStrengthValid}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="confirmPassword">Confirm new password</Label>
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          value={confirmPassword}
-          onChange={handleConfirmChange}
-          minLength={PASSWORD_MIN_LENGTH}
-          maxLength={PASSWORD_MAX_LENGTH}
-          required
-        />
-        {fieldErrors.confirm ? (
-          <p className="text-destructive text-xs">{fieldErrors.confirm}</p>
-        ) : null}
-      </div>
-
-      {generalError ? (
+      {generalError && !showPasswordStep ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Could not update password</AlertTitle>
+          <AlertTitle>Could not send verification code</AlertTitle>
           <AlertDescription>{generalError}</AlertDescription>
         </Alert>
       ) : null}
 
-      <div className="flex flex-wrap justify-end gap-2">
-        {showCancel && onCancel ? (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        ) : null}
-        <Button type="submit" disabled={!canSubmit || isSubmitting}>
-          {isSubmitting
-            ? "Updating…"
-            : (submitLabel ??
-              (mode === "forced" ? "Set new password" : "Update password"))}
-        </Button>
+      <div
+        className={cn(
+          "grid transition-all duration-300 ease-out",
+          showPasswordStep
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div
+            className={cn(
+              "grid gap-4",
+              showPasswordStep && "animate-in fade-in slide-in-from-top-2 duration-300",
+            )}
+          >
+            {showOtpGate && otpRequiredFromServer ? (
+              <div className="grid gap-2">
+                <Label htmlFor="otpCode">Verification code</Label>
+                <Input
+                  id="otpCode"
+                  name="otpCode"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otpCode}
+                  onChange={handleOtpChange}
+                  maxLength={6}
+                  placeholder="6-digit code"
+                />
+                {fieldErrors.otp ? (
+                  <p className="text-destructive text-xs">{fieldErrors.otp}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="grid gap-2">
+              <Label htmlFor="currentPassword">Current password</Label>
+              <Input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={handleCurrentChange}
+                minLength={PASSWORD_MIN_LENGTH}
+                maxLength={PASSWORD_MAX_LENGTH}
+                required={showPasswordStep}
+              />
+              {fieldErrors.current ? (
+                <p className="text-destructive text-xs">{fieldErrors.current}</p>
+              ) : null}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="newPassword">New password</Label>
+              <Input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={handleNewChange}
+                minLength={PASSWORD_MIN_LENGTH}
+                maxLength={PASSWORD_MAX_LENGTH}
+                required={showPasswordStep}
+              />
+              {fieldErrors.new ? (
+                <p className="text-destructive text-xs">{fieldErrors.new}</p>
+              ) : null}
+              <PasswordStrengthMeter
+                password={newPassword}
+                confirmPassword={confirmPassword}
+                userInputs={userInputs}
+                onValidityChange={setStrengthValid}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="confirmPassword">Confirm new password</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={handleConfirmChange}
+                minLength={PASSWORD_MIN_LENGTH}
+                maxLength={PASSWORD_MAX_LENGTH}
+                required={showPasswordStep}
+              />
+              {fieldErrors.confirm ? (
+                <p className="text-destructive text-xs">{fieldErrors.confirm}</p>
+              ) : null}
+            </div>
+
+            {generalError && showPasswordStep ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Could not update password</AlertTitle>
+                <AlertDescription>{generalError}</AlertDescription>
+              </Alert>
+            ) : null}
+
+            <div className="flex flex-wrap justify-end gap-2">
+              {showCancel && onCancel ? (
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              ) : null}
+              <Button type="submit" disabled={!canSubmit || isSubmitting}>
+                {isSubmitting
+                  ? "Updating…"
+                  : (submitLabel ??
+                    (mode === "forced" ? "Set new password" : "Update password"))}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </form>
   );
