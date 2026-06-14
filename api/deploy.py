@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Pseudo-CI/CD deploy: update release.json + ui .env.production, build, upload, extract.
-
-Reads deploy-sites.json (copy from deploy-sites.example.json).
-UI build uses VITE_APP_BUILD={major}.{minor}.{git-short}-{mode} from config + release.json.
+"""Pseudo-CI/CD deploy
 
 Usage:
+  python3 deploy.py --all
   python3 deploy.py --list
   python3 deploy.py --site scopt-direct
   python3 deploy.py --site client-vpn --dry-run
@@ -23,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -37,7 +36,9 @@ API_ZIP_NAME = "api.zip"
 UI_ZIP_NAME = "ui.zip"
 UI_BUILD_COMMAND = ["pnpm", "build"]
 
-COMMIT_TYPE_PATTERN = re.compile(r"^\[(feature|fix|update|improvement|chore)\]\s*", re.IGNORECASE)
+COMMIT_TYPE_PATTERN = re.compile(
+    r"^\[(feature|fix|update|improvement|chore)\]\s*", re.IGNORECASE
+)
 COMMIT_TYPE_MAP = {
     "feature": "feature",
     "fix": "fix",
@@ -53,6 +54,13 @@ class GitCommit:
     short_hash: str
     committed_on: str
     subject: str
+
+
+@dataclass(frozen=True)
+class SiteArtifacts:
+    site_id: str
+    ui_zip: Path | None
+    api_zip: Path | None
 
 
 class DeployError(Exception):
@@ -194,7 +202,9 @@ def select_new_commits(
     return selected
 
 
-def group_commits_by_date(commits: list[GitCommit]) -> list[tuple[str, list[GitCommit]]]:
+def group_commits_by_date(
+    commits: list[GitCommit],
+) -> list[tuple[str, list[GitCommit]]]:
     grouped: dict[str, list[GitCommit]] = {}
     for commit in commits:
         grouped.setdefault(commit.committed_on, []).append(commit)
@@ -245,7 +255,9 @@ def build_date_note(released_on: str, commits: list[GitCommit]) -> dict[str, Any
     }
 
 
-def merge_release_notes(notes: list[Any], grouped_commits: list[tuple[str, list[GitCommit]]]) -> list[Any]:
+def merge_release_notes(
+    notes: list[Any], grouped_commits: list[tuple[str, list[GitCommit]]]
+) -> list[Any]:
     merged = [note for note in notes if isinstance(note, dict)]
     for released_on, commits in grouped_commits:
         note_index = find_note_index(merged, released_on)
@@ -258,7 +270,9 @@ def merge_release_notes(notes: list[Any], grouped_commits: list[tuple[str, list[
 
 
 def write_release_document(path: Path, payload: dict[str, Any]) -> None:
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def release_commit_short(*, dry_run: bool = False) -> str:
@@ -279,7 +293,9 @@ def site_api_base_url(site: dict[str, Any]) -> str:
     return f"https://{host}"
 
 
-def build_app_build(config: dict[str, Any], site: dict[str, Any], *, dry_run: bool) -> str:
+def build_app_build(
+    config: dict[str, Any], site: dict[str, Any], *, dry_run: bool
+) -> str:
     mode = site.get("mode")
     if not mode:
         raise DeployError(f"Site {site.get('id')} missing mode (e.g. uat, prod)")
@@ -311,7 +327,10 @@ def update_dotenv_file(path: Path, updates: dict[str, str], *, dry_run: bool) ->
         output.append(f"{key}={value}")
 
     content = "\n".join(output).rstrip() + "\n"
-    print(f"update {path.name}: " + ", ".join(f"{key}={value}" for key, value in updates.items()))
+    print(
+        f"update {path.name}: "
+        + ", ".join(f"{key}={value}" for key, value in updates.items())
+    )
     if dry_run:
         return
     path.write_text(content, encoding="utf-8")
@@ -404,8 +423,14 @@ def validate_ssh_auth(ssh: dict[str, Any], *, label: str) -> None:
             raise DeployError(f"{label}: auth=key requires key")
         return
     if auth == "password":
-        if not ssh.get("password") and not ssh.get("password_env") and not ssh.get("password_file"):
-            raise DeployError(f"{label}: auth=password requires password, password_env, or password_file")
+        if (
+            not ssh.get("password")
+            and not ssh.get("password_env")
+            and not ssh.get("password_file")
+        ):
+            raise DeployError(
+                f"{label}: auth=password requires password, password_env, or password_file"
+            )
         return
     raise DeployError(f"{label}: unsupported auth type: {auth}")
 
@@ -453,8 +478,11 @@ def ssh_transport_options(ssh: dict[str, Any]) -> list[str]:
             if jump_port != 22:
                 jump_ssh.extend(["-p", str(jump_port)])
             jump_ssh.extend(["-W", "%h:%p", f"{jump_user}@{jump_host}"])
-            proxy_command = "SSHPASS=" + shlex.quote(jump_password) + " " + " ".join(
-                shlex.quote(part) for part in jump_ssh
+            proxy_command = (
+                "SSHPASS="
+                + shlex.quote(jump_password)
+                + " "
+                + " ".join(shlex.quote(part) for part in jump_ssh)
             )
             args.extend(["-o", f"ProxyCommand={proxy_command}"])
 
@@ -498,7 +526,13 @@ def ssh_run(
     dry_run: bool = False,
 ) -> None:
     prefix, env = auth_wrapper(ssh)
-    command = [*prefix, "ssh", *ssh_transport_options(ssh), ssh_target(ssh), remote_command]
+    command = [
+        *prefix,
+        "ssh",
+        *ssh_transport_options(ssh),
+        ssh_target(ssh),
+        remote_command,
+    ]
     run_local(command, env=env, dry_run=dry_run)
 
 
@@ -622,6 +656,120 @@ def find_site(config: dict[str, Any], site_id: str) -> dict[str, Any]:
     raise DeployError(f"Unknown site id: {site_id}. Known sites: {known or '(none)'}")
 
 
+def enabled_sites(config: dict[str, Any]) -> list[dict[str, Any]]:
+    return [site for site in config.get("sites", []) if site.get("enabled", True)]
+
+
+def validate_site(site: dict[str, Any]) -> None:
+    if not site.get("enabled", True):
+        raise DeployError(f"Site is disabled: {site.get('id')}")
+    ssh = site.get("ssh")
+    if not isinstance(ssh, dict):
+        raise DeployError(f"Site {site.get('id')} missing ssh block")
+    validate_ssh_auth(ssh, label=f"site {site.get('id')}")
+
+
+def prepare_api_zip(
+    config: dict[str, Any],
+    api_source: Path,
+    zip_path: Path,
+    *,
+    dry_run: bool,
+) -> None:
+    api_assets = asset_paths(config, "api")
+    package_assets(api_source, api_assets, zip_path, dry_run=dry_run)
+
+
+def prepare_ui_zip(
+    config: dict[str, Any],
+    site: dict[str, Any],
+    ui_source: Path,
+    zip_path: Path,
+    *,
+    dry_run: bool,
+) -> None:
+    ui_assets = asset_paths(config, "ui")
+    prepare_ui_production_env(ui_source, config, site, dry_run=dry_run)
+    build_ui(ui_source, dry_run=dry_run)
+    package_assets(
+        ui_source,
+        ui_assets,
+        zip_path,
+        flatten_dirs=ui_flatten_dirs(ui_source, ui_assets),
+        dry_run=dry_run,
+    )
+    cleanup_ui_dist(ui_source, dry_run=dry_run)
+
+
+def upload_site_artifacts(
+    site: dict[str, Any],
+    artifacts: SiteArtifacts,
+    *,
+    deploy_api_flag: bool,
+    deploy_ui_flag: bool,
+    dry_run: bool,
+) -> None:
+    site_id = str(site.get("id"))
+    print(f"[{site_id}] upload start")
+
+    if deploy_ui_flag and artifacts.ui_zip is not None:
+        if dry_run or artifacts.ui_zip.is_file():
+            deploy_zip(
+                site,
+                artifacts.ui_zip,
+                UI_ZIP_NAME,
+                str(site["remote"]["ui_dir"]),
+                clean_before_extract=True,
+                dry_run=dry_run,
+            )
+
+    if deploy_api_flag and artifacts.api_zip is not None:
+        if dry_run or artifacts.api_zip.is_file():
+            deploy_zip(
+                site,
+                artifacts.api_zip,
+                API_ZIP_NAME,
+                str(site["remote"]["api_dir"]),
+                after_extract=site.get("after_api_extract") or [],
+                dry_run=dry_run,
+            )
+
+    print(f"[{site_id}] upload done")
+
+
+def prepare_site_artifacts(
+    config: dict[str, Any],
+    site: dict[str, Any],
+    *,
+    temp_path: Path,
+    shared_api_zip: Path | None,
+    deploy_api_flag: bool,
+    deploy_ui_flag: bool,
+    dry_run: bool,
+) -> SiteArtifacts:
+    site_id = str(site["id"])
+    api_source = resolve_path(str(site.get("api", ".")), base=SCRIPT_DIR)
+    ui_source = resolve_path(str(site.get("ui", "../ui")), base=SCRIPT_DIR)
+
+    ui_zip: Path | None = None
+    api_zip: Path | None = None
+
+    if deploy_ui_flag:
+        ui_zip = temp_path / f"{site_id}-{UI_ZIP_NAME}"
+        print(f"[{site_id}] prepare ui")
+        prepare_ui_zip(config, site, ui_source, ui_zip, dry_run=dry_run)
+
+    if deploy_api_flag:
+        if shared_api_zip is not None:
+            api_zip = shared_api_zip
+        else:
+            api_zip = temp_path / f"{site_id}-{API_ZIP_NAME}"
+            print(f"[{site_id}] prepare api")
+            prepare_api_zip(config, api_source, api_zip, dry_run=dry_run)
+
+    return SiteArtifacts(site_id=site_id, ui_zip=ui_zip, api_zip=api_zip)
+
+
 def deploy_site(
     config: dict[str, Any],
     site: dict[str, Any],
@@ -630,64 +778,117 @@ def deploy_site(
     deploy_ui_flag: bool,
     dry_run: bool,
 ) -> None:
-    if not site.get("enabled", True):
-        raise DeployError(f"Site is disabled: {site.get('id')}")
-
-    ssh = site.get("ssh")
-    if not isinstance(ssh, dict):
-        raise DeployError(f"Site {site.get('id')} missing ssh block")
-    validate_ssh_auth(ssh, label=f"site {site.get('id')}")
+    validate_site(site)
 
     if not deploy_api_flag and not deploy_ui_flag:
         raise DeployError("Nothing selected to deploy (api/ui both off)")
-
-    api_source = resolve_path(str(site.get("api", ".")), base=SCRIPT_DIR)
-    ui_source = resolve_path(str(site.get("ui", "../ui")), base=SCRIPT_DIR)
-    api_assets = asset_paths(config, "api")
-    ui_assets = asset_paths(config, "ui")
 
     if deploy_api_flag or deploy_ui_flag:
         update_release_json(dry_run=dry_run)
 
     with tempfile.TemporaryDirectory(prefix="whirlpool-deploy-") as temp_dir:
         temp_path = Path(temp_dir)
-
-        if deploy_ui_flag:
-            prepare_ui_production_env(ui_source, config, site, dry_run=dry_run)
-            build_ui(ui_source, dry_run=dry_run)
-
-            ui_zip = temp_path / UI_ZIP_NAME
-            ui_dir = str(site["remote"]["ui_dir"])
-            package_assets(
-                ui_source,
-                ui_assets,
-                ui_zip,
-                flatten_dirs=ui_flatten_dirs(ui_source, ui_assets),
+        shared_api_zip: Path | None = None
+        if deploy_api_flag:
+            shared_api_zip = temp_path / API_ZIP_NAME
+            prepare_api_zip(
+                config,
+                resolve_path(str(site.get("api", ".")), base=SCRIPT_DIR),
+                shared_api_zip,
                 dry_run=dry_run,
             )
-            if dry_run or ui_zip.is_file():
-                deploy_zip(
-                    site,
-                    ui_zip,
-                    UI_ZIP_NAME,
-                    ui_dir,
-                    clean_before_extract=True,
-                    dry_run=dry_run,
-                )
-            cleanup_ui_dist(ui_source, dry_run=dry_run)
 
+        artifacts = prepare_site_artifacts(
+            config,
+            site,
+            temp_path=temp_path,
+            shared_api_zip=shared_api_zip,
+            deploy_api_flag=deploy_api_flag,
+            deploy_ui_flag=deploy_ui_flag,
+            dry_run=dry_run,
+        )
+        upload_site_artifacts(
+            site,
+            artifacts,
+            deploy_api_flag=deploy_api_flag,
+            deploy_ui_flag=deploy_ui_flag,
+            dry_run=dry_run,
+        )
+
+
+def deploy_all_enabled_sites(
+    config: dict[str, Any],
+    *,
+    deploy_api_flag: bool,
+    deploy_ui_flag: bool,
+    dry_run: bool,
+    max_workers: int | None = None,
+) -> None:
+    sites = enabled_sites(config)
+    if not sites:
+        raise DeployError("No enabled sites in deploy config")
+
+    if not deploy_api_flag and not deploy_ui_flag:
+        raise DeployError("Nothing selected to deploy (api/ui both off)")
+
+    for site in sites:
+        validate_site(site)
+
+    site_ids = ", ".join(str(site["id"]) for site in sites)
+    print(f"deploy all enabled sites ({len(sites)}): {site_ids}")
+
+    if deploy_api_flag or deploy_ui_flag:
+        update_release_json(dry_run=dry_run)
+
+    with tempfile.TemporaryDirectory(prefix="whirlpool-deploy-all-") as temp_dir:
+        temp_path = Path(temp_dir)
+
+        shared_api_zip: Path | None = None
         if deploy_api_flag:
-            api_zip = temp_path / API_ZIP_NAME
-            package_assets(api_source, api_assets, api_zip, dry_run=dry_run)
-            if dry_run or api_zip.is_file():
-                deploy_zip(
+            shared_api_zip = temp_path / API_ZIP_NAME
+            api_source = resolve_path(str(sites[0].get("api", ".")), base=SCRIPT_DIR)
+            print("prepare shared api zip")
+            prepare_api_zip(config, api_source, shared_api_zip, dry_run=dry_run)
+
+        artifacts_by_site: dict[str, SiteArtifacts] = {}
+        for site in sites:
+            artifacts = prepare_site_artifacts(
+                config,
+                site,
+                temp_path=temp_path,
+                shared_api_zip=shared_api_zip,
+                deploy_api_flag=deploy_api_flag,
+                deploy_ui_flag=deploy_ui_flag,
+                dry_run=dry_run,
+            )
+            artifacts_by_site[str(site["id"])] = artifacts
+
+        workers = max_workers or len(sites)
+        errors: list[str] = []
+
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {
+                pool.submit(
+                    upload_site_artifacts,
                     site,
-                    api_zip,
-                    API_ZIP_NAME,
-                    str(site["remote"]["api_dir"]),
-                    after_extract=site.get("after_api_extract") or [],
+                    artifacts_by_site[str(site["id"])],
+                    deploy_api_flag=deploy_api_flag,
+                    deploy_ui_flag=deploy_ui_flag,
                     dry_run=dry_run,
-                )
+                ): str(site["id"])
+                for site in sites
+            }
+            for future in as_completed(futures):
+                site_id = futures[future]
+                try:
+                    future.result()
+                except DeployError as exc:
+                    errors.append(f"{site_id}: {exc}")
+                except subprocess.CalledProcessError as exc:
+                    errors.append(f"{site_id}: command failed with exit code {exc.returncode}")
+
+        if errors:
+            raise DeployError("One or more site uploads failed:\n" + "\n".join(errors))
 
 
 def list_sites(config: dict[str, Any]) -> None:
@@ -706,11 +907,25 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=DEFAULT_CONFIG,
         help=f"Path to deploy config (default: {DEFAULT_CONFIG.name})",
     )
-    parser.add_argument("--site", help="Site id from deploy-sites.json")
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument("--site", help="Deploy one site id from deploy-sites.json")
+    target.add_argument(
+        "--all",
+        action="store_true",
+        help="Deploy all enabled sites (uploads run in parallel)",
+    )
     parser.add_argument("--list", action="store_true", help="List configured sites")
-    parser.add_argument("--dry-run", action="store_true", help="Print steps without executing")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Print steps without executing"
+    )
     parser.add_argument("--api-only", action="store_true", help="Deploy backend only")
     parser.add_argument("--ui-only", action="store_true", help="Deploy frontend only")
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=None,
+        help="Parallel upload workers for --all (default: number of enabled sites)",
+    )
     return parser.parse_args(argv)
 
 
@@ -727,27 +942,41 @@ def main(argv: list[str] | None = None) -> int:
         list_sites(config)
         return 0
 
-    if not args.site:
-        print("error: --site is required (or use --list)", file=sys.stderr)
+    if not args.site and not args.all:
+        print("error: --site or --all is required (or use --list)", file=sys.stderr)
         return 1
 
     if args.api_only and args.ui_only:
-        print("error: --api-only and --ui-only cannot be used together", file=sys.stderr)
+        print(
+            "error: --api-only and --ui-only cannot be used together", file=sys.stderr
+        )
         return 1
 
     if not args.dry_run:
         for tool in ("git", "ssh", "scp", "unzip"):
             require_tool(tool)
 
+    deploy_api_flag = not args.ui_only
+    deploy_ui_flag = not args.api_only
+
     try:
-        site = find_site(config, args.site)
-        deploy_site(
-            config,
-            site,
-            deploy_api_flag=not args.ui_only,
-            deploy_ui_flag=not args.api_only,
-            dry_run=args.dry_run,
-        )
+        if args.all:
+            deploy_all_enabled_sites(
+                config,
+                deploy_api_flag=deploy_api_flag,
+                deploy_ui_flag=deploy_ui_flag,
+                dry_run=args.dry_run,
+                max_workers=args.jobs,
+            )
+        else:
+            site = find_site(config, args.site)
+            deploy_site(
+                config,
+                site,
+                deploy_api_flag=deploy_api_flag,
+                deploy_ui_flag=deploy_ui_flag,
+                dry_run=args.dry_run,
+            )
     except DeployError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
