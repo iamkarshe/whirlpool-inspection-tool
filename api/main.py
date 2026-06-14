@@ -150,6 +150,11 @@ app.mount(
 # Jinja2 templates config.
 templates = Jinja2Templates(directory="template")
 
+# Latest VAPT report path
+VAPT_REPORT_PATH = (
+    Path(__file__).resolve().parent / "template" / "vapt-reports" / "uat-v1-report.html"
+)
+
 
 # Public text cache headers
 PUBLIC_TEXT_CACHE_HEADERS = {
@@ -228,9 +233,8 @@ async def vapt_report(
     db: Session = Depends(get_db),
 ) -> Response:
     require_superadmin_for_api_docs(request, db, token)
-    latest_vapt_report = "vapt-reports/uat-v1-report.html"
-    if Path(latest_vapt_report).exists():
-        return FileResponse(latest_vapt_report)
+    if VAPT_REPORT_PATH.is_file():
+        return FileResponse(VAPT_REPORT_PATH)
     return Response(
         content="Report not found",
         media_type="text/html",
