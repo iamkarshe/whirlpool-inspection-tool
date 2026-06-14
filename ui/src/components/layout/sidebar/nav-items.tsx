@@ -175,13 +175,21 @@ export const navItems: NavGroup[] = [
             href: PAGES.DASHBOARD_ADMIN_KNOWLEDGE_BASE,
             roles: SUPERADMIN_APP_ROLES,
           },
+          {
+            title: "Release Notes",
+            href: PAGES.DASHBOARD_RELEASE_NOTES,
+            roles: SUPERADMIN_APP_ROLES,
+          },
         ],
       },
     ],
   },
 ];
 
-function filterNavItem(item: NavItem, role: string | null | undefined): NavItem | null {
+function filterNavItem(
+  item: NavItem,
+  role: string | null | undefined,
+): NavItem | null {
   const allowed = item.roles ?? DASHBOARD_APP_ROLES;
   if (!hasAnyAppRole(role, allowed)) return null;
 
@@ -201,7 +209,11 @@ export function getNavItemsForRole(
   role: string | null | undefined,
 ): NavGroup[] {
   const normalized = normalizeAppRole(role);
-  if (!normalized || normalized === APP_ROLE.operator || normalized === APP_ROLE.manager) {
+  if (
+    !normalized ||
+    normalized === APP_ROLE.operator ||
+    normalized === APP_ROLE.manager
+  ) {
     return [];
   }
 

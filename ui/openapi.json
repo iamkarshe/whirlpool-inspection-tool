@@ -43,9 +43,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -55,6 +52,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -88,9 +88,6 @@
               }
             }
           },
-          "429": {
-            "description": "Too many authentication attempts from this IP."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -100,6 +97,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many authentication attempts from this IP."
           }
         }
       }
@@ -133,6 +133,16 @@
               }
             }
           },
+          "422": {
+            "description": "Request body failed Pydantic validation (e.g. invalid email format). Parse `error` for a summary and `details` for field-level messages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthRequestValidationErrorResponse"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Rate limited. Either auth route attempts exceeded (AUTH_RATE_LIMIT_*) or forgot-password IP block (FORGOT_PASSWORD_*). Read `detail` and Retry-After header.",
             "headers": {
@@ -159,16 +169,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpDetailErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Request body failed Pydantic validation (e.g. invalid email format). Parse `error` for a summary and `details` for field-level messages.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthRequestValidationErrorResponse"
                 }
               }
             }
@@ -205,6 +205,26 @@
               }
             }
           },
+          "400": {
+            "description": "Reset token is invalid, expired, already used, or belongs to a disallowed account (e.g. superadmin).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed. Malformed JSON body returns { success, error, details }. Password mismatch or weak password (zxcvbn score < 3) returns { detail }.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Too many auth attempts from this IP (shared auth rate limiter).",
             "headers": {
@@ -227,26 +247,6 @@
                 }
               }
             },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Reset token is invalid, expired, already used, or belongs to a disallowed account (e.g. superadmin).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpDetailErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation failed. Malformed JSON body returns { success, error, details }. Password mismatch or weak password (zxcvbn score < 3) returns { detail }.",
             "content": {
               "application/json": {
                 "schema": {
@@ -780,9 +780,6 @@
           "404": {
             "description": "User not found."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -792,6 +789,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -832,9 +832,6 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -844,6 +841,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -884,9 +884,6 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -896,6 +893,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -939,9 +939,6 @@
           "404": {
             "description": "User not found or no VPN profile."
           },
-          "503": {
-            "description": "VPN provision service not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -951,6 +948,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "VPN provision service not configured."
           }
         }
       }
@@ -3355,9 +3355,6 @@
           "409": {
             "description": "Warehouse is referenced by inspections."
           },
-          "503": {
-            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -3367,6 +3364,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           }
         }
       }
@@ -5071,9 +5071,6 @@
           "409": {
             "description": "Plant is referenced by inspections."
           },
-          "503": {
-            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5083,6 +5080,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "CRITICAL_ADMIN_DELETE_TOKEN is not configured."
           }
         }
       }
@@ -6814,9 +6814,6 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -6826,6 +6823,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
           }
         }
       }
@@ -6872,9 +6872,6 @@
           "401": {
             "description": "Missing or invalid x-job-execute-token."
           },
-          "503": {
-            "description": "JOB_EXECUTE_TOKEN not configured."
-          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -6884,6 +6881,9 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
           }
         }
       }
@@ -8050,7 +8050,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Id"
           },
           "value": {
@@ -12427,7 +12427,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -12641,7 +12641,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {
@@ -13771,8 +13771,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535.0,
-            "minimum": 1.0,
+            "maximum": 65535,
+            "minimum": 1,
             "title": "Port",
             "default": 587
           },
@@ -13816,8 +13816,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300.0,
-            "minimum": 1.0,
+            "maximum": 300,
+            "minimum": 1,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -13851,8 +13851,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535.0,
-            "minimum": 1.0,
+            "maximum": 65535,
+            "minimum": 1,
             "title": "Port",
             "description": "SMTP port (swaks --port 25).",
             "default": 25
@@ -13915,8 +13915,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300.0,
-            "minimum": 1.0,
+            "maximum": 300,
+            "minimum": 1,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -14050,8 +14050,8 @@
           },
           "port": {
             "type": "integer",
-            "maximum": 65535.0,
-            "minimum": 1.0,
+            "maximum": 65535,
+            "minimum": 1,
             "title": "Port",
             "default": 587
           },
@@ -14090,8 +14090,8 @@
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 300.0,
-            "minimum": 1.0,
+            "maximum": 300,
+            "minimum": 1,
             "title": "Timeout Seconds",
             "default": 30
           }
@@ -14128,13 +14128,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -14224,7 +14224,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 10.0,
+            "minimum": 10,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -14283,13 +14283,13 @@
           "lat": {
             "type": "number",
             "maximum": 37.6,
-            "minimum": 6.0,
+            "minimum": 6,
             "title": "Lat"
           },
           "lng": {
             "type": "number",
             "maximum": 97.8,
-            "minimum": 68.0,
+            "minimum": 68,
             "title": "Lng"
           },
           "truck_number": {
@@ -14392,7 +14392,7 @@
           },
           "device_time_taken": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Device Time Taken"
           },
           "checklist_answers": {
@@ -14438,8 +14438,8 @@
           },
           "max_attempts": {
             "type": "integer",
-            "maximum": 5.0,
-            "minimum": 1.0,
+            "maximum": 5,
+            "minimum": 1,
             "title": "Max Attempts",
             "default": 3
           }
@@ -15565,7 +15565,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           }
         },
@@ -15803,7 +15803,7 @@
           },
           "postal_code": {
             "type": "integer",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Postal Code"
           },
           "is_active": {

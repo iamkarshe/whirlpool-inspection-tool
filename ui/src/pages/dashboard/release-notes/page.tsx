@@ -1,62 +1,34 @@
 import PageActionBar from "@/components/page-action-bar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
+import type { ReleaseFeatureResponse } from "@/api/generated/model/releaseFeatureResponse";
+import type { ReleaseNoteResponse } from "@/api/generated/model/releaseNoteResponse";
+import { ReleaseDetailDialog } from "@/pages/dashboard/release-notes/release-detail-dialog";
+import { ReleaseLatestFeatureDialog } from "@/pages/dashboard/release-notes/release-latest-feature-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  countFeatureTypes,
+  formatReleaseDate,
+  getHeadFeature,
+  getHeadFeatureHash,
+} from "@/pages/dashboard/release-notes/release-notes-utils";
 import {
-  getReleaseNotes,
-  type ReleaseFeature,
-  type ReleaseFeatureType,
-  type ReleaseNote,
-} from "@/pages/dashboard/release-notes/release-notes-service";
+  ReleaseFeatureSummaryBadges,
+  ReleaseVersionBadge,
+} from "@/pages/dashboard/release-notes/release-badges";
+import {
+  fetchReleaseNotes,
+  releaseNotesApiErrorMessage,
+  type ReleaseNoteRow,
+} from "@/services/release-notes-api";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, ExternalLink } from "lucide-react";
-import { useEffect, useState } from "react";
-
-const featureTypeVariant: Record<
-  ReleaseFeatureType,
-  "default" | "secondary" | "outline" | "success"
-> = {
-  feature: "default",
-  fix: "secondary",
-  improvement: "outline",
-  chore: "secondary",
-};
-
-const featureTypeLabel: Record<ReleaseFeatureType, string> = {
-  feature: "Feature",
-  fix: "Fix",
-  improvement: "Improvement",
-  chore: "Chore",
-};
-
-function ReleaseVersionBadge({ version }: { version: string }) {
-  return (
-    <Badge variant="secondary" className="font-mono font-medium">
-      {version}
-    </Badge>
-  );
-}
-
-function FeatureTypePill({ type }: { type: ReleaseFeatureType }) {
-  return (
-    <Badge
-      variant={featureTypeVariant[type]}
-      className="min-w-[5.5rem] justify-center text-[10px] uppercase tracking-wide"
-    >
-      {featureTypeLabel[type]}
-    </Badge>
-  );
-}
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 function buildColumns(
-  onView: (release: ReleaseNote) => void,
-): ColumnDef<ReleaseNote>[] {
+  latestReleaseId: string | null,
+  onView: (release: ReleaseNoteRow) => void,
+  onViewLatestChange: (release: ReleaseNoteRow) => void,
+): ColumnDef<ReleaseNoteRow>[] {
   return [
     {
       accessorKey: "version",
@@ -70,10 +42,26 @@ function buildColumns(
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <ReleaseVersionBadge version={row.original.version} />,
+      cell: ({ row }) => {
+        const isLatest = row.original.id === latestReleaseId;
+        const headHash = isLatest ? getHeadFeatureHash(row.original) : null;
+
+        return (
+          <ReleaseVersionBadge
+            version={row.original.version}
+            isLatest={isLatest}
+            latestHash={headHash}
+            onLatestClick={
+              isLatest && getHeadFeature(row.original)
+                ? () => onViewLatestChange(row.original)
+                : undefined
+            }
+          />
+        );
+      },
     },
     {
-      accessorKey: "releasedAt",
+      accessorKey: "released_at",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -85,116 +73,147 @@ function buildColumns(
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground font-mono text-xs">
-          {row.original.releasedAt}
+        <span className="text-muted-foreground text-sm">
+          {formatReleaseDate(row.original.released_at)}
         </span>
       ),
     },
     {
       accessorKey: "title",
       header: "Title",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.title}</span>
-      ),
+      cell: ({ row }) => {
+        const isLatest = row.original.id === latestReleaseId;
+        const hasLatestChange = isLatest && getHeadFeature(row.original);
+
+        if (hasLatestChange) {
+          return (
+            <button
+              type="button"
+              onClick={() => onViewLatestChange(row.original)}
+              className="text-left font-medium hover:underline"
+              title="View latest change"
+            >
+              {row.original.title}
+            </button>
+          );
+        }
+
+        return (
+          <button
+            type="button"
+            onClick={() => onView(row.original)}
+            className="text-left font-medium hover:underline"
+          >
+            {row.original.title}
+          </button>
+        );
+      },
     },
     {
-      accessorKey: "features",
-      header: "Items",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground text-xs">
-          {row.original.features.length} items
-        </span>
-      ),
+      id: "summary",
+      header: "Changes",
+      cell: ({ row }) => {
+        const features = row.original.features ?? [];
+        const counts = countFeatureTypes(features);
+        const hasTyped = Object.keys(counts).length > 0;
+
+        return (
+          <div className="space-y-1.5">
+            <span className="text-muted-foreground text-xs">
+              {features.length} item{features.length === 1 ? "" : "s"}
+            </span>
+            {hasTyped ? <ReleaseFeatureSummaryBadges counts={counts} /> : null}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
-      header: "",
+      header: () => <span className="sr-only">Actions</span>,
+      meta: { align: "right" },
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 gap-1.5"
-          onClick={() => onView(row.original)}
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          View
-        </Button>
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5"
+            onClick={() => onView(row.original)}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            View
+          </Button>
+        </div>
       ),
     },
   ];
 }
 
-function ReleaseDetailDialog({
-  release,
-  open,
-  onOpenChange,
-}: {
-  release: ReleaseNote | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  if (!release) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <div className="flex flex-wrap items-center gap-2">
-            <DialogTitle className="text-xl">{release.title}</DialogTitle>
-            <ReleaseVersionBadge version={release.version} />
-          </div>
-          <p className="text-muted-foreground text-sm font-normal">
-            Released {release.releasedAt}
-          </p>
-        </DialogHeader>
-        <div className="space-y-3 py-2">
-          <h4 className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-            What&apos;s included
-          </h4>
-          <ul className="space-y-2">
-            {release.features.map((item: ReleaseFeature, i: number) => (
-              <li
-                key={`${release.id}-${i}`}
-                className="flex items-start gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm"
-              >
-                {item.type ? (
-                  <FeatureTypePill type={item.type} />
-                ) : (
-                  <span className="text-muted-foreground min-w-[5.5rem] text-center">
-                    •
-                  </span>
-                )}
-                <span className="min-w-0 flex-1">{item.text}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function ReleaseNotesPage() {
-  const [releases, setReleases] = useState<ReleaseNote[]>([]);
-  const [selectedRelease, setSelectedRelease] = useState<ReleaseNote | null>(
+  const [releases, setReleases] = useState<ReleaseNoteRow[]>([]);
+  const [selectedRelease, setSelectedRelease] = useState<ReleaseNoteRow | null>(
     null,
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [latestFeature, setLatestFeature] =
+    useState<ReleaseFeatureResponse | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [latestDialogOpen, setLatestDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getReleaseNotes().then((data) => {
-      setReleases(data);
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    fetchReleaseNotes()
+      .then((data) => {
+        if (!cancelled) {
+          setReleases(data);
+          setError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(
+            releaseNotesApiErrorMessage(err, "Could not load release notes."),
+          );
+          setReleases([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const handleView = (release: ReleaseNote) => {
-    setSelectedRelease(release);
-    setDialogOpen(true);
-  };
+  const latestReleaseId = releases[0]?.id ?? null;
+  const latestRelease = releases[0] ?? null;
 
-  const columns = buildColumns(handleView);
+  const handleView = useCallback((release: ReleaseNoteResponse) => {
+    setSelectedRelease(release);
+    setDetailDialogOpen(true);
+  }, []);
+
+  const handleViewLatestChange = useCallback((release: ReleaseNoteResponse) => {
+    const feature = getHeadFeature(release);
+    if (!feature) return;
+    setSelectedRelease(release);
+    setLatestFeature(feature);
+    setLatestDialogOpen(true);
+  }, []);
+
+  const handleViewFullReleaseFromLatest = useCallback(() => {
+    setLatestDialogOpen(false);
+    if (selectedRelease) {
+      setDetailDialogOpen(true);
+    }
+  }, [selectedRelease]);
+
+  const columns = useMemo(
+    () => buildColumns(latestReleaseId, handleView, handleViewLatestChange),
+    [latestReleaseId, handleView, handleViewLatestChange],
+  );
 
   return (
     <div className="space-y-4">
@@ -203,23 +222,38 @@ export default function ReleaseNotesPage() {
         description="Track changes and improvements shipped to the application."
       />
 
-      {loading ? (
-        <div className="flex min-h-[200px] items-center justify-center p-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
-      ) : (
-        <DataTable<ReleaseNote>
-          columns={columns}
-          data={releases}
-          searchKey="title"
-          rangeLabel="release notes"
-        />
-      )}
+      {error && !loading ? (
+        <p className="text-destructive text-sm">{error}</p>
+      ) : null}
+
+      <DataTable<ReleaseNoteRow>
+        columns={columns}
+        data={releases}
+        searchKey="title"
+        rangeLabel="release notes"
+        isLoading={loading}
+        showDateRangePicker={false}
+      />
+
+      {!loading && !error && releases.length === 0 ? (
+        <p className="text-muted-foreground py-6 text-center text-sm">
+          No release notes have been published yet.
+        </p>
+      ) : null}
+
+      <ReleaseLatestFeatureDialog
+        release={selectedRelease ?? latestRelease}
+        feature={latestFeature}
+        open={latestDialogOpen}
+        onOpenChange={setLatestDialogOpen}
+        onViewFullRelease={handleViewFullReleaseFromLatest}
+      />
 
       <ReleaseDetailDialog
         release={selectedRelease}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        isLatest={selectedRelease?.id === latestReleaseId}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
       />
     </div>
   );
