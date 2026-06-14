@@ -46,7 +46,7 @@
       "id": "client-vpn",
       "label": "Client site (SSH jump)",
       "enabled": false,
-      "api_base_url": "https://10.0.0.5",
+      "api_base_url": "https://whirlpool-client.example.com",
       "api": ".",
       "ui": "../ui",
       "ssh": {

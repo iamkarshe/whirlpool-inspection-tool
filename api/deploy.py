@@ -286,11 +286,13 @@ def release_commit_short(*, dry_run: bool = False) -> str:
 
 
 def site_api_base_url(site: dict[str, Any]) -> str:
-    explicit = site.get("api_base_url")
-    if explicit:
-        return str(explicit).strip().rstrip("/")
-    host = str(site["ssh"]["host"]).strip()
-    return f"https://{host}"
+    api_base_url = site.get("api_base_url")
+    if not api_base_url:
+        raise DeployError(
+            f"Site {site.get('id')} missing api_base_url "
+            "(public HTTPS URL for VITE_API_BASE_URL, not the SSH host/IP)"
+        )
+    return str(api_base_url).strip().rstrip("/")
 
 
 def build_app_build(

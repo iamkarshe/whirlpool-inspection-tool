@@ -105,6 +105,36 @@
           "text": "Add release notes functionality: implement loading and validation of release notes from release.json, enhance response models for structured release note data, and integrate new router for app routes in main.py.",
           "hash": "2148dbd",
           "type": "feature"
+        },
+        {
+          "text": "Enhance release notes functionality: add commit hash to release feature response, update release.json structure with new features, and block access to release.json for sensitive paths.",
+          "hash": "219ada4",
+          "type": "feature"
+        },
+        {
+          "text": "Expand API documentation and response models: add 'App' tag metadata, enhance release notes response structure with detailed examples, and improve router descriptions for clarity on usage and authentication errors.",
+          "hash": "80255b6",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance release notes page: add Open Graph metadata for improved sharing, integrate new release notes API responses, and update sidebar navigation to include release notes section.",
+          "hash": "7e3cea8",
+          "type": "feature"
+        },
+        {
+          "text": "Update deployment configuration: add versioning to deploy-sites.example.json, introduce site-specific API base URLs, and enhance deploy.py with environment variable management for UI builds.",
+          "hash": "a1691c3",
+          "type": "feature"
+        },
+        {
+          "text": "Refactor deploy.py: streamline function signatures for clarity, enhance site validation and artifact preparation, and improve logging for deployment processes.",
+          "hash": "6462d23",
+          "type": "feature"
+        },
+        {
+          "text": "Update VAPT report handling: define a constant for the latest report path and modify the endpoint to use this constant for file response, improving code clarity and maintainability.",
+          "hash": "f393afd",
+          "type": "feature"
         }
       ]
     },
@@ -983,5 +1013,5 @@
       ]
     }
   ],
-  "last_commit": "2148dbd446fa2e94e9dabed396d0a5bf9f0d0135"
+  "last_commit": "f393afd3b8ef62b8be560631842d9c9798119949"
 }
