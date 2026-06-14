@@ -8,6 +8,7 @@ wheels/
 # Virtual environments
 .venv
 .env
+.env.production
 
 # Credentials
 credentials.json
@@ -18,3 +19,9 @@ credentials.prod.json
 
 # Deploy config (site-specific hosts/paths)
 deploy-sites.json
+
+# Deploy build
+www.zip
+deploy.zip
+build.zip
+dist.zip

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+sudo apt install redis-server -y
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+
 sudo cp ./*.service ./*.target /etc/systemd/system/
 
 sudo systemctl daemon-reload

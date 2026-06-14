@@ -1,0 +1,1 @@
+ssh -i ~/.ssh/whirlpool_pdi_infra_ed25519 -L 2222:10.20.1.206:22 ubuntu@15.207.4.171
