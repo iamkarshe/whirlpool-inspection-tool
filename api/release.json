@@ -135,6 +135,15 @@
           "text": "Update VAPT report handling: define a constant for the latest report path and modify the endpoint to use this constant for file response, improving code clarity and maintainability.",
           "hash": "f393afd",
           "type": "feature"
+        },
+        {
+          "text": "Update API base URL in deploy-sites.example.json and enhance site API base URL validation in deploy.py to ensure proper configuration for deployment.",
+          "hash": "e41718f",
+          "type": "feature"
+        },
+        {
+          "text": "[deploy] Prod. setup pipeline.",
+          "hash": "14bffdd"
         }
       ]
     },
@@ -1013,5 +1022,5 @@
       ]
     }
   ],
-  "last_commit": "f393afd3b8ef62b8be560631842d9c9798119949"
+  "last_commit": "14bffdd9fab78a47275bbfe1ccdd51dc4ab76c59"
 }
