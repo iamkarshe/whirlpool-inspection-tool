@@ -1,4 +1,6 @@
 {
+  "major_version": "1",
+  "minor_version": "0",
   "assets": {
     "api": [
       "migrations",
@@ -15,9 +17,11 @@
   },
   "sites": [
     {
+      "mode": "uat",
       "id": "scopt-direct",
       "label": "Scopt production (direct)",
       "enabled": true,
+      "api_base_url": "https://whirlpool.scoptanalytics.in",
       "api": ".",
       "ui": "../ui",
       "ssh": {
@@ -38,9 +42,11 @@
       ]
     },
     {
+      "mode": "prod",
       "id": "client-vpn",
       "label": "Client site (SSH jump)",
       "enabled": false,
+      "api_base_url": "https://10.0.0.5",
       "api": ".",
       "ui": "../ui",
       "ssh": {

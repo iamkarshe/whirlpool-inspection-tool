@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Pseudo-CI/CD deploy: build ui, zip assets, upload, extract; then api + hooks.
+"""Pseudo-CI/CD deploy: update release.json + ui .env.production, build, upload, extract.
 
 Reads deploy-sites.json (copy from deploy-sites.example.json).
+UI build uses VITE_APP_BUILD={major}.{minor}.{git-short}-{mode} from config + release.json.
 
 Usage:
   python3 deploy.py --list
@@ -258,6 +259,87 @@ def merge_release_notes(notes: list[Any], grouped_commits: list[tuple[str, list[
 
 def write_release_document(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def release_commit_short(*, dry_run: bool = False) -> str:
+    payload = load_release_document(RELEASE_JSON_PATH)
+    last_commit = payload.get("last_commit")
+    if last_commit:
+        return str(last_commit)[:7]
+    if dry_run:
+        return "0000000"
+    return git_head_hash(REPO_ROOT)[:7]
+
+
+def site_api_base_url(site: dict[str, Any]) -> str:
+    explicit = site.get("api_base_url")
+    if explicit:
+        return str(explicit).strip().rstrip("/")
+    host = str(site["ssh"]["host"]).strip()
+    return f"https://{host}"
+
+
+def build_app_build(config: dict[str, Any], site: dict[str, Any], *, dry_run: bool) -> str:
+    mode = site.get("mode")
+    if not mode:
+        raise DeployError(f"Site {site.get('id')} missing mode (e.g. uat, prod)")
+    major = str(config.get("major_version", "0")).strip()
+    minor = str(config.get("minor_version", "0")).strip()
+    commit = release_commit_short(dry_run=dry_run)
+    return f"{major}.{minor}.{commit}-{mode}"
+
+
+def update_dotenv_file(path: Path, updates: dict[str, str], *, dry_run: bool) -> None:
+    if not path.is_file():
+        raise DeployError(f"UI env file not found: {path}")
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    remaining = dict(updates)
+    output: list[str] = []
+
+    for line in lines:
+        if not line or line.lstrip().startswith("#") or "=" not in line:
+            output.append(line)
+            continue
+        key, _, value = line.partition("=")
+        if key in remaining:
+            output.append(f"{key}={remaining.pop(key)}")
+        else:
+            output.append(f"{key}={value}")
+
+    for key, value in remaining.items():
+        output.append(f"{key}={value}")
+
+    content = "\n".join(output).rstrip() + "\n"
+    print(f"update {path.name}: " + ", ".join(f"{key}={value}" for key, value in updates.items()))
+    if dry_run:
+        return
+    path.write_text(content, encoding="utf-8")
+
+
+def prepare_ui_production_env(
+    ui_dir: Path,
+    config: dict[str, Any],
+    site: dict[str, Any],
+    *,
+    dry_run: bool,
+) -> None:
+    env_path = ui_dir / ".env.production"
+    updates = {
+        "VITE_API_BASE_URL": site_api_base_url(site),
+        "VITE_APP_BUILD": build_app_build(config, site, dry_run=dry_run),
+    }
+    update_dotenv_file(env_path, updates, dry_run=dry_run)
+
+
+def cleanup_ui_dist(ui_dir: Path, *, dry_run: bool) -> None:
+    dist_dir = ui_dir / "dist"
+    if not dist_dir.exists():
+        return
+    print(f"cleanup remove {dist_dir}")
+    if dry_run:
+        return
+    shutil.rmtree(dist_dir)
 
 
 def update_release_json(*, dry_run: bool = False) -> None:
@@ -564,10 +646,14 @@ def deploy_site(
     api_assets = asset_paths(config, "api")
     ui_assets = asset_paths(config, "ui")
 
+    if deploy_api_flag or deploy_ui_flag:
+        update_release_json(dry_run=dry_run)
+
     with tempfile.TemporaryDirectory(prefix="whirlpool-deploy-") as temp_dir:
         temp_path = Path(temp_dir)
 
         if deploy_ui_flag:
+            prepare_ui_production_env(ui_source, config, site, dry_run=dry_run)
             build_ui(ui_source, dry_run=dry_run)
 
             ui_zip = temp_path / UI_ZIP_NAME
@@ -588,9 +674,9 @@ def deploy_site(
                     clean_before_extract=True,
                     dry_run=dry_run,
                 )
+            cleanup_ui_dist(ui_source, dry_run=dry_run)
 
         if deploy_api_flag:
-            update_release_json(dry_run=dry_run)
             api_zip = temp_path / API_ZIP_NAME
             package_assets(api_source, api_assets, api_zip, dry_run=dry_run)
             if dry_run or api_zip.is_file():
@@ -649,11 +735,8 @@ def main(argv: list[str] | None = None) -> int:
         print("error: --api-only and --ui-only cannot be used together", file=sys.stderr)
         return 1
 
-    if not args.dry_run and not args.ui_only:
+    if not args.dry_run:
         for tool in ("git", "ssh", "scp", "unzip"):
-            require_tool(tool)
-    elif not args.dry_run:
-        for tool in ("ssh", "scp", "unzip"):
             require_tool(tool)
 
     try:
