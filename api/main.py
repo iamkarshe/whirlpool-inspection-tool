@@ -147,6 +147,15 @@ app.mount(
     name="uploads",
 )
 
+# Get Started guide static assets (screenshots, etc.)
+guide_static_dir = Path(__file__).resolve().parent / "template" / "static"
+guide_static_dir.mkdir(parents=True, exist_ok=True)
+app.mount(
+    "/get-started/static",
+    StaticFiles(directory=str(guide_static_dir)),
+    name="get_started_static",
+)
+
 # Jinja2 templates config.
 templates = Jinja2Templates(directory="template")
 
