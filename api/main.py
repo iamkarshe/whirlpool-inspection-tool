@@ -242,6 +242,24 @@ async def vapt_report(
     )
 
 
+# Get Started
+@app.get("/get-started", include_in_schema=False)
+async def get_started(
+    request: Request,
+    token: str | None = Query(
+        None,
+        description="Authorization bearer.",
+    ),
+    db: Session = Depends(get_db),
+) -> Response:
+    return templates.TemplateResponse(
+        "get-started.html",
+        {
+            "request": request,
+        },
+    )
+
+
 # Sitemap XML
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap_xml() -> Response:
