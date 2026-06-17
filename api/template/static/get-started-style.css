@@ -156,6 +156,80 @@ button:focus-visible {
   box-shadow: 0 4px 14px rgba(11, 61, 145, 0.1);
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-print-guide {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-base);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.btn-print-guide:hover {
+  border-color: var(--brand);
+  box-shadow: 0 4px 14px rgba(11, 61, 145, 0.1);
+}
+
+.print-only {
+  display: none !important;
+}
+
+.step-print-figures {
+  display: none;
+}
+
+body.is-printing .step-print-figures {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+body.is-printing .step-print-figure {
+  width: 100%;
+  max-width: 300px;
+  margin: 0;
+  text-align: center;
+}
+
+body.is-printing .step-print-figure img {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+body.is-printing .step-print-figure figcaption {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 .hero {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1134,5 +1208,245 @@ button:focus-visible {
 
   .meta-grid {
     grid-template-columns: 1fr;
+  }
+
+  .topbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm 18mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #0f172a;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .no-print,
+  .shot-dialog {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .topbar {
+    margin-bottom: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand-icon {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .guide-panel,
+  .role-panel {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin-top: 0 !important;
+  }
+
+  .role-panel {
+    display: block !important;
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .role-panel[hidden] {
+    display: block !important;
+  }
+
+  .platform-panel {
+    display: block !important;
+  }
+
+  .platform-panel[hidden] {
+    display: block !important;
+  }
+
+  .step-2-block.is-locked .step-2-intro,
+  .step-2-block.is-locked .role-switcher,
+  .step-2-block.is-locked .role-panel,
+  .step-2-block.is-locked .back-to-vpn {
+    display: block !important;
+  }
+
+  .step-2-block.is-locked .step-2-locked-note {
+    display: none !important;
+  }
+
+  .print-index {
+    break-after: page;
+    page-break-after: always;
+    padding: 8mm 0 12mm;
+  }
+
+  .print-cover-title {
+    margin: 0 0 8px;
+    font-family: var(--font-title);
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+
+  .print-cover-subtitle {
+    margin: 0 0 24px;
+    color: var(--text-muted);
+    font-size: 1rem;
+  }
+
+  .print-toc-heading {
+    margin: 0 0 12px;
+    font-family: var(--font-title);
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .print-toc {
+    margin: 0;
+    padding-left: 1.25rem;
+    line-height: 1.65;
+  }
+
+  .print-toc ol {
+    margin: 6px 0 10px;
+    padding-left: 1.25rem;
+  }
+
+  .print-toc a,
+  .print-toc a:visited {
+    color: #0b3d91 !important;
+    text-decoration: underline !important;
+    text-underline-offset: 2px;
+  }
+
+  .print-toc a::before,
+  .print-toc a::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .print-anchor {
+    display: block;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .print-page {
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  #print-vpn-overview {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  #panel-vpn .panel-body > .callout {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-role-overview {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .role-panel .panel-body > .meta-grid,
+  .role-panel .panel-body > .section:first-of-type {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .role-panel .panel-body > .section:first-of-type {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .steps .step.print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .role-panel:last-of-type .steps .step.print-page:last-child {
+    break-after: auto;
+  }
+
+  .step-shots .btn-view-shot {
+    display: none !important;
+  }
+
+  .step-print-figures {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .step-print-figure {
+    width: 100%;
+    max-width: 300px;
+    margin: 0;
+    text-align: center;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .step-print-figure img {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .step-print-figure figcaption {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .print-footer {
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .step-body a[href^="http"] {
+    text-decoration: underline !important;
+    color: #0b3d91 !important;
   }
 }

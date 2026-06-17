@@ -30,7 +30,7 @@
 
   <body>
     <div class="page">
-      <header class="topbar">
+      <header class="topbar no-print">
         <div class="brand">
           <div class="brand-icon" aria-hidden="true">
             <i class="bi bi-clipboard2-check"></i>
@@ -40,13 +40,89 @@
             <span>Pre-Delivery Inspection · Getting started</span>
           </div>
         </div>
-        <a class="app-link" href="/">
-          Open application
-          <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
-        </a>
+        <div class="topbar-actions no-print">
+          <button type="button" class="btn-print-guide" id="print-guide">
+            <i class="bi bi-printer" aria-hidden="true"></i>
+            Print as PDF
+          </button>
+          <a class="app-link" href="/">
+            Open application
+            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+          </a>
+        </div>
       </header>
 
-      <section class="hero">
+      <nav
+        class="print-only print-index print-page"
+        id="print-index"
+        aria-label="Table of contents"
+      >
+        <h1 class="print-cover-title">Whirlpool PDI Tool</h1>
+        <p class="print-cover-subtitle">Getting Started Guide</p>
+        <h2 class="print-toc-heading">Contents</h2>
+        <ol class="print-toc">
+          <li>
+            <a href="#print-vpn-overview">VPN setup overview</a>
+          </li>
+          <li>
+            VPN — Mobile
+            <ol>
+              <li>
+                <a href="#print-vpn-mobile-1">Install WireGuard</a>
+              </li>
+              <li>
+                <a href="#print-vpn-mobile-2">Add your VPN tunnel</a>
+              </li>
+              <li>
+                <a href="#print-vpn-mobile-3">Connect to the warehouse VPN</a>
+              </li>
+            </ol>
+          </li>
+          <li>
+            VPN — Desktop
+            <ol>
+              <li>
+                <a href="#print-vpn-desktop-1">Install WireGuard</a>
+              </li>
+              <li>
+                <a href="#print-vpn-desktop-2">Import your config file</a>
+              </li>
+              <li>
+                <a href="#print-vpn-desktop-3">Activate the tunnel</a>
+              </li>
+            </ol>
+          </li>
+          <li>
+            <a href="#print-admin-overview">Admin — role overview</a>
+            <ol>
+              <li><a href="#print-admin-step-1">Sign in and confirm warehouse access</a></li>
+              <li><a href="#print-admin-step-2">Navigate dashboard and analytics</a></li>
+              <li><a href="#print-admin-step-3">Monitor inspections and status</a></li>
+              <li><a href="#print-admin-step-4">Use master data and reports</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#print-manager-overview">Warehouse Manager — role overview</a>
+            <ol>
+              <li><a href="#print-manager-step-1">Install Ops app and sign in</a></li>
+              <li><a href="#print-manager-step-2">Clear inspection review queue</a></li>
+              <li><a href="#print-manager-step-3">Review team KPIs and lists</a></li>
+              <li><a href="#print-manager-step-4">Search inspections and account</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#print-operator-overview">Warehouse Operator — role overview</a>
+            <ol>
+              <li><a href="#print-operator-step-1">Install Ops app and sign in</a></li>
+              <li><a href="#print-operator-step-2">Start inbound or outbound inspection</a></li>
+              <li><a href="#print-operator-step-3">Complete checklist and submit</a></li>
+              <li><a href="#print-operator-step-4">Track KPIs and search inspections</a></li>
+            </ol>
+          </li>
+        </ol>
+      </nav>
+
+      <section class="hero no-print">
         <div class="hero-icon" aria-hidden="true">
           <i class="bi bi-compass"></i>
         </div>
@@ -60,11 +136,11 @@
         </div>
       </section>
 
-      <p class="section-label" id="step-1-label">
+      <p class="section-label no-print" id="step-1-label">
         <i class="bi bi-1-circle" aria-hidden="true"></i>
         Step 1 · Network access
       </p>
-      <div class="section-switcher">
+      <div class="section-switcher no-print">
         <div class="step-card step-card--active" id="step-1-card">
           <span class="tab-inner">
             <span class="tab-icon" aria-hidden="true">
@@ -80,7 +156,7 @@
 
       <!-- VPN Setup -->
       <article class="guide-panel" id="panel-vpn">
-        <div class="role-panel-header" data-role="vpn">
+        <div class="role-panel-header print-page" id="print-vpn-overview" data-role="vpn">
           <div class="role-badge vpn">
             <i class="bi bi-shield-lock" aria-hidden="true"></i>
             VPN Setup
@@ -103,7 +179,7 @@
             </span>
           </p>
 
-          <section class="section">
+          <section class="section no-print">
             <h3>
               <i class="bi bi-device-hdd" aria-hidden="true"></i>
               Choose your device
@@ -149,11 +225,11 @@
           >
             <section class="section">
               <h3>
-                <i class="bi bi-list-ol" aria-hidden="true"></i>
-                Mobile setup steps
+                <i class="bi bi-phone" aria-hidden="true"></i>
+                <span class="print-only">VPN — </span>Mobile setup steps
               </h3>
               <ol class="steps">
-                <li class="step">
+                <li class="step print-page" id="print-vpn-mobile-1">
                   <div class="step-head">
                     <span class="step-icon" aria-hidden="true">
                       <i class="bi bi-download"></i>
@@ -203,7 +279,7 @@
                     </button>
                   </div>
                 </li>
-                <li class="step">
+                <li class="step print-page" id="print-vpn-mobile-2">
                   <div class="step-head">
                     <span class="step-icon" aria-hidden="true">
                       <i class="bi bi-qr-code"></i>
@@ -250,7 +326,7 @@
                     </button>
                   </div>
                 </li>
-                <li class="step">
+                <li class="step print-page" id="print-vpn-mobile-3">
                   <div class="step-head">
                     <span class="step-icon" aria-hidden="true">
                       <i class="bi bi-plug"></i>
@@ -289,11 +365,11 @@
           >
             <section class="section">
               <h3>
-                <i class="bi bi-list-ol" aria-hidden="true"></i>
-                Desktop setup steps
+                <i class="bi bi-laptop" aria-hidden="true"></i>
+                <span class="print-only">VPN — </span>Desktop setup steps
               </h3>
               <ol class="steps">
-                <li class="step">
+                <li class="step print-page" id="print-vpn-desktop-1">
                   <div class="step-head">
                     <span class="step-icon" aria-hidden="true">
                       <i class="bi bi-download"></i>
@@ -323,7 +399,7 @@
                     </button>
                   </div>
                 </li>
-                <li class="step">
+                <li class="step print-page" id="print-vpn-desktop-2">
                   <div class="step-head">
                     <span class="step-icon" aria-hidden="true">
                       <i class="bi bi-file-earmark-code"></i>
@@ -350,7 +426,7 @@
                     </button>
                   </div>
                 </li>
-                <li class="step">
+                <li class="step print-page" id="print-vpn-desktop-3">
                   <div class="step-head">
                     <span class="step-icon" aria-hidden="true">
                       <i class="bi bi-toggle-on"></i>
@@ -381,7 +457,7 @@
         </div>
       </article>
 
-      <div class="step-continue-wrap">
+      <div class="step-continue-wrap no-print">
         <p class="step-continue-hint">Finish WireGuard setup, then continue.</p>
         <button class="btn-continue" type="button" id="vpn-continue">
           My VPN is connected
@@ -389,15 +465,15 @@
         </button>
       </div>
 
-      <div class="step-divider" aria-hidden="true"></div>
+      <div class="step-divider no-print" aria-hidden="true"></div>
 
       <div class="step-2-block is-locked" id="step-2-block">
-        <p class="section-label" id="step-2-label">
+        <p class="section-label no-print" id="step-2-label">
           <i class="bi bi-2-circle" aria-hidden="true"></i>
           Step 2 · Your role
         </p>
 
-        <p class="step-2-locked-note">
+        <p class="step-2-locked-note no-print">
           <i class="bi bi-lock" aria-hidden="true"></i>
           <span>
             Complete Step 1 and confirm your VPN connection to unlock role
@@ -405,17 +481,17 @@
           </span>
         </p>
 
-        <p class="step-2-intro">
+        <p class="step-2-intro no-print">
           Now that your VPN is connected, select the guide that matches your
           role in the warehouse.
         </p>
 
-        <a class="back-to-vpn" href="#step-1-label" id="back-to-vpn">
+        <a class="back-to-vpn no-print" href="#step-1-label" id="back-to-vpn">
           <i class="bi bi-arrow-left" aria-hidden="true"></i>
           Back to VPN setup
         </a>
 
-        <div class="role-switcher" role="tablist" aria-label="Role guides">
+        <div class="role-switcher no-print" role="tablist" aria-label="Role guides">
           <button
             class="role-tab"
             type="button"
@@ -484,7 +560,7 @@
           data-guide="admin"
           hidden
         >
-          <div class="role-panel-header" data-role="admin">
+          <div class="role-panel-header print-role-overview" id="print-admin-overview" data-role="admin">
             <div class="role-badge admin">
               <i class="bi bi-pc-display" aria-hidden="true"></i>
               Admin
@@ -574,7 +650,7 @@
                 Getting started steps
               </h3>
               <ol class="steps">
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-admin-step-1">
                   <div class="step-head">
                     <div class="step-number">1</div>
                     <p class="step-title">
@@ -583,7 +659,7 @@
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-admin-step-2">
                   <div class="step-head">
                     <div class="step-number">2</div>
                     <p class="step-title">
@@ -592,7 +668,7 @@
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-admin-step-3">
                   <div class="step-head">
                     <div class="step-number">3</div>
                     <p class="step-title">
@@ -601,7 +677,7 @@
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-admin-step-4">
                   <div class="step-head">
                     <div class="step-number">4</div>
                     <p class="step-title">
@@ -624,7 +700,7 @@
           data-guide="manager"
           hidden
         >
-          <div class="role-panel-header" data-role="manager">
+          <div class="role-panel-header print-role-overview" id="print-manager-overview" data-role="manager">
             <div class="role-badge manager">
               <i class="bi bi-person-check" aria-hidden="true"></i>
               Warehouse Manager
@@ -714,21 +790,21 @@
                 Getting started steps
               </h3>
               <ol class="steps">
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-manager-step-1">
                   <div class="step-head">
                     <div class="step-number">1</div>
                     <p class="step-title">Install the Ops app and sign in</p>
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-manager-step-2">
                   <div class="step-head">
                     <div class="step-number">2</div>
                     <p class="step-title">Clear the inspection review queue</p>
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-manager-step-3">
                   <div class="step-head">
                     <div class="step-number">3</div>
                     <p class="step-title">
@@ -737,7 +813,7 @@
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-manager-step-4">
                   <div class="step-head">
                     <div class="step-number">4</div>
                     <p class="step-title">
@@ -760,7 +836,7 @@
           data-guide="operator"
           hidden
         >
-          <div class="role-panel-header" data-role="operator">
+          <div class="role-panel-header print-role-overview" id="print-operator-overview" data-role="operator">
             <div class="role-badge operator">
               <i class="bi bi-upc-scan" aria-hidden="true"></i>
               Warehouse Operator
@@ -850,14 +926,14 @@
                 Getting started steps
               </h3>
               <ol class="steps">
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-operator-step-1">
                   <div class="step-head">
                     <div class="step-number">1</div>
                     <p class="step-title">Install the Ops app and sign in</p>
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-operator-step-2">
                   <div class="step-head">
                     <div class="step-number">2</div>
                     <p class="step-title">
@@ -866,7 +942,7 @@
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-operator-step-3">
                   <div class="step-head">
                     <div class="step-number">3</div>
                     <p class="step-title">
@@ -875,7 +951,7 @@
                   </div>
                   <p class="step-body">Detailed steps to be added.</p>
                 </li>
-                <li class="step step--placeholder">
+                <li class="step step--placeholder print-page" id="print-operator-step-4">
                   <div class="step-head">
                     <div class="step-number">4</div>
                     <p class="step-title">
@@ -890,7 +966,7 @@
         </article>
       </div>
 
-      <p class="footnote">
+      <p class="footnote no-print">
         <i class="bi bi-info-circle" aria-hidden="true"></i>
         <span>
           VPN must be active before sign-in. Role guides assume you are already
@@ -898,10 +974,14 @@
           integrations) is documented separately.
         </span>
       </p>
+
+      <footer class="print-only print-footer">
+        Whirlpool PDI Tool · Getting Started Guide · Scopt Analytics
+      </footer>
     </div>
 
     <dialog
-      class="shot-dialog"
+      class="shot-dialog no-print"
       id="shot-dialog"
       aria-labelledby="shot-dialog-title"
     >
@@ -1027,6 +1107,145 @@
             unlockStep2(false);
           }
         } catch (e) {}
+
+        const printGuideButton = document.getElementById("print-guide");
+        let printRestoreState = null;
+
+        function collectPrintRestoreState() {
+          return {
+            step2Locked: step2Block.classList.contains("is-locked"),
+            activeRole: (function () {
+              const selected = roleTabs.find(function (tab) {
+                return tab.getAttribute("aria-selected") === "true";
+              });
+              return selected ? selected.dataset.guide : "admin";
+            })(),
+            activePlatform: (function () {
+              const selected = platformTabs.find(function (tab) {
+                return tab.getAttribute("aria-selected") === "true";
+              });
+              return selected ? selected.dataset.platform : "mobile";
+            })(),
+          };
+        }
+
+        function fixPrintTocLinks() {
+          const docUrl = window.location.href.split("#")[0];
+          document.querySelectorAll(".print-toc a[href^='#']").forEach(function (anchor) {
+            const hash = anchor.getAttribute("href");
+            anchor.setAttribute("href", docUrl + hash);
+          });
+        }
+
+        function injectPrintFigures() {
+          document.querySelectorAll(".step-shots").forEach(function (group) {
+            if (group.querySelector(".step-print-figures")) return;
+            const buttons = group.querySelectorAll("[data-shot-open]");
+            if (!buttons.length) return;
+
+            const figures = document.createElement("div");
+            figures.className = "step-print-figures";
+
+            buttons.forEach(function (button) {
+              const src = button.dataset.shotSrc;
+              if (!src) return;
+              const figure = document.createElement("figure");
+              figure.className = "step-print-figure";
+              const img = document.createElement("img");
+              img.src = new URL(src, window.location.origin).href;
+              img.alt = button.dataset.shotAlt || button.textContent.trim();
+              img.loading = "eager";
+              const caption = document.createElement("figcaption");
+              caption.textContent = button.dataset.shotTitle || img.alt;
+              figure.appendChild(img);
+              figure.appendChild(caption);
+              figures.appendChild(figure);
+            });
+
+            group.appendChild(figures);
+          });
+        }
+
+        function ensurePrintAnchors() {
+          document.querySelectorAll("[id^='print-']").forEach(function (target) {
+            if (target.id === "print-index") return;
+            if (target.closest(".print-toc")) return;
+            if (target.querySelector(":scope > .print-anchor")) return;
+            const anchor = document.createElement("span");
+            anchor.className = "print-anchor";
+            anchor.setAttribute("aria-hidden", "true");
+            target.insertBefore(anchor, target.firstChild);
+          });
+        }
+
+        function preloadPrintImages() {
+          const images = document.querySelectorAll(".step-print-figure img");
+          return Promise.all(
+            Array.from(images).map(function (img) {
+              if (img.complete) return Promise.resolve();
+              return new Promise(function (resolve) {
+                img.addEventListener("load", resolve, { once: true });
+                img.addEventListener("error", resolve, { once: true });
+              });
+            }),
+          );
+        }
+
+        let printPrepared = false;
+
+        function preparePrintLayout() {
+          if (printPrepared) return;
+          printPrepared = true;
+          printRestoreState = collectPrintRestoreState();
+          document.body.classList.add("is-printing");
+          step2Block.classList.remove("is-locked");
+          step2Block.classList.add("is-unlocked");
+
+          rolePanels.forEach(function (panel) {
+            panel.hidden = false;
+            panel.removeAttribute("hidden");
+            panel.classList.add("is-active");
+          });
+
+          platformPanels.forEach(function (panel) {
+            panel.hidden = false;
+            panel.removeAttribute("hidden");
+            panel.classList.add("is-active");
+          });
+
+          ensurePrintAnchors();
+          injectPrintFigures();
+          fixPrintTocLinks();
+        }
+
+        function restoreAfterPrint() {
+          printPrepared = false;
+          document.body.classList.remove("is-printing");
+          if (!printRestoreState) return;
+
+          if (printRestoreState.step2Locked) {
+            step2Block.classList.add("is-locked");
+            step2Block.classList.remove("is-unlocked");
+          }
+
+          activateRole(printRestoreState.activeRole);
+          activatePlatform(printRestoreState.activePlatform);
+          printRestoreState = null;
+        }
+
+        if (printGuideButton) {
+          printGuideButton.addEventListener("click", function () {
+            preparePrintLayout();
+            preloadPrintImages().then(function () {
+              window.print();
+            });
+          });
+        }
+
+        window.addEventListener("beforeprint", function () {
+          preparePrintLayout();
+        });
+        window.addEventListener("afterprint", restoreAfterPrint);
 
         const shotDialog = document.getElementById("shot-dialog");
         const shotDialogImage = document.getElementById("shot-dialog-image");
