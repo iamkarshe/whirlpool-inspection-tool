@@ -164,21 +164,47 @@ def revoke_vpn_device(device_uuid: uuid_module.UUID) -> None:
         raise_vpn_upstream_error(step="revoke device", response=response)
 
 
-def fetch_vpn_device_config(device_uuid: uuid_module.UUID) -> Response:
+def fetch_vpn_device_config_bytes(
+    device_uuid: uuid_module.UUID,
+) -> tuple[bytes, str]:
     response = call_vpn_provision(
         method="GET",
         upstream_path=f"/v1/devices/{device_uuid}/config",
     )
     if response.status_code >= 400:
         raise_vpn_upstream_error(step="device config", response=response)
-    return upstream_response_to_fastapi_response(response)
+    content_type = response.headers.get("content-type", "text/plain")
+    return response.content, content_type
 
 
-def fetch_vpn_device_qr(device_uuid: uuid_module.UUID) -> Response:
+def fetch_vpn_device_qr_bytes(device_uuid: uuid_module.UUID) -> tuple[bytes, str]:
     response = call_vpn_provision(
         method="GET",
         upstream_path=f"/v1/devices/{device_uuid}/qr",
     )
     if response.status_code >= 400:
         raise_vpn_upstream_error(step="device qr", response=response)
-    return upstream_response_to_fastapi_response(response)
+    content_type = response.headers.get("content-type", "image/png")
+    return response.content, content_type
+
+
+def fetch_vpn_device_config(device_uuid: uuid_module.UUID) -> Response:
+    content, content_type = fetch_vpn_device_config_bytes(device_uuid)
+    response_headers: dict[str, str] = {"content-type": content_type}
+    return Response(
+        content=content,
+        status_code=status.HTTP_200_OK,
+        headers=response_headers,
+        media_type=content_type,
+    )
+
+
+def fetch_vpn_device_qr(device_uuid: uuid_module.UUID) -> Response:
+    content, content_type = fetch_vpn_device_qr_bytes(device_uuid)
+    response_headers: dict[str, str] = {"content-type": content_type}
+    return Response(
+        content=content,
+        status_code=status.HTTP_200_OK,
+        headers=response_headers,
+        media_type=content_type,
+    )

@@ -24,6 +24,7 @@ from mod.api.user.request import (
 from mod.api.user.response import UserListResponse, UserOnboardResponse, UserResponse
 from mod.api.user.onboard_helper import onboard_existing_user
 from mod.auth.onboarding_email import deliver_welcome_onboarding_email_after_commit
+from mod.auth.onboarding_vpn import prepare_onboarding_vpn_if_needed
 from mod.model import Role, User
 from utils.common import ensure_allowed_registration_email
 from utils.db import get_db
@@ -189,9 +190,10 @@ def create_user(
     description=(
         "Superadmin-only: generates a new temporary password for an existing user, "
         "sets must_change_password, and sends a welcome email with the login URL and "
-        "temporary credentials (VPN instructions are not included). The user must change "
-        "their password on first login before accessing the application. Safe to call "
-        "again to resend onboarding email with a fresh temporary password."
+        "temporary credentials. For first-time users without a VPN profile, provisions "
+        "VPN access and attaches the WireGuard config and QR code with setup instructions. "
+        "The user must change their password on first login before accessing the application. "
+        "Safe to call again to resend onboarding email with a fresh temporary password."
     ),
     response_model=UserOnboardResponse,
     responses={
@@ -210,6 +212,7 @@ def onboard_user(
         db,
         user_uuid=user_uuid,
     )
+    vpn_email_payload = prepare_onboarding_vpn_if_needed(db, result.user)
     invalidate_kpi_parameters_cache()
     db.commit()
 
@@ -217,6 +220,8 @@ def onboard_user(
         to_email=result.user.email,
         user_name=result.user.name,
         temporary_password=result.temporary_password,
+        include_vpn_instructions=vpn_email_payload is not None,
+        attachments=vpn_email_payload.attachments if vpn_email_payload else None,
     )
     log_user_onboarded(
         db,

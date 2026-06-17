@@ -6,6 +6,10 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from mod.api.integration.helper import load_credentials_payload
+from mod.auth.onboarding_vpn import (
+    build_vpn_setup_instructions_html,
+    build_vpn_setup_instructions_text,
+)
 from mod.tasks.constants import CREDENTIAL_KEY_DEFAULT_SMTP
 from mod.tasks.email_delivery import (
     EMAIL_KIND_WELCOME_ONBOARDING,
@@ -35,7 +39,9 @@ def build_welcome_onboarding_email_message(
     login_url: str,
     smtp_from_email: str,
     smtp_from_name: str,
-) -> dict[str, str]:
+    include_vpn_instructions: bool = False,
+    attachments: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
     subject = "Welcome to Whirlpool PDI — your account is ready"
     body_text = (
         f"Hello {user_name},\n\n"
@@ -44,7 +50,6 @@ def build_welcome_onboarding_email_message(
         f"Login URL: {login_url}\n"
         f"Email: {to_email}\n"
         f"Temporary password: {temporary_password}\n\n"
-        "VPN setup instructions are sent separately when your administrator provisions VPN access.\n"
     )
     body_html = (
         f"<p>Hello {user_name},</p>"
@@ -53,9 +58,31 @@ def build_welcome_onboarding_email_message(
         f"<p><strong>Login URL:</strong> <a href=\"{login_url}\">{login_url}</a><br/>"
         f"<strong>Email:</strong> {to_email}<br/>"
         f"<strong>Temporary password:</strong> {temporary_password}</p>"
-        "<p>VPN setup instructions are sent separately when your administrator provisions VPN access.</p>"
     )
-    return {
+
+    if include_vpn_instructions:
+        body_text += (
+            "--- VPN setup ---\n\n"
+            + build_vpn_setup_instructions_text(
+                user_name=user_name,
+                user_email=to_email,
+            )
+        )
+        body_html += build_vpn_setup_instructions_html(
+            user_name=user_name,
+            user_email=to_email,
+        )
+    else:
+        body_text += (
+            "VPN setup instructions are sent separately when your administrator "
+            "provisions VPN access.\n"
+        )
+        body_html += (
+            "<p>VPN setup instructions are sent separately when your administrator "
+            "provisions VPN access.</p>"
+        )
+
+    message: dict[str, Any] = {
         "from_email": smtp_from_email,
         "from_name": smtp_from_name,
         "to_email": to_email,
@@ -63,6 +90,9 @@ def build_welcome_onboarding_email_message(
         "body_text": body_text,
         "body_html": body_html,
     }
+    if attachments:
+        message["attachments"] = attachments
+    return message
 
 
 def resolve_smtp_message_config() -> tuple[dict[str, Any] | None, str, str]:
@@ -86,6 +116,8 @@ def queue_or_send_welcome_onboarding_email(
     to_email: str,
     user_name: str,
     temporary_password: str,
+    include_vpn_instructions: bool = False,
+    attachments: list[dict[str, str]] | None = None,
 ) -> bool:
     smtp_config, from_email, from_name = resolve_smtp_message_config()
     if smtp_config is None or not from_email:
@@ -101,6 +133,8 @@ def queue_or_send_welcome_onboarding_email(
         login_url=build_login_absolute_url(),
         smtp_from_email=from_email,
         smtp_from_name=from_name,
+        include_vpn_instructions=include_vpn_instructions,
+        attachments=attachments,
     )
     payload = {
         "credential_key": CREDENTIAL_KEY_DEFAULT_SMTP,
@@ -149,6 +183,8 @@ def deliver_welcome_onboarding_email_after_commit(
     to_email: str,
     user_name: str,
     temporary_password: str,
+    include_vpn_instructions: bool = False,
+    attachments: list[dict[str, str]] | None = None,
 ) -> bool:
     db = SessionLocal()
     try:
@@ -157,6 +193,8 @@ def deliver_welcome_onboarding_email_after_commit(
             to_email=to_email,
             user_name=user_name,
             temporary_password=temporary_password,
+            include_vpn_instructions=include_vpn_instructions,
+            attachments=attachments,
         )
     finally:
         db.close()

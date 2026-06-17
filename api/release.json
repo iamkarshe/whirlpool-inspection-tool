@@ -1,6 +1,49 @@
 {
   "notes": [
     {
+      "id": "2026-06-17",
+      "version": "2026-06-17",
+      "released_at": "2026-06-17",
+      "title": "Deploy 2026-06-17",
+      "features": [
+        {
+          "text": "Enhance 'Get Started' guide: update HTML template to include a print-friendly navigation and detailed table of contents, and add corresponding styles for improved user experience during printing.",
+          "hash": "386d368",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-16",
+      "version": "2026-06-16",
+      "released_at": "2026-06-16",
+      "title": "Deploy 2026-06-16",
+      "features": [
+        {
+          "text": "Add 'Get Started' endpoint: implement a new route to serve the get-started.html template, enhancing user onboarding experience.",
+          "hash": "72b2e18",
+          "type": "feature"
+        },
+        {
+          "text": "Add static assets for 'Get Started' guide: create a new directory for static files and mount it to serve assets, improving user onboarding experience.",
+          "hash": "f423dc3",
+          "type": "feature"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-15",
+      "version": "2026-06-15",
+      "released_at": "2026-06-15",
+      "title": "Deploy 2026-06-15",
+      "features": [
+        {
+          "text": "[release] 14bffdd.",
+          "hash": "7a92214"
+        }
+      ]
+    },
+    {
       "id": "2026-06-14",
       "version": "2026-06-14",
       "released_at": "2026-06-14",
@@ -1022,5 +1065,5 @@
       ]
     }
   ],
-  "last_commit": "14bffdd9fab78a47275bbfe1ccdd51dc4ab76c59"
+  "last_commit": "386d3687f57d096d43968324ff64c10bb359a832"
 }

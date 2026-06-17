@@ -22,13 +22,13 @@ Schema is created/updated **only** via Alembic migrations. The API must never ca
 
 ## Environment setup
 
-### 1) Create venv
+### Create venv
 
 ```bash
 uv venv
 ```
 
-### 2) Install dependencies
+### Install dependencies
 
 ```bash
 uv sync
@@ -70,7 +70,7 @@ This makes `NOW()` return IST for `created_at` / `updated_at`.
 
 These are the exact steps for **first-time schema creation**.
 
-### Step A) Initialize Alembic (only once per repo)
+### Initialize Alembic (only once per repo)
 
 If `migrations/` does not exist yet:
 
@@ -83,7 +83,7 @@ Ensure:
 - `alembic.ini` is in the project root.
 - `alembic.ini` has `script_location = migrations`.
 
-### Step B) Configure Alembic to use `.env`
+### Configure Alembic to use `.env`
 
 In `migrations/env.py`, Alembic must:
 
@@ -93,7 +93,7 @@ In `migrations/env.py`, Alembic must:
 
 (Already set up in this project.)
 
-### Step C) Create the initial migration from models
+### Create the initial migration from models
 
 Make sure your `.env` points to the correct remote UAT DB, then run:
 
@@ -103,13 +103,13 @@ uv run alembic revision --autogenerate -m "initial schema"
 
 This creates a new file inside `migrations/versions/`.
 
-### Step D) Apply migration to create tables
+### Apply migration to create tables
 
 ```bash
 uv run alembic upgrade head
 ```
 
-### Step E) Verify migration state
+### Verify migration state
 
 ```bash
 uv run alembic current
@@ -182,7 +182,7 @@ openssl rand -hex 32
 
 Run these from the **API project root** (where `.env` lives). You need **three processes**: Redis, a **worker**, and optionally Flower. Flower alone does not execute tasks.
 
-### 1) Redis
+### Redis
 
 ```bash
 redis-server
@@ -195,7 +195,7 @@ REDIS_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND_URL=redis://localhost:6379/1
 ```
 
-### 2) Celery worker (required)
+### Celery worker (required)
 
 Tasks are published to the `default` queue. Without a worker, API rows stay `queued` and Flower shows inspect warnings.
 
@@ -207,7 +207,7 @@ celery -A mod.tasks.worker.celery_app worker -Q default,celery --beat --loglevel
 
 You should see `mod.tasks.worker.execute_task` and `mod.jobs.celery_tasks.auto_approve_inspections` in the task list and `celery@... ready`.
 
-### 3) Flower (optional monitoring)
+### Flower (optional monitoring)
 
 Start **after** the worker is running, or inspect warnings (`stats`, `active`, etc.) are expected.
 
@@ -227,13 +227,19 @@ If `LLEN default` is greater than 0 and the worker is running, the queue should 
 
 ## Troubleshooting
 
-### 1) Alembic cannot connect
+### Alembic cannot connect
 
 - Confirm `.env` is present in project root.
 - Confirm `DB_HOST/DB_USER/DB_PASS/DB_NAME/DB_PORT` are correct.
 - Confirm UAT DB allows inbound connections from your IP/VPN.
 
-### 2) Migration autogenerate produces unexpected diffs
+### Migration autogenerate produces unexpected diffs
 
 - Ensure you are editing only `mod/model.py`.
 - Ensure `migrations/env.py` points `target_metadata` to `Base.metadata` from the same file.
+
+## Use WireGuard in Linux
+
+```bash
+sudo systemctl start wg-quick@warehouse-user
+```

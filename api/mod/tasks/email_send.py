@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import smtplib
 from email.message import EmailMessage
 from email.utils import formataddr
@@ -34,6 +35,40 @@ def resolve_smtp_config_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return dict(smtp_section)
 
 
+def parse_content_type(content_type: str) -> tuple[str, str]:
+    maintype, _, subtype = content_type.partition("/")
+    if not maintype or not subtype:
+        return "application", "octet-stream"
+    return maintype, subtype
+
+
+def add_message_attachments(
+    email_message: EmailMessage,
+    attachments: Any,
+) -> None:
+    if not isinstance(attachments, list):
+        return
+
+    for attachment in attachments:
+        if not isinstance(attachment, dict):
+            continue
+
+        filename = str(attachment.get("filename", "") or "").strip()
+        content_type = str(attachment.get("content_type", "") or "").strip()
+        content_b64 = attachment.get("content_b64")
+        if not filename or not isinstance(content_b64, str) or not content_b64:
+            continue
+
+        content = base64.b64decode(content_b64.encode("ascii"))
+        maintype, subtype = parse_content_type(content_type)
+        email_message.add_attachment(
+            content,
+            maintype=maintype,
+            subtype=subtype,
+            filename=filename,
+        )
+
+
 def build_task_email_message(message: dict[str, Any]) -> EmailMessage:
     from_email = str(message.get("from_email", "") or "").strip()
     to_email = str(message.get("to_email", "") or "").strip()
@@ -64,6 +99,8 @@ def build_task_email_message(message: dict[str, Any]) -> EmailMessage:
             email_message.add_alternative(body_html, subtype="html")
         else:
             email_message.set_content(body_html, subtype="html")
+
+    add_message_attachments(email_message, message.get("attachments"))
 
     return email_message
 
