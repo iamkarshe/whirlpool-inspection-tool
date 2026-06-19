@@ -1,0 +1,28 @@
+# .pre-commit-config.yaml
+# Fast, local "shift-left" checks that run on the developer's machine before a
+# commit ever reaches Jenkins. These mirror the cheap CI stages (secrets + SAST)
+# so problems are caught at the cheapest possible point.
+#
+# Setup (once per clone):
+#     pipx install pre-commit   # or: pip install pre-commit
+#     pre-commit install
+#
+# Run manually across the whole repo:
+#     pre-commit run --all-files
+#
+# Note: local hooks can be bypassed with `git commit --no-verify`. That is by
+# design — Jenkins remains the non-bypassable gate. These hooks are for speed,
+# not enforcement.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/semgrep/semgrep
+    rev: v1.96.0
+    hooks:
+      - id: semgrep
+        args: ["--config", "p/security-audit", "--config", "p/python",
+               "--config", "p/javascript", "--config", "p/react",
+               "--error", "--quiet", "--metrics=off"]

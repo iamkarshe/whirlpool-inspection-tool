@@ -1,0 +1,17 @@
+# .gitleaks.toml  —  secret-scanning configuration.
+# Extends the built-in ruleset and adds allowlists to suppress false positives.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for known-safe paths and fixtures"
+paths = [
+  '''(.*?)(test|tests|spec|fixtures|mocks)(.*?)''',
+  '''(.*?)\.example$''',
+  '''(.*?)\.lock$''',
+  '''node_modules/''',
+]
+# Suppress obvious placeholders so they don't trip the build.
+regexes = [
+  '''(?i)(your[-_]?api[-_]?key|changeme|example|placeholder|dummy)''',
+]
