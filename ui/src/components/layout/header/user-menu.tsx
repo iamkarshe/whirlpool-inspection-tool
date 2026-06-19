@@ -1,12 +1,4 @@
-import {
-  Activity,
-  BadgeCheck,
-  Bell,
-  FileText,
-  Info,
-  LogOut,
-  ShieldCheck,
-} from "lucide-react";
+import { BadgeCheck, FileText, Info, LogOut, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -32,12 +24,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PAGES } from "@/endpoints";
 import { useSessionUser } from "@/hooks/use-session-user";
-import { clearAuthenticatedSession } from "@/services/login-service";
 import {
   getApiDocumentationUrl,
-  getVaptReportUrl,
+  getGetStartedGuideUrl,
 } from "@/lib/api-documentation-url";
 import { getAvatarImage } from "@/lib/utils";
+import { clearAuthenticatedSession } from "@/services/login-service";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -45,7 +37,7 @@ export default function UserMenu() {
   const displayName = sessionUser?.name || "User";
   const displayEmail = sessionUser?.email || "user@whirlpool.com";
   const apiDocUrl = getApiDocumentationUrl();
-  const vaptReportUrl = getVaptReportUrl();
+  const getStartedGuideUrl = getGetStartedGuideUrl();
 
   return (
     <DropdownMenu>
@@ -79,13 +71,16 @@ export default function UserMenu() {
             <BadgeCheck />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
-            <Activity />
-            Activity Log
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled>
-            <Bell />
-            Notifications
+          <DropdownMenuItem
+            disabled={!getStartedGuideUrl}
+            onSelect={(event) => {
+              event.preventDefault();
+              if (!getStartedGuideUrl) return;
+              window.open(getStartedGuideUrl, "_blank", "noopener,noreferrer");
+            }}
+          >
+            <ShieldCheck />
+            Get Started Guide
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={!apiDocUrl}
@@ -97,17 +92,6 @@ export default function UserMenu() {
           >
             <FileText />
             API Documentation
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={!vaptReportUrl}
-            onSelect={(event) => {
-              event.preventDefault();
-              if (!vaptReportUrl) return;
-              window.open(vaptReportUrl, "_blank", "noopener,noreferrer");
-            }}
-          >
-            <ShieldCheck />
-            VAPT Report
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(event) => {

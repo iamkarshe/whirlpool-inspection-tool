@@ -699,7 +699,7 @@
           "Users"
         ],
         "summary": "Send onboarding welcome email",
-        "description": "Superadmin-only: generates a new temporary password for an existing user, sets must_change_password, and sends a welcome email with the login URL and temporary credentials (VPN instructions are not included). The user must change their password on first login before accessing the application. Safe to call again to resend onboarding email with a fresh temporary password.",
+        "description": "Superadmin-only: generates a new temporary password for an existing user, sets must_change_password, and sends a welcome email with the login URL and temporary credentials. For first-time users without a VPN profile, provisions VPN access and attaches the WireGuard config and QR code with setup instructions. The user must change their password on first login before accessing the application. Safe to call again to resend onboarding email with a fresh temporary password.",
         "operationId": "onboard_user_api_users__user_uuid__onboard_post",
         "parameters": [
           {
@@ -8022,10 +8022,10 @@
         "description": "Body for POST /auth/change-password (authenticated).",
         "examples": [
           {
-            "confirm_password": "NewSecurePass123!",
-            "current_password": "TemporaryPass123",
-            "new_password": "NewSecurePass123!",
-            "otp_code": "123456"
+            "confirm_password": "",
+            "current_password": "",
+            "new_password": "",
+            "otp_code": ""
           }
         ]
       },
@@ -13507,7 +13507,7 @@
             "title": "Password",
             "description": "New password. Validated with zxcvbn (minimum score 3).",
             "examples": [
-              "NewSecurePass123!"
+              ""
             ]
           },
           "confirm_password": {
@@ -13517,7 +13517,7 @@
             "title": "Confirm Password",
             "description": "Must match `password` exactly.",
             "examples": [
-              "NewSecurePass123!"
+              ""
             ]
           }
         },
@@ -13531,9 +13531,9 @@
         "description": "Body for POST /auth/reset-password.",
         "examples": [
           {
-            "confirm_password": "NewSecurePass123!",
-            "password": "NewSecurePass123!",
-            "token": "paste-token-from-email-link-query-param"
+            "confirm_password": "",
+            "password": "",
+            "token": ""
           }
         ]
       },

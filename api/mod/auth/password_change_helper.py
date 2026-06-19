@@ -25,7 +25,7 @@ def process_change_password(
 ) -> str:
     if new_password != confirm_password:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Password and confirm password do not match",
         )
 
@@ -37,14 +37,14 @@ def process_change_password(
 
     if verify_password(new_password, user.password):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="New password must be different from your current password",
         )
 
     if is_change_password_otp_required_for_user(user):
         if not otp_code or not otp_code.strip():
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Email verification code is required",
             )
         verify_change_password_otp(db, user=user, otp_code=otp_code)

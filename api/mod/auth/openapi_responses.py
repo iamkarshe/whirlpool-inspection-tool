@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from fastapi import status
 
-from mod.auth.response import AuthRequestValidationErrorResponse, HttpDetailErrorResponse
+from mod.auth.response import (
+    AuthRequestValidationErrorResponse,
+    HttpDetailErrorResponse,
+)
 
 AUTH_RATE_LIMIT_HEADERS = {
     "Retry-After": {
@@ -38,7 +41,7 @@ FORGOT_PASSWORD_OPENAPI_RESPONSES: dict[int | str, dict] = {
             "`debug.is_disallowed` to inspect the outcome."
         ),
     },
-    status.HTTP_422_UNPROCESSABLE_ENTITY: AUTH_BODY_VALIDATION_RESPONSE,
+    status.HTTP_422_UNPROCESSABLE_CONTENT: AUTH_BODY_VALIDATION_RESPONSE,
     status.HTTP_429_TOO_MANY_REQUESTS: {
         "description": (
             "Rate limited. Either auth route attempts exceeded "
@@ -61,7 +64,7 @@ RESET_PASSWORD_OPENAPI_RESPONSES: dict[int | str, dict] = {
         ),
         "model": HttpDetailErrorResponse,
     },
-    status.HTTP_422_UNPROCESSABLE_ENTITY: {
+    status.HTTP_422_UNPROCESSABLE_CONTENT: {
         "description": (
             "Validation failed. Malformed JSON body returns "
             "{ success, error, details }. Password mismatch or weak password "

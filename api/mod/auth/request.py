@@ -75,21 +75,21 @@ class ResetPasswordRequest(BaseModel):
         min_length=6,
         max_length=128,
         description="New password. Validated with zxcvbn (minimum score 3).",
-        examples=["NewSecurePass123!"],
+        examples=[""],
     )
     confirm_password: str = Field(
         min_length=6,
         max_length=128,
         description="Must match `password` exactly.",
-        examples=["NewSecurePass123!"],
+        examples=[""],
     )
 
 
 CHANGE_PASSWORD_REQUEST_EXAMPLE = {
-    "current_password": "TemporaryPass123",
-    "new_password": "NewSecurePass123!",
-    "confirm_password": "NewSecurePass123!",
-    "otp_code": "123456",
+    "current_password": "",
+    "new_password": "",
+    "confirm_password": "",
+    "otp_code": "",
 }
 
 

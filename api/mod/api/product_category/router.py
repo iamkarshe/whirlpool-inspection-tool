@@ -3,10 +3,10 @@ import uuid
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session, joinedload
 
+from mod.api.inspection.group_metrics import EMPTY_INSPECTION_BREAKDOWN
 from mod.api.middleware import auth_dependency
 from mod.api.product.helper import map_product
 from mod.api.product_category.helper import (
-    EMPTY_INSPECTION_BREAKDOWN,
     get_product_category_or_404,
     map_product_category,
     map_product_category_inspection,
@@ -22,7 +22,6 @@ from mod.api.product_category.response import (
 from mod.model import Inspection, Product, ProductCategory
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
-from utils.roles import ROLES_MASTER_READ
 from utils.pagination import (
     PaginationParams,
     apply_standard_filters,
@@ -30,6 +29,7 @@ from utils.pagination import (
     get_pagination_params,
     paginate_query,
 )
+from utils.roles import ROLES_MASTER_READ
 
 router = APIRouter(
     tags=["Product Categories"],

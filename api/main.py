@@ -208,9 +208,9 @@ async def api_docs(
     if token and token.strip():
         api_spec_url = f"/api-spec?token={quote(token.strip(), safe='')}"
     return templates.TemplateResponse(
+        request,
         "api-docs/index.html",
         {
-            "request": request,
             "api_spec_url": api_spec_url,
             "api_title": app_name,
         },
@@ -261,12 +261,7 @@ async def get_started(
     ),
     db: Session = Depends(get_db),
 ) -> Response:
-    return templates.TemplateResponse(
-        "get-started.html",
-        {
-            "request": request,
-        },
-    )
+    return templates.TemplateResponse(request, "get-started.html")
 
 
 # Sitemap XML
@@ -320,14 +315,14 @@ async def custom_404_handler(request: Request, exc):
 
     # Static files which not found
     if request.url.path.startswith("/public"):
-        return templates.TemplateResponse("error.html", {"request": request})
+        return templates.TemplateResponse(request, "error.html")
 
     # Check if build/index.html exists
     if Path("build/index.html").exists():
         # ReactJS build
         return FileResponse("build/index.html")
     else:
-        return templates.TemplateResponse("error-no-build.html", {"request": request})
+        return templates.TemplateResponse(request, "error-no-build.html")
 
 
 @app.exception_handler(Exception)

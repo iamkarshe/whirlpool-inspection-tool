@@ -11,7 +11,9 @@ def validate_password_strength(
     *,
     user_inputs: list[str] | None = None,
 ) -> None:
-    result = zxcvbn(password, user_inputs=[value for value in (user_inputs or []) if value])
+    result = zxcvbn(
+        password, user_inputs=[value for value in (user_inputs or []) if value]
+    )
     score = int(result.get("score", 0))
     if score >= PASSWORD_STRENGTH_MIN_SCORE:
         return
@@ -25,6 +27,6 @@ def validate_password_strength(
     ]
     detail = warning or (suggestions[0] if suggestions else "Password is too weak")
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail=detail,
     )

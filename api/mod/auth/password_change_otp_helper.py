@@ -337,7 +337,7 @@ def verify_change_password_otp(
     normalized = otp_code.strip()
     if not normalized:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Email verification code is required",
         )
 
