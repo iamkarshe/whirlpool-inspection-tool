@@ -93,7 +93,7 @@ When `APP_DEBUG=true`, errors may also include `"debug": { "cause": "...", "stac
 
 ```bash
 curl -X POST http://localhost:8080/v1/devices \
-  -H "Authorization: Bearer change-this-local-key" \
+  -H "Authorization: Bearer [LOCAL_KEY]" \
   -H "Content-Type: application/json" \
   -d '{
     "user_name": "Whirlpool User 01",

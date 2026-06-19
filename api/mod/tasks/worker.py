@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from mod.model import Task
 from mod.tasks.celery_app import get_celery_app
-
-celery_app = get_celery_app()
 from mod.tasks.handlers import TASK_HANDLERS
 from mod.tasks.service import (
     load_task_by_uuid,
@@ -19,6 +16,8 @@ from mod.tasks.service import (
     should_retry_task,
 )
 from utils.db import SessionLocal
+
+celery_app = get_celery_app()
 
 
 @celery_app.task(bind=True, name="mod.tasks.worker.execute_task")

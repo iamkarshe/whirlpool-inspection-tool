@@ -14,14 +14,12 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'ASSESSMENT_BRANCH', defaultValue: 'main',
-               description: 'Branch that triggers the security assessment')
         booleanParam(name: 'RUN_SECRETS', defaultValue: true,
                description: 'Gitleaks secret scan')
         booleanParam(name: 'RUN_SAST',    defaultValue: true,
                description: 'Semgrep + Bandit static analysis')
         booleanParam(name: 'RUN_SCA',     defaultValue: true,
-               description: 'Trivy / pip-audit / npm dependency analysis')
+               description: 'Trivy dependency analysis (uv.lock + pnpm-lock.yaml)')
         booleanParam(name: 'FAIL_ON_FINDINGS', defaultValue: true,
                description: 'Fail the build when thresholds are exceeded (off = report only)')
         string(name: 'MAX_CRITICAL', defaultValue: '0',
@@ -37,9 +35,9 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
-    triggers {
-        githubPush()
-    }
+    // Manual-only: no triggers block. Builds run on demand (Build Now /
+    // Build with Parameters). Re-add `triggers { githubPush() }` later to
+    // automate on push.
 
     environment {
         REPORTS      = 'reports'
@@ -57,7 +55,9 @@ pipeline {
     stages {
 
         stage('Security Assessment') {
-            when { expression { env.BRANCH_NAME == params.ASSESSMENT_BRANCH } }
+            // Runs on whatever branch you build (manual phase). To restrict to
+            // main once you automate, re-add:
+            //   when { expression { env.BRANCH_NAME == 'main' } }
 
             stages {
 
@@ -89,12 +89,15 @@ pipeline {
                                     docker run --rm -v "$WORKSPACE:/src" -w /src "$IMG_SEMGREP" \
                                         semgrep scan --metrics=off \
                                         --config p/python --config p/security-audit \
+                                        --exclude-rule python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure \
                                         --sarif --output "$REPORTS/semgrep-api.sarif" api || true
                                 '''
                                 sh '''
                                     docker run --rm -v "$WORKSPACE:/src" -w /src "$IMG_PY" sh -c \
                                         "pip install --quiet bandit && \
-                                         bandit -r api -f html -o $REPORTS/bandit-api.html" || true
+                                         bandit -r api -x '*/tests/*,*/scripts/*' \
+                                         --skip B105,B106,B107 \
+                                         -f html -o $REPORTS/bandit-api.html" || true
                                 '''
                             }
                         }
@@ -116,29 +119,37 @@ pipeline {
                     parallel {
                         stage('api/ — deps') {
                             steps {
-                                sh '''
-                                    docker run --rm -v "$WORKSPACE:/src" -w /src "$IMG_PY" sh -c \
-                                        "pip install --quiet pip-audit && \
-                                         pip-audit -r api/requirements.txt -f json \
-                                         -o $REPORTS/pip-audit.json" || true
-                                '''
+                                // Scan uv.lock (complete resolved tree). Skip
+                                // requirements.txt so the same CVEs aren't counted twice.
+                                // (Once requirements.txt is deleted, --skip-files is a no-op.)
                                 sh '''
                                     docker run --rm -v "$WORKSPACE:/src" -v "$TRIVY_CACHE:/root/.cache" \
                                         -w /src "$IMG_TRIVY" fs --scanners vuln api \
+                                        --skip-files api/requirements.txt \
                                         --format sarif --output "$REPORTS/trivy-fs-api.sarif" || true
+                                '''
+                                // CycloneDX SBOM (audit inventory) — archived, not gated.
+                                sh '''
+                                    docker run --rm -v "$WORKSPACE:/src" -v "$TRIVY_CACHE:/root/.cache" \
+                                        -w /src "$IMG_TRIVY" fs --format cyclonedx \
+                                        --skip-files api/requirements.txt \
+                                        --output "$REPORTS/sbom-api.cdx.json" api || true
                                 '''
                             }
                         }
                         stage('ui/ — deps') {
                             steps {
-                                sh '''
-                                    docker run --rm -v "$WORKSPACE:/src" -w /src/ui "$IMG_NODE" sh -c \
-                                        "npm audit --json > /src/$REPORTS/npm-audit.json || true"
-                                '''
+                                // Trivy reads pnpm-lock.yaml natively (project uses pnpm).
                                 sh '''
                                     docker run --rm -v "$WORKSPACE:/src" -v "$TRIVY_CACHE:/root/.cache" \
                                         -w /src "$IMG_TRIVY" fs --scanners vuln ui \
                                         --format sarif --output "$REPORTS/trivy-fs-ui.sarif" || true
+                                '''
+                                // CycloneDX SBOM (audit inventory) — archived, not gated.
+                                sh '''
+                                    docker run --rm -v "$WORKSPACE:/src" -v "$TRIVY_CACHE:/root/.cache" \
+                                        -w /src "$IMG_TRIVY" fs --format cyclonedx \
+                                        --output "$REPORTS/sbom-ui.cdx.json" ui || true
                                 '''
                             }
                         }

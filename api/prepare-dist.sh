@@ -9,6 +9,8 @@ if ! command -v zip >/dev/null 2>&1; then
   exit 1
 fi
 
+uvx ruff check --select F .
+
 # ZIP_NAME="deploy-$(date +%Y%m%d-%H%M%S).zip"
 ZIP_NAME="www.zip"
 

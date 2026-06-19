@@ -77,7 +77,11 @@ def upload_media(relative_path: str, data: bytes) -> str:
 
 def _local_build_url(relative_path: str) -> str:
     base = (get_media_base_url() or "").strip()
-    rel = relative_path if relative_path.startswith("/") else f"/{relative_path.lstrip('/')}"
+    rel = (
+        relative_path
+        if relative_path.startswith("/")
+        else f"/{relative_path.lstrip('/')}"
+    )
     if not base:
         return rel
     return urljoin(base.rstrip("/") + "/", rel.lstrip("/"))

@@ -62,18 +62,16 @@
       <b> {{ api_title }} </b>
     </header>
 
-    <div id="app"></div>
+    <div id="app" data-spec-url="{{ api_spec_url }}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
 
     <!-- Initialize the Scalar API Reference -->
     <script>
       Scalar.createApiReference("#app", {
-        url: "{{ api_spec_url }}",
+        url: document.getElementById("app").dataset.specUrl,
         showDeveloperTools: false,
-        agent: {
-          disabled: true,
-        },
+        agent: { disabled: true },
       });
     </script>
   </body>
