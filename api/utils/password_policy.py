@@ -106,7 +106,7 @@ def ensure_password_not_reused(db: Session, user: User, new_password: str) -> No
     hashes_to_check = [user.password, *list_recent_password_hashes(db, user.id)]
     if password_matches_any_hash(new_password, hashes_to_check):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Password cannot match your current or last 3 passwords",
         )
 
@@ -165,10 +165,12 @@ def generate_temporary_password(length: int = TEMPORARY_PASSWORD_LENGTH_DEFAULT)
             return candidate
 
 
-PASSWORD_POLICY_EXEMPT_PATHS = frozenset({
-    "/auth/change-password",
-    "/auth/change-password/request-otp",
-})
+PASSWORD_POLICY_EXEMPT_PATHS = frozenset(
+    {
+        "/auth/change-password",
+        "/auth/change-password/request-otp",
+    }
+)
 
 
 def auth_path_exempt_from_password_policy(path: str) -> bool:

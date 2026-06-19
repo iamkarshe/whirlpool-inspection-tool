@@ -32,7 +32,7 @@ def exception_handler_decorator(func: Callable):
         except Exception as ex:
             debug_rich_console()
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={
                     "success": False,
                     "error": str(ex),
@@ -89,7 +89,7 @@ def check_api_role(allowed_roles: List[str]):
             except Exception as ex:
                 debug_rich_console()
                 return JSONResponse(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     content={
                         "success": False,
                         "error": str(ex),

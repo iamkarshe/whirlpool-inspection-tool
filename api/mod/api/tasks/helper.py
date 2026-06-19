@@ -164,14 +164,14 @@ def build_sample_send_email_payload(body: SampleSendEmailRequest) -> dict[str, A
     smtp = load_credentials_payload().get("smtp", {})
     if not isinstance(smtp, dict):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="SMTP credentials are not configured",
         )
     from_email = str(smtp.get("from_email", "") or "").strip()
     from_name = str(smtp.get("from_name", "") or "").strip()
     if not from_email:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="SMTP from_email is not configured",
         )
 
