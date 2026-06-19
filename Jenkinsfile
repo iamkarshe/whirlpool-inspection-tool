@@ -71,11 +71,15 @@ pipeline {
                 stage('Secrets — Gitleaks') {
                     when { expression { params.RUN_SECRETS } }
                     steps {
+                        // Scan only the real source dirs (api, ui), not the whole
+                        // tree — this skips the large vendored template/ directory
+                        // that was making the scan hang. Config (.gitleaks.toml) is
+                        // auto-discovered from the repo root; no --config needed.
                         sh '''
                             docker run --rm -v "$WORKSPACE:/repo" -w /repo "$IMG_GITLEAKS" \
-                                dir . --report-format sarif \
+                                dir api ui vpn-provisioner --report-format sarif \
                                 --report-path "$REPORTS/gitleaks.sarif" \
-                                --config /repo/.gitleaks.toml --exit-code 0 || true
+                                --exit-code 0 || true
                         '''
                     }
                 }
