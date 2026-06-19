@@ -127,12 +127,8 @@ def inspection_totals_and_breakdown(
                 row.inspection_outbound_under_review or 0
             ),
             "inspection_inbound_approved": int(row.inspection_inbound_approved or 0),
-            "inspection_outbound_approved": int(
-                row.inspection_outbound_approved or 0
-            ),
+            "inspection_outbound_approved": int(row.inspection_outbound_approved or 0),
             "inspection_inbound_rejected": int(row.inspection_inbound_rejected or 0),
-            "inspection_outbound_rejected": int(
-                row.inspection_outbound_rejected or 0
-            ),
+            "inspection_outbound_rejected": int(row.inspection_outbound_rejected or 0),
         }
     return inspection_counts, inspection_breakdown

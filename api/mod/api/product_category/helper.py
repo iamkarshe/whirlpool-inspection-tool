@@ -5,7 +5,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from mod.api.inspection.group_metrics import (
-    EMPTY_INSPECTION_BREAKDOWN,
     inspection_totals_and_breakdown,
 )
 from mod.api.product_category.response import (
@@ -52,14 +51,18 @@ def get_product_category_or_404(
     db: Session, product_category_uuid: uuid.UUID
 ) -> ProductCategory:
     product_category = (
-        db.query(ProductCategory).filter(ProductCategory.uuid == product_category_uuid).first()
+        db.query(ProductCategory)
+        .filter(ProductCategory.uuid == product_category_uuid)
+        .first()
     )
     if product_category is None:
         raise HTTPException(status_code=404, detail="Product category not found")
     return product_category
 
 
-def map_product_category_inspection(inspection: Inspection) -> ProductCategoryInspectionResponse:
+def map_product_category_inspection(
+    inspection: Inspection,
+) -> ProductCategoryInspectionResponse:
     inspector = inspection.inspector
     device = inspection.device
     return ProductCategoryInspectionResponse(

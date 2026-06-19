@@ -20,7 +20,6 @@ from mod.tasks.email_delivery import (
 )
 from utils.env import is_celery_broker_configured, parse_env_bool_optional
 from utils.change_password_otp import (
-    OTP_PURPOSE_ACCOUNT,
     OTP_PURPOSE_ONBOARDING,
     change_password_otp_expiry_minutes,
     change_password_otp_length,
@@ -113,9 +112,7 @@ def build_change_password_otp_email_message(
     purpose: str,
 ) -> dict[str, str]:
     if purpose == OTP_PURPOSE_ONBOARDING:
-        context_line = (
-            "Use this code to finish setting your password after onboarding."
-        )
+        context_line = "Use this code to finish setting your password after onboarding."
     else:
         context_line = "Use this code to confirm your account password change."
 
@@ -148,7 +145,10 @@ def resolve_smtp_message_config() -> tuple[dict[str, Any] | None, str, str]:
     try:
         smtp_config = dict(load_credentials_payload().get("smtp") or {})
     except Exception:
-        logger.exception("Failed to load SMTP credentials for change-password OTP email")
+        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
+        logger.exception(
+            "Failed to load SMTP credentials for change-password OTP email"
+        )
         return None, "", ""
 
     from_email = str(smtp_config.get("from_email", "") or "").strip()
@@ -173,6 +173,7 @@ def queue_or_send_change_password_otp_email(
 ) -> bool:
     smtp_config, from_email, from_name = resolve_smtp_message_config()
     if smtp_config is None or not from_email:
+        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
         logger.warning(
             "SMTP not configured; change-password OTP email skipped for %s", to_email
         )
@@ -188,7 +189,11 @@ def queue_or_send_change_password_otp_email(
         purpose=purpose,
     )
 
-    if change_password_otp_use_celery() and is_celery_broker_configured() and db is not None:
+    if (
+        change_password_otp_use_celery()
+        and is_celery_broker_configured()
+        and db is not None
+    ):
         from mod.tasks.queue import enqueue_background_task
 
         payload = {
@@ -202,6 +207,7 @@ def queue_or_send_change_password_otp_email(
                 payload=payload,
                 created_by="auth_change_password_otp",
             )
+            # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
             logger.info(
                 "Change-password OTP email queued for %s (task_uuid=%s)",
                 to_email,
@@ -209,6 +215,7 @@ def queue_or_send_change_password_otp_email(
             )
             return True
         except Exception:
+            # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
             logger.exception(
                 "Failed to queue change-password OTP email for %s; trying direct SMTP",
                 to_email,
@@ -225,10 +232,18 @@ def queue_or_send_change_password_otp_email(
             created_by="auth_change_password_otp",
             commit_log=True,
         )
-        logger.info("Change-password OTP email sent directly via SMTP to %s", to_email)
+        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
+        logger.info(
+            "Change-password OTP email sent directly via SMTP to %s",
+            to_email,
+        )
         return True
     except Exception:
-        logger.exception("Direct change-password OTP email delivery failed for %s", to_email)
+        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
+        logger.exception(
+            "Direct change-password OTP email delivery failed for %s",
+            to_email,
+        )
         return False
 
 

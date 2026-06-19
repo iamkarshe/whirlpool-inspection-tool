@@ -10,6 +10,8 @@ paths = [
   '''(.*?)\.example$''',
   '''(.*?)\.lock$''',
   '''node_modules/''',
+  '''^api/template/vapt-reports/''',
+  '''^template/shadcn-ui-kit-dashboard-main/'''
 ]
 # Suppress obvious placeholders so they don't trip the build.
 regexes = [

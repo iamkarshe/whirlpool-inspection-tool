@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { DetailKeyValueList } from "@/components/detail-key-value-list";
+import { SanitizedHtmlPreview } from "@/components/sanitized-html-preview";
 import type { ApplicationLogRow } from "@/pages/dashboard/admin/log/log-types";
 import {
   listLogDetailEntries,
@@ -170,9 +171,9 @@ export function DialogApplicationLogDetail({
                   </div>
                 </div>
                 {emailPreview === "html" && bodyHtml ? (
-                  <div
-                    className="prose prose-sm dark:prose-invert max-w-none rounded-md border bg-background p-3"
-                    dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                  <SanitizedHtmlPreview
+                    html={bodyHtml}
+                    title="Email HTML preview"
                   />
                 ) : (
                   <pre className="max-h-64 overflow-auto rounded-md border bg-muted/30 p-3 text-xs whitespace-pre-wrap">

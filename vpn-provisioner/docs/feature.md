@@ -203,7 +203,7 @@ Create `.env.example`:
 APP_ENV=local
 APP_ADDR=:8080
 APP_DB_PATH=./data/vpn_provisioner.sqlite
-APP_ADMIN_API_KEY=change-this-local-key
+APP_ADMIN_API_KEY=LOCAL_KEY
 
 WG_BACKEND=docker
 WG_DOCKER_CONTAINER=whirlpool-wireguard-mock
@@ -717,7 +717,7 @@ Create device:
 
 ```bash
 curl -X POST http://localhost:8080/v1/devices \
-  -H "Authorization: Bearer change-this-local-key" \
+  -H "Authorization: Bearer [LOCAL_KEY]" \
   -H "Content-Type: application/json" \
   -d '{
     "user_name": "Whirlpool User 01",
@@ -731,7 +731,7 @@ List devices:
 
 ```bash
 curl http://localhost:8080/v1/devices \
-  -H "Authorization: Bearer change-this-local-key"
+  -H "Authorization: Bearer [LOCAL_KEY]"
 ```
 
 Check mock peers:

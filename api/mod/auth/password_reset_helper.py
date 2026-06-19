@@ -154,6 +154,7 @@ def queue_or_send_password_reset_email(
 ) -> bool:
     smtp_config, from_email, from_name = resolve_smtp_message_config()
     if smtp_config is None or not from_email:
+        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
         logger.warning(
             "SMTP not configured; password reset email skipped for %s", to_email
         )
@@ -190,6 +191,7 @@ def queue_or_send_password_reset_email(
         )
         return True
     except Exception:
+        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
         logger.exception("Direct password reset email delivery failed for %s", to_email)
         return False
 

@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import json
 from typing import Any
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
+import httpx
 from sqlalchemy.orm import Session
 
 from mod.api.ip_metadata.helper import (
@@ -40,13 +39,16 @@ def fetch_ip_geo_payload(ip_address: str) -> dict[str, Any]:
     if lookup_url is None:
         raise RuntimeError("IP geolocation lookup is disabled")
 
-    request = Request(
-        lookup_url,
-        headers={"Accept": "application/json", "User-Agent": "whirlpool-pdi-api/1.0"},
-    )
-    with urlopen(request, timeout=10) as response:
-        body = response.read().decode("utf-8")
-    payload = json.loads(body)
+    with httpx.Client(timeout=10.0) as client:
+        response = client.get(
+            lookup_url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "whirlpool-pdi-api/1.0",
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
     if not isinstance(payload, dict):
         raise ValueError("Lookup provider returned non-object JSON")
     return payload
@@ -59,7 +61,7 @@ def execute_resolve_ip_metadata(db: Session, payload: dict[str, Any]) -> dict[st
 
     try:
         provider_payload = fetch_ip_geo_payload(ip_address)
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
+    except (httpx.HTTPError, json.JSONDecodeError, ValueError) as exc:
         mark_ip_metadata_lookup_failed(
             db,
             ip_address=ip_address,

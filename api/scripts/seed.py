@@ -2,7 +2,6 @@ import csv
 import uuid
 from pathlib import Path
 
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from mod.model import (
@@ -30,31 +29,6 @@ CHECKLIST_CSV_HEADERS = {
     "Upload Photo ? (Y/N)",
     "Required Upload Files",
 }
-
-
-def truncate_all(db: Session):
-    tables = [
-        "logs",
-        "inspection_images",
-        "inspection_inputs",
-        "inspections",
-        "checklists",
-        "product_units",
-        "products",
-        "product_categories",
-        "skus",
-        "warehouses",
-        "plants",
-        "devices",
-        "users",
-        "roles",
-    ]
-
-    sql = f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE;"
-    db.execute(text(sql))
-    db.commit()
-
-    print("All tables truncated")
 
 
 def seed_roles(db: Session):
@@ -246,9 +220,12 @@ def seed_users(db: Session):
 def main():
     db = SessionLocal()
 
-    try:
-        truncate_all(db)
+    print("Make sure you have run the migrations first")
+    print("And truncated the tables first")
 
+    print("Seeding...")
+
+    try:
         seed_roles(db)
         seed_users(db)
         seed_product_categories(db)

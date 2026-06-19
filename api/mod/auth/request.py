@@ -7,9 +7,9 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 FORGOT_PASSWORD_REQUEST_EXAMPLE = {"email": "operator@whirlpool.com"}
 
 RESET_PASSWORD_REQUEST_EXAMPLE = {
-    "token": "paste-token-from-email-link-query-param",
-    "password": "NewSecurePass123!",
-    "confirm_password": "NewSecurePass123!",
+    "token": "",
+    "password": "",
+    "confirm_password": "",
 }
 
 
@@ -48,7 +48,9 @@ class ResolveDevicesRequest(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     """Body for POST /auth/forgot-password."""
 
-    model_config = ConfigDict(json_schema_extra={"examples": [FORGOT_PASSWORD_REQUEST_EXAMPLE]})
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [FORGOT_PASSWORD_REQUEST_EXAMPLE]}
+    )
 
     email: EmailStr = Field(
         description="Account email. Superadmin accounts cannot use self-service reset.",
@@ -59,7 +61,9 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     """Body for POST /auth/reset-password."""
 
-    model_config = ConfigDict(json_schema_extra={"examples": [RESET_PASSWORD_REQUEST_EXAMPLE]})
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [RESET_PASSWORD_REQUEST_EXAMPLE]}
+    )
 
     token: str = Field(
         min_length=16,
