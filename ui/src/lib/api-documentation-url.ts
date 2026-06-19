@@ -25,3 +25,8 @@ export function getApiDocumentationUrl(): string | null {
 export function getVaptReportUrl(): string | null {
   return authenticatedDocUrl("vapt-report");
 }
+
+/** Opens authenticated Get Started Guide (`GET /get-started?token=…`). */
+export function getGetStartedGuideUrl(): string | null {
+  return authenticatedDocUrl("get-started");
+}

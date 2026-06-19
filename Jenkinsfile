@@ -55,9 +55,7 @@ pipeline {
     stages {
 
         stage('Security Assessment') {
-            // Runs on whatever branch you build (manual phase). To restrict to
-            // main once you automate, re-add:
-            //   when { expression { env.BRANCH_NAME == 'main' } }
+            when { expression { env.BRANCH_NAME == 'main' } }
 
             stages {
 
