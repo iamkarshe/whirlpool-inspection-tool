@@ -1,0 +1,62 @@
+{
+  "brand": {
+    "name": "SCOPT Analytics",
+    "show_logo": false,
+    "initials": "SA",
+    "tagline": "Data · Security · Analytics",
+    "website": "https://scoptanalytics.com/",
+    "email": "info@scoptanalytics.com"
+  },
+  "document": {
+    "title": "Non-Disclosure Agreement",
+    "subtitle": "Application Vulnerability Assessment and Penetration Testing Engagement",
+    "reference": "SCOPT-NDA-2026-001",
+    "classification": "Strictly Confidential",
+    "agreement_date_day": "19",
+    "agreement_date_month": "June",
+    "agreement_date_year": "2026",
+    "confidentiality_term_years": "three (3)",
+    "governing_law": "India",
+    "jurisdiction_city": "Bengaluru"
+  },
+  "disclosing_party": {
+    "label": "Customer / Disclosing Party",
+    "name": "SCOPT Analytics",
+    "registered_address": "Palm 410, SJR Park Vista Apartments, Off Sarjapur Road, Ambalipura, Bengaluru, Karnataka 560102",
+    "authorized_representative": "Srinivas G R",
+    "designation": "Co-founder",
+    "email": "info@scoptanalytics.com",
+    "website": "https://scoptanalytics.com/"
+  },
+  "receiving_party": {
+    "label": "CyEile Technologies / Receiving Party",
+    "name": "CyEile Technologies",
+    "registered_address": "____________________________________",
+    "authorized_representative": "____________________________",
+    "designation": "____________________________________",
+    "email": "____________________________________",
+    "website": ""
+  },
+  "scope": {
+    "web_pages": "Approximately 25",
+    "apis": "Approximately 15",
+    "uat_environment": "Hosted on Hostinger",
+    "production_environment": "Hosted on AWS",
+    "meeting_date": "19 June 2026",
+    "meeting_time": "12:00 PM"
+  },
+  "signatures": {
+    "customer": {
+      "heading": "For Customer / Disclosing Party",
+      "signatory_name": "Srinivas G R",
+      "designation": "Co-founder",
+      "company_name": "SCOPT Analytics"
+    },
+    "receiving": {
+      "heading": "For CyEile Technologies / Receiving Party",
+      "signatory_name": "________________________________",
+      "designation": "________________________________",
+      "company_name": "CyEile Technologies"
+    }
+  }
+}

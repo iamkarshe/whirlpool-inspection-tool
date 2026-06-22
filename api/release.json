@@ -1,6 +1,46 @@
 {
   "notes": [
     {
+      "id": "2026-06-19",
+      "version": "2026-06-19",
+      "released_at": "2026-06-19",
+      "title": "Deploy 2026-06-19",
+      "features": [
+        {
+          "text": "[ci] Jenkins setup.",
+          "hash": "a79c2b3"
+        },
+        {
+          "text": "[refactor] Remove deprecated pre-commit configuration, update gitleaks configuration to include new paths, and enhance dependency management in pyproject.toml. Additionally, streamline various scripts and migration files for improved clarity and maintainability.",
+          "hash": "4882be4"
+        },
+        {
+          "text": "Merge pull request #3 from iamkarshe/feat-package-patch",
+          "hash": "202ac32"
+        },
+        {
+          "text": "[refactor] Update Gitleaks scanning in Jenkinsfile to target specific source directories, improving performance by avoiding large vendored directories.",
+          "hash": "cd4a3c9"
+        },
+        {
+          "text": "Merge pull request #4 from iamkarshe/feat-package-patch",
+          "hash": "292fe34"
+        },
+        {
+          "text": "[refactor] Update API response handling: replace 'UNPROCESSABLE_ENTITY' status with 'UNPROCESSABLE_CONTENT' in multiple locations for consistency, and streamline template response calls in main.py for improved clarity.",
+          "hash": "752a2f8"
+        },
+        {
+          "text": "[refactor] Update Jenkinsfile to enforce security assessment stage on the main branch only, and streamline 'Get Started' guide by removing outdated image references and updating styles. Additionally, enhance API documentation with clearer onboarding instructions and update user menu links for improved navigation.",
+          "hash": "33a376c"
+        },
+        {
+          "text": "Merge pull request #5 from iamkarshe/feat-package-patch",
+          "hash": "4f21494"
+        }
+      ]
+    },
+    {
       "id": "2026-06-17",
       "version": "2026-06-17",
       "released_at": "2026-06-17",
@@ -9,6 +49,11 @@
         {
           "text": "Enhance 'Get Started' guide: update HTML template to include a print-friendly navigation and detailed table of contents, and add corresponding styles for improved user experience during printing.",
           "hash": "386d368",
+          "type": "feature"
+        },
+        {
+          "text": "Enhance onboarding process: include VPN setup instructions in welcome emails, update email message structure to support attachments, and refactor VPN device configuration retrieval methods for improved response handling.",
+          "hash": "3e7a6e9",
           "type": "feature"
         }
       ]
@@ -1065,5 +1110,5 @@
       ]
     }
   ],
-  "last_commit": "386d3687f57d096d43968324ff64c10bb359a832"
+  "last_commit": "4f214949b382f6c1a8da93befe9f2d5e8b2dcd76"
 }
