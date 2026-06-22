@@ -1,3 +1,4 @@
+import re
 from typing import Any, NamedTuple
 
 import httpx
@@ -8,6 +9,41 @@ from utils.env import get_vpn_provision_key, get_vpn_provision_server
 
 VPN_SERVICE_UNAVAILABLE_DETAIL = "VPN service not available"
 VPN_PROVISION_TIMEOUT_SECONDS = 30.0
+
+
+def _slugify_name(value: str) -> str:
+    slug = value.strip().lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
+    return re.sub(r"-{2,}", "-", slug).strip("-")
+
+
+def vpn_tunnel_name_slug(
+    user_name: str,
+    *,
+    fallback_email: str | None = None,
+) -> str:
+    base = _slugify_name(user_name)
+    if not base and fallback_email:
+        base = _slugify_name(fallback_email.split("@", 1)[0])
+    if not base:
+        base = "pdi-user"
+    return f"{base}-pdi-tunnel"
+
+
+def vpn_config_filename(
+    user_name: str,
+    *,
+    fallback_email: str | None = None,
+) -> str:
+    return f"{vpn_tunnel_name_slug(user_name, fallback_email=fallback_email)}.conf"
+
+
+def vpn_qr_filename(
+    user_name: str,
+    *,
+    fallback_email: str | None = None,
+) -> str:
+    return f"{vpn_tunnel_name_slug(user_name, fallback_email=fallback_email)}-qr.png"
 
 
 class VpnProvisionConfig(NamedTuple):

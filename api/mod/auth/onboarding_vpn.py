@@ -12,6 +12,8 @@ from mod.api.vpn.helper import (
     create_vpn_device,
     fetch_vpn_device_config_bytes,
     fetch_vpn_device_qr_bytes,
+    vpn_config_filename,
+    vpn_qr_filename,
 )
 from mod.model import User
 from utils.env import is_vpn_provision_configured
@@ -26,22 +28,14 @@ WIREGUARD_IOS_URL = "https://apps.apple.com/app/wireguard/id1441195209"
 DEFAULT_ONBOARDING_VPN_DEVICE_TYPE = "android"
 
 
-def vpn_config_filename(email: str) -> str:
-    return f"{email}-wireguard-vpn.conf"
-
-
-def vpn_qr_filename(email: str) -> str:
-    return f"{email}-wireguard-vpn-qr.png"
-
-
 def is_first_time_vpn_user(user: User) -> bool:
     return user.vpn_device_uuid is None
 
 
 def build_vpn_setup_instructions_text(*, user_name: str, user_email: str) -> str:
     first_name = (user_name.split() or [user_name])[0]
-    config_file = vpn_config_filename(user_email)
-    qr_file = vpn_qr_filename(user_email)
+    config_file = vpn_config_filename(user_name, fallback_email=user_email)
+    qr_file = vpn_qr_filename(user_name, fallback_email=user_email)
     return (
         f"Hi {first_name},\n\n"
         "Your warehouse VPN profile is ready. Follow the steps below to connect "
@@ -64,8 +58,8 @@ def build_vpn_setup_instructions_text(*, user_name: str, user_email: str) -> str
 
 def build_vpn_setup_instructions_html(*, user_name: str, user_email: str) -> str:
     first_name = (user_name.split() or [user_name])[0]
-    config_file = vpn_config_filename(user_email)
-    qr_file = vpn_qr_filename(user_email)
+    config_file = vpn_config_filename(user_name, fallback_email=user_email)
+    qr_file = vpn_qr_filename(user_name, fallback_email=user_email)
     return (
         f"<p>Hi {first_name},</p>"
         "<p>Your warehouse VPN profile is ready. Follow the steps below to connect "
@@ -137,6 +131,7 @@ def provision_user_vpn_for_onboarding(
 
 def build_onboarding_vpn_email_payload(
     *,
+    user_name: str,
     user_email: str,
     device_uuid: uuid.UUID,
 ) -> OnboardingVpnEmailPayload:
@@ -145,12 +140,12 @@ def build_onboarding_vpn_email_payload(
     return OnboardingVpnEmailPayload(
         attachments=[
             encode_email_attachment(
-                filename=vpn_config_filename(user_email),
+                filename=vpn_config_filename(user_name, fallback_email=user_email),
                 content=config_content,
                 content_type=config_content_type,
             ),
             encode_email_attachment(
-                filename=vpn_qr_filename(user_email),
+                filename=vpn_qr_filename(user_name, fallback_email=user_email),
                 content=qr_content,
                 content_type=qr_content_type,
             ),
@@ -174,6 +169,7 @@ def prepare_onboarding_vpn_if_needed(
     try:
         device_uuid = provision_user_vpn_for_onboarding(db, user)
         return build_onboarding_vpn_email_payload(
+            user_name=user.name,
             user_email=user.email,
             device_uuid=device_uuid,
         )

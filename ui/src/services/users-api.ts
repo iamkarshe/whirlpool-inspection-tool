@@ -175,12 +175,41 @@ export async function onboardUser(
   );
 }
 
-export function vpnConfigDownloadFilename(email: string): string {
-  return `${email}-wireguard-vpn.conf`;
+export function slugifyVpnName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-export function vpnQrDownloadFilename(email: string): string {
-  return `${email}-wireguard-vpn-qr.png`;
+export function vpnTunnelNameSlug(
+  userName: string,
+  fallbackEmail?: string,
+): string {
+  let base = slugifyVpnName(userName);
+  if (!base && fallbackEmail) {
+    base = slugifyVpnName(fallbackEmail.split("@")[0] ?? fallbackEmail);
+  }
+  if (!base) {
+    base = "pdi-user";
+  }
+  return `${base}-pdi-tunnel`;
+}
+
+export function vpnConfigDownloadFilename(
+  userName: string,
+  fallbackEmail?: string,
+): string {
+  return `${vpnTunnelNameSlug(userName, fallbackEmail)}.conf`;
+}
+
+export function vpnQrDownloadFilename(
+  userName: string,
+  fallbackEmail?: string,
+): string {
+  return `${vpnTunnelNameSlug(userName, fallbackEmail)}-qr.png`;
 }
 
 export async function generateUserVpn(
@@ -239,7 +268,7 @@ export async function downloadUserVpnConfig(
     if (!(blob instanceof Blob)) {
       throw new Error("Unexpected VPN config response.");
     }
-    triggerBlobDownload(blob, vpnConfigDownloadFilename(user.email));
+    triggerBlobDownload(blob, vpnConfigDownloadFilename(user.name, user.email));
   } catch (err: unknown) {
     throw new Error(
       await userVpnBlobErrorMessage(err, "Could not download VPN config."),
@@ -260,7 +289,7 @@ export async function downloadUserVpnQr(
     if (!(blob instanceof Blob)) {
       throw new Error("Unexpected VPN QR response.");
     }
-    triggerBlobDownload(blob, vpnQrDownloadFilename(user.email));
+    triggerBlobDownload(blob, vpnQrDownloadFilename(user.name, user.email));
   } catch (err: unknown) {
     throw new Error(
       await userVpnBlobErrorMessage(err, "Could not download VPN QR code."),

@@ -11,11 +11,11 @@ const WIREGUARD_IOS_URL =
   "https://apps.apple.com/app/wireguard/id1441195209";
 
 export function vpnConfigFilenameForUser(user: UserResponse): string {
-  return vpnConfigDownloadFilename(user.email);
+  return vpnConfigDownloadFilename(user.name, user.email);
 }
 
 export function vpnQrFilenameForUser(user: UserResponse): string {
-  return vpnQrDownloadFilename(user.email);
+  return vpnQrDownloadFilename(user.name, user.email);
 }
 
 export function buildVpnEmailSubject(user: UserResponse): string {

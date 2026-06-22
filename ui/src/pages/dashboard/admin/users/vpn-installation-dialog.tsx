@@ -72,8 +72,8 @@ export function VpnInstallationDialog({
   onSendEmail,
   sendingEmail = false,
 }: VpnInstallationDialogProps) {
-  const configFilename = user ? vpnConfigFilenameForUser(user) : "wireguard-vpn.conf";
-  const qrFilename = user ? vpnQrFilenameForUser(user) : "wireguard-vpn-qr.png";
+  const configFilename = user ? vpnConfigFilenameForUser(user) : "pdi-user-pdi-tunnel.conf";
+  const qrFilename = user ? vpnQrFilenameForUser(user) : "pdi-user-pdi-tunnel-qr.png";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

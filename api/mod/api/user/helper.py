@@ -10,6 +10,8 @@ from mod.api.vpn.helper import (
     fetch_vpn_device_config,
     fetch_vpn_device_qr,
     revoke_vpn_device,
+    vpn_config_filename,
+    vpn_qr_filename,
 )
 from mod.model import Plant, User, Warehouse
 from utils.password_policy import resolve_password_change_flags
@@ -157,12 +159,18 @@ def revoke_user_vpn_by_uuid(db: Session, user_uuid: uuid.UUID) -> User:
 
 def download_user_vpn_config(user: User) -> Response:
     device_uuid = require_user_vpn_device_uuid(user)
-    return fetch_vpn_device_config(device_uuid)
+    response = fetch_vpn_device_config(device_uuid)
+    filename = vpn_config_filename(user.name, fallback_email=user.email)
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 def download_user_vpn_qr(user: User) -> Response:
     device_uuid = require_user_vpn_device_uuid(user)
-    return fetch_vpn_device_qr(device_uuid)
+    response = fetch_vpn_device_qr(device_uuid)
+    filename = vpn_qr_filename(user.name, fallback_email=user.email)
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 def apply_user_facility_scope(
