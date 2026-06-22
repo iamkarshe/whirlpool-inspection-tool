@@ -42,4 +42,6 @@ export interface UserResponse {
   must_change_password?: boolean;
   /** True when the password exceeded PASSWORD_MAX_AGE_DAYS and must be rotated. */
   password_expired?: boolean;
+  /** UTC time when the welcome onboarding email was last delivered successfully. Null means the user has not received an onboarding email yet. */
+  onboard_email_sent_at?: string | null;
 }

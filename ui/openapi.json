@@ -693,6 +693,79 @@
         }
       }
     },
+    "/api/users/csv/template": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Download users CSV template",
+        "description": "Downloads a CSV with columns Name, Email, Mobile, Role, Designation, and Allowed Warehouse (pipe-separated codes). Existing non-superadmin users are included so the file can be edited and re-uploaded to upsert.",
+        "operationId": "download_users_csv_template_api_users_csv_template_get",
+        "responses": {
+          "200": {
+            "description": "CSV file containing the template header and existing users.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller is not superadmin."
+          }
+        }
+      }
+    },
+    "/api/users/csv/upload": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Bulk upsert users from CSV",
+        "description": "Creates or updates users matched by email. Does not send onboarding emails. New users receive a random password and must_change_password=true until POST /api/users/{user_uuid}/onboard is called separately. Role values: Admin (maps to Biz Admin), Manager, Operator. Superadmin cannot be added via CSV. Allowed Warehouse uses pipe-separated warehouse codes (for example RI52|RI62). The response lists created/updated users, rejected rows with reasons, and rejected_csv for download and re-upload after fixes.",
+        "operationId": "upload_users_csv_api_users_csv_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_users_csv_api_users_csv_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Upsert summary with accepted and rejected rows.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCsvUpsertResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid CSV file or missing required headers."
+          },
+          "403": {
+            "description": "Caller is not superadmin."
+          },
+          "409": {
+            "description": "Unique constraint conflict during commit."
+          },
+          "422": {
+            "description": "Unknown warehouse code or invalid CSV headers."
+          }
+        }
+      }
+    },
     "/api/users/{user_uuid}/onboard": {
       "post": {
         "tags": [
@@ -6888,6 +6961,64 @@
         }
       }
     },
+    "/jobs/bulk-onboard-emails": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Send welcome onboarding emails to pending users",
+        "description": "Finds active non-superadmin users with must_change_password=true and no onboard_email_sent_at (for example after CSV bulk import). Processes users one at a time with direct SMTP delivery and up to 3 retries per email. When Celery is configured, work is queued to the worker; otherwise the job runs inline in this request.",
+        "operationId": "job_bulk_onboard_emails_jobs_bulk_onboard_emails_get",
+        "parameters": [
+          {
+            "name": "x-job-execute-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Shared secret from JOB_EXECUTE_TOKEN env var.",
+              "title": "X-Job-Execute-Token"
+            },
+            "description": "Shared secret from JOB_EXECUTE_TOKEN env var."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk onboard email job result or enqueue acknowledgement.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkOnboardEmailsJobResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid x-job-execute-token."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "JOB_EXECUTE_TOKEN not configured."
+          }
+        }
+      }
+    },
     "/api/tasks": {
       "get": {
         "tags": [
@@ -7864,6 +7995,21 @@
         ],
         "title": "Body_upload_skus_csv_api_skus_csv_upload_post"
       },
+      "Body_upload_users_csv_api_users_csv_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "UTF-8 CSV file with header row. Required columns: Name, Email, Mobile, Role, Designation, Allowed Warehouse. Role must be one of: Admin (maps to biz-admin), Manager, Operator. Allowed Warehouse is pipe-separated (for example RI52|RI62). Superadmin cannot be imported. Extra columns are ignored."
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_users_csv_api_users_csv_upload_post"
+      },
       "Body_upload_warehouses_csv_api_warehouses_csv_upload_post": {
         "properties": {
           "file": {
@@ -7907,6 +8053,150 @@
           "keys"
         ],
         "title": "BrowserPushSubscription"
+      },
+      "BulkOnboardEmailItemResponse": {
+        "properties": {
+          "user_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Uuid",
+            "description": "User UUID."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "User email."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "User display name."
+          },
+          "welcome_email_sent": {
+            "type": "boolean",
+            "title": "Welcome Email Sent",
+            "description": "True when the welcome onboarding email was delivered."
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "Present when onboarding or email delivery failed."
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_uuid",
+          "email",
+          "name",
+          "welcome_email_sent"
+        ],
+        "title": "BulkOnboardEmailItemResponse",
+        "description": "Per-user result when GET /jobs/bulk-onboard-emails runs inline."
+      },
+      "BulkOnboardEmailsJobResponse": {
+        "properties": {
+          "job_name": {
+            "type": "string",
+            "title": "Job Name",
+            "description": "Internal job identifier.",
+            "examples": [
+              "bulk_onboard_emails"
+            ]
+          },
+          "pending_count": {
+            "type": "integer",
+            "title": "Pending Count",
+            "description": "Users matched for onboarding at job start.",
+            "examples": [
+              25
+            ]
+          },
+          "sent_count": {
+            "type": "integer",
+            "title": "Sent Count",
+            "description": "Welcome emails delivered successfully.",
+            "examples": [
+              23
+            ]
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count",
+            "description": "Users that failed onboarding or email delivery.",
+            "examples": [
+              2
+            ]
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable outcome summary."
+          },
+          "logged": {
+            "type": "boolean",
+            "title": "Logged",
+            "description": "True when a row was written to job_logs."
+          },
+          "enqueued": {
+            "type": "boolean",
+            "title": "Enqueued",
+            "description": "True when processing was queued to Celery. When true, results is empty and sent_count/failed_count stay 0 until the worker finishes.",
+            "default": false
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BulkOnboardEmailItemResponse"
+            },
+            "type": "array",
+            "title": "Results",
+            "description": "Per-user outcomes when the job ran inline (enqueued=false)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_name",
+          "pending_count",
+          "sent_count",
+          "failed_count",
+          "message",
+          "logged"
+        ],
+        "title": "BulkOnboardEmailsJobResponse",
+        "description": "Result of GET /jobs/bulk-onboard-emails.",
+        "examples": [
+          {
+            "enqueued": false,
+            "failed_count": 2,
+            "job_name": "bulk_onboard_emails",
+            "logged": true,
+            "message": "Bulk onboard emails finished: 23 sent, 2 failed, 25 pending at start.",
+            "pending_count": 25,
+            "results": [
+              {
+                "email": "susanta_palit@whirlpool.in",
+                "name": "Susanta Palit",
+                "user_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "welcome_email_sent": true
+              },
+              {
+                "email": "bad@whirlpool.in",
+                "error": "Welcome email delivery failed after retries",
+                "name": "Bad User",
+                "user_uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                "welcome_email_sent": false
+              }
+            ],
+            "sent_count": 23
+          }
+        ]
       },
       "ChangePasswordOtpDebugResponse": {
         "properties": {
@@ -14929,6 +15219,237 @@
           }
         ]
       },
+      "UserCsvRejectedRowResponse": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "title": "Row Number",
+            "description": "1-based CSV row number (header is row 1).",
+            "examples": [
+              8
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Name from the rejected row.",
+            "examples": [
+              "Bad Row"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Email from the rejected row (may be invalid).",
+            "examples": [
+              "bad@whirlpool.in"
+            ]
+          },
+          "mobile": {
+            "type": "string",
+            "title": "Mobile",
+            "description": "Mobile from the rejected row.",
+            "examples": [
+              "123"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "Role label from the rejected row.",
+            "examples": [
+              "Operator"
+            ]
+          },
+          "designation": {
+            "type": "string",
+            "title": "Designation",
+            "description": "Designation from the rejected row.",
+            "examples": [
+              "Operator"
+            ]
+          },
+          "allowed_warehouse": {
+            "type": "string",
+            "title": "Allowed Warehouse",
+            "description": "Allowed Warehouse cell from the rejected row.",
+            "examples": [
+              "RI52"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Why the row was rejected.",
+            "examples": [
+              "Mobile must be exactly 10 digits"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_number",
+          "name",
+          "email",
+          "mobile",
+          "role",
+          "designation",
+          "allowed_warehouse",
+          "reason"
+        ],
+        "title": "UserCsvRejectedRowResponse",
+        "description": "One rejected row from POST /api/users/csv/upload."
+      },
+      "UserCsvUpsertResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "True when the upload finished without a fatal error."
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created",
+            "description": "Number of new users inserted."
+          },
+          "updated": {
+            "type": "integer",
+            "title": "Updated",
+            "description": "Number of existing users updated by email."
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected",
+            "description": "Number of rows rejected due to validation or conflicts."
+          },
+          "created_users": {
+            "items": {
+              "$ref": "#/components/schemas/UserCsvUpsertRowResult"
+            },
+            "type": "array",
+            "title": "Created Users",
+            "description": "Rows that created new users."
+          },
+          "updated_users": {
+            "items": {
+              "$ref": "#/components/schemas/UserCsvUpsertRowResult"
+            },
+            "type": "array",
+            "title": "Updated Users",
+            "description": "Rows that updated existing users."
+          },
+          "rejected_rows": {
+            "items": {
+              "$ref": "#/components/schemas/UserCsvRejectedRowResponse"
+            },
+            "type": "array",
+            "title": "Rejected Rows",
+            "description": "Rejected rows with the original values and a reason."
+          },
+          "rejected_csv": {
+            "type": "string",
+            "title": "Rejected Csv",
+            "description": "CSV text for rejected rows (same columns as the upload plus Error). Save as a .csv file, fix the issues, and re-upload.",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "created",
+          "updated",
+          "rejected"
+        ],
+        "title": "UserCsvUpsertResponse",
+        "description": "Result of POST /api/users/csv/upload.",
+        "examples": [
+          {
+            "created": 12,
+            "created_users": [
+              {
+                "action": "created",
+                "email": "susanta_palit@whirlpool.in",
+                "name": "Susanta Palit",
+                "row_number": 2
+              }
+            ],
+            "rejected": 1,
+            "rejected_csv": "Name,Email,Mobile,Role,Designation,Allowed Warehouse,Error\\n...",
+            "rejected_rows": [
+              {
+                "allowed_warehouse": "RI52",
+                "designation": "Operator",
+                "email": "bad@whirlpool.in",
+                "mobile": "123",
+                "name": "Bad Row",
+                "reason": "Mobile must be exactly 10 digits",
+                "role": "Operator",
+                "row_number": 8
+              }
+            ],
+            "success": true,
+            "updated": 4,
+            "updated_users": [
+              {
+                "action": "updated",
+                "email": "mohit_trivedi_kamalsons@whirlpool.in",
+                "name": "Mohit Trivedi",
+                "row_number": 5
+              }
+            ]
+          }
+        ]
+      },
+      "UserCsvUpsertRowResult": {
+        "properties": {
+          "row_number": {
+            "type": "integer",
+            "title": "Row Number",
+            "description": "1-based CSV row number (header is row 1).",
+            "examples": [
+              2
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "User email from the row.",
+            "examples": [
+              "susanta_palit@whirlpool.in"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "User name from the row.",
+            "examples": [
+              "Susanta Palit"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "created",
+              "updated"
+            ],
+            "title": "Action",
+            "description": "Whether the row created a new user or updated an existing user by email.",
+            "examples": [
+              "created"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "row_number",
+          "email",
+          "name",
+          "action"
+        ],
+        "title": "UserCsvUpsertRowResult",
+        "description": "One accepted row from POST /api/users/csv/upload."
+      },
       "UserGenerateVpnRequest": {
         "properties": {
           "user_uuid": {
@@ -15204,6 +15725,19 @@
             "title": "Password Expired",
             "description": "True when the password exceeded PASSWORD_MAX_AGE_DAYS and must be rotated.",
             "default": false
+          },
+          "onboard_email_sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onboard Email Sent At",
+            "description": "UTC time when the welcome onboarding email was last delivered successfully. Null means the user has not received an onboarding email yet."
           }
         },
         "type": "object",

@@ -6,8 +6,10 @@
  * OpenAPI spec version: 1.7.1
  */
 import type {
+  BodyUploadUsersCsvApiUsersCsvUploadPost,
   GetUsersApiUsersGetParams,
   UserCreateRequest,
+  UserCsvUpsertResponse,
   UserGenerateVpnRequest,
   UserListResponse,
   UserOnboardResponse,
@@ -50,7 +52,36 @@ const createUserApiUsersPost = (
       options);
     }
   /**
- * Superadmin-only: generates a new temporary password for an existing user, sets must_change_password, and sends a welcome email with the login URL and temporary credentials (VPN instructions are not included). The user must change their password on first login before accessing the application. Safe to call again to resend onboarding email with a fresh temporary password.
+ * Downloads a CSV with columns Name, Email, Mobile, Role, Designation, and Allowed Warehouse (pipe-separated codes). Existing non-superadmin users are included so the file can be edited and re-uploaded to upsert.
+ * @summary Download users CSV template
+ */
+const downloadUsersCsvTemplateApiUsersCsvTemplateGet = (
+
+ options?: SecondParameter<typeof customInstance<unknown | Blob>>,) => {
+      return customInstance<unknown | Blob>(
+      {url: `/api/users/csv/template`, method: 'GET',
+        responseType: 'blob'
+    },
+      options);
+    }
+  /**
+ * Creates or updates users matched by email. Does not send onboarding emails. New users receive a random password and must_change_password=true until POST /api/users/{user_uuid}/onboard is called separately. Role values: Admin (maps to Biz Admin), Manager, Operator. Superadmin cannot be added via CSV. Allowed Warehouse uses pipe-separated warehouse codes (for example RI52|RI62). The response lists created/updated users, rejected rows with reasons, and rejected_csv for download and re-upload after fixes.
+ * @summary Bulk upsert users from CSV
+ */
+const uploadUsersCsvApiUsersCsvUploadPost = (
+    bodyUploadUsersCsvApiUsersCsvUploadPost: BodyUploadUsersCsvApiUsersCsvUploadPost,
+ options?: SecondParameter<typeof customInstance<UserCsvUpsertResponse>>,) => {const formData = new FormData();
+formData.append(`file`, bodyUploadUsersCsvApiUsersCsvUploadPost.file);
+
+      return customInstance<UserCsvUpsertResponse>(
+      {url: `/api/users/csv/upload`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData
+    },
+      options);
+    }
+  /**
+ * Superadmin-only: generates a new temporary password for an existing user, sets must_change_password, and sends a welcome email with the login URL and temporary credentials. For first-time users without a VPN profile, provisions VPN access and attaches the WireGuard config and QR code with setup instructions. The user must change their password on first login before accessing the application. Safe to call again to resend onboarding email with a fresh temporary password.
  * @summary Send onboarding welcome email
  */
 const onboardUserApiUsersUserUuidOnboardPost = (
@@ -128,9 +159,11 @@ const updateUserApiUsersUserUuidPut = (
     },
       options);
     }
-  return {getUsersApiUsersGet,createUserApiUsersPost,onboardUserApiUsersUserUuidOnboardPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,revokeUserVpnApiUsersUserUuidVpnRevokeGet,updateUserApiUsersUserUuidPut}};
+  return {getUsersApiUsersGet,createUserApiUsersPost,downloadUsersCsvTemplateApiUsersCsvTemplateGet,uploadUsersCsvApiUsersCsvUploadPost,onboardUserApiUsersUserUuidOnboardPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,revokeUserVpnApiUsersUserUuidVpnRevokeGet,updateUserApiUsersUserUuidPut}};
 export type GetUsersApiUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['getUsersApiUsersGet']>>>
 export type CreateUserApiUsersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['createUserApiUsersPost']>>>
+export type DownloadUsersCsvTemplateApiUsersCsvTemplateGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUsersCsvTemplateApiUsersCsvTemplateGet']>>>
+export type UploadUsersCsvApiUsersCsvUploadPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['uploadUsersCsvApiUsersCsvUploadPost']>>>
 export type OnboardUserApiUsersUserUuidOnboardPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['onboardUserApiUsersUserUuidOnboardPost']>>>
 export type GenerateUserVpnApiUsersGenerateVpnPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['generateUserVpnApiUsersGenerateVpnPost']>>>
 export type DownloadUserVpnConfigApiUsersUserUuidVpnConfigGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnConfigApiUsersUserUuidVpnConfigGet']>>>

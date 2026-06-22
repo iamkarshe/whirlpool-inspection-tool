@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.7.1
  */
 import type {
+  BulkOnboardEmailsJobResponse,
   JobExecutionResponse
 } from '../model';
 
@@ -40,6 +41,19 @@ const jobResolvePendingIpMetadataJobsResolvePendingIpMetadataGet = (
     },
       options);
     }
-  return {jobAutoApproveInspectionsJobsAutoApproveInspectionsGet,jobResolvePendingIpMetadataJobsResolvePendingIpMetadataGet}};
+  /**
+ * Finds active non-superadmin users with must_change_password=true and no onboard_email_sent_at (for example after CSV bulk import). Processes users one at a time with direct SMTP delivery and up to 3 retries per email. When Celery is configured, work is queued to the worker; otherwise the job runs inline in this request.
+ * @summary Send welcome onboarding emails to pending users
+ */
+const jobBulkOnboardEmailsJobsBulkOnboardEmailsGet = (
+
+ options?: SecondParameter<typeof customInstance<BulkOnboardEmailsJobResponse>>,) => {
+      return customInstance<BulkOnboardEmailsJobResponse>(
+      {url: `/jobs/bulk-onboard-emails`, method: 'GET'
+    },
+      options);
+    }
+  return {jobAutoApproveInspectionsJobsAutoApproveInspectionsGet,jobResolvePendingIpMetadataJobsResolvePendingIpMetadataGet,jobBulkOnboardEmailsJobsBulkOnboardEmailsGet}};
 export type JobAutoApproveInspectionsJobsAutoApproveInspectionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getJobs>['jobAutoApproveInspectionsJobsAutoApproveInspectionsGet']>>>
 export type JobResolvePendingIpMetadataJobsResolvePendingIpMetadataGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getJobs>['jobResolvePendingIpMetadataJobsResolvePendingIpMetadataGet']>>>
+export type JobBulkOnboardEmailsJobsBulkOnboardEmailsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getJobs>['jobBulkOnboardEmailsJobsBulkOnboardEmailsGet']>>>

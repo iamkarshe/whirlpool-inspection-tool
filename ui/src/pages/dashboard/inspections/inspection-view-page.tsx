@@ -34,6 +34,9 @@ import { InspectionOverviewTab } from "@/pages/dashboard/inspections/components/
 import { InspectionSectionTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-section-tab";
 import { InspectionRelationshipTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-relationship-tab";
 import { InspectionImagesTab } from "@/pages/dashboard/inspections/components/view-tabs/inspection-images-tab";
+import {
+  buildInspectionSideImages,
+} from "@/pages/dashboard/inspections/inspection-image-utils";
 import { InspectionContextBadges } from "@/pages/dashboard/inspections/components/inspection-context-badges";
 import {
   InspectionFlagsTab,
@@ -65,7 +68,6 @@ export default function InspectionViewPage() {
   const [productRows, setProductRows] = useState<InspectionQuestionResult[]>(
     [],
   );
-  const [deviceRows, setDeviceRows] = useState<InspectionQuestionResult[]>([]);
   const [relationship, setRelationship] =
     useState<InspectionRelationship | null>(null);
   const [relationshipLoading, setRelationshipLoading] = useState(false);
@@ -129,7 +131,6 @@ export default function InspectionViewPage() {
         setOuterRows(bundle.outer);
         setInnerRows(bundle.inner);
         setProductRows(bundle.product);
-        setDeviceRows(bundle.device);
       })
       .catch((err: unknown) => {
         if (ac.signal.aborted) return;
@@ -242,21 +243,22 @@ export default function InspectionViewPage() {
     [innerRows, outerRows, productRows],
   );
 
-  const allImages = useMemo(() => {
-    const source = [...outerRows, ...innerRows, ...productRows, ...deviceRows];
-    return source.flatMap((row) =>
-      row.images.map((img, index) => ({
-        ...img,
-        section: row.section,
-        question: row.question,
-        key: `${row.id}-${index}-${img.url}`,
-      })),
-    );
-  }, [outerRows, innerRows, productRows, deviceRows]);
-
-  const allGalleryImages = useMemo(
-    () => allImages.map(({ url, filename }) => ({ url, filename })),
-    [allImages],
+  const sideImagesByCategory = useMemo(
+    () => ({
+      "outer-packaging": buildInspectionSideImages(
+        inspection?.outer_packaging_side_images,
+        "outer-packaging",
+      ),
+      "inner-packaging": buildInspectionSideImages(
+        inspection?.inner_packaging_side_images,
+        "inner-packaging",
+      ),
+      product: buildInspectionSideImages(
+        inspection?.product_side_images,
+        "product",
+      ),
+    }),
+    [inspection],
   );
 
   const systemIssues = useMemo<ManualIssue[]>(() => {
@@ -476,8 +478,7 @@ export default function InspectionViewPage() {
 
           <InspectionImagesTab
             reviewLoading={reviewLoading}
-            allImages={allImages}
-            allGalleryImages={allGalleryImages}
+            sideImagesByCategory={sideImagesByCategory}
             issueRows={issueRows}
             onOpenImage={(images, activeUrl) => {
               setGalleryImages(images);
