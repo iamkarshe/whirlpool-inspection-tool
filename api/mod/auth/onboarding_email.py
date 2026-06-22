@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -176,6 +177,66 @@ def queue_or_send_welcome_onboarding_email(
     except Exception:
         logger.exception("Direct welcome onboarding email delivery failed for %s", to_email)
         return False
+
+
+def deliver_welcome_onboarding_email_with_retry(
+    db: Session,
+    *,
+    to_email: str,
+    user_name: str,
+    temporary_password: str,
+    include_vpn_instructions: bool = False,
+    attachments: list[dict[str, str]] | None = None,
+    actor_user_id: int | None = None,
+    max_attempts: int = 3,
+    retry_delay_seconds: float = 5.0,
+) -> bool:
+    smtp_config, from_email, from_name = resolve_smtp_message_config()
+    if smtp_config is None or not from_email:
+        logger.warning(
+            "SMTP not configured; welcome onboarding email skipped for %s", to_email
+        )
+        return False
+
+    message = build_welcome_onboarding_email_message(
+        to_email=to_email,
+        user_name=user_name,
+        temporary_password=temporary_password,
+        login_url=build_login_absolute_url(),
+        smtp_from_email=from_email,
+        smtp_from_name=from_name,
+        include_vpn_instructions=include_vpn_instructions,
+        attachments=attachments,
+    )
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            send_and_log_task_email(
+                db,
+                smtp_config,
+                message,
+                email_kind=EMAIL_KIND_WELCOME_ONBOARDING,
+                actor_user_id=actor_user_id,
+                delivery_mode="direct",
+                created_by="user_onboard",
+                commit_log=False,
+            )
+            logger.info(
+                "Welcome onboarding email sent directly via SMTP to %s (attempt %s)",
+                to_email,
+                attempt,
+            )
+            return True
+        except Exception:
+            logger.exception(
+                "Welcome onboarding email attempt %s failed for %s",
+                attempt,
+                to_email,
+            )
+            if attempt >= max_attempts:
+                return False
+            time.sleep(retry_delay_seconds)
+    return False
 
 
 def deliver_welcome_onboarding_email_after_commit(

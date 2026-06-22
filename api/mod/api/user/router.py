@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Path, Request, Resp
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from mod.api.log.audit import log_user_added, log_user_onboarded, log_user_updated
+from mod.api.log.audit import log_user_added, log_user_updated
 from mod.api.middleware import auth_dependency
 from mod.api.user.csv_bulk import (
     buildUsersCsvTemplateRows,
@@ -35,9 +35,7 @@ from mod.api.user.response import (
     UserOnboardResponse,
     UserResponse,
 )
-from mod.api.user.onboard_helper import onboard_existing_user
-from mod.auth.onboarding_email import deliver_welcome_onboarding_email_after_commit
-from mod.auth.onboarding_vpn import prepare_onboarding_vpn_if_needed
+from mod.api.user.onboard_delivery import deliverUserOnboarding
 from mod.model import Role, User
 from utils.common import ensure_allowed_registration_email
 from utils.db import get_db
@@ -324,35 +322,17 @@ def onboard_user(
     user_uuid: uuid.UUID = Path(..., description="User UUID from POST /api/users."),
     db: Session = Depends(get_db),
 ):
-    result = onboard_existing_user(
+    outcome = deliverUserOnboarding(
         db,
         user_uuid=user_uuid,
+        actor_user_id=int(request.state.user_id),
     )
-    vpn_email_payload = prepare_onboarding_vpn_if_needed(db, result.user)
     invalidate_kpi_parameters_cache()
     db.commit()
 
-    welcome_email_sent = deliver_welcome_onboarding_email_after_commit(
-        to_email=result.user.email,
-        user_name=result.user.name,
-        temporary_password=result.temporary_password,
-        include_vpn_instructions=vpn_email_payload is not None,
-        attachments=vpn_email_payload.attachments if vpn_email_payload else None,
-    )
-    log_user_onboarded(
-        db,
-        actor_user_id=int(request.state.user_id),
-        target_user_uuid=str(result.user.uuid),
-        target_email=result.user.email,
-        target_name=result.user.name,
-        target_role=result.target_role,
-        welcome_email_sent=welcome_email_sent,
-    )
-    db.commit()
-
     return UserOnboardResponse(
-        user=map_user_response(result.user),
-        welcome_email_sent=welcome_email_sent,
+        user=map_user_response(outcome.user),
+        welcome_email_sent=outcome.welcome_email_sent,
     )
 
 

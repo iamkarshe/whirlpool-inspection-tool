@@ -6,7 +6,13 @@ from mod.jobs.helper import (
     run_resolve_pending_ip_metadata,
     verify_job_execute_token,
 )
-from mod.jobs.response import JobExecutionResponse
+from mod.jobs.onboard_emails import (
+    BULK_ONBOARD_EMAILS_JOB_NAME,
+    runBulkOnboardEmails,
+)
+from mod.jobs.response import BulkOnboardEmailsJobResponse, JobExecutionResponse
+from mod.api.user.onboard_delivery import listUsersPendingOnboardEmail
+from utils.env import is_celery_broker_configured
 from utils.db import get_db
 from utils.decorator import exception_handler_decorator
 
@@ -84,4 +90,81 @@ def job_resolve_pending_ip_metadata(
         rows_updated=result.rows_updated,
         message=result.message,
         logged=result.logged,
+    )
+
+
+@router.get(
+    "/bulk-onboard-emails",
+    name="job_bulk_onboard_emails",
+    summary="Send welcome onboarding emails to pending users",
+    description=(
+        "Finds active non-superadmin users with must_change_password=true and no "
+        "onboard_email_sent_at (for example after CSV bulk import). Processes users "
+        "one at a time with direct SMTP delivery and up to 3 retries per email. "
+        "When Celery is configured, work is queued to the worker; otherwise the job "
+        "runs inline in this request."
+    ),
+    response_model=BulkOnboardEmailsJobResponse,
+    responses={
+        401: {"description": "Missing or invalid x-job-execute-token."},
+        503: {"description": "JOB_EXECUTE_TOKEN not configured."},
+    },
+)
+@exception_handler_decorator
+def job_bulk_onboard_emails(
+    request: Request,
+    _: None = Depends(require_job_token),
+    db: Session = Depends(get_db),
+) -> BulkOnboardEmailsJobResponse:
+    pending_users = listUsersPendingOnboardEmail(db)
+    pending_count = len(pending_users)
+    if pending_count == 0:
+        return BulkOnboardEmailsJobResponse(
+            job_name=BULK_ONBOARD_EMAILS_JOB_NAME,
+            pending_count=0,
+            sent_count=0,
+            failed_count=0,
+            message="No users pending onboarding email.",
+            logged=False,
+            enqueued=False,
+            results=[],
+        )
+
+    if is_celery_broker_configured():
+        from mod.jobs.celery_tasks import bulk_onboard_emails_task
+
+        bulk_onboard_emails_task.delay()
+        return BulkOnboardEmailsJobResponse(
+            job_name=BULK_ONBOARD_EMAILS_JOB_NAME,
+            pending_count=pending_count,
+            sent_count=0,
+            failed_count=0,
+            message=(
+                f"Queued bulk onboard email job for {pending_count} user(s). "
+                "Check job_logs after the worker finishes."
+            ),
+            logged=False,
+            enqueued=True,
+            results=[],
+        )
+
+    result = runBulkOnboardEmails(db)
+    return BulkOnboardEmailsJobResponse(
+        job_name=result.job_name,
+        pending_count=result.pending_count,
+        sent_count=result.sent_count,
+        failed_count=result.failed_count,
+        message=result.message,
+        logged=result.logged,
+        enqueued=False,
+        results=[
+            {
+                "user_uuid": item.user_uuid,
+                "email": item.email,
+                "name": item.name,
+                "welcome_email_sent": item.welcome_email_sent,
+                "error": item.error,
+            }
+            for item in result.results
+        ],
     )

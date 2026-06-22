@@ -311,6 +311,10 @@ class User(TimestampSoftDeleteMixin, Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    onboard_email_sent_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     role: Mapped["Role"] = relationship(back_populates="users")
     devices: Mapped[list["Device"]] = relationship(back_populates="user")
