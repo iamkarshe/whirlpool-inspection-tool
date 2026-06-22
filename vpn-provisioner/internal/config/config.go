@@ -24,6 +24,7 @@ type Config struct {
 	WGServerVPNIP    string
 
 	WGClientDNS        string
+	WGClientMTU        int
 	WGClientAllowedIPs string
 
 	WGDeviceStartIP string
@@ -67,6 +68,14 @@ func LoadFromEnv() (Config, error) {
 	if err := validateIP(c.WGClientDNS); err != nil {
 		return Config{}, fmt.Errorf("WG_CLIENT_DNS invalid: %w", err)
 	}
+	mtu, err := parseIntEnv("WG_CLIENT_MTU", 1380)
+	if err != nil {
+		return Config{}, fmt.Errorf("WG_CLIENT_MTU invalid: %w", err)
+	}
+	if mtu < 68 || mtu > 65535 {
+		return Config{}, errors.New("WG_CLIENT_MTU must be between 68 and 65535")
+	}
+	c.WGClientMTU = mtu
 	if err := validateIP(c.WGDeviceStartIP); err != nil {
 		return Config{}, fmt.Errorf("WG_DEVICE_START_IP invalid: %w", err)
 	}
@@ -87,6 +96,18 @@ func getenv(key, def string) string {
 		return def
 	}
 	return v
+}
+
+func parseIntEnv(key string, def int) (int, error) {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return def, nil
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 func parseBoolEnv(key string, def bool) bool {

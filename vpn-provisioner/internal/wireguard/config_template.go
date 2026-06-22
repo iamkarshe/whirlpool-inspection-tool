@@ -1,12 +1,16 @@
 package wireguard
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // ClientConfigParams are values for the client .conf template.
 type ClientConfigParams struct {
 	DevicePrivateKey    string
 	DeviceIP            string
 	ClientDNS           string
+	ClientMTU           int
 	ServerPublicKey     string
 	ServerEndpoint      string
 	ClientAllowedIPsCSV string
@@ -20,6 +24,9 @@ func RenderClientConfig(p ClientConfigParams) string {
 	b.WriteString("PrivateKey = " + strings.TrimSpace(p.DevicePrivateKey) + "\n")
 	b.WriteString("Address = " + strings.TrimSpace(p.DeviceIP) + "/32\n")
 	b.WriteString("DNS = " + strings.TrimSpace(p.ClientDNS) + "\n")
+	if p.ClientMTU > 0 {
+		b.WriteString("MTU = " + strconv.Itoa(p.ClientMTU) + "\n")
+	}
 	b.WriteString("\n")
 	b.WriteString("[Peer]\n")
 	b.WriteString("PublicKey = " + strings.TrimSpace(p.ServerPublicKey) + "\n")

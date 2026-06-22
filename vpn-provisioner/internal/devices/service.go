@@ -96,6 +96,7 @@ func (s *Service) ClientConfig(ctx context.Context, uuid string) (string, error)
 		DevicePrivateKey:    d.PrivateKeyEncrypted,
 		DeviceIP:            d.AssignedIP,
 		ClientDNS:           s.cfg.WGClientDNS,
+		ClientMTU:           s.cfg.WGClientMTU,
 		ServerPublicKey:     srvPub,
 		ServerEndpoint:      s.cfg.WGServerEndpoint,
 		ClientAllowedIPsCSV: s.cfg.WGClientAllowedIPs,
