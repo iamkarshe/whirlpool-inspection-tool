@@ -31,6 +31,51 @@ USER_GENERATE_VPN_EXAMPLE = {
     "device_type": "android",
 }
 
+USER_CSV_HEADERS = (
+    "Name",
+    "Email",
+    "Mobile",
+    "Role",
+    "Designation",
+    "Allowed Warehouse",
+)
+
+USER_CSV_UPSERT_EXAMPLE = {
+    "success": True,
+    "created": 12,
+    "updated": 4,
+    "rejected": 1,
+    "created_users": [
+        {
+            "row_number": 2,
+            "email": "susanta_palit@whirlpool.in",
+            "name": "Susanta Palit",
+            "action": "created",
+        }
+    ],
+    "updated_users": [
+        {
+            "row_number": 5,
+            "email": "mohit_trivedi_kamalsons@whirlpool.in",
+            "name": "Mohit Trivedi",
+            "action": "updated",
+        }
+    ],
+    "rejected_rows": [
+        {
+            "row_number": 8,
+            "name": "Bad Row",
+            "email": "bad@whirlpool.in",
+            "mobile": "123",
+            "role": "Operator",
+            "designation": "Operator",
+            "allowed_warehouse": "RI52",
+            "reason": "Mobile must be exactly 10 digits",
+        }
+    ],
+    "rejected_csv": "Name,Email,Mobile,Role,Designation,Allowed Warehouse,Error\\n...",
+}
+
 
 class UserCreateRequest(BaseModel):
     """Body for POST /api/users."""

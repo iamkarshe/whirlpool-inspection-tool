@@ -1,10 +1,18 @@
+import csv
+import io
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Request, Response, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from mod.api.log.audit import log_user_added, log_user_onboarded, log_user_updated
 from mod.api.middleware import auth_dependency
+from mod.api.user.csv_bulk import (
+    buildUsersCsvTemplateRows,
+    readUserCsvUpload,
+    upsertUsersFromCsv,
+)
 from mod.api.user.helper import (
     apply_user_facility_scope,
     download_user_vpn_config,
@@ -21,7 +29,12 @@ from mod.api.user.request import (
     UserGenerateVpnRequest,
     UserUpdateRequest,
 )
-from mod.api.user.response import UserListResponse, UserOnboardResponse, UserResponse
+from mod.api.user.response import (
+    UserCsvUpsertResponse,
+    UserListResponse,
+    UserOnboardResponse,
+    UserResponse,
+)
 from mod.api.user.onboard_helper import onboard_existing_user
 from mod.auth.onboarding_email import deliver_welcome_onboarding_email_after_commit
 from mod.auth.onboarding_vpn import prepare_onboarding_vpn_if_needed
@@ -93,6 +106,109 @@ def get_users(
         page=params.page,
         per_page=params.per_page,
         mapper=map_user_response,
+    )
+
+
+@router.get(
+    "/users/csv/template",
+    name="download_users_csv_template",
+    summary="Download users CSV template",
+    description=(
+        "Downloads a CSV with columns Name, Email, Mobile, Role, Designation, "
+        "and Allowed Warehouse (pipe-separated codes). Existing non-superadmin users "
+        "are included so the file can be edited and re-uploaded to upsert."
+    ),
+    responses={
+        403: {"description": "Caller is not superadmin."},
+    },
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def download_users_csv_template(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    output = io.StringIO()
+    writer = csv.writer(output)
+    for row in buildUsersCsvTemplateRows(db):
+        writer.writerow(row)
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="users_template.csv"'},
+    )
+
+
+@router.post(
+    "/users/csv/upload",
+    name="upload_users_csv",
+    summary="Bulk upsert users from CSV",
+    description=(
+        "Creates or updates users matched by email. Does not send onboarding emails. "
+        "New users receive a random password and must_change_password=true until "
+        "POST /api/users/{user_uuid}/onboard is called separately. "
+        "Role values: Admin (maps to Biz Admin), Manager, Operator. "
+        "Superadmin cannot be added via CSV. "
+        "Allowed Warehouse uses pipe-separated warehouse codes (for example RI52|RI62). "
+        "The response lists created/updated users, rejected rows with reasons, and "
+        "rejected_csv for download and re-upload after fixes."
+    ),
+    response_model=UserCsvUpsertResponse,
+    responses={
+        403: {"description": "Caller is not superadmin."},
+        409: {"description": "Unique constraint conflict during commit."},
+        422: {"description": "Unknown warehouse code or invalid CSV headers."},
+    },
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def upload_users_csv(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+) -> UserCsvUpsertResponse:
+    rows = readUserCsvUpload(file=file)
+    outcome = upsertUsersFromCsv(db, request, rows)
+    if outcome.created or outcome.updated:
+        invalidate_kpi_parameters_cache()
+    return UserCsvUpsertResponse(
+        success=outcome.success,
+        created=outcome.created,
+        updated=outcome.updated,
+        rejected=outcome.rejected,
+        created_users=[
+            {
+                "row_number": row.row_number,
+                "email": row.email,
+                "name": row.name,
+                "action": row.action,
+            }
+            for row in outcome.created_users
+        ],
+        updated_users=[
+            {
+                "row_number": row.row_number,
+                "email": row.email,
+                "name": row.name,
+                "action": row.action,
+            }
+            for row in outcome.updated_users
+        ],
+        rejected_rows=[
+            {
+                "row_number": row.row_number,
+                "name": row.name,
+                "email": row.email,
+                "mobile": row.mobile,
+                "role": row.role,
+                "designation": row.designation,
+                "allowed_warehouse": row.allowed_warehouse,
+                "reason": row.reason,
+            }
+            for row in outcome.rejected_rows
+        ],
+        rejected_csv=outcome.rejected_csv,
     )
 
 

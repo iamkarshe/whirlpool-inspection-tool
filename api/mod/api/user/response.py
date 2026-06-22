@@ -4,6 +4,8 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from mod.api.user.request import USER_CSV_UPSERT_EXAMPLE
+
 USER_RESPONSE_EXAMPLE = {
     "id": 3,
     "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -110,3 +112,62 @@ class UserListResponse(BaseModel):
     page: int = Field(..., description="Current page (1-based).")
     per_page: int = Field(..., description="Page size.")
     total_pages: int = Field(..., description="Total number of pages.")
+
+
+class UserCsvUpsertRowResult(BaseModel):
+    row_number: int = Field(..., description="1-based CSV row number (header is row 1).")
+    email: str = Field(..., description="User email from the row.")
+    name: str = Field(..., description="User name from the row.")
+    action: str = Field(..., description="Either created or updated.")
+
+
+class UserCsvRejectedRowResponse(BaseModel):
+    row_number: int = Field(..., description="1-based CSV row number (header is row 1).")
+    name: str = Field(..., description="Name from the rejected row.")
+    email: str = Field(..., description="Email from the rejected row.")
+    mobile: str = Field(..., description="Mobile from the rejected row.")
+    role: str = Field(..., description="Role label from the rejected row.")
+    designation: str = Field(..., description="Designation from the rejected row.")
+    allowed_warehouse: str = Field(
+        ...,
+        description="Allowed Warehouse cell from the rejected row.",
+    )
+    reason: str = Field(..., description="Why the row was rejected.")
+
+
+class UserCsvUpsertResponse(BaseModel):
+    """Result of POST /api/users/csv/upload."""
+
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [USER_CSV_UPSERT_EXAMPLE]}
+    )
+
+    success: bool = Field(
+        ...,
+        description="True when the upload finished without a fatal error.",
+    )
+    created: int = Field(..., description="Number of new users inserted.")
+    updated: int = Field(..., description="Number of existing users updated by email.")
+    rejected: int = Field(
+        ...,
+        description="Number of rows rejected due to validation or conflicts.",
+    )
+    created_users: list[UserCsvUpsertRowResult] = Field(
+        default_factory=list,
+        description="Rows that created new users.",
+    )
+    updated_users: list[UserCsvUpsertRowResult] = Field(
+        default_factory=list,
+        description="Rows that updated existing users.",
+    )
+    rejected_rows: list[UserCsvRejectedRowResponse] = Field(
+        default_factory=list,
+        description="Rejected rows with the original values and a reason.",
+    )
+    rejected_csv: str = Field(
+        default="",
+        description=(
+            "CSV text for rejected rows (same columns as the upload plus Error). "
+            "Save as a .csv file, fix the issues, and re-upload."
+        ),
+    )
