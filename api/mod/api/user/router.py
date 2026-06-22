@@ -25,12 +25,15 @@ from mod.api.user.helper import (
     user_with_role_and_scope,
 )
 from mod.api.user.request import (
+    USER_CSV_UPLOAD_FILE_DESCRIPTION,
     UserCreateRequest,
     UserGenerateVpnRequest,
     UserUpdateRequest,
 )
 from mod.api.user.response import (
     UserCsvUpsertResponse,
+    UserCsvUpsertRowResult,
+    UserCsvRejectedRowResponse,
     UserListResponse,
     UserOnboardResponse,
     UserResponse,
@@ -117,6 +120,14 @@ def get_users(
         "are included so the file can be edited and re-uploaded to upsert."
     ),
     responses={
+        200: {
+            "description": "CSV file containing the template header and existing users.",
+            "content": {
+                "text/csv": {
+                    "schema": {"type": "string", "format": "binary"},
+                }
+            },
+        },
         403: {"description": "Caller is not superadmin."},
     },
 )
@@ -154,6 +165,15 @@ def download_users_csv_template(
     ),
     response_model=UserCsvUpsertResponse,
     responses={
+        200: {
+            "description": "Upsert summary with accepted and rejected rows.",
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/UserCsvUpsertResponse"},
+                }
+            },
+        },
+        400: {"description": "Invalid CSV file or missing required headers."},
         403: {"description": "Caller is not superadmin."},
         409: {"description": "Unique constraint conflict during commit."},
         422: {"description": "Unknown warehouse code or invalid CSV headers."},
@@ -163,7 +183,7 @@ def download_users_csv_template(
 @check_api_role(["superadmin"])
 def upload_users_csv(
     request: Request,
-    file: UploadFile = File(...),
+    file: UploadFile = File(..., description=USER_CSV_UPLOAD_FILE_DESCRIPTION),
     db: Session = Depends(get_db),
 ) -> UserCsvUpsertResponse:
     rows = readUserCsvUpload(file=file)
@@ -176,34 +196,34 @@ def upload_users_csv(
         updated=outcome.updated,
         rejected=outcome.rejected,
         created_users=[
-            {
-                "row_number": row.row_number,
-                "email": row.email,
-                "name": row.name,
-                "action": row.action,
-            }
+            UserCsvUpsertRowResult(
+                row_number=row.row_number,
+                email=row.email,
+                name=row.name,
+                action=row.action,
+            )
             for row in outcome.created_users
         ],
         updated_users=[
-            {
-                "row_number": row.row_number,
-                "email": row.email,
-                "name": row.name,
-                "action": row.action,
-            }
+            UserCsvUpsertRowResult(
+                row_number=row.row_number,
+                email=row.email,
+                name=row.name,
+                action=row.action,
+            )
             for row in outcome.updated_users
         ],
         rejected_rows=[
-            {
-                "row_number": row.row_number,
-                "name": row.name,
-                "email": row.email,
-                "mobile": row.mobile,
-                "role": row.role,
-                "designation": row.designation,
-                "allowed_warehouse": row.allowed_warehouse,
-                "reason": row.reason,
-            }
+            UserCsvRejectedRowResponse(
+                row_number=row.row_number,
+                name=row.name,
+                email=row.email,
+                mobile=row.mobile,
+                role=row.role,
+                designation=row.designation,
+                allowed_warehouse=row.allowed_warehouse,
+                reason=row.reason,
+            )
             for row in outcome.rejected_rows
         ],
         rejected_csv=outcome.rejected_csv,

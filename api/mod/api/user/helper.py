@@ -59,6 +59,7 @@ def map_user_response(user: User) -> UserResponse:
         vpn_provisioned_at=user.vpn_provisioned_at,
         must_change_password=must_change_password,
         password_expired=password_expired,
+        onboard_email_sent_at=user.onboard_email_sent_at,
     )
 
 

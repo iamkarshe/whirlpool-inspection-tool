@@ -1,10 +1,12 @@
 import uuid as uuid_std
 from datetime import datetime
-from typing import List
+from typing import List, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from mod.api.user.request import USER_CSV_UPSERT_EXAMPLE
+
+UserCsvRowAction = Literal["created", "updated"]
 
 USER_RESPONSE_EXAMPLE = {
     "id": 3,
@@ -21,6 +23,7 @@ USER_RESPONSE_EXAMPLE = {
     "vpn_device_name": None,
     "vpn_device_type": None,
     "vpn_provisioned_at": None,
+    "onboard_email_sent_at": None,
 }
 
 
@@ -81,6 +84,13 @@ class UserResponse(BaseModel):
         default=False,
         description="True when the password exceeded PASSWORD_MAX_AGE_DAYS and must be rotated.",
     )
+    onboard_email_sent_at: datetime | None = Field(
+        default=None,
+        description=(
+            "UTC time when the welcome onboarding email was last delivered successfully. "
+            "Null means the user has not received an onboarding email yet."
+        ),
+    )
 
 
 class UserOnboardResponse(BaseModel):
@@ -115,24 +125,65 @@ class UserListResponse(BaseModel):
 
 
 class UserCsvUpsertRowResult(BaseModel):
-    row_number: int = Field(..., description="1-based CSV row number (header is row 1).")
-    email: str = Field(..., description="User email from the row.")
-    name: str = Field(..., description="User name from the row.")
-    action: str = Field(..., description="Either created or updated.")
+    """One accepted row from POST /api/users/csv/upload."""
+
+    row_number: int = Field(
+        ...,
+        description="1-based CSV row number (header is row 1).",
+        examples=[2],
+    )
+    email: EmailStr = Field(
+        ...,
+        description="User email from the row.",
+        examples=["susanta_palit@whirlpool.in"],
+    )
+    name: str = Field(..., description="User name from the row.", examples=["Susanta Palit"])
+    action: UserCsvRowAction = Field(
+        ...,
+        description="Whether the row created a new user or updated an existing user by email.",
+        examples=["created"],
+    )
 
 
 class UserCsvRejectedRowResponse(BaseModel):
-    row_number: int = Field(..., description="1-based CSV row number (header is row 1).")
-    name: str = Field(..., description="Name from the rejected row.")
-    email: str = Field(..., description="Email from the rejected row.")
-    mobile: str = Field(..., description="Mobile from the rejected row.")
-    role: str = Field(..., description="Role label from the rejected row.")
-    designation: str = Field(..., description="Designation from the rejected row.")
+    """One rejected row from POST /api/users/csv/upload."""
+
+    row_number: int = Field(
+        ...,
+        description="1-based CSV row number (header is row 1).",
+        examples=[8],
+    )
+    name: str = Field(..., description="Name from the rejected row.", examples=["Bad Row"])
+    email: str = Field(
+        ...,
+        description="Email from the rejected row (may be invalid).",
+        examples=["bad@whirlpool.in"],
+    )
+    mobile: str = Field(
+        ...,
+        description="Mobile from the rejected row.",
+        examples=["123"],
+    )
+    role: str = Field(
+        ...,
+        description="Role label from the rejected row.",
+        examples=["Operator"],
+    )
+    designation: str = Field(
+        ...,
+        description="Designation from the rejected row.",
+        examples=["Operator"],
+    )
     allowed_warehouse: str = Field(
         ...,
         description="Allowed Warehouse cell from the rejected row.",
+        examples=["RI52"],
     )
-    reason: str = Field(..., description="Why the row was rejected.")
+    reason: str = Field(
+        ...,
+        description="Why the row was rejected.",
+        examples=["Mobile must be exactly 10 digits"],
+    )
 
 
 class UserCsvUpsertResponse(BaseModel):

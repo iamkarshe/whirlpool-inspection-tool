@@ -40,6 +40,21 @@ USER_CSV_HEADERS = (
     "Allowed Warehouse",
 )
 
+USER_CSV_ROLE_VALUES = (
+    "Admin (maps to biz-admin)",
+    "Manager",
+    "Operator",
+)
+
+USER_CSV_UPLOAD_FILE_DESCRIPTION = (
+    "UTF-8 CSV file with header row. Required columns: "
+    + ", ".join(USER_CSV_HEADERS)
+    + ". Role must be one of: "
+    + ", ".join(USER_CSV_ROLE_VALUES)
+    + ". Allowed Warehouse is pipe-separated (for example RI52|RI62). "
+    + "Superadmin cannot be imported. Extra columns are ignored."
+)
+
 USER_CSV_UPSERT_EXAMPLE = {
     "success": True,
     "created": 12,

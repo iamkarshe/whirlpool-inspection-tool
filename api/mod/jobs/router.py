@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Header, Request
+import uuid
 from sqlalchemy.orm import Session
 
 from mod.jobs.helper import (
@@ -10,7 +11,11 @@ from mod.jobs.onboard_emails import (
     BULK_ONBOARD_EMAILS_JOB_NAME,
     runBulkOnboardEmails,
 )
-from mod.jobs.response import BulkOnboardEmailsJobResponse, JobExecutionResponse
+from mod.jobs.response import (
+    BulkOnboardEmailItemResponse,
+    BulkOnboardEmailsJobResponse,
+    JobExecutionResponse,
+)
 from mod.api.user.onboard_delivery import listUsersPendingOnboardEmail
 from utils.env import is_celery_broker_configured
 from utils.db import get_db
@@ -106,6 +111,16 @@ def job_resolve_pending_ip_metadata(
     ),
     response_model=BulkOnboardEmailsJobResponse,
     responses={
+        200: {
+            "description": "Bulk onboard email job result or enqueue acknowledgement.",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/BulkOnboardEmailsJobResponse"
+                    },
+                }
+            },
+        },
         401: {"description": "Missing or invalid x-job-execute-token."},
         503: {"description": "JOB_EXECUTE_TOKEN not configured."},
     },
@@ -158,13 +173,13 @@ def job_bulk_onboard_emails(
         logged=result.logged,
         enqueued=False,
         results=[
-            {
-                "user_uuid": item.user_uuid,
-                "email": item.email,
-                "name": item.name,
-                "welcome_email_sent": item.welcome_email_sent,
-                "error": item.error,
-            }
+            BulkOnboardEmailItemResponse(
+                user_uuid=uuid.UUID(item.user_uuid),
+                email=item.email,
+                name=item.name,
+                welcome_email_sent=item.welcome_email_sent,
+                error=item.error,
+            )
             for item in result.results
         ],
     )
