@@ -1,6 +1,110 @@
 {
   "notes": [
     {
+      "id": "2026-06-23",
+      "version": "2026-06-23",
+      "released_at": "2026-06-23",
+      "title": "Deploy 2026-06-23",
+      "features": [
+        {
+          "text": "[feat] Add server health router and integrate psutil for system monitoring; enhance user CSV upload functionality with detailed error handling and user guidance.",
+          "hash": "3fe63f1"
+        },
+        {
+          "text": "[feat] Implement two-factor authentication support: Added user model fields for two-factor settings, integrated two-factor routes and request/response structures, and enhanced login flow to accommodate TOTP verification.",
+          "hash": "e81859d"
+        },
+        {
+          "text": "[feat] Add two-factor authentication reset functionality: Implemented user-specific 2FA reset endpoint, enhanced request/response models, and added password verification for secure resets.",
+          "hash": "05311c8"
+        },
+        {
+          "text": "[feat] API Orval updated.",
+          "hash": "1cf7550"
+        },
+        {
+          "text": "[feat] Update NDA proposal document for CERT-In reporting requirements; add server health page and navigation items in the admin dashboard.",
+          "hash": "8a31d8b"
+        },
+        {
+          "text": "[feat] Enhance login and user management with two-factor authentication: Added MFA setup and verification flows, integrated 2FA reset functionality, and updated user interface components for better user experience.",
+          "hash": "ff00e80"
+        },
+        {
+          "text": "[feat] Integrate Network Status Provider and update health check logic: Wrapped main app components with NetworkStatusProvider, updated header positioning, and refactored health check functions to utilize network health checks.",
+          "hash": "0f2eadf"
+        },
+        {
+          "text": "[feat] Add production URL configuration and update app structure: Introduced VITE_PROD_URL in environment settings, replaced NetworkStatusProvider with AppTopBannersProvider, and integrated UAT environment notices across various components.",
+          "hash": "ac7cc13"
+        },
+        {
+          "text": "[feat] Add product barcode support in inspection API and UI: Updated inspection models to include product barcode, modified search parameters, and enhanced inspections data table to display barcode information.",
+          "hash": "401f4fe"
+        },
+        {
+          "text": "[feat] Enhance inspections page with date range selection and apply functionality: Added date range picker, apply button, and logic to manage date range state, improving user experience for filtering inspections.",
+          "hash": "e2e856c"
+        },
+        {
+          "text": "[feat] Refactor date range selection across dashboard pages: Replaced CalendarDateRangePicker with AppliedDateRangePicker, implementing a unified date range management system for improved user experience and consistency in filtering across various components.",
+          "hash": "d29014c"
+        },
+        {
+          "text": "[refactor] Simplify CSV upload processing in plant, warehouse, and SKU APIs: Replaced repetitive validation and insertion logic with a unified `bulk_upsert_facility_rows` function and introduced CSV header normalization utilities for improved data handling.",
+          "hash": "51b3a4e"
+        },
+        {
+          "text": "[feat] Enhance CSV user upload process: Introduced `ignore_unknown_facilities` parameter to allow user creation/update with non-existent warehouse and plant codes, improving flexibility in CSV handling and error management.",
+          "hash": "de4b7ec"
+        },
+        {
+          "text": "[feat] Integrate user onboarding delivery: Added `deliverUserOnboarding` import to user router and removed unused two-factor reset import, streamlining user management functionality.",
+          "hash": "f0a39cd"
+        },
+        {
+          "text": "[feat] Introduce user name normalization and enhance email handling: Added `normalize_user_name` function for consistent user name formatting and updated user creation and update processes to utilize normalized email and name, improving data integrity in user management.",
+          "hash": "7d60439"
+        }
+      ]
+    },
+    {
+      "id": "2026-06-22",
+      "version": "2026-06-22",
+      "released_at": "2026-06-22",
+      "title": "Deploy 2026-06-22",
+      "features": [
+        {
+          "text": "[chores] Folder re-structure.",
+          "hash": "2cc6fa2"
+        },
+        {
+          "text": "[refactor] Enhance VPN filename generation: Introduce user-specific naming for VPN configuration and QR code files across API and UI components, improving clarity and consistency in user onboarding.",
+          "hash": "23153c9"
+        },
+        {
+          "text": "[feat] Implement CSV upload and download functionality for bulk user management: Added endpoints to download a user CSV template and upload a CSV for bulk upsert operations, including detailed response structures for created, updated, and rejected users.",
+          "hash": "8518ec0"
+        },
+        {
+          "text": "[feat] Implement bulk onboarding email functionality: Added new endpoint for sending welcome onboarding emails to pending users, with support for retry logic and integration with Celery for asynchronous processing. Enhanced user model to track email delivery timestamps and updated related response structures.",
+          "hash": "f7f5ec5"
+        },
+        {
+          "text": "[feat] Enhance user onboarding and CSV upload functionality: Added onboarding email timestamp to user response, defined role values for CSV uploads, and improved response structures for bulk user management, including detailed examples and descriptions.",
+          "hash": "d989c8e"
+        },
+        {
+          "text": "[vpn] MTU added.",
+          "hash": "dc4ecf4"
+        },
+        {
+          "text": "[feat] Show outer inner product side images in inspection tabs",
+          "hash": "c93594c"
+        }
+      ]
+    },
+    {
       "id": "2026-06-19",
       "version": "2026-06-19",
       "released_at": "2026-06-19",
@@ -1110,5 +1214,5 @@
       ]
     }
   ],
-  "last_commit": "4f214949b382f6c1a8da93befe9f2d5e8b2dcd76"
+  "last_commit": "7d604391c949746b3397687cd76763ac826f87e9"
 }

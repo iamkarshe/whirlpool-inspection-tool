@@ -167,6 +167,8 @@ propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
+psutil==7.2.2
+    # via api (pyproject.toml)
 psycopg==3.3.4
     # via api (pyproject.toml)
 psycopg-binary==3.3.4
@@ -194,6 +196,8 @@ pydantic-settings==2.14.1
 pygments==2.20.0
     # via rich
 pyjwt==2.13.0
+    # via api (pyproject.toml)
+pyotp==2.10.0
     # via api (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
