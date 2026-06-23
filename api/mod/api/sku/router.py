@@ -240,38 +240,52 @@ def upload_skus_csv(
         return {
             "success": True,
             "created_categories": 0,
+            "updated_categories": 0,
             "created_products": 0,
+            "updated_products": 0,
             "created_skus": 0,
+            "updated_skus": 0,
             "skipped": skipped,
             "errors": errors,
         }
 
     try:
         category_rows = list(category_rows_by_key.values())
+        composite_keys = list(category_rows_by_key.keys())
 
-        category_stmt = (
-            insert(ProductCategory)
-            .values(category_rows)
-            .on_conflict_do_nothing(
-                index_elements=[
-                    ProductCategory.category_type,
-                    ProductCategory.sub_category_type,
-                    ProductCategory.category_code,
-                    ProductCategory.category_description,
-                ],
-            )
-            .returning(
-                ProductCategory.id,
+        existing_category_keys = {
+            (ct, sct, cc, cd)
+            for ct, sct, cc, cd in db.query(
                 ProductCategory.category_type,
                 ProductCategory.sub_category_type,
                 ProductCategory.category_code,
                 ProductCategory.category_description,
             )
+            .filter(
+                tuple_(
+                    ProductCategory.category_type,
+                    ProductCategory.sub_category_type,
+                    ProductCategory.category_code,
+                    ProductCategory.category_description,
+                ).in_(composite_keys)
+            )
+            .all()
+        }
+
+        category_stmt = insert(ProductCategory).values(category_rows)
+        category_stmt = category_stmt.on_conflict_do_update(
+            index_elements=[
+                ProductCategory.category_type,
+                ProductCategory.sub_category_type,
+                ProductCategory.category_code,
+                ProductCategory.category_description,
+            ],
+            set_={
+                "name": category_stmt.excluded.name,
+                "is_active": category_stmt.excluded.is_active,
+            },
         )
-
-        inserted_categories = db.execute(category_stmt).all()
-
-        composite_keys = list(category_rows_by_key.keys())
+        db.execute(category_stmt)
 
         existing_categories = (
             db.query(
@@ -323,48 +337,93 @@ def upload_skus_csv(
             for row in product_rows
         ]
 
-        product_stmt = (
-            insert(Product)
-            .values(final_product_rows)
-            .on_conflict_do_nothing(
-                index_elements=[Product.material_code],
+        existing_product_codes = {
+            code
+            for (code,) in db.query(Product.material_code)
+            .filter(
+                Product.material_code.in_(
+                    [row["material_code"] for row in final_product_rows]
+                )
             )
-            .returning(Product.id)
+            .all()
+        }
+
+        product_stmt = insert(Product).values(final_product_rows)
+        product_stmt = product_stmt.on_conflict_do_update(
+            index_elements=[Product.material_code],
+            set_={
+                "product_category_id": product_stmt.excluded.product_category_id,
+                "material_description": product_stmt.excluded.material_description,
+                "is_active": product_stmt.excluded.is_active,
+            },
         )
+        db.execute(product_stmt)
 
-        inserted_products = db.execute(product_stmt).all()
+        existing_sku_codes = {
+            code
+            for (code,) in db.query(Sku.material_code)
+            .filter(Sku.material_code.in_([row["material_code"] for row in sku_rows]))
+            .all()
+        }
 
-        sku_stmt = (
-            insert(Sku)
-            .values(sku_rows)
-            .on_conflict_do_nothing(
-                index_elements=[Sku.material_code],
-            )
-            .returning(Sku.id)
+        sku_stmt = insert(Sku).values(sku_rows)
+        sku_stmt = sku_stmt.on_conflict_do_update(
+            index_elements=[Sku.material_code],
+            set_={
+                "category": sku_stmt.excluded.category,
+                "sub_category": sku_stmt.excluded.sub_category,
+                "category_code": sku_stmt.excluded.category_code,
+                "category_description": sku_stmt.excluded.category_description,
+                "material_description": sku_stmt.excluded.material_description,
+                "source_data": sku_stmt.excluded.source_data,
+                "is_active": sku_stmt.excluded.is_active,
+            },
         )
+        db.execute(sku_stmt)
 
-        inserted_skus = db.execute(sku_stmt).all()
+        created_categories = len(
+            [key for key in composite_keys if key not in existing_category_keys]
+        )
+        updated_categories = len(category_rows) - created_categories
+        created_products = len(
+            [
+                row
+                for row in final_product_rows
+                if row["material_code"] not in existing_product_codes
+            ]
+        )
+        updated_products = len(final_product_rows) - created_products
+        created_skus = len(
+            [row for row in sku_rows if row["material_code"] not in existing_sku_codes]
+        )
+        updated_skus = len(sku_rows) - created_skus
 
         audit_master_from_request(
             db,
             request,
             resource_type="sku",
             resource_key="bulk_csv",
-            operation="imported",
+            operation="upserted",
             summary=(
-                "SKU CSV import: "
-                f"{len(inserted_categories)} categories, "
-                f"{len(inserted_products)} products, "
-                f"{len(inserted_skus)} SKUs"
+                "SKU CSV upsert: "
+                f"{created_categories} new categories, "
+                f"{updated_categories} updated categories, "
+                f"{created_products} new products, "
+                f"{updated_products} updated products, "
+                f"{created_skus} new SKUs, "
+                f"{updated_skus} updated SKUs"
             ),
         )
         db.commit()
 
         return {
             "success": True,
-            "created_categories": len(inserted_categories),
-            "created_products": len(inserted_products),
-            "created_skus": len(inserted_skus),
+            "created_categories": created_categories,
+            "updated_categories": updated_categories,
+            "created_products": created_products,
+            "updated_products": updated_products,
+            "created_skus": created_skus,
+            "updated_skus": updated_skus,
             "skipped": skipped,
             "errors": errors,
         }

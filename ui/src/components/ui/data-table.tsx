@@ -18,7 +18,6 @@ import * as React from "react";
 import type { DateRange } from "react-day-picker";
 
 import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
-import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

@@ -75,6 +75,22 @@ def to_proper_case(value: str) -> str:
     return " ".join(word.capitalize() for word in value.strip().split())
 
 
+def normalize_csv_header(name: str | None) -> str:
+    if name is None:
+        return ""
+    return name.strip().lower()
+
+
+def normalize_csv_row(row: dict[str, str | None]) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for raw_key, raw_value in row.items():
+        key = normalize_csv_header(raw_key)
+        if not key:
+            continue
+        normalized[key] = (raw_value or "").strip()
+    return normalized
+
+
 def read_csv_upload(
     file: UploadFile, required_headers: set[str]
 ) -> list[dict[str, str]]:
@@ -88,14 +104,20 @@ def read_csv_upload(
     if reader.fieldnames is None:
         raise HTTPException(status_code=400, detail="CSV is empty")
 
-    missing_headers = required_headers.difference(set(reader.fieldnames))
+    normalized_headers = {
+        normalize_csv_header(header)
+        for header in reader.fieldnames
+        if normalize_csv_header(header)
+    }
+    required_normalized = {header.strip().lower() for header in required_headers}
+    missing_headers = required_normalized.difference(normalized_headers)
     if missing_headers:
         raise HTTPException(
             status_code=400,
             detail=f"Missing required headers: {', '.join(sorted(missing_headers))}",
         )
 
-    return [dict(row) for row in reader]
+    return [normalize_csv_row(row) for row in reader]
 
 
 def parse_yes_no_outcome(value: str | None) -> str | None:

@@ -4,8 +4,6 @@ import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from mod.api.facility_metrics import (
@@ -31,6 +29,7 @@ from utils.common import read_csv_upload, to_proper_case
 from utils.critical_admin_delete import require_critical_admin_delete_token
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
+from utils.facility_csv_upsert import bulk_upsert_facility_rows, parse_facility_csv_row
 from utils.roles import ROLES_MASTER_READ, ROLES_MASTER_WRITE
 from utils.pagination import (
     PaginationParams,
@@ -345,96 +344,34 @@ def upload_plants_csv(
     seen_codes: set[str] = set()
 
     for row_number, row in enumerate(rows, start=2):
-        plant_code = (row.get("plant_code") or "").strip()
-        name = (row.get("name") or "").strip()
-        address = (row.get("address") or "").strip()
-        city = to_proper_case((row.get("city") or ""))
-        lat_raw = (row.get("lat") or "").strip()
-        lng_raw = (row.get("lng") or "").strip()
-        postal_code_raw = (row.get("postal_code") or "").strip()
-        is_active_raw = (row.get("is_active") or "true").strip().lower()
-
-        if not all(
-            [plant_code, name, address, city, lat_raw, lng_raw, postal_code_raw]
-        ):
-            skipped += 1
-            errors.append(f"Row {row_number}: required field is missing")
-            continue
-
-        if plant_code in seen_codes:
-            skipped += 1
-            errors.append(
-                f"Row {row_number}: duplicate plant_code in same upload ({plant_code})"
-            )
-            continue
-        seen_codes.add(plant_code)
-
-        try:
-            lat = float(lat_raw)
-            lng = float(lng_raw)
-            postal_code = int(postal_code_raw)
-            if postal_code < 0:
-                raise ValueError("postal code must be non-negative")
-        except ValueError as ex:
-            skipped += 1
-            errors.append(f"Row {row_number}: invalid numeric value ({str(ex)})")
-            continue
-
-        is_active = is_active_raw not in {"false", "0", "no"}
-        valid_rows.append(
-            {
-                "plant_code": plant_code,
-                "name": name,
-                "address": address,
-                "city": city,
-                "lat": lat,
-                "lng": lng,
-                "postal_code": str(postal_code),
-                "is_active": is_active,
-            }
+        parsed_row, error_message = parse_facility_csv_row(
+            row_number,
+            row,
+            code_field="plant_code",
+            seen_codes=seen_codes,
         )
+        if error_message:
+            skipped += 1
+            errors.append(error_message)
+            continue
+        valid_rows.append(parsed_row)
 
     if valid_rows:
-        existing_codes = {
-            code
-            for (code,) in db.query(Plant.plant_code)
-            .filter(Plant.plant_code.in_([r["plant_code"] for r in valid_rows]))
-            .all()
-        }
-
-        stmt = insert(Plant).values(valid_rows)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[Plant.plant_code],
-            set_={
-                "name": stmt.excluded.name,
-                "address": stmt.excluded.address,
-                "city": stmt.excluded.city,
-                "lat": stmt.excluded.lat,
-                "lng": stmt.excluded.lng,
-                "postal_code": stmt.excluded.postal_code,
-                "is_active": stmt.excluded.is_active,
-            },
+        created, updated = bulk_upsert_facility_rows(
+            db,
+            Plant,
+            code_attr="plant_code",
+            valid_rows=valid_rows,
         )
-        try:
-            db.execute(stmt)
-            audit_master_from_request(
-                db,
-                request,
-                resource_type="plant",
-                resource_key="bulk_csv",
-                operation="upserted",
-                summary=f"Plants CSV upsert: {len(valid_rows)} row(s)",
-            )
-            db.commit()
-        except IntegrityError as ex:
-            db.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail=f"CSV upsert failed due to unique constraint conflict: {str(ex.orig)}",
-            )
-
-        created = len([r for r in valid_rows if r["plant_code"] not in existing_codes])
-        updated = len(valid_rows) - created
+        audit_master_from_request(
+            db,
+            request,
+            resource_type="plant",
+            resource_key="bulk_csv",
+            operation="upserted",
+            summary=f"Plants CSV upsert: {len(valid_rows)} row(s)",
+        )
+        db.commit()
     else:
         created = 0
         updated = 0
