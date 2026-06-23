@@ -22,6 +22,7 @@ from mod.api.user.helper import (
     map_user_response,
     revoke_user_vpn_by_uuid,
     revoke_user_vpn_profile,
+    reset_user_two_factor_for_admin,
     user_with_role_and_scope,
 )
 from mod.api.user.request import (
@@ -38,7 +39,8 @@ from mod.api.user.response import (
     UserOnboardResponse,
     UserResponse,
 )
-from mod.api.user.onboard_delivery import deliverUserOnboarding
+from mod.auth.two_factor_helper import reset_user_two_factor
+from mod.auth.response import TwoFactorResetResponse
 from mod.model import Role, User
 from utils.common import ensure_allowed_registration_email
 from utils.db import get_db
@@ -477,6 +479,40 @@ def revoke_user_vpn(
     return map_user_response(user)
 
 
+@router.post(
+    "/users/{user_uuid}/reset-2fa",
+    name="reset_user_two_factor",
+    summary="Reset user two-factor authentication",
+    description=(
+        "Clears the user's TOTP secret and disables 2FA so they can enroll again. "
+        "Use when a user lost access to their authenticator app. "
+        "Superadmin accounts cannot be reset via this API."
+    ),
+    response_model=TwoFactorResetResponse,
+    responses={
+        403: {"description": "Target user is superadmin."},
+        404: {"description": "User not found."},
+    },
+)
+@exception_handler_decorator
+@check_api_role(["superadmin"])
+def reset_user_two_factor_route(
+    request: Request,
+    user_uuid: uuid.UUID = Path(..., description="User UUID."),
+    db: Session = Depends(get_db),
+) -> TwoFactorResetResponse:
+    user = reset_user_two_factor_for_admin(db, user_uuid)
+    log_user_updated(
+        db,
+        actor_user_id=int(request.state.user_id),
+        target_user_uuid=str(user.uuid),
+        target_email=user.email,
+        summary=f"Two-factor authentication reset for {user.name} ({user.email})",
+    )
+    db.commit()
+    return TwoFactorResetResponse(user_uuid=user.uuid)
+
+
 @router.put(
     "/users/{user_uuid}",
     name="update_user",
@@ -565,6 +601,9 @@ def update_user(
         warehouse_codes=payload.allowed_warehouse,
         plant_codes=payload.allowed_plants,
     )
+
+    if payload.two_factor_enforced is not None:
+        user.two_factor_enforced = bool(payload.two_factor_enforced)
 
     changed_fields = list(payload.model_dump(exclude_unset=True).keys())
     if payload.is_active is False:

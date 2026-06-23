@@ -315,6 +315,17 @@ class User(TimestampSoftDeleteMixin, Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    two_factor_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    two_factor_secret: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    two_factor_enforced: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    two_factor_enabled_at: Mapped[Any | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     role: Mapped["Role"] = relationship(back_populates="users")
     devices: Mapped[list["Device"]] = relationship(back_populates="user")

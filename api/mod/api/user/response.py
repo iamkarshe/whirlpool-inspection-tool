@@ -91,6 +91,14 @@ class UserResponse(BaseModel):
             "Null means the user has not received an onboarding email yet."
         ),
     )
+    two_factor_enabled: bool = Field(
+        default=False,
+        description="Whether TOTP two-factor authentication is active.",
+    )
+    two_factor_enforced: bool = Field(
+        default=False,
+        description="Whether an administrator requires this user to enroll in 2FA.",
+    )
 
 
 class UserOnboardResponse(BaseModel):

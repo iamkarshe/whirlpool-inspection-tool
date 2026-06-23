@@ -30,6 +30,8 @@ from mod.app.router import router as app_router
 from mod.auth.device_router import router as auth_device_router
 from mod.auth.password_router import router as auth_password_router
 from mod.auth.router import router as auth_router
+from mod.auth.two_factor_router import authenticated_router as auth_two_factor_authenticated_router
+from mod.auth.two_factor_router import router as auth_two_factor_router
 from mod.jobs.router import router as jobs_router
 from mod.okta.router import router as okta_sso_router
 from mod.push_notification.router import router as push_notification_router
@@ -117,6 +119,8 @@ app.add_middleware(AuthAttemptRemainingMiddleware)
 
 # API routes
 app.include_router(auth_router)
+app.include_router(auth_two_factor_router)
+app.include_router(auth_two_factor_authenticated_router)
 app.include_router(app_router)
 app.include_router(auth_password_router)
 app.include_router(auth_device_router)

@@ -9,13 +9,13 @@ from sqlalchemy.orm import Session
 from mod.auth.actions import build_login_device_metadata, log_login_failure_action
 from utils.common import normalize_login_email
 from mod.auth.helper import (
-    complete_login,
     ensure_user_is_active,
     get_request_client_context,
     get_user_for_login,
     log_user_not_found_and_raise,
     verify_sso_login_token,
 )
+from mod.auth.two_factor_helper import begin_login_after_credentials_verified
 from mod.auth.openapi_responses import (
     FORGOT_PASSWORD_OPENAPI_RESPONSES,
     RESET_PASSWORD_OPENAPI_RESPONSES,
@@ -97,7 +97,7 @@ def login(
             detail="Invalid email or password",
         )
 
-    login_response = complete_login(
+    login_response = begin_login_after_credentials_verified(
         db,
         user,
         ctx,
@@ -106,7 +106,8 @@ def login(
         login_method="password",
         login_metadata=login_metadata,
     )
-    reset_auth_rate_limit_after_successful_login(request, response)
+    if login_response.access_token:
+        reset_auth_rate_limit_after_successful_login(request, response)
     return login_response
 
 
@@ -151,7 +152,7 @@ def login_token(
         login_metadata=login_metadata,
     )
 
-    login_response = complete_login(
+    login_response = begin_login_after_credentials_verified(
         db,
         user,
         ctx,
@@ -160,7 +161,8 @@ def login_token(
         login_method="sso",
         login_metadata=login_metadata,
     )
-    reset_auth_rate_limit_after_successful_login(request, response)
+    if login_response.access_token:
+        reset_auth_rate_limit_after_successful_login(request, response)
     return login_response
 
 

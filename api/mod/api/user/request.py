@@ -203,6 +203,13 @@ class UserUpdateRequest(BaseModel):
         default=None,
         description="Replaces plant scope when provided. Omit to keep existing.",
     )
+    two_factor_enforced: bool | None = Field(
+        default=None,
+        description=(
+            "When true, the user must enroll in TOTP two-factor authentication. "
+            "When false, removes the admin requirement (does not disable an existing enrollment)."
+        ),
+    )
 
     @field_validator("mobile_number")
     @classmethod

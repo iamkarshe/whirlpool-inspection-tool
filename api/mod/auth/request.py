@@ -12,6 +12,23 @@ RESET_PASSWORD_REQUEST_EXAMPLE = {
     "confirm_password": "",
 }
 
+LOGIN_VERIFY_2FA_REQUEST_EXAMPLE = {
+    "mfa_pending_token": "",
+    "totp_code": "123456",
+}
+
+LOGIN_2FA_SETUP_REQUEST_EXAMPLE = {
+    "mfa_pending_token": "",
+}
+
+TWO_FACTOR_CONFIRM_REQUEST_EXAMPLE = {
+    "totp_code": "123456",
+}
+
+TWO_FACTOR_DISABLE_REQUEST_EXAMPLE = {
+    "totp_code": "123456",
+}
+
 
 class LoginDeviceInfo(BaseModel):
     imei: str = Field(min_length=3, max_length=48)
@@ -42,6 +59,60 @@ class ResolveDevicesRequest(BaseModel):
     keep_device_uuids: list[uuid.UUID] = Field(
         min_length=1,
         description="Device UUIDs to keep active; all other active devices are deregistered.",
+    )
+
+
+class LoginVerifyTwoFactorRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [LOGIN_VERIFY_2FA_REQUEST_EXAMPLE]}
+    )
+
+    mfa_pending_token: str = Field(
+        min_length=16,
+        description="Token returned from POST /auth/login when mfa_required or mfa_setup_required is true.",
+    )
+    totp_code: str = Field(
+        min_length=6,
+        max_length=8,
+        description="Six-digit code from the authenticator app.",
+        examples=["123456"],
+    )
+
+
+class LoginTwoFactorSetupRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [LOGIN_2FA_SETUP_REQUEST_EXAMPLE]}
+    )
+
+    mfa_pending_token: str = Field(
+        min_length=16,
+        description="Token returned from POST /auth/login when mfa_setup_required is true.",
+    )
+
+
+class TwoFactorConfirmRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [TWO_FACTOR_CONFIRM_REQUEST_EXAMPLE]}
+    )
+
+    totp_code: str = Field(
+        min_length=6,
+        max_length=8,
+        description="Six-digit code from the authenticator app.",
+        examples=["123456"],
+    )
+
+
+class TwoFactorDisableRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [TWO_FACTOR_DISABLE_REQUEST_EXAMPLE]}
+    )
+
+    totp_code: str = Field(
+        min_length=6,
+        max_length=8,
+        description="Current authenticator code required to disable 2FA.",
+        examples=["123456"],
     )
 
 

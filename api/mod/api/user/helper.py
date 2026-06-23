@@ -14,7 +14,9 @@ from mod.api.vpn.helper import (
     vpn_qr_filename,
 )
 from mod.model import Plant, User, Warehouse
+from mod.auth.two_factor_helper import reset_user_two_factor
 from utils.password_policy import resolve_password_change_flags
+from utils.two_factor import user_has_two_factor_enabled, user_has_two_factor_enforced
 
 
 def forbid_superadmin_role_assignment(role_row: object) -> None:
@@ -60,6 +62,8 @@ def map_user_response(user: User) -> UserResponse:
         must_change_password=must_change_password,
         password_expired=password_expired,
         onboard_email_sent_at=user.onboard_email_sent_at,
+        two_factor_enabled=user_has_two_factor_enabled(user),
+        two_factor_enforced=user_has_two_factor_enforced(user),
     )
 
 
@@ -207,3 +211,19 @@ def apply_user_facility_scope(
                 detail=f"Unknown plant_code(s): {missing}",
             )
         user.plants_scope = rows
+
+
+def reset_user_two_factor_for_admin(db: Session, user_uuid: uuid.UUID) -> User:
+    user = user_with_role_and_scope(db, user_uuid)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if (user.role.role or "").lower() == "superadmin":
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot reset two-factor authentication for superadmin accounts",
+        )
+
+    reset_user_two_factor(user)
+    db.flush()
+    return user

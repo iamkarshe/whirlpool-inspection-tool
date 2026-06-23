@@ -97,6 +97,62 @@ class LoginResponse(BaseModel):
             "when CHANGE_PASSWORD_OTP_REQUIRED is enabled (default true)."
         ),
     )
+    mfa_required: bool = Field(
+        default=False,
+        description=(
+            "True when password/SSO verification succeeded but the user must submit "
+            "a TOTP code via POST /auth/login/verify-2fa before receiving access_token."
+        ),
+    )
+    mfa_setup_required: bool = Field(
+        default=False,
+        description=(
+            "True when admin-enforced 2FA is enabled but the user has not enrolled yet. "
+            "Call POST /auth/login/2fa/setup then POST /auth/login/verify-2fa."
+        ),
+    )
+    mfa_pending_token: str | None = Field(
+        default=None,
+        description="Short-lived token for the second login step. Omitted when login is complete.",
+    )
+    two_factor_enabled: bool = Field(
+        default=False,
+        description="Whether TOTP two-factor authentication is active for this user.",
+    )
+    two_factor_enforced: bool = Field(
+        default=False,
+        description="Whether an administrator requires this user to use two-factor authentication.",
+    )
+
+
+class TwoFactorSetupStartResponse(BaseModel):
+    secret_key: str = Field(
+        description="Base32 secret for manual entry in an authenticator app.",
+    )
+    provisioning_uri: str = Field(
+        description="otpauth:// URI for QR code generation in the UI.",
+    )
+    issuer: str = Field(description="Issuer label shown in the authenticator app.")
+
+
+class TwoFactorStatusResponse(BaseModel):
+    two_factor_enabled: bool
+    two_factor_enforced: bool
+    two_factor_setup_required: bool
+
+
+class TwoFactorConfirmResponse(BaseModel):
+    message: str = "Two-factor authentication enabled"
+    two_factor_enabled: bool = True
+
+
+class TwoFactorDisableResponse(BaseModel):
+    message: str = "Two-factor authentication disabled"
+
+
+class TwoFactorResetResponse(BaseModel):
+    message: str = "Two-factor authentication reset for user"
+    user_uuid: uuid.UUID
 
 
 class ResolveDevicesResponse(BaseModel):

@@ -27,6 +27,10 @@ from mod.auth.session import create_user_session, deregister_device
 from mod.model import Device, User
 from utils.password_policy import resolve_password_change_flags
 from utils.change_password_otp import is_change_password_otp_required_for_user
+from utils.two_factor import (
+    user_has_two_factor_enabled,
+    user_has_two_factor_enforced,
+)
 from utils.common import normalize_login_email
 from utils.env import get_allow_multi_login
 from utils.ip_address import get_client_ip_address
@@ -125,6 +129,11 @@ def build_login_response(
         must_change_password=must_change_password,
         password_expired=password_expired,
         change_password_otp_required=is_change_password_otp_required_for_user(user),
+        mfa_required=False,
+        mfa_setup_required=False,
+        mfa_pending_token=None,
+        two_factor_enabled=user_has_two_factor_enabled(user),
+        two_factor_enforced=user_has_two_factor_enforced(user),
     )
 
 
