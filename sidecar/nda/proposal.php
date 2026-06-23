@@ -50,7 +50,7 @@ $timeline = [
   ['Day 1',         'Onboarding, NDA confirmation, authorization, UAT URL sharing, test credentials sharing, and scope confirmation.'],
   ['Day 2 – Day 3', 'VAPT activity on the approved target.'],
   ['Day 4 – Day 5', 'Initial report submission and remediation by the ' . $customer . ' team.'],
-  ['Day 6 – Day 7', 'Retesting, closure validation, and CERT-In aligned / Safe-to-Host report support.'],
+  ['Day 6 – Day 7', 'Retesting, closure validation, and CERT-In aligned / empanelled report support.'],
 ];
 ?>
 <!doctype html>
@@ -99,7 +99,7 @@ $timeline = [
         <div class="role">Customer</div>
         <div class="nm"><?= e($customer) ?></div>
       </div>
-      <div class="amp">&rarr;</div>
+      <div class="amp">&amp;</div>
       <div class="pp">
         <div class="role">Proposed Security Partner</div>
         <div class="nm"><?= e($partner) ?></div>
@@ -145,7 +145,7 @@ $timeline = [
   <h2><span class="sn">1</span> Background</h2>
   <p><?= e($customer) ?> intends to engage <?= e($partner) ?> for a professional Vulnerability Assessment and Penetration Testing (VAPT) activity for a web application and associated APIs.</p>
   <p>The objective of this engagement is to identify security weaknesses, validate exploitable risks, document findings with practical proof-of-concept evidence, and provide remediation guidance that can be acted upon by the development team.</p>
-  <p>The engagement is expected to support application security assurance, management review, remediation planning, and CERT-In aligned reporting / Safe-to-Host support wherever applicable.</p>
+  <p>The engagement is expected to support application security assurance, management review, remediation planning, and a mandatory CERT-In aligned / empanelled report.</p>
 
   <h2><span class="sn">2</span> Application Target</h2>
   <p>The application target shall be confirmed before the start of testing. Current application scope discussed:</p>
@@ -160,7 +160,7 @@ $timeline = [
       <tr><td class="k">UAT Hosting</td><td><?= e(v($sc,'uat_environment','Hostinger')) ?></td></tr>
       <tr><td class="k">Production Hosting</td><td><?= e(v($sc,'production_environment','AWS')) ?></td></tr>
       <tr><td class="k">Credentials</td><td>Test credentials to be provided by <?= e($customer) ?></td></tr>
-      <tr><td class="k">Compliance Requirement</td><td>CERT-In / Safe-to-Host report support, wherever applicable</td></tr>
+      <tr><td class="k">Compliance Requirement</td><td>CERT-In aligned / empanelled report &mdash; <b>mandatory</b></td></tr>
     </tbody>
   </table>
   <p class="muted">Final application URL, API endpoints, test user credentials, restricted areas, and approved testing window shall be shared after NDA completion and written authorization.</p>
@@ -176,7 +176,7 @@ $timeline = [
       <li>Affected URL / API / parameter / role / function.</li>
       <li>Practical remediation recommendation.</li>
       <li>Retesting / closure status after fixes are applied.</li>
-      <li>CERT-In aligned report / Safe-to-Host support, if applicable.</li>
+      <li>CERT-In aligned / empanelled report (mandatory deliverable).</li>
     </ol>
   </div>
 
@@ -200,9 +200,22 @@ $timeline = [
     <li>Latest OWASP guidance applicable on the date of testing.</li>
     <li>OWASP API Security Top 10, wherever APIs are involved.</li>
     <li>Common web application security testing practices.</li>
-    <li>CERT-In / Safe-to-Host reporting expectations, wherever applicable.</li>
+    <li>CERT-In aligned / empanelled reporting expectations (mandatory).</li>
   </ol>
   <div class="callout"><b>Note:</b> If <?= e($partner) ?> follows any internal testing methodology, checklist, or CERT-In empanelled partner format, the same may be shared as part of the proposal.</div>
+
+  <div class="pagefoot">
+    <span><?= e($reference) ?></span>
+    <span>Page <span class="pageno"></span></span>
+  </div>
+</section>
+
+<!-- ════════════════ PAGE — In-Scope Testing Areas (own page) ════════════════ -->
+<section class="page">
+  <div class="pagehead">
+    <span><b><?= e($brandName) ?></b> &middot; Request for Proposal</span>
+    <span class="cls"><?= e($classify) ?></span>
+  </div>
 
   <h2><span class="sn">5</span> In-Scope Testing Areas</h2>
   <p>Testing should cover OWASP Top 10 2025 categories and related risks. The following areas are expected to be covered:</p>
@@ -382,7 +395,7 @@ $timeline = [
       <li>Remediation Recommendation.</li>
       <li>Retesting Status.</li>
       <li>Closure Summary.</li>
-      <li>CERT-In / Safe-to-Host aligned section, wherever applicable.</li>
+      <li>CERT-In aligned / empanelled report section (mandatory).</li>
     </ol>
   </div>
 
@@ -488,7 +501,7 @@ $timeline = [
       <li>Proposed testing methodology.</li>
       <li>Confirmation of OWASP Top 10 2025 and API security coverage.</li>
       <li>Confirmation of manual testing coverage.</li>
-      <li>Confirmation of CERT-In / Safe-to-Host report support.</li>
+      <li>Confirmation of CERT-In aligned / empanelled report support (mandatory).</li>
       <li>Report sample or report structure, if available.</li>
       <li>Team details / tester profile, if applicable.</li>
       <li>Confirmation of timeline feasibility.</li>
@@ -539,7 +552,7 @@ $timeline = [
     <li>All evidence captured shall be limited to what is necessary for reporting.</li>
     <li>Any customer, user, business, or production data encountered shall not be downloaded, modified, deleted, or shared.</li>
     <li>The final report should be suitable for management review and developer remediation.</li>
-    <li>CERT-In / Safe-to-Host certification dependencies, if involving a separate empanelled auditor, should be clearly communicated.</li>
+    <li>The CERT-In aligned / empanelled report is a mandatory deliverable; any certification dependencies involving a separate empanelled auditor should be clearly communicated.</li>
   </ol>
 
   <div class="parties">
@@ -552,7 +565,7 @@ $timeline = [
           <li>Proof-of-concept evidence.</li>
           <li>Remediation recommendations.</li>
           <li>Retest report / closure report.</li>
-          <li>CERT-In aligned / Safe-to-Host support report, wherever applicable.</li>
+          <li>CERT-In aligned / empanelled report (mandatory).</li>
           <li>Final summary for management &amp; compliance record.</li>
         </ol>
       </div>
@@ -566,7 +579,7 @@ $timeline = [
           <li>Clear remediation guidance is received.</li>
           <li>Retesting is performed after fixes are applied.</li>
           <li>Closure status is documented.</li>
-          <li>CERT-In aligned / Safe-to-Host support provided, wherever applicable.</li>
+          <li>CERT-In aligned / empanelled report is provided (mandatory).</li>
           <li>Final report is accepted by <?= e($customer) ?>.</li>
         </ol>
       </div>
@@ -574,7 +587,7 @@ $timeline = [
   </div>
 
   <h2><span class="sn">17</span> Contact and Coordination</h2>
-  <p><?= e($customer) ?> shall nominate a technical contact and emergency contact before commencement of testing. <?= e($partner) ?> shall nominate a testing contact responsible for: daily coordination, clarification during testing, critical finding escalation, report submission, retesting coordination, and CERT-In / Safe-to-Host coordination wherever applicable.</p>
+  <p><?= e($customer) ?> shall nominate a technical contact and emergency contact before commencement of testing. <?= e($partner) ?> shall nominate a testing contact responsible for: daily coordination, clarification during testing, critical finding escalation, report submission, retesting coordination, and CERT-In aligned / empanelled report coordination.</p>
 
   <div class="pagefoot">
     <span><?= e($reference) ?></span>
@@ -595,7 +608,7 @@ $timeline = [
     <li>Acceptance of the proposed scope.</li>
     <li>Acceptance of the proposed timeline.</li>
     <li>Acceptance of the commercial terms.</li>
-    <li>Confirmation of CERT-In / Safe-to-Host support.</li>
+    <li>Confirmation of the mandatory CERT-In aligned / empanelled report.</li>
     <li>Confirmation that testing will be performed in a controlled and non-destructive manner.</li>
     <li>Confirmation that the final report will contain validated findings and not only automated scanner output.</li>
   </ol>

@@ -1,5 +1,10 @@
 import type { InspectionSectionKey } from "@/pages/dashboard/inspections/inspection-types";
 
+export type InspectionSideImageSectionKey = Exclude<
+  InspectionSectionKey,
+  "device"
+>;
+
 export type InspectionSideImage = {
   key: string;
   url: string;
@@ -7,7 +12,10 @@ export type InspectionSideImage = {
   label: string;
 };
 
-export const INSPECTION_SIDE_IMAGE_LABELS: Record<InspectionSectionKey, string[]> =
+export const INSPECTION_SIDE_IMAGE_LABELS: Record<
+  InspectionSideImageSectionKey,
+  string[]
+> =
   {
     "outer-packaging": [
       "Top",
@@ -50,7 +58,7 @@ export function inspectionImageUrl(pathOrUrl: string): string {
 
 export function buildInspectionSideImages(
   paths: string[] | undefined,
-  section: InspectionSectionKey,
+  section: InspectionSideImageSectionKey,
 ): InspectionSideImage[] {
   const labels = INSPECTION_SIDE_IMAGE_LABELS[section];
 

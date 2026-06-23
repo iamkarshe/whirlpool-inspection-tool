@@ -104,6 +104,7 @@ export const PAGES = {
   DASHBOARD_ADMIN_LOGS: "/dashboard/admin/logs",
   DASHBOARD_ADMIN_JOB_LOGS: "/dashboard/admin/job-logs",
   DASHBOARD_ADMIN_TASKS: "/dashboard/admin/tasks",
+  DASHBOARD_ADMIN_SERVER_HEALTH: "/dashboard/admin/server-health",
   DASHBOARD_ADMIN_KNOWLEDGE_BASE: "/dashboard/admin/knowledge-base",
 
   OPS_HOME: "/ops",

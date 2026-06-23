@@ -4,13 +4,15 @@ import { useMemo } from "react";
 import type { GalleryImage } from "@/components/image-gallery-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { InspectionSideImage } from "@/pages/dashboard/inspections/inspection-image-utils";
-import type { InspectionSectionKey } from "@/pages/dashboard/inspections/inspection-types";
+import type {
+  InspectionSideImage,
+  InspectionSideImageSectionKey,
+} from "@/pages/dashboard/inspections/inspection-image-utils";
 import type { InspectionIssueRow } from "@/pages/dashboard/inspections/components/view-tabs/inspection-flags-tab";
 import { ImageIssuesBadge } from "@/pages/dashboard/inspections/components/view-tabs/image-issues-badge";
 
 const SIDE_IMAGE_TABS: {
-  value: InspectionSectionKey;
+  value: InspectionSideImageSectionKey;
   label: string;
 }[] = [
   { value: "outer-packaging", label: "Outer packaging" },
@@ -20,7 +22,7 @@ const SIDE_IMAGE_TABS: {
 
 type Props = {
   reviewLoading: boolean;
-  sideImagesByCategory: Record<InspectionSectionKey, InspectionSideImage[]>;
+  sideImagesByCategory: Record<InspectionSideImageSectionKey, InspectionSideImage[]>;
   onOpenImage: (images: GalleryImage[], activeUrl: string) => void;
   issueRows: InspectionIssueRow[];
   onOpenImageIssues: (imageUrl: string) => void;
@@ -95,7 +97,7 @@ export function InspectionImagesTab({
   );
 
   const galleryImagesByCategory = useMemo(() => {
-    const map = {} as Record<InspectionSectionKey, GalleryImage[]>;
+    const map = {} as Record<InspectionSideImageSectionKey, GalleryImage[]>;
     for (const tab of SIDE_IMAGE_TABS) {
       map[tab.value] = sideImagesByCategory[tab.value].map(({ url, filename }) => ({
         url,

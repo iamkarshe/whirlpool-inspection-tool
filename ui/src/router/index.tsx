@@ -246,6 +246,9 @@ const IntegrationsSmtpPage = lazy(
 const LogsPage = lazy(() => import("@/pages/dashboard/admin/log/page"));
 const JobLogsPage = lazy(() => import("@/pages/dashboard/admin/job-logs/page"));
 const TasksPage = lazy(() => import("@/pages/dashboard/admin/tasks/page"));
+const ServerHealthPage = lazy(
+  () => import("@/pages/dashboard/admin/server-health/page"),
+);
 const KnowledgeBasePage = lazy(
   () => import("@/pages/dashboard/admin/knowledge-base/page"),
 );
@@ -766,6 +769,15 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <TasksPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "admin/server-health",
+        handle: { title: "Server Health" },
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ServerHealthPage />
           </Suspense>
         ),
       },
