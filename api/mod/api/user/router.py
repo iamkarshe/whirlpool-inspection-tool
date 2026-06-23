@@ -42,7 +42,7 @@ from mod.api.user.response import (
 )
 from mod.auth.response import TwoFactorResetResponse
 from mod.model import Role, User
-from utils.common import ensure_allowed_registration_email
+from utils.common import ensure_allowed_registration_email, normalize_login_email, normalize_user_name
 from utils.db import get_db
 from utils.decorator import check_api_role, exception_handler_decorator
 from utils.pagination import (
@@ -257,9 +257,11 @@ def create_user(
     payload: UserCreateRequest,
     db: Session = Depends(get_db),
 ):
-    ensure_allowed_registration_email(str(payload.email))
+    normalized_email = normalize_login_email(str(payload.email))
+    normalized_name = normalize_user_name(payload.name)
+    ensure_allowed_registration_email(normalized_email)
 
-    existing = db.query(User).filter(User.email == str(payload.email)).first()
+    existing = db.query(User).filter(User.email == normalized_email).first()
     if existing is not None:
         raise HTTPException(status_code=409, detail="Email already exists")
 
@@ -280,12 +282,12 @@ def create_user(
 
     validate_password_strength(
         payload.password,
-        user_inputs=[str(payload.email), payload.name, payload.mobile_number],
+        user_inputs=[normalized_email, normalized_name, payload.mobile_number],
     )
 
     user = User(
-        name=payload.name,
-        email=str(payload.email),
+        name=normalized_name,
+        email=normalized_email,
         mobile_number=payload.mobile_number,
         designation=payload.designation,
         password=hash_password(payload.password),
@@ -550,16 +552,18 @@ def update_user(
     if (user.role.role or "").lower() == "superadmin":
         raise HTTPException(status_code=403, detail="Cannot modify superadmin accounts")
 
-    if payload.email is not None and str(payload.email) != user.email:
-        ensure_allowed_registration_email(str(payload.email))
-        clash = (
-            db.query(User)
-            .filter(User.email == str(payload.email), User.id != user.id)
-            .first()
-        )
-        if clash is not None:
-            raise HTTPException(status_code=409, detail="Email already exists")
-        user.email = str(payload.email)
+    if payload.email is not None:
+        normalized_email = normalize_login_email(str(payload.email))
+        if normalized_email != user.email:
+            ensure_allowed_registration_email(normalized_email)
+            clash = (
+                db.query(User)
+                .filter(User.email == normalized_email, User.id != user.id)
+                .first()
+            )
+            if clash is not None:
+                raise HTTPException(status_code=409, detail="Email already exists")
+            user.email = normalized_email
 
     if (
         payload.mobile_number is not None
@@ -575,7 +579,7 @@ def update_user(
         user.mobile_number = payload.mobile_number
 
     if payload.name is not None:
-        user.name = payload.name
+        user.name = normalize_user_name(payload.name)
     if payload.designation is not None:
         user.designation = payload.designation
     if payload.is_active is not None:

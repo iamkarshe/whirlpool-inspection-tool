@@ -71,6 +71,11 @@ def normalize_login_email(email: str) -> str:
     return email.strip().lower()
 
 
+def normalize_user_name(name: str) -> str:
+    """Store display names in title case (each word capitalized)."""
+    return to_proper_case(name)
+
+
 def to_proper_case(value: str) -> str:
     return " ".join(word.capitalize() for word in value.strip().split())
 

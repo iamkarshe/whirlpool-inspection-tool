@@ -18,7 +18,11 @@ from mod.api.user.helper import (
 )
 from mod.api.user.request import USER_CSV_HEADERS
 from mod.model import Role, User
-from utils.common import ensure_allowed_registration_email, normalize_login_email
+from utils.common import (
+    ensure_allowed_registration_email,
+    normalize_login_email,
+    normalize_user_name,
+)
 from utils.password import hash_password
 from utils.password_policy import generate_temporary_password
 from utils.roles import ROLE_BIZ_ADMIN, ROLE_MANAGER, ROLE_OPERATOR, ROLE_SUPERADMIN
@@ -214,7 +218,7 @@ def parseUserCsvRow(
             "Superadmin cannot be added or updated via CSV",
         )
 
-    name = (row.get("name") or "").strip()
+    name = normalize_user_name((row.get("name") or "").strip())
     email = normalize_login_email(row.get("email") or "")
     mobile = re.sub(r"\D", "", row.get("mobile") or "")
     role_slug = resolveUserCsvRole(role_raw)
