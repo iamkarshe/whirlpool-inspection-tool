@@ -46,6 +46,7 @@ import {
   UserOnboardBadge,
   UserRoleBadge,
   UserStatusBadge,
+  UserTwoFactorBadge,
 } from "@/pages/dashboard/admin/users/user-badge";
 import {
   isSuperadminRoleName,
@@ -62,6 +63,7 @@ function buildUserColumns(
   onVpnDownloadQr: (user: UserResponse) => void,
   onVpnRevoke: (user: UserResponse) => void,
   onVpnShowInstructions: (user: UserResponse) => void,
+  onResetUserTwoFactor: (user: UserResponse) => void,
   vpnBusyUserUuid: string | null,
   vpnBusyAction: "setup" | "config" | "qr" | "revoke" | "email" | null,
 ): ColumnDef<UserResponse>[] {
@@ -143,6 +145,19 @@ function buildUserColumns(
         if (filterValue === "true") return v === true;
         if (filterValue === "false") return v === false;
         return true;
+      },
+    },
+    {
+      id: "two_factor",
+      header: "2FA",
+      cell: ({ row }) => {
+        if (isSuperadminRoleName(row.original.role)) return "—";
+        return (
+          <UserTwoFactorBadge
+            twoFactorEnabled={row.original.two_factor_enabled}
+            twoFactorEnforced={row.original.two_factor_enforced}
+          />
+        );
       },
     },
     {
@@ -329,6 +344,16 @@ function buildUserColumns(
                       Update user
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      className="flex items-center"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        onResetUserTwoFactor(user);
+                      }}
+                    >
+                      <ShieldOff className="mr-2 h-4 w-4" />
+                      Reset 2FA
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       className={
                         user.is_active
                           ? "text-destructive focus:text-destructive"
@@ -395,6 +420,7 @@ interface UsersDataTableProps {
   onVpnDownloadQr: (user: UserResponse) => void;
   onVpnRevoke: (user: UserResponse) => void;
   onVpnShowInstructions: (user: UserResponse) => void;
+  onResetUserTwoFactor: (user: UserResponse) => void;
   vpnBusyUserUuid?: string | null;
   vpnBusyAction?: "setup" | "config" | "qr" | "revoke" | "email" | null;
 }
@@ -412,6 +438,7 @@ export default function UsersDataTable({
   onVpnDownloadQr,
   onVpnRevoke,
   onVpnShowInstructions,
+  onResetUserTwoFactor,
   vpnBusyUserUuid = null,
   vpnBusyAction = null,
 }: UsersDataTableProps) {
@@ -427,6 +454,7 @@ export default function UsersDataTable({
         onVpnDownloadQr,
         onVpnRevoke,
         onVpnShowInstructions,
+        onResetUserTwoFactor,
         vpnBusyUserUuid,
         vpnBusyAction,
       ),
@@ -440,6 +468,7 @@ export default function UsersDataTable({
       onVpnDownloadQr,
       onVpnRevoke,
       onVpnShowInstructions,
+      onResetUserTwoFactor,
       vpnBusyUserUuid,
       vpnBusyAction,
     ],

@@ -32,6 +32,7 @@ import {
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import { DeactivateUserDialog } from "@/pages/dashboard/admin/users/deactivate-user-dialog";
 import { DialogResendOnboard } from "@/pages/dashboard/admin/users/dialog-resend-onboard";
+import { DialogResetUserTwoFactor } from "@/pages/dashboard/admin/users/dialog-reset-user-two-factor";
 import { DialogUsersCsvRejected } from "@/pages/dashboard/admin/users/dialog-users-csv-rejected";
 import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
@@ -58,6 +59,7 @@ import {
   uploadUsersCsvErrorMessage,
   userApiErrorMessage,
 } from "@/services/users-api";
+import { resetUserTwoFactor } from "@/services/two-factor-api";
 import {
   fetchAllWarehouses,
   warehouseApiErrorMessage,
@@ -330,6 +332,9 @@ export default function UsersPage() {
   const [csvRejectedDialogOpen, setCsvRejectedDialogOpen] = useState(false);
   const [csvRejectedResult, setCsvRejectedResult] =
     useState<UserCsvUpsertResponse | null>(null);
+  const [resetTwoFactorUser, setResetTwoFactorUser] =
+    useState<UserResponse | null>(null);
+  const [resetTwoFactorBusy, setResetTwoFactorBusy] = useState(false);
   const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
 
   const applyUserActiveState = useCallback(
@@ -469,6 +474,28 @@ export default function UsersPage() {
 
   const onOnboardUser = useCallback((user: UserResponse) => {
     setOnboardUserTarget(user);
+  }, []);
+
+  const onResetUserTwoFactor = useCallback((user: UserResponse) => {
+    setResetTwoFactorUser(user);
+  }, []);
+
+  const applyResetUserTwoFactor = useCallback(async (user: UserResponse) => {
+    setResetTwoFactorBusy(true);
+    try {
+      const result = await resetUserTwoFactor(user.uuid);
+      toast.success(result.message || "Two-factor authentication reset.");
+      setReloadKey((v) => v + 1);
+      setResetTwoFactorUser(null);
+    } catch (e: unknown) {
+      toast.error(
+        e instanceof Error
+          ? e.message
+          : "Could not reset two-factor authentication.",
+      );
+    } finally {
+      setResetTwoFactorBusy(false);
+    }
   }, []);
 
   const applyOnboardUser = useCallback(async (user: UserResponse) => {
@@ -646,6 +673,7 @@ export default function UsersPage() {
         onVpnDownloadQr={onVpnDownloadQr}
         onVpnRevoke={onVpnRevoke}
         onVpnShowInstructions={onVpnShowInstructions}
+        onResetUserTwoFactor={onResetUserTwoFactor}
         vpnBusyUserUuid={vpnBusyUserUuid}
         vpnBusyAction={vpnBusyAction}
       />
@@ -731,6 +759,15 @@ export default function UsersPage() {
         open={csvRejectedDialogOpen}
         onOpenChange={setCsvRejectedDialogOpen}
         result={csvRejectedResult}
+      />
+      <DialogResetUserTwoFactor
+        open={resetTwoFactorUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setResetTwoFactorUser(null);
+        }}
+        user={resetTwoFactorUser}
+        isLoading={resetTwoFactorBusy}
+        onConfirm={applyResetUserTwoFactor}
       />
     </div>
   );

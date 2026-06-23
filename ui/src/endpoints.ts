@@ -1,6 +1,8 @@
 export const PAGES = {
   CHECK_APP: "/",
   LOGIN: "/login",
+  LOGIN_2FA_VERIFY: "/login/2fa-verify",
+  LOGIN_2FA_SETUP: "/login/2fa-setup",
   CHANGE_PASSWORD: "/change-password",
   FORGOT_PASSWORD: "/forgot-password",
   REGISTER: "/register",
@@ -16,6 +18,7 @@ export const PAGES = {
   DASHBOARD_SETTINGS: "/dashboard/settings",
   settingsPasswordPath: () => `${PAGES.DASHBOARD_SETTINGS}/password`,
   settingsSessionsPath: () => `${PAGES.DASHBOARD_SETTINGS}/sessions`,
+  settingsTwoFactorPath: () => `${PAGES.DASHBOARD_SETTINGS}/two-factor`,
   DASHBOARD_NOTIFICATIONS: "/dashboard/notifications",
   DASHBOARD_RELEASE_NOTES: "/dashboard/release-notes",
 

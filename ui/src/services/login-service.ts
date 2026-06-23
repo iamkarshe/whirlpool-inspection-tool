@@ -53,6 +53,23 @@ export function shouldShowDeviceSelection(login: LoginResponse): boolean {
   return login.requires_device_selection === true;
 }
 
+export function loginRequiresMfaVerification(login: LoginResponse): boolean {
+  return (
+    login.mfa_required === true && Boolean(login.mfa_pending_token?.trim())
+  );
+}
+
+export function loginRequiresMfaSetup(login: LoginResponse): boolean {
+  return (
+    login.mfa_setup_required === true &&
+    Boolean(login.mfa_pending_token?.trim())
+  );
+}
+
+export function isLoginAccessTokenReady(login: LoginResponse): boolean {
+  return Boolean(login.access_token?.trim());
+}
+
 export function loginRequiresPasswordChange(login: LoginResponse): boolean {
   return (
     login.must_change_password === true || login.password_expired === true
@@ -114,8 +131,10 @@ export function clearAuthenticatedSession(): void {
 export function persistAuthenticatedSession(login: LoginResponse): void {
   if (typeof window === "undefined") return;
 
+  const token = login.access_token?.trim();
+  if (!token) return;
+
   const tokenType = login.token_type?.trim() ? login.token_type : "Bearer";
-  const token = login.access_token;
 
   window.localStorage.setItem(SESSION_ACCESS_TOKEN_KEY, token);
   window.localStorage.setItem(SESSION_TOKEN_TYPE_KEY, tokenType);

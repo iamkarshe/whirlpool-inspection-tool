@@ -16,6 +16,12 @@ const PublicRouter = lazy(() =>
 
 // Auth Pages
 const LoginPage = lazy(() => import("@/pages/auth/login"));
+const TwoFactorVerifyPage = lazy(
+  () => import("@/pages/auth/two-factor-verify"),
+);
+const TwoFactorSetupLoginPage = lazy(
+  () => import("@/pages/auth/two-factor-setup"),
+);
 const ForgotPasswordPage = lazy(() => import("@/pages/auth/forgot-password"));
 const ResetPasswordConfirmationPage = lazy(
   () => import("@/pages/auth/reset-password"),
@@ -178,6 +184,9 @@ const SettingsPasswordPage = lazy(
 );
 const SettingsSessionsPage = lazy(
   () => import("@/pages/dashboard/settings/sessions/page"),
+);
+const SettingsTwoFactorPage = lazy(
+  () => import("@/pages/dashboard/settings/two-factor/page"),
 );
 const NotificationsPage = lazy(
   () => import("@/pages/dashboard/notifications/page"),
@@ -501,6 +510,22 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <LoginPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "login/2fa-verify",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <TwoFactorVerifyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "login/2fa-setup",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <TwoFactorSetupLoginPage />
           </Suspense>
         ),
       },
@@ -1211,6 +1236,15 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <SettingsSessionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "two-factor",
+            handle: { title: "Two-factor authentication" },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SettingsTwoFactorPage />
               </Suspense>
             ),
           },

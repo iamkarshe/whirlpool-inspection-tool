@@ -8,6 +8,9 @@ import {
   HardHat,
   Mail,
   Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
   UserCog,
   XCircle,
 } from "lucide-react";
@@ -121,6 +124,37 @@ export function UserOnboardBadge({
     <Badge variant="warning" className={BADGE_ICON_CLASS}>
       <Clock />
       PENDING ONBOARD
+    </Badge>
+  );
+}
+
+export function UserTwoFactorBadge({
+  twoFactorEnabled,
+  twoFactorEnforced,
+}: {
+  twoFactorEnabled?: boolean;
+  twoFactorEnforced?: boolean;
+}) {
+  if (twoFactorEnabled) {
+    return (
+      <Badge variant="success" className={BADGE_ICON_CLASS}>
+        <ShieldCheck />
+        2FA ON
+      </Badge>
+    );
+  }
+  if (twoFactorEnforced) {
+    return (
+      <Badge variant="warning" className={BADGE_ICON_CLASS}>
+        <ShieldAlert />
+        2FA REQUIRED
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className={BADGE_ICON_CLASS}>
+      <ShieldOff />
+      2FA OFF
     </Badge>
   );
 }

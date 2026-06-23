@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -34,7 +35,7 @@ import {
   fetchAllWarehouses,
   warehouseApiErrorMessage,
 } from "@/services/warehouses-api";
-import { updateUser, userApiErrorMessage } from "@/services/users-api";
+import { updateUser, userApiErrorMessage, isSuperadminRoleName } from "@/services/users-api";
 import { AlertCircle } from "lucide-react";
 
 function isValidIndianMobile(value: string): boolean {
@@ -67,6 +68,9 @@ export function EditUserDialog({
     normalizeAllowedWarehouseCodes(user.allowed_warehouse),
   );
   const [password, setPassword] = useState("");
+  const [twoFactorEnforced, setTwoFactorEnforced] = useState(
+    user.two_factor_enforced === true,
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,6 +104,7 @@ export function EditUserDialog({
       normalizeAllowedWarehouseCodes(user.allowed_warehouse),
     );
     setPassword("");
+    setTwoFactorEnforced(user.two_factor_enforced === true);
     setError(null);
   }, [open, user]);
 
@@ -128,6 +133,9 @@ export function EditUserDialog({
       await updateUser(user.uuid, {
         ...body,
         ...(pwd ? { password: pwd } : {}),
+        ...(!isSuperadminRoleName(user.role)
+          ? { two_factor_enforced: twoFactorEnforced }
+          : {}),
       });
       toast.success("User updated.");
       onOpenChange(false);
@@ -229,6 +237,23 @@ export function EditUserDialog({
             warehouses={warehouses}
             disabled={Boolean(loadWhError)}
           />
+          {!isSuperadminRoleName(user.role) ? (
+            <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-two-factor-enforced">
+                  Require two-factor authentication
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  User must enroll in an authenticator app on next sign-in.
+                </p>
+              </div>
+              <Switch
+                id="edit-two-factor-enforced"
+                checked={twoFactorEnforced}
+                onCheckedChange={setTwoFactorEnforced}
+              />
+            </div>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="edit-password">New password (optional)</Label>
             <Input

@@ -1,10 +1,11 @@
 import { PAGES } from "@/endpoints";
 import { Outlet } from "react-router-dom";
-import { KeyRound, LogOut } from "lucide-react";
+import { KeyRound, LogOut, Shield } from "lucide-react";
 import { TabbedNav } from "@/components/tabbed-nav";
 
 const items = [
   { title: "Update password", href: PAGES.settingsPasswordPath(), icon: KeyRound },
+  { title: "Two-factor authentication", href: PAGES.settingsTwoFactorPath(), icon: Shield },
   { title: "Logout sessions", href: PAGES.settingsSessionsPath(), icon: LogOut },
 ] as const;
 

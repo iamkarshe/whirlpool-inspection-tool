@@ -34,12 +34,15 @@ import {
   authenticateWithEmailPassword,
   authenticateWithSsoExchangeToken,
   clearAuthenticatedSession,
+  loginRequiresMfaSetup,
+  loginRequiresMfaVerification,
   loginRequiresPasswordChange,
   persistAuthenticatedSession,
   resolvePostLoginHref,
   shouldShowDeviceSelection,
 } from "@/services/login-service";
 import { persistPendingLoginForPasswordChange } from "@/lib/pending-login-state";
+import { persistPendingMfaState } from "@/lib/pending-mfa-state";
 
 const ALLOW_FORGOT_PASSWORD = true;
 
@@ -95,6 +98,30 @@ export default function LoginPage() {
 
   const handlePostAuthenticate = useCallback(
     (login: LoginResponse) => {
+      if (loginRequiresMfaSetup(login)) {
+        persistPendingMfaState({
+          mfa_pending_token: login.mfa_pending_token!.trim(),
+          mfa_setup_required: true,
+          mfa_required: false,
+          name: login.name,
+          email: login.email,
+        });
+        navigate(PAGES.LOGIN_2FA_SETUP, { replace: true });
+        return;
+      }
+
+      if (loginRequiresMfaVerification(login)) {
+        persistPendingMfaState({
+          mfa_pending_token: login.mfa_pending_token!.trim(),
+          mfa_setup_required: false,
+          mfa_required: true,
+          name: login.name,
+          email: login.email,
+        });
+        navigate(PAGES.LOGIN_2FA_VERIFY, { replace: true });
+        return;
+      }
+
       persistAuthenticatedSession(login);
 
       if (loginRequiresPasswordChange(login)) {
