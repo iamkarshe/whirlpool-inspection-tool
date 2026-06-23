@@ -162,6 +162,8 @@ def download_users_csv_template(
         "Role values: Admin (maps to Biz Admin), Manager, Operator. "
         "Superadmin cannot be added via CSV. "
         "Allowed Warehouse uses pipe-separated warehouse codes (for example RI52|RI62). "
+        "Unknown warehouse codes are ignored: the user is still created or updated with "
+        "only warehouses that exist in the database (empty scope when none match). "
         "The response lists created/updated users, rejected rows with reasons, and "
         "rejected_csv for download and re-upload after fixes."
     ),
@@ -178,7 +180,7 @@ def download_users_csv_template(
         400: {"description": "Invalid CSV file or missing required headers."},
         403: {"description": "Caller is not superadmin."},
         409: {"description": "Unique constraint conflict during commit."},
-        422: {"description": "Unknown warehouse code or invalid CSV headers."},
+        422: {"description": "Invalid CSV headers or row validation error."},
     },
 )
 @exception_handler_decorator

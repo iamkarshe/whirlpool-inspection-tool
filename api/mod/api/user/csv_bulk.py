@@ -17,7 +17,7 @@ from mod.api.user.helper import (
     forbid_superadmin_role_assignment,
 )
 from mod.api.user.request import USER_CSV_HEADERS
-from mod.model import Role, User, Warehouse
+from mod.model import Role, User
 from utils.common import ensure_allowed_registration_email, normalize_login_email
 from utils.password import hash_password
 from utils.password_policy import generate_temporary_password
@@ -381,25 +381,6 @@ def upsertUsersFromCsv(
         if role_slug not in role_rows:
             raise HTTPException(status_code=500, detail=f"Missing role: {role_slug}")
 
-    all_warehouse_codes = {
-        code for row in valid_rows for code in row.warehouse_codes
-    }
-    if all_warehouse_codes:
-        known = {
-            warehouse.warehouse_code
-            for warehouse in db.query(Warehouse)
-            .filter(Warehouse.warehouse_code.in_(sorted(all_warehouse_codes)))
-            .all()
-        }
-        missing_codes = sorted(
-            code for code in all_warehouse_codes if code not in known
-        )
-        if missing_codes:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Unknown warehouse code(s): {missing_codes}",
-            )
-
     emails = [row.email for row in valid_rows]
     existing_users = {
         user.email: user
@@ -475,6 +456,7 @@ def upsertUsersFromCsv(
                 user,
                 warehouse_codes=row.warehouse_codes,
                 plant_codes=None,
+                ignore_unknown_facilities=True,
             )
             existing_users[row.email] = user
             mobile_owner_by_number[row.mobile] = user.id
@@ -522,6 +504,7 @@ def upsertUsersFromCsv(
             existing,
             warehouse_codes=row.warehouse_codes,
             plant_codes=None,
+            ignore_unknown_facilities=True,
         )
         log_user_updated(
             db,

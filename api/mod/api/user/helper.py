@@ -184,6 +184,7 @@ def apply_user_facility_scope(
     *,
     warehouse_codes: list[str] | None,
     plant_codes: list[str] | None,
+    ignore_unknown_facilities: bool = False,
 ) -> None:
     if warehouse_codes is not None:
         unique_wh = list(dict.fromkeys(warehouse_codes))
@@ -192,24 +193,26 @@ def apply_user_facility_scope(
             .filter(Warehouse.warehouse_code.in_(unique_wh))
             .all()
         )
-        found = {w.warehouse_code for w in rows}
-        if len(found) != len(unique_wh):
-            missing = [c for c in unique_wh if c not in found]
-            raise HTTPException(
-                status_code=422,
-                detail=f"Unknown warehouse_code(s): {missing}",
-            )
+        if not ignore_unknown_facilities:
+            found = {w.warehouse_code for w in rows}
+            if len(found) != len(unique_wh):
+                missing = [c for c in unique_wh if c not in found]
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Unknown warehouse_code(s): {missing}",
+                )
         user.warehouses_scope = rows
     if plant_codes is not None:
         unique_pc = list(dict.fromkeys(plant_codes))
         rows = db.query(Plant).filter(Plant.plant_code.in_(unique_pc)).all()
-        found = {p.plant_code for p in rows}
-        if len(found) != len(unique_pc):
-            missing = [c for c in unique_pc if c not in found]
-            raise HTTPException(
-                status_code=422,
-                detail=f"Unknown plant_code(s): {missing}",
-            )
+        if not ignore_unknown_facilities:
+            found = {p.plant_code for p in rows}
+            if len(found) != len(unique_pc):
+                missing = [c for c in unique_pc if c not in found]
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Unknown plant_code(s): {missing}",
+                )
         user.plants_scope = rows
 
 
