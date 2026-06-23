@@ -13,6 +13,8 @@ wheels/
 # Credentials
 credentials.json
 credentials.prod.json
+scripts/psql/config.toml
+scripts/psql/db_uat.dump
 
 # Redis
 *.rdb

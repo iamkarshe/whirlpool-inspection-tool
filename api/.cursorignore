@@ -2,3 +2,4 @@
 credentials.json
 credentials.prod.json
 deploy-sites.json
+scripts/psql/config.toml

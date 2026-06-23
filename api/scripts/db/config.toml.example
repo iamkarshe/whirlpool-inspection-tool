@@ -1,0 +1,24 @@
+[source]
+host = "prod-db.example.com"
+port = 5432
+user = "postgres"
+password = "changeme"
+database = "digilog_app"
+
+[target]
+host = "uat-db.example.com"
+port = 5432
+user = "postgres"
+password = "changeme"
+database = "digilog_uat_feature"
+
+# Enable when the target database is only reachable via a jump host.
+[target.ssh]
+enabled = false
+host = "bastion.example.com"
+user = "ubuntu"
+port = 22
+# identity_file = "~/.ssh/id_rsa"
+# local_port = 15432
+# remote_host = "127.0.0.1"
+# remote_port = 5432

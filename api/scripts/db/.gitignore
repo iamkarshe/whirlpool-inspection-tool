@@ -1,0 +1,9 @@
+config.toml
+*.dump
+*.log
+*.err
+*.out
+*.err.log
+*.out.log
+*.err.log.gz
+*.out.log.gz
