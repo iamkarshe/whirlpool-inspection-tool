@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DateRange } from "react-day-picker";
 
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { SegmentedFilterGroup } from "@/components/filters/segmented-filter-group";
 import PageActionBar from "@/components/page-action-bar";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 import type { FilterOption } from "@/api/generated/model/filterOption";
 import LogsDataTable from "@/pages/dashboard/admin/log/data-table";
 import type { ApplicationLogRow } from "@/pages/dashboard/admin/log/log-types";
@@ -29,7 +29,13 @@ const APPLICATION_LOG_SORT = {
 };
 
 export default function LogsPage() {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
   const [sourceOptions, setSourceOptions] = useState<FilterOption[]>([]);
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [filtersError, setFiltersError] = useState<string | null>(null);
@@ -129,7 +135,12 @@ export default function LogsPage() {
           title="Logs"
           description="Application and audit logs for the application."
         />
-        <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+        <AppliedDateRangePicker
+          draft={dateRangeDraft}
+          onDraftChange={onDraftChange}
+          onApply={applyDateRange}
+          isDirty={dateRangeDirty}
+        />
       </div>
 
       <SegmentedFilterGroup

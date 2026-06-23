@@ -1,4 +1,4 @@
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { ChartCard } from "@/components/chart-card";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
@@ -45,7 +45,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DateRange } from "react-day-picker";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -103,7 +103,13 @@ export default function ExecutiveAnalyticsPage() {
   const [paretoTotalDefects, setParetoTotalDefects] = useState(0);
   const [paretoLoading, setParetoLoading] = useState(true);
   const [kpiLoading, setKpiLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
   const [inspectionType, setInspectionType] = useState<InspectionType>(
     InspectionType.inbound,
   );
@@ -436,7 +442,12 @@ export default function ExecutiveAnalyticsPage() {
           </ToggleGroup>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+          <AppliedDateRangePicker
+            draft={dateRangeDraft}
+            onDraftChange={onDraftChange}
+            onApply={applyDateRange}
+            isDirty={dateRangeDirty}
+          />
           <MultiSelectFiltersDialog
             title="Filters"
             description="Warehouse, plant, product category, and damage grading."

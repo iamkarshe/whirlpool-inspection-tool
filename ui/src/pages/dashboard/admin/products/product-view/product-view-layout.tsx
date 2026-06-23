@@ -1,14 +1,14 @@
 import { TabbedContent } from "@/components/tabbed-content";
 import { Button } from "@/components/ui/button";
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import type { ProductResponse } from "@/api/generated/model/productResponse";
 import { PAGES } from "@/endpoints";
 import type { ProductViewContext } from "@/pages/dashboard/admin/products/product-view/context";
 import { resolveProductCategoryUuidForProduct } from "@/services/product-categories-api";
 import { fetchProductDetail } from "@/services/products-api";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { DateRange } from "react-day-picker";
 import { Link, Outlet, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,7 +21,13 @@ export default function ProductViewLayout() {
   );
   const [product, setProduct] = useState<ProductResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
 
   useEffect(() => {
     const ac = new AbortController();
@@ -105,7 +111,12 @@ export default function ProductViewLayout() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+          <AppliedDateRangePicker
+            draft={dateRangeDraft}
+            onDraftChange={onDraftChange}
+            onApply={applyDateRange}
+            isDirty={dateRangeDirty}
+          />
           <Button variant="outline" asChild>
             <Link
               to={`${PAGES.DASHBOARD_INSPECTIONS}?product=${encodeURIComponent(
@@ -129,7 +140,6 @@ export default function ProductViewLayout() {
                   ? categoryUuidById.get(product.product_category_id) ?? null
                   : null,
               dateRange,
-              setDateRange,
             } satisfies ProductViewContext
           }
         />

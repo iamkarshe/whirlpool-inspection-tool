@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import type { DateRange } from "react-day-picker";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import {
   ImageGalleryDialog,
@@ -100,7 +100,13 @@ function flaggedRowsFromBundle(
 
 export default function FlaggedImagesPage() {
   const location = useLocation();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
   const [filterOptions, setFilterOptions] =
     useState<InspectionFilterOptionsSource | null>(null);
   const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(() =>
@@ -398,10 +404,12 @@ export default function FlaggedImagesPage() {
             title="Flagged Images"
             description="Failed-check images for inspections on the current list page. Use table pagination to load more."
           />
-          <div className="flex items-center gap-2">
-            <CalendarDateRangePicker
-              value={dateRange}
-              onChange={setDateRange}
+          <div className="flex flex-wrap items-center gap-2">
+            <AppliedDateRangePicker
+              draft={dateRangeDraft}
+              onDraftChange={onDraftChange}
+              onApply={applyDateRange}
+              isDirty={dateRangeDirty}
             />
             <MultiSelectFiltersDialog
               title="Filters"
@@ -430,7 +438,6 @@ export default function FlaggedImagesPage() {
               dateRangeFilter={{ dateAccessorKey: "created_at" }}
               showDateRangePicker={false}
               dateRange={dateRange}
-              onDateRangeChange={setDateRange}
               rangeLabel="flagged images"
               serverSide={serverSide}
               isLoading={loading}

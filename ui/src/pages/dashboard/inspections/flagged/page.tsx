@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import type { DateRange } from "react-day-picker";
 
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filters-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import InspectionsDataTable from "@/pages/dashboard/inspections/inspections-data-table";
@@ -15,10 +14,17 @@ import {
   type InspectionFilterOptionsSource,
 } from "@/pages/dashboard/inspections/components/inspection-filters";
 import { useInspectionsServerTable } from "@/pages/dashboard/inspections/components/use-inspections-server-table";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 
 export default function FlaggedInspectionsPage() {
   const location = useLocation();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
   const [filterOptions, setFilterOptions] =
     useState<InspectionFilterOptionsSource | null>(null);
   const [filtersValue, setFiltersValue] = useState<Record<string, string[]>>(() =>
@@ -56,8 +62,13 @@ export default function FlaggedInspectionsPage() {
           title="Flagged Inspections"
           description="Inspections with at least one failed check (Outer packaging, Inner packaging, or Product)."
         />
-        <div className="flex items-center gap-2">
-          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+        <div className="flex flex-wrap items-center gap-2">
+          <AppliedDateRangePicker
+            draft={dateRangeDraft}
+            onDraftChange={onDraftChange}
+            onApply={applyDateRange}
+            isDirty={dateRangeDirty}
+          />
           <MultiSelectFiltersDialog
             title="Filters"
             description="Refine the table results."
@@ -76,7 +87,6 @@ export default function FlaggedInspectionsPage() {
       <InspectionsDataTable
         data={rows}
         dateRange={dateRange}
-        onDateRangeChange={setDateRange}
         serverSide={serverSide}
         isLoading={isLoading}
       />

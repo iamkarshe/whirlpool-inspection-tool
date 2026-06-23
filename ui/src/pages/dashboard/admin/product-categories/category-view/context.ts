@@ -5,5 +5,4 @@ export type ProductCategoryViewContext = {
   categoryUuid: string;
   category: ProductCategoryResponse | null;
   dateRange?: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
 };

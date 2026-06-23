@@ -1,14 +1,14 @@
 import { TabbedContent } from "@/components/tabbed-content";
 import { Button } from "@/components/ui/button";
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { PAGES } from "@/endpoints";
 import type { ProductCategoryResponse } from "@/api/generated/model/productCategoryResponse";
 import type { ProductCategoryViewContext } from "@/pages/dashboard/admin/product-categories/category-view/context";
 import { fetchProductCategoryDetail } from "@/services/product-category-view-api";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useParams } from "react-router-dom";
-import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 
 export default function ProductCategoryViewLayout() {
@@ -17,7 +17,13 @@ export default function ProductCategoryViewLayout() {
 
   const [category, setCategory] = useState<ProductCategoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
 
   useEffect(() => {
     const ac = new AbortController();
@@ -97,7 +103,12 @@ export default function ProductCategoryViewLayout() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+          <AppliedDateRangePicker
+            draft={dateRangeDraft}
+            onDraftChange={onDraftChange}
+            onApply={applyDateRange}
+            isDirty={dateRangeDirty}
+          />
           <Button variant="outline" asChild>
             <Link
               to={`${PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS}?product_category_id=${category?.uuid ?? categoryUuid}`}
@@ -115,7 +126,6 @@ export default function ProductCategoryViewLayout() {
               categoryUuid,
               category,
               dateRange,
-              setDateRange,
             } satisfies ProductCategoryViewContext
           }
         />

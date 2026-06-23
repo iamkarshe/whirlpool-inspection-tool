@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import type { DateRange } from "react-day-picker";
 
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { SegmentedFilterGroup } from "@/components/filters/segmented-filter-group";
 import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
 import { Button } from "@/components/ui/button";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 import type { FilterOption } from "@/api/generated/model/filterOption";
 import { LoginStatCards } from "@/pages/dashboard/admin/logins/components/login-stat-cards";
 import { LoginsActivitySection } from "@/pages/dashboard/admin/logins/logins-activity-section";
@@ -24,7 +24,13 @@ export default function LoginsPage() {
   const [view, setView] = useState<LoginsView>("activity");
   const [kpis, setKpis] = useState<LoginKpis | null>(null);
   const [loadingKpis, setLoadingKpis] = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
   const [statusFilter, setStatusFilter] = useState<LoginKpiFilter>("");
   const [abusiveOnly, setAbusiveOnly] = useState(false);
   useEffect(() => {
@@ -47,9 +53,11 @@ export default function LoginsPage() {
           description="Login activity, IP geolocation, and abuse investigation."
         />
         <div className="flex items-center gap-2">
-          <CalendarDateRangePicker
-            value={dateRange}
-            onChange={setDateRange}
+          <AppliedDateRangePicker
+            draft={dateRangeDraft}
+            onDraftChange={onDraftChange}
+            onApply={applyDateRange}
+            isDirty={dateRangeDirty}
           />
           <Button variant="outline" size="sm" type="button">
             Download

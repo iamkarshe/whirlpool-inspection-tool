@@ -17,7 +17,8 @@ import { Columns, Download, PlusCircle } from "lucide-react";
 import * as React from "react";
 import type { DateRange } from "react-day-picker";
 
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -51,6 +52,10 @@ import {
 } from "@/components/ui/table";
 import { DEFAULT_SERVER_DATA_TABLE_PAGE_SIZE } from "@/components/ui/data-table-server";
 import { filterByCalendarDateRange } from "@/lib/date-range-filter";
+import {
+  dateRangesEqual,
+  defaultDataTableDateRange,
+} from "@/lib/date-range-defaults";
 import { downloadCsv as downloadCsvFile, toCsv } from "@/lib/csv";
 import { cn } from "@/lib/utils";
 
@@ -275,16 +280,19 @@ export function DataTable<TData>({
   }, [searchFields, searchKey]);
   const isDateRangeControlled =
     controlledDateRange !== undefined && onDateRangeChange !== undefined;
-  const [internalDateRange, setInternalDateRange] = React.useState<
+  const defaultInternalRange = React.useMemo(() => defaultDataTableDateRange(), []);
+  const [internalDateRangeDraft, setInternalDateRangeDraft] = React.useState<
     DateRange | undefined
-  >(undefined);
-  const dateRange = isDateRangeControlled ? controlledDateRange : internalDateRange;
-  const setDateRange = React.useCallback(
-    (next: DateRange | undefined) => {
-      if (isDateRangeControlled) onDateRangeChange?.(next);
-      else setInternalDateRange(next);
-    },
-    [isDateRangeControlled, onDateRangeChange],
+  >(defaultInternalRange);
+  const [internalDateRangeApplied, setInternalDateRangeApplied] = React.useState<
+    DateRange | undefined
+  >(defaultInternalRange);
+  const dateRange = isDateRangeControlled
+    ? controlledDateRange
+    : internalDateRangeApplied;
+  const internalDateRangeDirty = !dateRangesEqual(
+    internalDateRangeDraft,
+    internalDateRangeApplied,
   );
 
   const filteredData = React.useMemo(() => {
@@ -432,11 +440,15 @@ export function DataTable<TData>({
       <div className="w-full">
         <div className="flex items-center gap-4 py-4">
           <div className="flex flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
-            {dateRangeFilter && showDateRangePicker ? (
-              <CalendarDateRangePicker
-                value={dateRange}
-                onChange={setDateRange}
+            {dateRangeFilter && showDateRangePicker && !isDateRangeControlled ? (
+              <AppliedDateRangePicker
                 className="shrink-0"
+                draft={internalDateRangeDraft}
+                onDraftChange={setInternalDateRangeDraft}
+                isDirty={internalDateRangeDirty}
+                onApply={() => {
+                  setInternalDateRangeApplied(internalDateRangeDraft);
+                }}
               />
             ) : null}
             {serverSide ? (

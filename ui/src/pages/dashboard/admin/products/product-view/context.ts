@@ -6,5 +6,4 @@ export type ProductViewContext = {
   product: ProductResponse | null;
   categoryUuid: string | null;
   dateRange?: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
 };

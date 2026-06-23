@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DateRange } from "react-day-picker";
 
-import CalendarDateRangePicker from "@/components/custom-date-range-picker";
+import { AppliedDateRangePicker } from "@/components/applied-date-range-picker";
 import { SegmentedFilterGroup } from "@/components/filters/segmented-filter-group";
 import PageActionBar from "@/components/page-action-bar";
 import { sortingStateToApiSortQuery } from "@/components/ui/data-table-server";
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
+import { useAppliedDateRange } from "@/hooks/use-applied-date-range";
 import type { FilterOption } from "@/api/generated/model/filterOption";
 import JobLogsDataTable from "@/pages/dashboard/admin/job-logs/data-table";
 import { RunAutoApproveJobDialog } from "@/pages/dashboard/admin/job-logs/run-auto-approve-job-dialog";
@@ -35,7 +35,13 @@ const STATUS_FILTER_OPTIONS: FilterOption[] = [
 ];
 
 export default function JobLogsPage() {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const {
+    draft: dateRangeDraft,
+    applied: dateRange,
+    onDraftChange,
+    apply: applyDateRange,
+    isDirty: dateRangeDirty,
+  } = useAppliedDateRange();
   const [jobOptions, setJobOptions] = useState<FilterOption[]>([]);
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [filtersError, setFiltersError] = useState<string | null>(null);
@@ -120,7 +126,12 @@ export default function JobLogsPage() {
           description="Cron and background job outcomes."
         />
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <CalendarDateRangePicker value={dateRange} onChange={setDateRange} />
+          <AppliedDateRangePicker
+            draft={dateRangeDraft}
+            onDraftChange={onDraftChange}
+            onApply={applyDateRange}
+            isDirty={dateRangeDirty}
+          />
           <RunAutoApproveJobDialog
             onSuccess={() => setLogsRefreshKey((key) => key + 1)}
           />
