@@ -25,6 +25,7 @@ from mod.api.user.helper import (
     reset_user_two_factor_for_admin,
     user_with_role_and_scope,
 )
+from mod.api.user.onboard_delivery import deliverUserOnboarding
 from mod.api.user.request import (
     USER_CSV_UPLOAD_FILE_DESCRIPTION,
     UserCreateRequest,
@@ -39,7 +40,6 @@ from mod.api.user.response import (
     UserOnboardResponse,
     UserResponse,
 )
-from mod.auth.two_factor_helper import reset_user_two_factor
 from mod.auth.response import TwoFactorResetResponse
 from mod.model import Role, User
 from utils.common import ensure_allowed_registration_email
