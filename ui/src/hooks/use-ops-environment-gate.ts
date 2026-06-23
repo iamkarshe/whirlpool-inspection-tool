@@ -1,34 +1,15 @@
-import { useGeolocation } from "@/hooks/use-geolocation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useGeolocation } from "@/hooks/use-geolocation";
+import {
+  getNetworkHealthCheckUrl,
+  NETWORK_HEALTH_TIMEOUT_MS,
+  pingNetworkHealth,
+} from "@/lib/network-health";
+
 const HEALTH_INTERVAL_MS = 12_000 * 5;
-const HEALTH_TIMEOUT_MS = 8_000;
 
-function getApiBaseUrl(): string {
-  return String(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-}
-
-export function getOpsHealthCheckUrl(): string | null {
-  const base = getApiBaseUrl();
-  if (!base) return null;
-  return `${base}/health`;
-}
-
-async function pingHealth(signal: AbortSignal): Promise<boolean> {
-  const url = getOpsHealthCheckUrl();
-  if (!url) return false;
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      signal,
-      cache: "no-store",
-      headers: { Accept: "application/json, text/plain, */*" },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
+export { getNetworkHealthCheckUrl as getOpsHealthCheckUrl };
 
 /**
  * Ops shell readiness: browser online, `/health` reachable, geolocation acquired.
@@ -54,19 +35,19 @@ export function useOpsEnvironmentGate() {
     const id = ++healthRequestId.current;
     setHealthChecking(true);
     const controller = new AbortController();
-    const t = window.setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      NETWORK_HEALTH_TIMEOUT_MS,
+    );
     try {
-      const url = getOpsHealthCheckUrl();
-      if (!url) {
-        if (healthRequestId.current === id) setHealthOk(false);
-        return;
+      const result = await pingNetworkHealth(controller.signal);
+      if (healthRequestId.current === id) {
+        setHealthOk(result.configured ? result.ok : false);
       }
-      const ok = await pingHealth(controller.signal);
-      if (healthRequestId.current === id) setHealthOk(ok);
     } catch {
       if (healthRequestId.current === id) setHealthOk(false);
     } finally {
-      window.clearTimeout(t);
+      window.clearTimeout(timeout);
       if (healthRequestId.current === id) setHealthChecking(false);
     }
   }, []);
@@ -79,7 +60,7 @@ export function useOpsEnvironmentGate() {
   }, [runHealthCheck]);
 
   useEffect(() => {
-    void runHealthCheck();
+    queueMicrotask(() => void runHealthCheck());
     const interval = window.setInterval(() => {
       void runHealthCheck();
     }, HEALTH_INTERVAL_MS);
@@ -110,7 +91,7 @@ export function useOpsEnvironmentGate() {
     };
   }, [runHealthCheck]);
 
-  const apiBaseConfigured = getOpsHealthCheckUrl() !== null;
+  const apiBaseConfigured = getNetworkHealthCheckUrl() !== null;
   const locationUnsupported = locationStatus === "unsupported";
 
   const environmentReady =

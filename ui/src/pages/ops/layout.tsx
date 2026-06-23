@@ -278,7 +278,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         )}
         inert={!envGate.environmentReady ? true : undefined}
       >
-        <header className="sticky top-0 z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
+        <header className="sticky top-(--network-status-banner-offset,0px) z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
           <div className="mx-auto flex max-w-md items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-0.5">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground font-title">

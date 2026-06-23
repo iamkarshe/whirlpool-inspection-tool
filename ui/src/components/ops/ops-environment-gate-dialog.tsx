@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getOpsHealthCheckUrl } from "@/hooks/use-ops-environment-gate";
+import { getNetworkHealthCheckUrl } from "@/lib/network-health";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -96,7 +96,7 @@ export function OpsEnvironmentGateDialog({
   const healthRowOk = healthOk === true;
   const healthRowBad = !healthPending && healthOk !== true;
 
-  const healthUrl = getOpsHealthCheckUrl();
+  const healthUrl = getNetworkHealthCheckUrl();
   const healthDetail = !apiBaseConfigured ?
     "VITE_API_BASE_URL is not set. Configure the API base URL to enable health checks."
   : healthPending ?
