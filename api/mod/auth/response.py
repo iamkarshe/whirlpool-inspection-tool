@@ -151,8 +151,13 @@ class TwoFactorDisableResponse(BaseModel):
 
 
 class TwoFactorResetResponse(BaseModel):
-    message: str = "Two-factor authentication reset for user"
+    message: str = "Two-factor authentication reset"
     user_uuid: uuid.UUID
+    two_factor_enabled: bool = False
+    two_factor_enforced: bool = Field(
+        default=False,
+        description="When true, the user must enroll again before the next login completes.",
+    )
 
 
 class ResolveDevicesResponse(BaseModel):

@@ -8,11 +8,13 @@ from mod.auth.request import (
     LoginVerifyTwoFactorRequest,
     TwoFactorConfirmRequest,
     TwoFactorDisableRequest,
+    TwoFactorResetRequest,
 )
 from mod.auth.response import (
     LoginResponse,
     TwoFactorConfirmResponse,
     TwoFactorDisableResponse,
+    TwoFactorResetResponse,
     TwoFactorSetupStartResponse,
     TwoFactorStatusResponse,
 )
@@ -21,10 +23,12 @@ from mod.auth.two_factor_helper import (
     complete_login_with_two_factor,
     confirm_two_factor_setup,
     disable_user_two_factor,
+    reset_user_two_factor_self,
     start_authenticated_two_factor_setup,
     start_pending_login_two_factor_setup,
 )
 from mod.model import User
+from utils.two_factor import user_has_two_factor_enforced
 from utils.auth_rate_limit import (
     require_auth_rate_limit,
     reset_auth_rate_limit_after_successful_login,
@@ -190,3 +194,36 @@ def disable_two_factor_route(
     disable_user_two_factor(db, user, totp_code=payload.totp_code)
     db.commit()
     return TwoFactorDisableResponse()
+
+
+@authenticated_router.post(
+    "/2fa/reset",
+    response_model=TwoFactorResetResponse,
+    name="reset_two_factor_self",
+    summary="Reset your own two-factor authentication",
+    description=(
+        "Clears the authenticated user's TOTP secret using their account password. "
+        "Use when the user lost their authenticator app but still has an active session, "
+        "or wants to enroll a new device. Only the signed-in user can reset their own 2FA. "
+        "When two_factor_enforced is true, the user must enroll again before the next login."
+    ),
+)
+def reset_two_factor_self_route(
+    request: Request,
+    payload: TwoFactorResetRequest,
+    db: Session = Depends(get_db),
+) -> TwoFactorResetResponse:
+    user = (
+        db.query(User)
+        .options(joinedload(User.role))
+        .filter(User.id == int(request.state.user_id))
+        .first()
+    )
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    reset_user_two_factor_self(db, user, current_password=payload.current_password)
+    db.commit()
+    return TwoFactorResetResponse(
+        user_uuid=user.uuid,
+        two_factor_enforced=user_has_two_factor_enforced(user),
+    )

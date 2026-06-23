@@ -29,6 +29,10 @@ TWO_FACTOR_DISABLE_REQUEST_EXAMPLE = {
     "totp_code": "123456",
 }
 
+TWO_FACTOR_RESET_REQUEST_EXAMPLE = {
+    "current_password": "YourCurrentPassword123",
+}
+
 
 class LoginDeviceInfo(BaseModel):
     imei: str = Field(min_length=3, max_length=48)
@@ -113,6 +117,21 @@ class TwoFactorDisableRequest(BaseModel):
         max_length=8,
         description="Current authenticator code required to disable 2FA.",
         examples=["123456"],
+    )
+
+
+class TwoFactorResetRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [TWO_FACTOR_RESET_REQUEST_EXAMPLE]}
+    )
+
+    current_password: str = Field(
+        min_length=6,
+        max_length=128,
+        description=(
+            "Account password required to reset 2FA without an authenticator code. "
+            "Use when the user lost their authenticator app but still has an active session."
+        ),
     )
 
 

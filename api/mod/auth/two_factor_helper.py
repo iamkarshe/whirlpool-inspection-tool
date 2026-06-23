@@ -348,6 +348,17 @@ def reset_user_two_factor(user: User) -> None:
     user.two_factor_enabled_at = None
 
 
+def reset_user_two_factor_self(db: Session, user: User, *, current_password: str) -> None:
+    from utils.password import verify_password
+
+    if not verify_password(current_password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect",
+        )
+    reset_user_two_factor(user)
+
+
 def disable_user_two_factor(db: Session, user: User, *, totp_code: str) -> None:
     if user_has_two_factor_enforced(user):
         raise HTTPException(

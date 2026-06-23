@@ -482,15 +482,16 @@ def revoke_user_vpn(
 @router.post(
     "/users/{user_uuid}/reset-2fa",
     name="reset_user_two_factor",
-    summary="Reset user two-factor authentication",
+    summary="Reset user two-factor authentication (superadmin only)",
     description=(
-        "Clears the user's TOTP secret and disables 2FA so they can enroll again. "
-        "Use when a user lost access to their authenticator app. "
+        "Superadmin-only: clears another user's TOTP secret and disables 2FA so they can "
+        "enroll again. Use when a user lost access to their authenticator app and cannot "
+        "self-reset. Managers and other roles cannot reset 2FA for other users. "
         "Superadmin accounts cannot be reset via this API."
     ),
     response_model=TwoFactorResetResponse,
     responses={
-        403: {"description": "Target user is superadmin."},
+        403: {"description": "Caller is not superadmin, or target user is superadmin."},
         404: {"description": "User not found."},
     },
 )
@@ -510,7 +511,10 @@ def reset_user_two_factor_route(
         summary=f"Two-factor authentication reset for {user.name} ({user.email})",
     )
     db.commit()
-    return TwoFactorResetResponse(user_uuid=user.uuid)
+    return TwoFactorResetResponse(
+        user_uuid=user.uuid,
+        two_factor_enforced=bool(user.two_factor_enforced),
+    )
 
 
 @router.put(
