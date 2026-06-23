@@ -2,6 +2,7 @@ import Notifications from "@/components/layout/header/notifications";
 import Search from "@/components/layout/header/search";
 import ThemeSwitch from "@/components/layout/header/theme-switch";
 import UserMenu from "@/components/layout/header/user-menu";
+import { UatEnvironmentBadge } from "@/components/uat-environment-badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -11,7 +12,7 @@ export function SiteHeader() {
   const { toggleSidebar, open } = useSidebar();
 
   return (
-    <header className="bg-background sticky top-(--network-status-banner-offset,0px) z-50 flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:rounded-tl-xl md:rounded-tr-xl">
+    <header className="bg-background sticky top-(--app-top-banner-offset,0px) z-50 flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:rounded-tl-xl md:rounded-tr-xl">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2">
         <Button onClick={toggleSidebar} size="icon" variant="ghost">
           {open ? <PanelLeftClose /> : <PanelLeftOpen />}
@@ -23,6 +24,7 @@ export function SiteHeader() {
         <Search />
 
         <div className="ml-auto flex items-center gap-2">
+          <UatEnvironmentBadge />
           <Notifications />
           <ThemeSwitch />
           <Separator

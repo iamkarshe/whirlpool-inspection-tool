@@ -4,6 +4,7 @@ import { MultiSelectFiltersDialog } from "@/components/filters/multi-select-filt
 import { KpiCardGrid, type KpiCardProps } from "@/components/kpi-card";
 import KpiLoader from "@/components/kpi-loader";
 import PageActionBar from "@/components/page-action-bar";
+import { UatEnvironmentNoticeDialog } from "@/components/uat-environment-notice-dialog";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -48,6 +49,8 @@ import type { DateRange } from "react-day-picker";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
+import { isNonProductionAppHost } from "@/lib/app-environment";
+import { consumeUatNoticeAfterLogin } from "@/lib/uat-environment-notice";
 import { cn } from "@/lib/utils";
 
 function buildKpiCards(kpis: ExecutiveAnalyticsKpis): KpiCardProps[] {
@@ -111,6 +114,13 @@ export default function ExecutiveAnalyticsPage() {
 
   const filterOptionsLoadedRef = useRef(false);
   const [filterOptionsLoading, setFilterOptionsLoading] = useState(false);
+  const [uatNoticeOpen, setUatNoticeOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isNonProductionAppHost()) return;
+    consumeUatNoticeAfterLogin();
+    setUatNoticeOpen(true);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -376,7 +386,12 @@ export default function ExecutiveAnalyticsPage() {
   }, [dateRange, filters, inspectionType]);
 
   return (
-    <div
+    <>
+      <UatEnvironmentNoticeDialog
+        open={uatNoticeOpen}
+        onOpenChange={setUatNoticeOpen}
+      />
+      <div
       data-containerid="dashboard-reports-executive-analytics"
       data-testid="screen-dashboard-reports-executive-analytics"
       className="space-y-4"
@@ -511,5 +526,6 @@ export default function ExecutiveAnalyticsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

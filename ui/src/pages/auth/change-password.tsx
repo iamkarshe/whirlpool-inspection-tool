@@ -26,7 +26,7 @@ import {
   requiresPasswordChange,
 } from "@/lib/session-password-flags";
 import {
-  resolvePostLoginHref,
+  navigateAfterAuthenticatedLogin,
   shouldShowDeviceSelection,
 } from "@/services/login-service";
 
@@ -54,7 +54,7 @@ export default function ChangePasswordPage() {
         return;
       }
       toast.success("Password updated successfully.");
-      navigate(resolvePostLoginHref(role), { replace: true });
+      navigateAfterAuthenticatedLogin(navigate, role);
     },
     [navigate, sessionUser?.role],
   );
@@ -82,7 +82,7 @@ export default function ChangePasswordPage() {
     clearPendingLoginState();
     toast.success("Password updated successfully.");
     if (login) {
-      navigate(resolvePostLoginHref(login.role), { replace: true });
+      navigateAfterAuthenticatedLogin(navigate, login.role);
     }
   }, [navigate, pendingLogin]);
 

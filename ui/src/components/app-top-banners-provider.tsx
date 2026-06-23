@@ -1,24 +1,24 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 
 import { NetworkStatusBanner } from "@/components/network-status-banner";
 import { useNetworkStatus } from "@/hooks/use-network-status";
+import { getAppTopBannerOffset } from "@/lib/app-environment";
 
-const BANNER_OFFSET = "2.75rem";
-
-export function NetworkStatusProvider({ children }: { children: ReactNode }) {
+export function AppTopBannersProvider({ children }: { children: ReactNode }) {
   const network = useNetworkStatus();
 
+  const topBannerCount = useMemo(
+    () => (network.bannerKind ? 1 : 0),
+    [network.bannerKind],
+  );
+
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--network-status-banner-offset",
-      network.bannerKind ? BANNER_OFFSET : "0px",
-    );
+    const offset = getAppTopBannerOffset(topBannerCount);
+    document.documentElement.style.setProperty("--app-top-banner-offset", offset);
     return () => {
-      document.documentElement.style.removeProperty(
-        "--network-status-banner-offset",
-      );
+      document.documentElement.style.removeProperty("--app-top-banner-offset");
     };
-  }, [network.bannerKind]);
+  }, [topBannerCount]);
 
   return (
     <>

@@ -1,6 +1,9 @@
 import { BrandLogo } from "@/components/brand-logo";
 import { OpsEnvironmentGateDialog } from "@/components/ops/ops-environment-gate-dialog";
+import { UatEnvironmentBadge } from "@/components/uat-environment-badge";
+import { UatEnvironmentNoticeDialog } from "@/components/uat-environment-notice-dialog";
 import { useOpsEnvironmentGate } from "@/hooks/use-ops-environment-gate";
+import { usePostLoginUatNotice } from "@/hooks/use-post-login-uat-notice";
 import { useSessionUser } from "@/hooks/use-session-user";
 import {
   formatOpsRoleBadgeLabel,
@@ -87,6 +90,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
   const matches = useMatches();
   const sessionUser = useSessionUser();
   const envGate = useOpsEnvironmentGate();
+  const uatNotice = usePostLoginUatNotice();
   const [showDesktopWarning, setShowDesktopWarning] = React.useState(false);
   const [installBusy, setInstallBusy] = React.useState(false);
   const [installHelpOpen, setInstallHelpOpen] = React.useState(false);
@@ -278,7 +282,10 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         )}
         inert={!envGate.environmentReady ? true : undefined}
       >
-        <header className="sticky top-(--network-status-banner-offset,0px) z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
+        <header className="relative sticky top-(--app-top-banner-offset,0px) z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4">
+            <UatEnvironmentBadge className="pointer-events-auto" />
+          </div>
           <div className="mx-auto flex max-w-md items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-0.5">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground font-title">
@@ -371,6 +378,10 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         locationError={envGate.locationError}
         onRecheck={envGate.recheckAll}
         onRequestLocation={envGate.acquireLocation}
+      />
+      <UatEnvironmentNoticeDialog
+        open={uatNotice.open}
+        onOpenChange={uatNotice.setOpen}
       />
       <Dialog open={showDesktopWarning} onOpenChange={setShowDesktopWarning}>
         <DialogContent>

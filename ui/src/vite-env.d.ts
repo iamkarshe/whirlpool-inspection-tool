@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_ALLOW_DEFAULT_LOCATION: string;
   readonly VITE_APP_EMAIL: string;
   readonly VITE_APP_PASSWORD: string;
+  readonly VITE_PROD_URL: string;
   readonly VITE_VAPID_PUBLIC_KEY?: string;
 }
 
@@ -22,5 +23,6 @@ interface Navigator {
 interface Window {
   readonly __WHIRLPOOL_ENV__?: {
     readonly VITE_API_BASE_URL?: string;
+    readonly VITE_PROD_URL?: string;
   };
 }

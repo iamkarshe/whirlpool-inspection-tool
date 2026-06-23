@@ -20,6 +20,8 @@ import {
 } from "@/lib/session-password-flags";
 import { PAGES } from "@/endpoints";
 import { isAxiosError } from "axios";
+import type { NavigateFunction } from "react-router-dom";
+import { markUatNoticeAfterLogin } from "@/lib/uat-environment-notice";
 
 export { requiresPasswordChange } from "@/lib/session-password-flags";
 
@@ -118,6 +120,15 @@ export function resolvePostLoginHref(roleRaw: string): string {
   const r = roleRaw.trim().toLowerCase();
   if (r === "operator" || r === "manager") return PAGES.OPS_HOME;
   return PAGES.DASHBOARD_REPORTS_EXECUTIVE_ANALYTICS;
+}
+
+/** Navigate to the role home after login and queue the UAT notice dialog. */
+export function navigateAfterAuthenticatedLogin(
+  navigate: NavigateFunction,
+  role: string,
+): void {
+  markUatNoticeAfterLogin();
+  navigate(resolvePostLoginHref(role), { replace: true });
 }
 
 /** Clears persisted auth and Axios bearer header (logout). */

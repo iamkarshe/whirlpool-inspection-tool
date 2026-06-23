@@ -25,8 +25,8 @@ import { persistPendingLoginForPasswordChange } from "@/lib/pending-login-state"
 import AuthLayout from "@/pages/auth/layout";
 import {
   loginRequiresPasswordChange,
+  navigateAfterAuthenticatedLogin,
   persistAuthenticatedSession,
-  resolvePostLoginHref,
   shouldShowDeviceSelection,
 } from "@/services/login-service";
 import {
@@ -79,7 +79,7 @@ export default function TwoFactorSetupLoginPage() {
   const finishLoginNavigation = useCallback(
     (login: LoginResponse) => {
       toast.success(`Welcome back, ${login.name}.`);
-      navigate(resolvePostLoginHref(login.role), { replace: true });
+      navigateAfterAuthenticatedLogin(navigate, login.role);
     },
     [navigate],
   );

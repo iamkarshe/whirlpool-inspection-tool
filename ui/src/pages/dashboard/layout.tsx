@@ -2,6 +2,8 @@ import { AppNotificationsProvider } from "@/contexts/app-notifications-provider"
 import { SiteHeader } from "@/components/layout/header";
 import { AppSidebar } from "@/components/layout/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { UatEnvironmentNoticeDialog } from "@/components/uat-environment-notice-dialog";
+import { usePostLoginUatNotice } from "@/hooks/use-post-login-uat-notice";
 import { setPageTitle } from "@/lib/core";
 import DashboardRouteGuard from "@/router/dashboard-route-guard";
 import React, { useEffect, useMemo } from "react";
@@ -11,6 +13,7 @@ type RouteHandle = { title?: string };
 
 export default function DashboardLayout() {
   const defaultOpen = true;
+  const uatNotice = usePostLoginUatNotice();
 
   const matches = useMatches();
 
@@ -27,6 +30,10 @@ export default function DashboardLayout() {
 
   return (
     <AppNotificationsProvider>
+      <UatEnvironmentNoticeDialog
+        open={uatNotice.open}
+        onOpenChange={uatNotice.setOpen}
+      />
       <SidebarProvider
         defaultOpen={defaultOpen}
         style={

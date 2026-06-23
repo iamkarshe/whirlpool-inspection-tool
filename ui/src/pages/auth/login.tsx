@@ -37,8 +37,8 @@ import {
   loginRequiresMfaSetup,
   loginRequiresMfaVerification,
   loginRequiresPasswordChange,
+  navigateAfterAuthenticatedLogin,
   persistAuthenticatedSession,
-  resolvePostLoginHref,
   shouldShowDeviceSelection,
 } from "@/services/login-service";
 import { persistPendingLoginForPasswordChange } from "@/lib/pending-login-state";
@@ -91,7 +91,7 @@ export default function LoginPage() {
   const finishLoginNavigation = useCallback(
     (login: LoginResponse) => {
       toast.success(`Welcome back, ${login.name}.`);
-      navigate(resolvePostLoginHref(login.role), { replace: true });
+      navigateAfterAuthenticatedLogin(navigate, login.role);
     },
     [navigate],
   );
