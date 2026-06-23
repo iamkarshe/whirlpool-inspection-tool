@@ -497,6 +497,11 @@ def map_inspection_list_item(
         device_fingerprint=device_display_label(device),
         product_id=inspection.product_id,
         product_material_code=product.material_code if product else "",
+        product_barcode=(
+            inspection.product_unit.barcode.strip()
+            if inspection.product_unit and inspection.product_unit.barcode
+            else None
+        ),
         inspection_type=inspection_type_value(inspection),
         review_status=review_status_str,
         reviewer_id=inspection.reviewer_id,

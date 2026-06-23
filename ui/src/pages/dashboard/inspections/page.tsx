@@ -126,6 +126,8 @@ export default function InspectionsPage() {
           ) : null}
           <InspectionsDataTable
             data={rows}
+            hideDeviceColumn
+            showBarcodeColumn
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             serverSide={serverSide}

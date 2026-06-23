@@ -53,7 +53,8 @@ class InspectionListQueryParams(InspectionScopeQueryParams):
     search: str | None = Field(
         default=None,
         description=(
-            "Search inspector name, material code/description, device fingerprint, or IMEI."
+            "Search product unit barcode, inspector name, material code/description, "
+            "device fingerprint, or IMEI."
         ),
     )
     sort_by: str | None = Field(

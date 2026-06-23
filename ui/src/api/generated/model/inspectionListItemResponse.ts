@@ -17,6 +17,7 @@ export interface InspectionListItemResponse {
   device_fingerprint: string;
   product_id: number;
   product_material_code: string;
+  product_barcode?: string | null;
   inspection_type: string;
   review_status: string;
   reviewer_id: number | null;

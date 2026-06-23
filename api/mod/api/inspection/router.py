@@ -71,7 +71,7 @@ from mod.api.inspection.response import (
     StartOutboundInspectionRequest,
 )
 from mod.api.middleware import auth_dependency
-from mod.model import Device, Inspection, InspectionType, Product, User
+from mod.model import Device, Inspection, InspectionType, Product, ProductUnit, User
 from utils.common import resolve_inspection_kpi_period
 from utils.db import get_db
 from utils.decorator import (
@@ -375,6 +375,7 @@ def get_inspections(
         db.query(Inspection)
         .join(Product, Inspection.product_id == Product.id)
         .join(Device, Inspection.device_id == Device.id)
+        .outerjoin(ProductUnit, Inspection.product_unit_id == ProductUnit.id)
         .outerjoin(User, Inspection.inspector_id == User.id)
         .options(
             joinedload(Inspection.inspector),
@@ -409,6 +410,7 @@ def get_inspections(
         query=query,
         params=filter_params,
         search_columns=[
+            ProductUnit.barcode,
             User.name,
             Product.material_code,
             Product.material_description,

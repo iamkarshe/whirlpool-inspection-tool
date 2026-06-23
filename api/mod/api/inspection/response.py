@@ -93,6 +93,7 @@ class InspectionListItemResponse(BaseModel):
     device_fingerprint: str
     product_id: int
     product_material_code: str
+    product_barcode: str | None = None
     inspection_type: str
     review_status: str
     reviewer_id: int | None

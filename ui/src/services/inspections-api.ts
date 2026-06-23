@@ -126,6 +126,11 @@ export function mapInspectionListItemToInspection(
     "product_category_name",
     "productCategoryName",
   ]);
+  const product_barcode = optionalCodeFromListItem(row, [
+    "product_barcode",
+    "productBarcode",
+    "barcode",
+  ]);
 
   return {
     id: row.uuid,
@@ -136,6 +141,7 @@ export function mapInspectionListItemToInspection(
     device_fingerprint: row.device_fingerprint,
     product_id: row.product_id,
     product_serial: row.product_material_code,
+    product_barcode: product_barcode ?? null,
     product_category_pair,
     product_category_type,
     product_category_sub_category,

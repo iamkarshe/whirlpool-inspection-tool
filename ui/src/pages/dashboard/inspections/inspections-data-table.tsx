@@ -63,6 +63,8 @@ export type InspectionsDataTableProps = {
   data: Inspection[];
   /** When true, hide the Device column (e.g. on device inspections tab). */
   hideDeviceColumn?: boolean;
+  /** When true, show the product unit barcode column (e.g. main inspections list). */
+  showBarcodeColumn?: boolean;
   dateRange?: DateRange | undefined;
   onDateRangeChange?: (range: DateRange | undefined) => void;
   downloadCsvFileName?: string;
@@ -226,6 +228,26 @@ function SectionStatusCell({
   );
 }
 
+const barcodeColumn: ColumnDef<Inspection> = {
+  id: "product_barcode",
+  accessorKey: "product_barcode",
+  header: ({ column }) => (
+    <Button
+      className="-ml-3"
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      Barcode
+      <ArrowUpDown className="ml-1 h-4 w-4" />
+    </Button>
+  ),
+  cell: ({ row }) => (
+    <span className="font-mono text-sm">
+      {row.original.product_barcode?.trim() || "—"}
+    </span>
+  ),
+};
+
 const deviceColumn: ColumnDef<Inspection> = {
   id: "device",
   accessorKey: "device_uuid",
@@ -250,6 +272,7 @@ const deviceColumn: ColumnDef<Inspection> = {
 export default function InspectionsDataTable({
   data,
   hideDeviceColumn = false,
+  showBarcodeColumn = false,
   dateRange,
   onDateRangeChange,
   downloadCsvFileName,
@@ -338,7 +361,7 @@ export default function InspectionsDataTable({
       filterFn: (row, _columnId, filterValue) =>
         row.getValue("inspector_name") === filterValue,
     },
-    ...(hideDeviceColumn ? [] : [deviceColumn]),
+    ...(showBarcodeColumn ? [barcodeColumn] : hideDeviceColumn ? [] : [deviceColumn]),
     {
       accessorKey: "product_serial",
       header: ({ column }) => (
@@ -595,11 +618,21 @@ export default function InspectionsDataTable({
         <DataTable<Inspection>
           columns={columns}
           data={data}
-          searchKey={serverSide ? undefined : "product_serial"}
+          searchKey={
+            serverSide
+              ? undefined
+              : showBarcodeColumn
+                ? "product_barcode"
+                : "product_serial"
+          }
           searchFields={
             serverSide
-              ? (["product_serial", "inspector_name", "device_fingerprint"] as const)
-              : undefined
+              ? showBarcodeColumn
+                ? (["product_barcode"] as const)
+                : (["product_serial", "inspector_name", "device_fingerprint"] as const)
+              : showBarcodeColumn
+                ? (["product_barcode", "product_serial", "inspector_name"] as const)
+                : undefined
           }
           filters={serverSide ? undefined : filters}
           dateRangeFilter={

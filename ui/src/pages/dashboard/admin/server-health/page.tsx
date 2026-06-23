@@ -16,13 +16,18 @@ import {
 } from "@/services/server-health-api";
 
 export default function ServerHealthPage() {
-  const [restSnapshot, setRestSnapshot] =
-    useState<ServerHealthSnapshot | null>(null);
+  const [restSnapshot, setRestSnapshot] = useState<ServerHealthSnapshot | null>(
+    null,
+  );
   const [restLoading, setRestLoading] = useState(true);
   const [restError, setRestError] = useState<string | null>(null);
 
-  const { snapshot: wsSnapshot, status, closeReason, reconnect } =
-    useServerHealthStream(true);
+  const {
+    snapshot: wsSnapshot,
+    status,
+    closeReason,
+    reconnect,
+  } = useServerHealthStream(true);
 
   const snapshot = wsSnapshot ?? restSnapshot;
 
@@ -52,7 +57,7 @@ export default function ServerHealthPage() {
     <div className="space-y-6">
       <PageActionBar
         title="Server Health"
-        description="Live CPU, memory, disk, and process metrics for the API host."
+        description="Live CPU, memory, disk, and process metrics for the application server."
       >
         <ConnectionStatusBadge
           status={status}
