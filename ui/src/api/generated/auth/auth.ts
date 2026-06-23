@@ -16,10 +16,20 @@ import type {
   LoginRequest,
   LoginResponse,
   LoginTokenRequest,
+  LoginTwoFactorSetupRequest,
+  LoginVerifyTwoFactorRequest,
   ResetPasswordRequest,
   ResetPasswordResponse,
   ResolveDevicesRequest,
-  ResolveDevicesResponse
+  ResolveDevicesResponse,
+  TwoFactorConfirmRequest,
+  TwoFactorConfirmResponse,
+  TwoFactorDisableRequest,
+  TwoFactorDisableResponse,
+  TwoFactorResetRequest,
+  TwoFactorResetResponse,
+  TwoFactorSetupStartResponse,
+  TwoFactorStatusResponse
 } from '../model';
 
 import { customInstance } from '../../axios-instance';
@@ -81,6 +91,98 @@ const resetPasswordAuthResetPasswordPost = (
       {url: `/auth/reset-password`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: resetPasswordRequest
+    },
+      options);
+    }
+  /**
+ * Second step after POST /auth/login or POST /auth/login-token when mfa_required or mfa_setup_required is true.
+ * @summary Complete login with authenticator code
+ */
+const loginVerifyTwoFactorAuthLoginVerify2faPost = (
+    loginVerifyTwoFactorRequest: LoginVerifyTwoFactorRequest,
+ options?: SecondParameter<typeof customInstance<LoginResponse>>,) => {
+      return customInstance<LoginResponse>(
+      {url: `/auth/login/verify-2fa`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: loginVerifyTwoFactorRequest
+    },
+      options);
+    }
+  /**
+ * Returns the TOTP secret and provisioning URI after password/SSO verification when mfa_setup_required is true. Scan the QR code, then call POST /auth/login/verify-2fa with the first code.
+ * @summary Start enforced 2FA enrollment during login
+ */
+const loginStartTwoFactorSetupAuthLogin2faSetupPost = (
+    loginTwoFactorSetupRequest: LoginTwoFactorSetupRequest,
+ options?: SecondParameter<typeof customInstance<TwoFactorSetupStartResponse>>,) => {
+      return customInstance<TwoFactorSetupStartResponse>(
+      {url: `/auth/login/2fa/setup`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: loginTwoFactorSetupRequest
+    },
+      options);
+    }
+  /**
+ * @summary Get current user's 2FA status
+ */
+const getTwoFactorStatusAuth2faStatusGet = (
+
+ options?: SecondParameter<typeof customInstance<TwoFactorStatusResponse>>,) => {
+      return customInstance<TwoFactorStatusResponse>(
+      {url: `/auth/2fa/status`, method: 'GET'
+    },
+      options);
+    }
+  /**
+ * Generates a new TOTP secret and provisioning URI. Confirm with POST /auth/2fa/confirm before 2FA is enabled.
+ * @summary Start personal 2FA enrollment
+ */
+const startTwoFactorSetupAuth2faSetupPost = (
+
+ options?: SecondParameter<typeof customInstance<TwoFactorSetupStartResponse>>,) => {
+      return customInstance<TwoFactorSetupStartResponse>(
+      {url: `/auth/2fa/setup`, method: 'POST'
+    },
+      options);
+    }
+  /**
+ * @summary Confirm personal 2FA enrollment
+ */
+const confirmTwoFactorSetupAuth2faConfirmPost = (
+    twoFactorConfirmRequest: TwoFactorConfirmRequest,
+ options?: SecondParameter<typeof customInstance<TwoFactorConfirmResponse>>,) => {
+      return customInstance<TwoFactorConfirmResponse>(
+      {url: `/auth/2fa/confirm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorConfirmRequest
+    },
+      options);
+    }
+  /**
+ * Not allowed when an administrator has enforced 2FA for the account.
+ * @summary Disable personal 2FA
+ */
+const disableTwoFactorAuth2faDisablePost = (
+    twoFactorDisableRequest: TwoFactorDisableRequest,
+ options?: SecondParameter<typeof customInstance<TwoFactorDisableResponse>>,) => {
+      return customInstance<TwoFactorDisableResponse>(
+      {url: `/auth/2fa/disable`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorDisableRequest
+    },
+      options);
+    }
+  /**
+ * Clears the authenticated user's TOTP secret using their account password. Use when the user lost their authenticator app but still has an active session, or wants to enroll a new device. Only the signed-in user can reset their own 2FA. When two_factor_enforced is true, the user must enroll again before the next login.
+ * @summary Reset your own two-factor authentication
+ */
+const resetTwoFactorSelfAuth2faResetPost = (
+    twoFactorResetRequest: TwoFactorResetRequest,
+ options?: SecondParameter<typeof customInstance<TwoFactorResetResponse>>,) => {
+      return customInstance<TwoFactorResetResponse>(
+      {url: `/auth/2fa/reset`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: twoFactorResetRequest
     },
       options);
     }
@@ -148,11 +250,18 @@ const deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost = (
     },
       options);
     }
-  return {loginAuthLoginPost,loginTokenAuthLoginTokenPost,forgotPasswordAuthForgotPasswordPost,resetPasswordAuthResetPasswordPost,requestChangePasswordOtpAuthChangePasswordRequestOtpPost,changePasswordAuthChangePasswordPost,listActiveAuthDevicesAuthDevicesActiveGet,resolveAuthDevicesAuthDevicesResolvePost,deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost}};
+  return {loginAuthLoginPost,loginTokenAuthLoginTokenPost,forgotPasswordAuthForgotPasswordPost,resetPasswordAuthResetPasswordPost,loginVerifyTwoFactorAuthLoginVerify2faPost,loginStartTwoFactorSetupAuthLogin2faSetupPost,getTwoFactorStatusAuth2faStatusGet,startTwoFactorSetupAuth2faSetupPost,confirmTwoFactorSetupAuth2faConfirmPost,disableTwoFactorAuth2faDisablePost,resetTwoFactorSelfAuth2faResetPost,requestChangePasswordOtpAuthChangePasswordRequestOtpPost,changePasswordAuthChangePasswordPost,listActiveAuthDevicesAuthDevicesActiveGet,resolveAuthDevicesAuthDevicesResolvePost,deregisterAuthDeviceAuthDevicesDeviceUuidDeregisterPost}};
 export type LoginAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginAuthLoginPost']>>>
 export type LoginTokenAuthLoginTokenPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginTokenAuthLoginTokenPost']>>>
 export type ForgotPasswordAuthForgotPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['forgotPasswordAuthForgotPasswordPost']>>>
 export type ResetPasswordAuthResetPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resetPasswordAuthResetPasswordPost']>>>
+export type LoginVerifyTwoFactorAuthLoginVerify2faPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginVerifyTwoFactorAuthLoginVerify2faPost']>>>
+export type LoginStartTwoFactorSetupAuthLogin2faSetupPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginStartTwoFactorSetupAuthLogin2faSetupPost']>>>
+export type GetTwoFactorStatusAuth2faStatusGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getTwoFactorStatusAuth2faStatusGet']>>>
+export type StartTwoFactorSetupAuth2faSetupPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['startTwoFactorSetupAuth2faSetupPost']>>>
+export type ConfirmTwoFactorSetupAuth2faConfirmPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['confirmTwoFactorSetupAuth2faConfirmPost']>>>
+export type DisableTwoFactorAuth2faDisablePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['disableTwoFactorAuth2faDisablePost']>>>
+export type ResetTwoFactorSelfAuth2faResetPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['resetTwoFactorSelfAuth2faResetPost']>>>
 export type RequestChangePasswordOtpAuthChangePasswordRequestOtpPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['requestChangePasswordOtpAuthChangePasswordRequestOtpPost']>>>
 export type ChangePasswordAuthChangePasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['changePasswordAuthChangePasswordPost']>>>
 export type ListActiveAuthDevicesAuthDevicesActiveGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['listActiveAuthDevicesAuthDevicesActiveGet']>>>

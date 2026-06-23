@@ -8,6 +8,7 @@
 import type {
   BodyUploadUsersCsvApiUsersCsvUploadPost,
   GetUsersApiUsersGetParams,
+  TwoFactorResetResponse,
   UserCreateRequest,
   UserCsvUpsertResponse,
   UserGenerateVpnRequest,
@@ -145,6 +146,18 @@ const revokeUserVpnApiUsersUserUuidVpnRevokeGet = (
       options);
     }
   /**
+ * Superadmin-only: clears another user's TOTP secret and disables 2FA so they can enroll again. Use when a user lost access to their authenticator app and cannot self-reset. Managers and other roles cannot reset 2FA for other users. Superadmin accounts cannot be reset via this API.
+ * @summary Reset user two-factor authentication (superadmin only)
+ */
+const resetUserTwoFactorApiUsersUserUuidReset2faPost = (
+    userUuid: string,
+ options?: SecondParameter<typeof customInstance<TwoFactorResetResponse>>,) => {
+      return customInstance<TwoFactorResetResponse>(
+      {url: `/api/users/${userUuid}/reset-2fa`, method: 'POST'
+    },
+      options);
+    }
+  /**
  * Partial update: send only fields to change. Set is_active to false to deactivate; VPN is revoked automatically. Superadmin accounts cannot be edited.
  * @summary Update user
  */
@@ -159,7 +172,7 @@ const updateUserApiUsersUserUuidPut = (
     },
       options);
     }
-  return {getUsersApiUsersGet,createUserApiUsersPost,downloadUsersCsvTemplateApiUsersCsvTemplateGet,uploadUsersCsvApiUsersCsvUploadPost,onboardUserApiUsersUserUuidOnboardPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,revokeUserVpnApiUsersUserUuidVpnRevokeGet,updateUserApiUsersUserUuidPut}};
+  return {getUsersApiUsersGet,createUserApiUsersPost,downloadUsersCsvTemplateApiUsersCsvTemplateGet,uploadUsersCsvApiUsersCsvUploadPost,onboardUserApiUsersUserUuidOnboardPost,generateUserVpnApiUsersGenerateVpnPost,downloadUserVpnConfigApiUsersUserUuidVpnConfigGet,downloadUserVpnQrApiUsersUserUuidVpnQrGet,revokeUserVpnApiUsersUserUuidVpnRevokeGet,resetUserTwoFactorApiUsersUserUuidReset2faPost,updateUserApiUsersUserUuidPut}};
 export type GetUsersApiUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['getUsersApiUsersGet']>>>
 export type CreateUserApiUsersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['createUserApiUsersPost']>>>
 export type DownloadUsersCsvTemplateApiUsersCsvTemplateGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUsersCsvTemplateApiUsersCsvTemplateGet']>>>
@@ -169,4 +182,5 @@ export type GenerateUserVpnApiUsersGenerateVpnPostResult = NonNullable<Awaited<R
 export type DownloadUserVpnConfigApiUsersUserUuidVpnConfigGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnConfigApiUsersUserUuidVpnConfigGet']>>>
 export type DownloadUserVpnQrApiUsersUserUuidVpnQrGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['downloadUserVpnQrApiUsersUserUuidVpnQrGet']>>>
 export type RevokeUserVpnApiUsersUserUuidVpnRevokeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['revokeUserVpnApiUsersUserUuidVpnRevokeGet']>>>
+export type ResetUserTwoFactorApiUsersUserUuidReset2faPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['resetUserTwoFactorApiUsersUserUuidReset2faPost']>>>
 export type UpdateUserApiUsersUserUuidPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUsers>['updateUserApiUsersUserUuidPut']>>>

@@ -44,4 +44,8 @@ export interface UserResponse {
   password_expired?: boolean;
   /** UTC time when the welcome onboarding email was last delivered successfully. Null means the user has not received an onboarding email yet. */
   onboard_email_sent_at?: string | null;
+  /** Whether TOTP two-factor authentication is active. */
+  two_factor_enabled?: boolean;
+  /** Whether an administrator requires this user to enroll in 2FA. */
+  two_factor_enforced?: boolean;
 }

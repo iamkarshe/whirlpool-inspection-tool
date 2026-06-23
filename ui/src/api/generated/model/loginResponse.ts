@@ -29,4 +29,14 @@ export interface LoginResponse {
   password_expired?: boolean;
   /** True when POST /auth/change-password requires an email OTP. False on first login (must_change_password); true after onboarding when CHANGE_PASSWORD_OTP_REQUIRED is enabled (default true). */
   change_password_otp_required?: boolean;
+  /** True when password/SSO verification succeeded but the user must submit a TOTP code via POST /auth/login/verify-2fa before receiving access_token. */
+  mfa_required?: boolean;
+  /** True when admin-enforced 2FA is enabled but the user has not enrolled yet. Call POST /auth/login/2fa/setup then POST /auth/login/verify-2fa. */
+  mfa_setup_required?: boolean;
+  /** Short-lived token for the second login step. Omitted when login is complete. */
+  mfa_pending_token?: string | null;
+  /** Whether TOTP two-factor authentication is active for this user. */
+  two_factor_enabled?: boolean;
+  /** Whether an administrator requires this user to use two-factor authentication. */
+  two_factor_enforced?: boolean;
 }

@@ -258,6 +258,258 @@
         }
       }
     },
+    "/auth/login/verify-2fa": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Complete login with authenticator code",
+        "description": "Second step after POST /auth/login or POST /auth/login-token when mfa_required or mfa_setup_required is true.",
+        "operationId": "login_verify_two_factor_auth_login_verify_2fa_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginVerifyTwoFactorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login/2fa/setup": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Start enforced 2FA enrollment during login",
+        "description": "Returns the TOTP secret and provisioning URI after password/SSO verification when mfa_setup_required is true. Scan the QR code, then call POST /auth/login/verify-2fa with the first code.",
+        "operationId": "login_start_two_factor_setup_auth_login_2fa_setup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginTwoFactorSetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorSetupStartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/2fa/status": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get current user's 2FA status",
+        "operationId": "get_two_factor_status_auth_2fa_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/2fa/setup": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Start personal 2FA enrollment",
+        "description": "Generates a new TOTP secret and provisioning URI. Confirm with POST /auth/2fa/confirm before 2FA is enabled.",
+        "operationId": "start_two_factor_setup_auth_2fa_setup_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorSetupStartResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/2fa/confirm": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Confirm personal 2FA enrollment",
+        "operationId": "confirm_two_factor_setup_auth_2fa_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorConfirmResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/2fa/disable": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Disable personal 2FA",
+        "description": "Not allowed when an administrator has enforced 2FA for the account.",
+        "operationId": "disable_two_factor_auth_2fa_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorDisableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorDisableResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/2fa/reset": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Reset your own two-factor authentication",
+        "description": "Clears the authenticated user's TOTP secret using their account password. Use when the user lost their authenticator app but still has an active session, or wants to enroll a new device. Only the signed-in user can reset their own 2FA. When two_factor_enforced is true, the user must enroll again before the next login.",
+        "operationId": "reset_two_factor_self_auth_2fa_reset_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorResetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/release-notes": {
       "get": {
         "tags": [
@@ -1024,6 +1276,58 @@
           },
           "503": {
             "description": "VPN provision service not configured."
+          }
+        }
+      }
+    },
+    "/api/users/{user_uuid}/reset-2fa": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Reset user two-factor authentication (superadmin only)",
+        "description": "Superadmin-only: clears another user's TOTP secret and disables 2FA so they can enroll again. Use when a user lost access to their authenticator app and cannot self-reset. Managers and other roles cannot reset 2FA for other users. Superadmin accounts cannot be reset via this API.",
+        "operationId": "reset_user_two_factor_api_users__user_uuid__reset_2fa_post",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "User UUID.",
+              "title": "User Uuid"
+            },
+            "description": "User UUID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorResetResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller is not superadmin, or target user is superadmin."
+          },
+          "404": {
+            "description": "User not found."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -6249,6 +6553,31 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/server-health/snapshot": {
+      "get": {
+        "tags": [
+          "Server Health"
+        ],
+        "summary": "Current server health snapshot",
+        "description": "Returns one htop-style snapshot for the API host: CPU, memory, swap, load, disk usage, top processes, and slow processes. Superadmin only.",
+        "operationId": "get_server_health_snapshot_api_server_health_snapshot_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerHealthSnapshot"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Caller is not superadmin."
           }
         }
       }
@@ -12083,6 +12412,42 @@
             "title": "Change Password Otp Required",
             "description": "True when POST /auth/change-password requires an email OTP. False on first login (must_change_password); true after onboarding when CHANGE_PASSWORD_OTP_REQUIRED is enabled (default true).",
             "default": false
+          },
+          "mfa_required": {
+            "type": "boolean",
+            "title": "Mfa Required",
+            "description": "True when password/SSO verification succeeded but the user must submit a TOTP code via POST /auth/login/verify-2fa before receiving access_token.",
+            "default": false
+          },
+          "mfa_setup_required": {
+            "type": "boolean",
+            "title": "Mfa Setup Required",
+            "description": "True when admin-enforced 2FA is enabled but the user has not enrolled yet. Call POST /auth/login/2fa/setup then POST /auth/login/verify-2fa.",
+            "default": false
+          },
+          "mfa_pending_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mfa Pending Token",
+            "description": "Short-lived token for the second login step. Omitted when login is complete."
+          },
+          "two_factor_enabled": {
+            "type": "boolean",
+            "title": "Two Factor Enabled",
+            "description": "Whether TOTP two-factor authentication is active for this user.",
+            "default": false
+          },
+          "two_factor_enforced": {
+            "type": "boolean",
+            "title": "Two Factor Enforced",
+            "description": "Whether an administrator requires this user to use two-factor authentication.",
+            "default": false
           }
         },
         "type": "object",
@@ -12122,6 +12487,58 @@
           "access_token"
         ],
         "title": "LoginTokenRequest"
+      },
+      "LoginTwoFactorSetupRequest": {
+        "properties": {
+          "mfa_pending_token": {
+            "type": "string",
+            "minLength": 16,
+            "title": "Mfa Pending Token",
+            "description": "Token returned from POST /auth/login when mfa_setup_required is true."
+          }
+        },
+        "type": "object",
+        "required": [
+          "mfa_pending_token"
+        ],
+        "title": "LoginTwoFactorSetupRequest",
+        "examples": [
+          {
+            "mfa_pending_token": ""
+          }
+        ]
+      },
+      "LoginVerifyTwoFactorRequest": {
+        "properties": {
+          "mfa_pending_token": {
+            "type": "string",
+            "minLength": 16,
+            "title": "Mfa Pending Token",
+            "description": "Token returned from POST /auth/login when mfa_required or mfa_setup_required is true."
+          },
+          "totp_code": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 6,
+            "title": "Totp Code",
+            "description": "Six-digit code from the authenticator app.",
+            "examples": [
+              "123456"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "mfa_pending_token",
+          "totp_code"
+        ],
+        "title": "LoginVerifyTwoFactorRequest",
+        "examples": [
+          {
+            "mfa_pending_token": "",
+            "totp_code": "123456"
+          }
+        ]
       },
       "ManagerInspectionTeamKpisResponse": {
         "properties": {
@@ -13939,6 +14356,306 @@
         ],
         "title": "SampleSendEmailRequest"
       },
+      "ServerCpuInfo": {
+        "properties": {
+          "percent": {
+            "type": "number",
+            "title": "Percent",
+            "description": "Overall CPU usage percent."
+          },
+          "per_cpu_percent": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Per Cpu Percent",
+            "description": "Per-core CPU usage percent."
+          },
+          "logical_cpu_count": {
+            "type": "integer",
+            "title": "Logical Cpu Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "percent",
+          "logical_cpu_count"
+        ],
+        "title": "ServerCpuInfo"
+      },
+      "ServerDiskInfo": {
+        "properties": {
+          "mountpoint": {
+            "type": "string",
+            "title": "Mountpoint"
+          },
+          "device": {
+            "type": "string",
+            "title": "Device"
+          },
+          "fstype": {
+            "type": "string",
+            "title": "Fstype"
+          },
+          "total_bytes": {
+            "type": "integer",
+            "title": "Total Bytes"
+          },
+          "used_bytes": {
+            "type": "integer",
+            "title": "Used Bytes"
+          },
+          "free_bytes": {
+            "type": "integer",
+            "title": "Free Bytes"
+          },
+          "percent": {
+            "type": "number",
+            "title": "Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mountpoint",
+          "device",
+          "fstype",
+          "total_bytes",
+          "used_bytes",
+          "free_bytes",
+          "percent"
+        ],
+        "title": "ServerDiskInfo"
+      },
+      "ServerHealthSnapshot": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "WebSocket message type.",
+            "default": "snapshot"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collected At"
+          },
+          "host": {
+            "$ref": "#/components/schemas/ServerHostInfo"
+          },
+          "cpu": {
+            "$ref": "#/components/schemas/ServerCpuInfo"
+          },
+          "memory": {
+            "$ref": "#/components/schemas/ServerMemoryInfo"
+          },
+          "swap": {
+            "$ref": "#/components/schemas/ServerSwapInfo"
+          },
+          "load_average": {
+            "$ref": "#/components/schemas/ServerLoadAverage"
+          },
+          "disks": {
+            "items": {
+              "$ref": "#/components/schemas/ServerDiskInfo"
+            },
+            "type": "array",
+            "title": "Disks"
+          },
+          "processes": {
+            "items": {
+              "$ref": "#/components/schemas/ServerProcessInfo"
+            },
+            "type": "array",
+            "title": "Processes",
+            "description": "Top processes by CPU usage."
+          },
+          "slow_processes": {
+            "items": {
+              "$ref": "#/components/schemas/ServerProcessInfo"
+            },
+            "type": "array",
+            "title": "Slow Processes",
+            "description": "Processes above CPU or memory thresholds."
+          }
+        },
+        "type": "object",
+        "required": [
+          "collected_at",
+          "host",
+          "cpu",
+          "memory",
+          "swap",
+          "load_average",
+          "disks",
+          "processes",
+          "slow_processes"
+        ],
+        "title": "ServerHealthSnapshot"
+      },
+      "ServerHostInfo": {
+        "properties": {
+          "hostname": {
+            "type": "string",
+            "title": "Hostname"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "boot_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Boot Time"
+          },
+          "uptime_seconds": {
+            "type": "integer",
+            "title": "Uptime Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hostname",
+          "platform",
+          "boot_time",
+          "uptime_seconds"
+        ],
+        "title": "ServerHostInfo"
+      },
+      "ServerLoadAverage": {
+        "properties": {
+          "load_1m": {
+            "type": "number",
+            "title": "Load 1M"
+          },
+          "load_5m": {
+            "type": "number",
+            "title": "Load 5M"
+          },
+          "load_15m": {
+            "type": "number",
+            "title": "Load 15M"
+          }
+        },
+        "type": "object",
+        "required": [
+          "load_1m",
+          "load_5m",
+          "load_15m"
+        ],
+        "title": "ServerLoadAverage"
+      },
+      "ServerMemoryInfo": {
+        "properties": {
+          "total_bytes": {
+            "type": "integer",
+            "title": "Total Bytes"
+          },
+          "used_bytes": {
+            "type": "integer",
+            "title": "Used Bytes"
+          },
+          "available_bytes": {
+            "type": "integer",
+            "title": "Available Bytes"
+          },
+          "percent": {
+            "type": "number",
+            "title": "Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_bytes",
+          "used_bytes",
+          "available_bytes",
+          "percent"
+        ],
+        "title": "ServerMemoryInfo"
+      },
+      "ServerProcessInfo": {
+        "properties": {
+          "pid": {
+            "type": "integer",
+            "title": "Pid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "cpu_percent": {
+            "type": "number",
+            "title": "Cpu Percent"
+          },
+          "memory_percent": {
+            "type": "number",
+            "title": "Memory Percent"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "create_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Create Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pid",
+          "name",
+          "cpu_percent",
+          "memory_percent",
+          "status"
+        ],
+        "title": "ServerProcessInfo"
+      },
+      "ServerSwapInfo": {
+        "properties": {
+          "total_bytes": {
+            "type": "integer",
+            "title": "Total Bytes"
+          },
+          "used_bytes": {
+            "type": "integer",
+            "title": "Used Bytes"
+          },
+          "free_bytes": {
+            "type": "integer",
+            "title": "Free Bytes"
+          },
+          "percent": {
+            "type": "number",
+            "title": "Percent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_bytes",
+          "used_bytes",
+          "free_bytes",
+          "percent"
+        ],
+        "title": "ServerSwapInfo"
+      },
       "SkuListResponse": {
         "properties": {
           "data": {
@@ -15100,6 +15817,181 @@
         ],
         "title": "TaskListResponse"
       },
+      "TwoFactorConfirmRequest": {
+        "properties": {
+          "totp_code": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 6,
+            "title": "Totp Code",
+            "description": "Six-digit code from the authenticator app.",
+            "examples": [
+              "123456"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "totp_code"
+        ],
+        "title": "TwoFactorConfirmRequest",
+        "examples": [
+          {
+            "totp_code": "123456"
+          }
+        ]
+      },
+      "TwoFactorConfirmResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Two-factor authentication enabled"
+          },
+          "two_factor_enabled": {
+            "type": "boolean",
+            "title": "Two Factor Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "TwoFactorConfirmResponse"
+      },
+      "TwoFactorDisableRequest": {
+        "properties": {
+          "totp_code": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 6,
+            "title": "Totp Code",
+            "description": "Current authenticator code required to disable 2FA.",
+            "examples": [
+              "123456"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "totp_code"
+        ],
+        "title": "TwoFactorDisableRequest",
+        "examples": [
+          {
+            "totp_code": "123456"
+          }
+        ]
+      },
+      "TwoFactorDisableResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Two-factor authentication disabled"
+          }
+        },
+        "type": "object",
+        "title": "TwoFactorDisableResponse"
+      },
+      "TwoFactorResetRequest": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 6,
+            "title": "Current Password",
+            "description": "Account password required to reset 2FA without an authenticator code. Use when the user lost their authenticator app but still has an active session."
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_password"
+        ],
+        "title": "TwoFactorResetRequest",
+        "examples": [
+          {
+            "current_password": "YourCurrentPassword123"
+          }
+        ]
+      },
+      "TwoFactorResetResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Two-factor authentication reset"
+          },
+          "user_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Uuid"
+          },
+          "two_factor_enabled": {
+            "type": "boolean",
+            "title": "Two Factor Enabled",
+            "default": false
+          },
+          "two_factor_enforced": {
+            "type": "boolean",
+            "title": "Two Factor Enforced",
+            "description": "When true, the user must enroll again before the next login completes.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_uuid"
+        ],
+        "title": "TwoFactorResetResponse"
+      },
+      "TwoFactorSetupStartResponse": {
+        "properties": {
+          "secret_key": {
+            "type": "string",
+            "title": "Secret Key",
+            "description": "Base32 secret for manual entry in an authenticator app."
+          },
+          "provisioning_uri": {
+            "type": "string",
+            "title": "Provisioning Uri",
+            "description": "otpauth:// URI for QR code generation in the UI."
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer",
+            "description": "Issuer label shown in the authenticator app."
+          }
+        },
+        "type": "object",
+        "required": [
+          "secret_key",
+          "provisioning_uri",
+          "issuer"
+        ],
+        "title": "TwoFactorSetupStartResponse"
+      },
+      "TwoFactorStatusResponse": {
+        "properties": {
+          "two_factor_enabled": {
+            "type": "boolean",
+            "title": "Two Factor Enabled"
+          },
+          "two_factor_enforced": {
+            "type": "boolean",
+            "title": "Two Factor Enforced"
+          },
+          "two_factor_setup_required": {
+            "type": "boolean",
+            "title": "Two Factor Setup Required"
+          }
+        },
+        "type": "object",
+        "required": [
+          "two_factor_enabled",
+          "two_factor_enforced",
+          "two_factor_setup_required"
+        ],
+        "title": "TwoFactorStatusResponse"
+      },
       "UserCreateRequest": {
         "properties": {
           "name": {
@@ -15738,6 +16630,18 @@
             ],
             "title": "Onboard Email Sent At",
             "description": "UTC time when the welcome onboarding email was last delivered successfully. Null means the user has not received an onboarding email yet."
+          },
+          "two_factor_enabled": {
+            "type": "boolean",
+            "title": "Two Factor Enabled",
+            "description": "Whether TOTP two-factor authentication is active.",
+            "default": false
+          },
+          "two_factor_enforced": {
+            "type": "boolean",
+            "title": "Two Factor Enforced",
+            "description": "Whether an administrator requires this user to enroll in 2FA.",
+            "default": false
           }
         },
         "type": "object",
@@ -15913,6 +16817,18 @@
             ],
             "title": "Allowed Plants",
             "description": "Replaces plant scope when provided. Omit to keep existing."
+          },
+          "two_factor_enforced": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Two Factor Enforced",
+            "description": "When true, the user must enroll in TOTP two-factor authentication. When false, removes the admin requirement (does not disable an existing enrollment)."
           }
         },
         "type": "object",

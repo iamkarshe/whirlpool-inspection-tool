@@ -29,4 +29,6 @@ export interface UserUpdateRequest {
   allowed_warehouse?: string[] | null;
   /** Replaces plant scope when provided. Omit to keep existing. */
   allowed_plants?: string[] | null;
+  /** When true, the user must enroll in TOTP two-factor authentication. When false, removes the admin requirement (does not disable an existing enrollment). */
+  two_factor_enforced?: boolean | null;
 }
