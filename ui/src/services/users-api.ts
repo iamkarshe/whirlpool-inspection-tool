@@ -4,6 +4,7 @@ import type { HTTPValidationError } from "@/api/generated/model/hTTPValidationEr
 import type { UserCreateRequest } from "@/api/generated/model/userCreateRequest";
 import type { UserUpdateRequest } from "@/api/generated/model/userUpdateRequest";
 import { UserCreateRequestRole } from "@/api/generated/model/userCreateRequestRole";
+import type { UserCsvUpsertResponse } from "@/api/generated/model/userCsvUpsertResponse";
 import type { UserListResponse } from "@/api/generated/model/userListResponse";
 import type { UserOnboardResponse } from "@/api/generated/model/userOnboardResponse";
 import type { UserResponse } from "@/api/generated/model/userResponse";
@@ -162,6 +163,28 @@ export function generateInternalCreatePassword(): string {
     return crypto.randomUUID().replace(/-/g, "").slice(0, 32);
   }
   return `Wpd${Date.now()}${Math.random().toString(36).slice(2, 12)}`;
+}
+
+export async function uploadUsersCsv(
+  file: File,
+  request?: { signal?: AbortSignal },
+): Promise<UserCsvUpsertResponse> {
+  const api = getUsers();
+  return api.uploadUsersCsvApiUsersCsvUploadPost(
+    { file },
+    request?.signal ? { signal: request.signal } : undefined,
+  );
+}
+
+export function downloadRejectedUsersCsv(rejectedCsv: string): void {
+  triggerBlobDownload(
+    new Blob([rejectedCsv], { type: "text/csv;charset=utf-8;" }),
+    "users-rejected.csv",
+  );
+}
+
+export function uploadUsersCsvErrorMessage(err: unknown): string {
+  return userApiErrorMessage(err, "Could not upload the users CSV.");
 }
 
 export async function onboardUser(

@@ -7,7 +7,13 @@ import type {
   UserCreateRequestRole,
 } from "@/api/generated/model";
 import type { UserResponse } from "@/api/generated/model/userResponse";
+import type { UserCsvUpsertResponse } from "@/api/generated/model/userCsvUpsertResponse";
 import type { WarehouseResponse } from "@/api/generated/model/warehouseResponse";
+import {
+  CsvUploadHowToDialog,
+  type CsvUploadHowToStep,
+} from "@/components/csv-upload-how-to-dialog";
+import CsvUploadDialog from "@/components/csv-upload-dialog";
 import { CreateEntryDialog } from "@/components/dialogs/create-entry-dialog";
 import PageActionBar from "@/components/page-action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -26,6 +32,7 @@ import {
 import { useControlledServerTable } from "@/hooks/use-controlled-server-table";
 import { DeactivateUserDialog } from "@/pages/dashboard/admin/users/deactivate-user-dialog";
 import { DialogResendOnboard } from "@/pages/dashboard/admin/users/dialog-resend-onboard";
+import { DialogUsersCsvRejected } from "@/pages/dashboard/admin/users/dialog-users-csv-rejected";
 import { EditUserDialog } from "@/pages/dashboard/admin/users/edit-user-dialog";
 import UsersDataTable from "@/pages/dashboard/admin/users/data-table";
 import { RevokeUserVpnDialog } from "@/pages/dashboard/admin/users/revoke-user-vpn-dialog";
@@ -47,6 +54,8 @@ import {
   onboardUser,
   revokeUserVpn,
   updateUser,
+  uploadUsersCsv,
+  uploadUsersCsvErrorMessage,
   userApiErrorMessage,
 } from "@/services/users-api";
 import {
@@ -68,6 +77,29 @@ const USER_LIST_SORT = {
   allowedColumns: ["id", "name", "email", "mobile_number"] as const,
   defaultSort: { sort_by: "id", sort_dir: "desc" as const },
 };
+
+const USER_CSV_HOW_TO_STEPS: CsvUploadHowToStep[] = [
+  {
+    title: "Download the CSV template",
+    description:
+      'Click Upload Users, then Template CSV. The file includes existing users so you can edit and re-upload to update them.',
+  },
+  {
+    title: "Fill in or update rows",
+    description:
+      "Each row needs Name, Email, Mobile, Role, Designation, and Allowed Warehouse. Roles: Admin (Biz Admin), Manager, or Operator. Warehouses use pipe-separated codes (for example RI52|RI62).",
+  },
+  {
+    title: "Upload your file",
+    description:
+      "Choose the saved CSV and press Upload. Matching emails are updated; new emails create users. Onboarding emails are not sent automatically.",
+  },
+  {
+    title: "Fix any rejected rows",
+    description:
+      "If some rows fail validation, a table lists each error. Download the rejected CSV, correct the issues, and upload again.",
+  },
+];
 
 function isValidIndianMobile(value: string): boolean {
   return /^[5-9][0-9]{9}$/.test(value);
@@ -132,9 +164,9 @@ function CreateUserForm({ onCreated }: { onCreated: () => void }) {
       password: generateInternalCreatePassword(),
       role: formValues.role || undefined,
       designation: formValues.designation.trim() || undefined,
-      ...(formValues.allowed_warehouse_codes.length > 0 ?
-        { allowed_warehouse: formValues.allowed_warehouse_codes }
-      : {}),
+      ...(formValues.allowed_warehouse_codes.length > 0
+        ? { allowed_warehouse: formValues.allowed_warehouse_codes }
+        : {}),
     };
     setIsCreating(true);
     try {
@@ -279,19 +311,25 @@ export default function UsersPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserResponse | null>(null);
   const [togglingUserUuid, setTogglingUserUuid] = useState<string | null>(null);
-  const [deactivateUser, setDeactivateUser] = useState<UserResponse | null>(null);
-  const [vpnInstallUser, setVpnInstallUser] = useState<UserResponse | null>(null);
+  const [deactivateUser, setDeactivateUser] = useState<UserResponse | null>(
+    null,
+  );
+  const [vpnInstallUser, setVpnInstallUser] = useState<UserResponse | null>(
+    null,
+  );
   const [revokeVpnUser, setRevokeVpnUser] = useState<UserResponse | null>(null);
   const [vpnBusyUserUuid, setVpnBusyUserUuid] = useState<string | null>(null);
   const [vpnBusyAction, setVpnBusyAction] = useState<
     "setup" | "config" | "qr" | "revoke" | "email" | null
   >(null);
-  const [onboardUserTarget, setOnboardUserTarget] = useState<UserResponse | null>(
-    null,
-  );
+  const [onboardUserTarget, setOnboardUserTarget] =
+    useState<UserResponse | null>(null);
   const [onboardBusyUserUuid, setOnboardBusyUserUuid] = useState<string | null>(
     null,
   );
+  const [csvRejectedDialogOpen, setCsvRejectedDialogOpen] = useState(false);
+  const [csvRejectedResult, setCsvRejectedResult] =
+    useState<UserCsvUpsertResponse | null>(null);
   const onEditUser = useCallback((u: UserResponse) => setEditUser(u), []);
 
   const applyUserActiveState = useCallback(
@@ -307,9 +345,9 @@ export default function UsersPage() {
         toast.error(
           userApiErrorMessage(
             e,
-            isActive ?
-              "Could not activate user."
-            : "Could not deactivate user.",
+            isActive
+              ? "Could not activate user."
+              : "Could not deactivate user.",
           ),
         );
         return false;
@@ -381,6 +419,46 @@ export default function UsersPage() {
     [runVpnDownload],
   );
 
+  const handleUsersCsvSubmit = useCallback(async (file: File) => {
+    try {
+      const result = await uploadUsersCsv(file);
+      const rejectedCount =
+        result.rejected ?? result.rejected_rows?.length ?? 0;
+      const created = result.created ?? 0;
+      const updated = result.updated ?? 0;
+
+      if (created > 0 || updated > 0) {
+        setReloadKey((v) => v + 1);
+        const parts: string[] = [];
+        if (created > 0) parts.push(`${created} created`);
+        if (updated > 0) parts.push(`${updated} updated`);
+        toast.success(`Users CSV import: ${parts.join(", ")}.`);
+      }
+
+      if (rejectedCount > 0) {
+        setCsvRejectedResult(result);
+        setCsvRejectedDialogOpen(true);
+        if (created === 0 && updated === 0) {
+          toast.warning(
+            `${rejectedCount} row(s) could not be imported. Fix the errors and try again.`,
+          );
+        } else {
+          toast.warning(
+            `${rejectedCount} row(s) were rejected. Review the errors below.`,
+          );
+        }
+        return;
+      }
+
+      if (created === 0 && updated === 0) {
+        toast.info("No changes were made.");
+      }
+    } catch (e: unknown) {
+      toast.error(uploadUsersCsvErrorMessage(e));
+      throw e;
+    }
+  }, []);
+
   const onVpnRevoke = useCallback((user: UserResponse) => {
     setRevokeVpnUser(user);
   }, []);
@@ -424,9 +502,9 @@ export default function UsersPage() {
       );
     } catch (e: unknown) {
       toast.error(
-        e instanceof Error ?
-          e.message
-        : "Could not prepare VPN files for email.",
+        e instanceof Error
+          ? e.message
+          : "Could not prepare VPN files for email.",
       );
     } finally {
       setVpnBusyUserUuid(null);
@@ -522,6 +600,19 @@ export default function UsersPage() {
         title="Users"
         description="Manage user accounts and roles."
       >
+        <CsvUploadHowToDialog
+          title="How to import users"
+          intro="Bulk create or update users from a spreadsheet. Onboarding emails are sent separately from the user menu."
+          steps={USER_CSV_HOW_TO_STEPS}
+          footerNote="Superadmin accounts cannot be added via CSV. New users receive a random password until you send an onboarding email."
+        />
+        <CsvUploadDialog
+          title="Upload Users"
+          description="Select a CSV file to create or update users by email."
+          templateFilename="users-template.csv"
+          templateDownloadUrl="/api/users/csv/template"
+          onSubmit={handleUsersCsvSubmit}
+        />
         <CreateEntryDialog
           triggerLabel="Add User"
           title="Add user"
@@ -558,7 +649,7 @@ export default function UsersPage() {
         vpnBusyUserUuid={vpnBusyUserUuid}
         vpnBusyAction={vpnBusyAction}
       />
-      {editUser ?
+      {editUser ? (
         <EditUserDialog
           key={editUser.uuid}
           open
@@ -571,7 +662,7 @@ export default function UsersPage() {
             setEditUser(null);
           }}
         />
-      : null}
+      ) : null}
       <DeactivateUserDialog
         open={deactivateUser !== null}
         onOpenChange={(open) => {
@@ -582,9 +673,9 @@ export default function UsersPage() {
           deactivateUser !== null && togglingUserUuid === deactivateUser.uuid
         }
         onConfirm={() =>
-          deactivateUser ?
-            applyUserActiveState(deactivateUser, false)
-          : Promise.resolve(false)
+          deactivateUser
+            ? applyUserActiveState(deactivateUser, false)
+            : Promise.resolve(false)
         }
       />
       <VpnInstallationDialog
@@ -594,18 +685,16 @@ export default function UsersPage() {
         }}
         user={vpnInstallUser}
         downloading={
-          vpnInstallUser && vpnBusyUserUuid === vpnInstallUser.uuid ?
-            vpnBusyAction === "config" || vpnBusyAction === "qr" ?
-              vpnBusyAction
+          vpnInstallUser && vpnBusyUserUuid === vpnInstallUser.uuid
+            ? vpnBusyAction === "config" || vpnBusyAction === "qr"
+              ? vpnBusyAction
+              : null
             : null
-          : null
         }
         onDownloadConfig={handleInstallDialogDownloadConfig}
         onDownloadQr={handleInstallDialogDownloadQr}
         onSendEmail={() =>
-          vpnInstallUser ?
-            sendVpnInstructionsEmail(vpnInstallUser)
-          : undefined
+          vpnInstallUser ? sendVpnInstructionsEmail(vpnInstallUser) : undefined
         }
         sendingEmail={
           vpnInstallUser !== null &&
@@ -623,9 +712,7 @@ export default function UsersPage() {
           revokeVpnUser !== null && vpnBusyUserUuid === revokeVpnUser.uuid
         }
         onConfirm={() =>
-          revokeVpnUser ?
-            applyVpnRevoke(revokeVpnUser)
-          : Promise.resolve(false)
+          revokeVpnUser ? applyVpnRevoke(revokeVpnUser) : Promise.resolve(false)
         }
       />
       <DialogResendOnboard
@@ -639,6 +726,11 @@ export default function UsersPage() {
           onboardBusyUserUuid === onboardUserTarget.uuid
         }
         onConfirm={applyOnboardUser}
+      />
+      <DialogUsersCsvRejected
+        open={csvRejectedDialogOpen}
+        onOpenChange={setCsvRejectedDialogOpen}
+        result={csvRejectedResult}
       />
     </div>
   );

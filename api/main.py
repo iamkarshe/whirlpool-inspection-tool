@@ -18,6 +18,7 @@ from mod.api.plant.router import router as plant_router
 from mod.api.product.router import router as product_router
 from mod.api.product_category.router import router as product_category_router
 from mod.api.reports.router import router as reports_router
+from mod.api.server_health.router import router as server_health_router
 from mod.api.sku.router import router as sku_router
 from mod.api.tasks.router import router as tasks_router
 from mod.api.user.router import router as user_router
@@ -131,6 +132,7 @@ app.include_router(plant_router)
 app.include_router(product_router)
 app.include_router(product_category_router)
 app.include_router(reports_router)
+app.include_router(server_health_router)
 app.include_router(sku_router)
 app.include_router(push_notification_router)
 app.include_router(vpn_router)
