@@ -261,16 +261,16 @@ EOF
                                             -w /src \
                                             "$IMG_PY" sh -c '
                                                 set +e
+
                                                 pip install --quiet --disable-pip-version-check bandit
 
                                                 bandit -r api \
-                                                    --exclude api/deploy.py \
-                                                    -x "*/tests/*,*/__pycache__/*" \
+                                                    -x "api/deploy.py,*/tests/*,*/__pycache__/*" \
                                                     --skip B105,B106,B107 \
                                                     -f html \
                                                     -o reports/bandit-api.html
 
-                                                echo "Bandit exit code: $?"
+                                                echo "Bandit api/ exit code: $?"
                                                 exit 0
                                             '
                                     '''

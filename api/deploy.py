@@ -1,4 +1,3 @@
-# nosec
 #!/usr/bin/env python3
 """Pseudo-CI/CD deploy
 
