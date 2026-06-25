@@ -66,6 +66,10 @@
         {
           "text": "[refactor] Remove VAPT report functionality and associated HTML template: Deleted the VAPT report endpoint and its corresponding HTML file to streamline the API and eliminate unused features.",
           "hash": "3038ba0"
+        },
+        {
+          "text": "Update release.json with recent commit entries: Added enhancements for logging in email handling, upgraded pydantic-settings to version 2.14.2, and removed VAPT report functionality to streamline the API.",
+          "hash": "40d24dd"
         }
       ]
     },
@@ -1291,5 +1295,5 @@
       ]
     }
   ],
-  "last_commit": "3038ba0320a00f72172fb5affb234be7a5af40c5"
+  "last_commit": "40d24dd5cf896c6c26227697eae2f66e101a1d76"
 }
