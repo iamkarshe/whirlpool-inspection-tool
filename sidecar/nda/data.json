@@ -37,6 +37,62 @@
     "email": "____________________________________",
     "website": ""
   },
+  "client": {
+    "label": "Prepared For / Client",
+    "name": "Whirlpool India",
+    "registered_address": "____________________________________",
+    "authorized_representative": "____________________________",
+    "designation": "____________________________________",
+    "email": "____________________________________",
+    "website": ""
+  },
+  "assessor": {
+    "label": "Prepared By / Security Assessor",
+    "name": "SCOPT Analytics",
+    "registered_address": "Palm 410, SJR Park Vista Apartments, Off Sarjapur Road, Ambalipura, Bengaluru, Karnataka 560102",
+    "authorized_representative": "Srinivas G R",
+    "designation": "Co-founder",
+    "email": "info@scoptanalytics.com",
+    "website": "https://scoptanalytics.com/"
+  },
+  "technical_lead": {
+    "name": "Utkarsh Kumar Raut",
+    "designation": "Technical Lead",
+    "email": "utkarshkumar.raut@scoptanalytics.com",
+    "responsibility": "VAPT execution and security assessment reporting (SCA, SAST, DAST)"
+  },
+  "assessment": {
+    "application": "Whirlpool Inspection Tool",
+    "components": "Web Application (UI) and REST API",
+    "environment": "UAT (Hostinger) and Production (AWS)",
+    "assessment_date": "25 June 2026",
+    "report_date": "25 June 2026",
+    "classification": "Confidential — For Client Use Only",
+    "overall_result": "PASSED",
+    "methodology_standard": "OWASP ASVS, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), CWE / SANS Top 25"
+  },
+  "reports": {
+    "sca": {
+      "title": "Software Composition Analysis Report",
+      "subtitle": "Third-party dependency and software supply-chain risk assessment of the Whirlpool Inspection Tool application.",
+      "reference": "SCOPT-SCA-2026-001"
+    },
+    "sast": {
+      "title": "Static Application Security Testing Report",
+      "subtitle": "Source-code, secret-exposure and static security analysis of the Whirlpool Inspection Tool application.",
+      "reference": "SCOPT-SAST-2026-001"
+    },
+    "dast": {
+      "title": "Dynamic Application Security Testing Report",
+      "subtitle": "Runtime security assessment of the deployed Whirlpool Inspection Tool web application and APIs.",
+      "reference": "SCOPT-DAST-2026-001"
+    },
+    "sbom": {
+      "title": "Software Bill of Materials Report",
+      "subtitle": "Inventory of the third-party software packages used to build each service of the Whirlpool Inspection Tool application.",
+      "reference": "SCOPT-SBOM-2026-001"
+    }
+  },
   "scope": {
     "web_pages": "Approximately 25",
     "apis": "Approximately 15",
