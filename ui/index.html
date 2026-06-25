@@ -71,9 +71,126 @@
     />
 
     <title>%VITE_APP_TITLE%</title>
+
+    <style>
+      :root {
+        --boot-bg: #ffffff;
+        --boot-fg: #252525;
+        --boot-muted: #737373;
+        --boot-track: #e5e5e5;
+        --boot-accent: #252525;
+      }
+
+      html.dark {
+        --boot-bg: #0a0a0a;
+        --boot-fg: #fafafa;
+        --boot-muted: #a3a3a3;
+        --boot-track: #262626;
+        --boot-accent: #fafafa;
+      }
+
+      #app-boot-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--boot-bg);
+        color: var(--boot-fg);
+        font-family:
+          "Outfit",
+          ui-sans-serif,
+          system-ui,
+          sans-serif;
+        transition:
+          opacity 0.2s ease,
+          visibility 0.2s ease;
+      }
+
+      #app-boot-loader.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .app-boot-loader__panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        text-align: center;
+      }
+
+      .app-boot-loader__spinner {
+        position: relative;
+        width: 3.5rem;
+        height: 3.5rem;
+      }
+
+      .app-boot-loader__spinner::before,
+      .app-boot-loader__spinner::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        border: 3px solid var(--boot-track);
+      }
+
+      .app-boot-loader__spinner::after {
+        border-color: var(--boot-accent);
+        border-top-color: transparent;
+        animation: app-boot-spin 0.8s linear infinite;
+      }
+
+      .app-boot-loader__label {
+        margin: 0;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      .app-boot-loader__hint {
+        margin: 0;
+        max-width: 16rem;
+        font-size: 0.8125rem;
+        line-height: 1.45;
+        color: var(--boot-muted);
+      }
+
+      @keyframes app-boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .app-boot-loader__spinner::after {
+          animation: none;
+          border-top-color: var(--boot-accent);
+        }
+
+        #app-boot-loader {
+          transition: none;
+        }
+      }
+    </style>
   </head>
 
   <body>
+    <div
+      id="app-boot-loader"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-label="Loading application"
+    >
+      <div class="app-boot-loader__panel">
+        <div class="app-boot-loader__spinner" aria-hidden="true"></div>
+        <p class="app-boot-loader__label">Loading application…</p>
+        <p class="app-boot-loader__hint">Preparing your workspace</p>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

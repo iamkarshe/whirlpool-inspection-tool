@@ -61,13 +61,6 @@ function LoaderIndicator({
           borderWidth,
         )}
       />
-      <div
-        className={cn(
-          "absolute inset-0 animate-spin rounded-full border-primary border-t-transparent",
-          borderWidth,
-        )}
-      />
-      <div className="absolute inset-[22%] animate-pulse rounded-full bg-primary/10" />
     </div>
   );
 }
@@ -93,7 +86,9 @@ function LoaderCopy({
         <span className="inline-flex w-[1.25em] animate-pulse">…</span>
       </p>
       {description ? (
-        <p className="text-muted-foreground text-sm leading-snug">{description}</p>
+        <p className="text-muted-foreground text-sm leading-snug">
+          {description}
+        </p>
       ) : null}
     </div>
   );
@@ -162,11 +157,7 @@ export function LoadingOverlay({
     <div className={cn("relative", className)}>
       {children}
       {active ? (
-        <AppLoader
-          variant="overlay"
-          label={label}
-          description={description}
-        />
+        <AppLoader variant="overlay" label={label} description={description} />
       ) : null}
     </div>
   );
