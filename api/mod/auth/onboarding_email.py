@@ -100,13 +100,19 @@ def resolve_smtp_message_config() -> tuple[dict[str, Any] | None, str, str]:
     try:
         smtp_config = dict(load_credentials_payload().get("smtp") or {})
     except Exception:
-        logger.exception("Failed to load SMTP credentials for welcome onboarding email")
+        logger.exception(
+            "Failed to load SMTP config for welcome onboarding email",
+            extra={"email_type": "welcome_onboarding"},
+        )
         return None, "", ""
 
     from_email = str(smtp_config.get("from_email", "") or "").strip()
     from_name = str(smtp_config.get("from_name", "") or "").strip() or "Whirlpool PDI"
     if not from_email:
-        logger.warning("SMTP from_email missing; welcome onboarding email skipped")
+        logger.warning(
+            "SMTP from_email missing; welcome onboarding email skipped",
+            extra={"email_type": "welcome_onboarding"},
+        )
         return None, "", ""
     return smtp_config, from_email, from_name
 
@@ -123,7 +129,8 @@ def queue_or_send_welcome_onboarding_email(
     smtp_config, from_email, from_name = resolve_smtp_message_config()
     if smtp_config is None or not from_email:
         logger.warning(
-            "SMTP not configured; welcome onboarding email skipped for %s", to_email
+            "SMTP not configured; welcome onboarding email skipped",
+            extra={"email_type": "welcome_onboarding"},
         )
         return False
 
@@ -151,15 +158,17 @@ def queue_or_send_welcome_onboarding_email(
                 created_by="user_onboard",
             )
             logger.info(
-                "Welcome onboarding email queued for %s (task_uuid=%s)",
-                to_email,
-                task_uuid,
+                "Welcome onboarding email queued",
+                extra={
+                    "email_type": "welcome_onboarding",
+                    "task_uuid": task_uuid,
+                },
             )
             return True
         except Exception:
             logger.exception(
-                "Failed to queue welcome onboarding email for %s; trying direct SMTP",
-                to_email,
+                "Failed to queue welcome onboarding email; trying direct SMTP",
+                extra={"email_type": "welcome_onboarding"},
             )
 
     try:
@@ -172,10 +181,16 @@ def queue_or_send_welcome_onboarding_email(
             created_by="user_onboard",
             commit_log=True,
         )
-        logger.info("Welcome onboarding email sent directly via SMTP to %s", to_email)
+        logger.info(
+            "Welcome onboarding email sent directly via SMTP",
+            extra={"email_type": "welcome_onboarding"},
+        )
         return True
     except Exception:
-        logger.exception("Direct welcome onboarding email delivery failed for %s", to_email)
+        logger.exception(
+            "Direct welcome onboarding email delivery failed",
+            extra={"email_type": "welcome_onboarding"},
+        )
         return False
 
 
@@ -194,7 +209,8 @@ def deliver_welcome_onboarding_email_with_retry(
     smtp_config, from_email, from_name = resolve_smtp_message_config()
     if smtp_config is None or not from_email:
         logger.warning(
-            "SMTP not configured; welcome onboarding email skipped for %s", to_email
+            "SMTP not configured; welcome onboarding email skipped",
+            extra={"email_type": "welcome_onboarding"},
         )
         return False
 
@@ -222,16 +238,20 @@ def deliver_welcome_onboarding_email_with_retry(
                 commit_log=False,
             )
             logger.info(
-                "Welcome onboarding email sent directly via SMTP to %s (attempt %s)",
-                to_email,
-                attempt,
+                "Welcome onboarding email sent directly via SMTP",
+                extra={
+                    "email_type": "welcome_onboarding",
+                    "attempt": attempt,
+                },
             )
             return True
         except Exception:
             logger.exception(
-                "Welcome onboarding email attempt %s failed for %s",
-                attempt,
-                to_email,
+                "Welcome onboarding email delivery attempt failed",
+                extra={
+                    "email_type": "welcome_onboarding",
+                    "attempt": attempt,
+                },
             )
             if attempt >= max_attempts:
                 return False

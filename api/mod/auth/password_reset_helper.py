@@ -135,7 +135,10 @@ def resolve_smtp_message_config() -> tuple[dict[str, Any] | None, str, str]:
     try:
         smtp_config = dict(load_credentials_payload().get("smtp") or {})
     except Exception:
-        logger.exception("Failed to load SMTP credentials for password reset email")
+        logger.exception(
+            "Failed to load SMTP config for password reset email",
+            extra={"email_type": "password_reset"},
+        )
         return None, "", ""
 
     from_email = str(smtp_config.get("from_email", "") or "").strip()
@@ -154,9 +157,9 @@ def queue_or_send_password_reset_email(
 ) -> bool:
     smtp_config, from_email, from_name = resolve_smtp_message_config()
     if smtp_config is None or not from_email:
-        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
         logger.warning(
-            "SMTP not configured; password reset email skipped for %s", to_email
+            "SMTP not configured; password reset email skipped",
+            extra={"email_type": "password_reset"},
         )
         return False
 
@@ -191,8 +194,10 @@ def queue_or_send_password_reset_email(
         )
         return True
     except Exception:
-        # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
-        logger.exception("Direct password reset email delivery failed for %s", to_email)
+        logger.exception(
+            "Direct password reset email delivery failed",
+            extra={"email_type": "password_reset"},
+        )
         return False
 
 
