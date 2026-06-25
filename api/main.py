@@ -30,7 +30,9 @@ from mod.app.router import router as app_router
 from mod.auth.device_router import router as auth_device_router
 from mod.auth.password_router import router as auth_password_router
 from mod.auth.router import router as auth_router
-from mod.auth.two_factor_router import authenticated_router as auth_two_factor_authenticated_router
+from mod.auth.two_factor_router import (
+    authenticated_router as auth_two_factor_authenticated_router,
+)
 from mod.auth.two_factor_router import router as auth_two_factor_router
 from mod.jobs.router import router as jobs_router
 from mod.okta.router import router as okta_sso_router
@@ -165,12 +167,6 @@ app.mount(
 # Jinja2 templates config.
 templates = Jinja2Templates(directory="template")
 
-# Latest VAPT report path
-VAPT_REPORT_PATH = (
-    Path(__file__).resolve().parent / "template" / "vapt-reports" / "uat-v1-report.html"
-)
-
-
 # Public text cache headers
 PUBLIC_TEXT_CACHE_HEADERS = {
     "Cache-Control": "public, max-age=3600",
@@ -235,26 +231,6 @@ async def api_spec(
 ):
     require_superadmin_for_api_docs(request, db, token)
     return JSONResponse(content=app.openapi())
-
-
-# VAPT Report
-@app.get("/vapt-report", include_in_schema=False)
-async def vapt_report(
-    request: Request,
-    token: str | None = Query(
-        None,
-        description="Authorization bearer.",
-    ),
-    db: Session = Depends(get_db),
-) -> Response:
-    require_superadmin_for_api_docs(request, db, token)
-    if VAPT_REPORT_PATH.is_file():
-        return FileResponse(VAPT_REPORT_PATH)
-    return Response(
-        content="Report not found",
-        media_type="text/html",
-        status_code=404,
-    )
 
 
 # Get Started
