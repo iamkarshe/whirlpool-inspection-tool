@@ -1,6 +1,54 @@
 {
   "notes": [
     {
+      "id": "2026-06-25",
+      "version": "2026-06-25",
+      "released_at": "2026-06-25",
+      "title": "Deploy 2026-06-25",
+      "features": [
+        {
+          "text": "[refactor] Replace top banners with clickable status badges dialogs and loader",
+          "hash": "6d21db0"
+        },
+        {
+          "text": "[feat] Implement application boot loader: Added a loading overlay with customizable styles and animations to enhance user experience during application initialization.",
+          "hash": "bf03985"
+        },
+        {
+          "text": "[refactor] Update bandit security scan configuration: Excluded 'api/deploy.py' from the scan to improve focus on relevant code areas while maintaining security checks.",
+          "hash": "20a304e"
+        },
+        {
+          "text": "[refactor] Improve error handling in deploy_all_enabled_sites: Reformatted error message for subprocess failures to enhance readability and maintainability.",
+          "hash": "19331af"
+        },
+        {
+          "text": "[refactor] Revise Jenkinsfile for enhanced security pipeline: Updated pipeline parameters for clarity, improved error handling, and refined image versioning for consistent CI behavior. Expanded comments for better understanding of pipeline scope and requirements.",
+          "hash": "c4ee8e9"
+        },
+        {
+          "text": "[refactor] Update Jenkinsfile and service.py for improved timeout handling and randomness: Increased timeout duration in Jenkins pipeline steps for better stability and replaced random jitter with secrets for enhanced security in task retry logic.",
+          "hash": "3968dd3"
+        },
+        {
+          "text": "[report] SCA, SAST and DAST report and analysis added.",
+          "hash": "338f1c9"
+        },
+        {
+          "text": "[refactor] Jankins update remove ansiColor('xterm')",
+          "hash": "6b8451d"
+        },
+        {
+          "text": "[refactor] Jankins update post method.",
+          "hash": "77e5d10"
+        },
+        {
+          "text": "[refactor] Jenkins bandit update.",
+          "hash": "d0542a5"
+        }
+      ]
+    },
+    {
       "id": "2026-06-23",
       "version": "2026-06-23",
       "released_at": "2026-06-23",
@@ -65,6 +113,14 @@
         {
           "text": "[feat] Introduce user name normalization and enhance email handling: Added `normalize_user_name` function for consistent user name formatting and updated user creation and update processes to utilize normalized email and name, improving data integrity in user management.",
           "hash": "7d60439"
+        },
+        {
+          "text": "[feat] Update release notes and requirements: Added new features for two-factor authentication, server health monitoring, and enhanced CSV upload processes. Updated requirements to include psutil and pyotp for system monitoring and TOTP support.",
+          "hash": "c1c80d7"
+        },
+        {
+          "text": "[refactor] Update error page and configuration files: Enhanced VPN required error page with improved semantics and styling, added config.toml to .gitignore and .cursorignore for better environment management.",
+          "hash": "6ce8732"
         }
       ]
     },
@@ -1214,5 +1270,5 @@
       ]
     }
   ],
-  "last_commit": "7d604391c949746b3397687cd76763ac826f87e9"
+  "last_commit": "d0542a55f5059f17c451d6542945113d24b2c88c"
 }

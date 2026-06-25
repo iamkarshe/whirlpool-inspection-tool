@@ -264,6 +264,14 @@ EOF
 
                                                 pip install --quiet --disable-pip-version-check bandit
 
+                                                # JSON is the machine-readable source the dynamic report
+                                                # generator parses; HTML is kept for human viewing.
+                                                bandit -r api \
+                                                    -x "api/deploy.py,*/tests/*,*/__pycache__/*" \
+                                                    --skip B105,B106,B107 \
+                                                    -f json \
+                                                    -o reports/bandit-api.json
+
                                                 bandit -r api \
                                                     -x "api/deploy.py,*/tests/*,*/__pycache__/*" \
                                                     --skip B105,B106,B107 \

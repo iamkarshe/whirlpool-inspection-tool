@@ -50,6 +50,25 @@ function sev($level) {
   return '<span class="sev sev-' . $cls . '">' . e($level) . '</span>';
 }
 
+// Render the five severity KPI cards from a normalised counts map
+// (['CRITICAL'=>n,'HIGH'=>n,'MEDIUM'=>n,'LOW'=>n,'INFO'=>n]).
+function rpt_kpis($counts) {
+  $cards = [
+    ['CRITICAL', 'Critical', 'is-crit'],
+    ['HIGH',     'High',     'is-high'],
+    ['MEDIUM',   'Medium',   'is-med'],
+    ['LOW',      'Low',      'is-low'],
+    ['INFO',     'Info',     'is-info'],
+  ];
+  echo '<div class="kpis">';
+  foreach ($cards as [$key, $label, $cls]) {
+    $n = (int)($counts[$key] ?? 0);
+    $cls = $n > 0 ? $cls : 'is-zero';
+    echo '<div class="kpi ' . $cls . '"><div class="n">' . $n . '</div><div class="l">' . e($label) . '</div></div>';
+  }
+  echo '</div>';
+}
+
 // Page header band (top of every interior page).
 function rpt_page_head($docName) {
   global $brandName, $assess;

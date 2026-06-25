@@ -4,10 +4,18 @@
 // OWASP-aligned test coverage matrix, and the clean result. No automated DAST
 // scanner output exists in reports/, so no synthetic scanner tables are shown.
 require __DIR__ . '/report-common.php';
+require __DIR__ . '/report-findings.php';
 
 $rcfg = v($d, 'reports.dast', []);
 $ref  = v($rcfg, 'reference', 'SCOPT-DAST-2026-001');
 $docName = 'Dynamic Application Security Testing Report';
+
+// DAST has no automated scanner artefact by default; if a ZAP JSON
+// (reports/zap.json) is dropped in, counts/findings become dynamic.
+$D = rf_dast();
+$dcounts = $D['counts'];
+$dpost   = $D['has_scan'] ? rf_posture($dcounts) : ['word' => v($assess,'overall_result','PASSED'), 'class' => '', 'top' => ''];
+$dTotal  = rf_total($dcounts);
 
 rpt_head([
   'key'       => 'dast',
@@ -42,20 +50,19 @@ rpt_head([
   </div>
 
   <h3>Findings by Severity</h3>
-  <div class="kpis">
-    <div class="kpi is-zero"><div class="n">0</div><div class="l">Critical</div></div>
-    <div class="kpi is-zero"><div class="n">0</div><div class="l">High</div></div>
-    <div class="kpi is-zero"><div class="n">0</div><div class="l">Medium</div></div>
-    <div class="kpi is-zero"><div class="n">0</div><div class="l">Low</div></div>
-    <div class="kpi is-zero"><div class="n">0</div><div class="l">Info</div></div>
-  </div>
+  <?php rpt_kpis($dcounts); ?>
+  <?php if (!$D['has_scan']): ?>
+  <p class="legend">No automated DAST scanner artefact present in <code>reports/</code>; the matrix in Section 3 records
+    manual, analyst-verified test coverage. Drop a ZAP JSON at <code>reports/zap.json</code> to populate this section
+    automatically.</p>
+  <?php endif; ?>
 
   <h3>Coverage</h3>
   <div class="statgrid">
     <div class="stat"><div class="l">Web Pages In Scope</div><div class="val"><?= e(v($d,'scope.web_pages','~25')) ?></div></div>
     <div class="stat"><div class="l">API Endpoints</div><div class="val"><?= e(v($d,'scope.apis','~15')) ?></div></div>
     <div class="stat"><div class="l">Auth Model</div><div class="val">Authenticated</div></div>
-    <div class="stat"><div class="l">Exploitable Findings</div><div class="val">0</div></div>
+    <div class="stat"><div class="l">Exploitable Findings</div><div class="val"><?= e($dTotal) ?></div></div>
   </div>
 
   <h3>Scope &amp; Assets</h3>

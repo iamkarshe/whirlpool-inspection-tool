@@ -5,15 +5,22 @@
 //   reports/sbom-ui.cdx.json   (UI service — npm)
 // Notable component versions below are taken verbatim from those SBOMs.
 require __DIR__ . '/report-common.php';
+require __DIR__ . '/report-findings.php';
 
 $rcfg = v($d, 'reports.sbom', []);
 $ref  = v($rcfg, 'reference', 'SCOPT-SBOM-2026-001');
 $docName = 'Software Bill of Materials Report';
 
-// Service inventory (authoritative counts from the CycloneDX SBOM components).
-$API_PKGS = 102;   // sbom-api.cdx.json — library components
-$UI_PKGS  = 285;   // sbom-ui.cdx.json  — library components
-$TOTAL    = $API_PKGS + $UI_PKGS;
+// Authoritative counts parsed live from the CycloneDX SBOM components.
+$B = rf_sbom();
+$API_PKGS = $B['api_pkgs'];   // sbom-api.cdx.json — library components
+$UI_PKGS  = $B['ui_pkgs'];    // sbom-ui.cdx.json  — library components
+$TOTAL    = $B['total'];
+$apiBy    = $B['api']['by_name'];   // package name → version (API)
+$uiBy     = $B['ui']['by_name'];    // package name → version (UI)
+// Guard against divide-by-zero if an SBOM artefact is missing.
+$apiShare = $TOTAL ? round($API_PKGS / $TOTAL * 100) : 0;
+$uiShare  = $TOTAL ? round($UI_PKGS  / $TOTAL * 100) : 0;
 
 rpt_head([
   'key'       => 'sbom',
@@ -62,14 +69,14 @@ rpt_head([
         <td>Backend application &amp; REST API</td>
         <td>Python (PyPI)</td>
         <td class="num"><?= e($API_PKGS) ?></td>
-        <td class="num"><?= e(round($API_PKGS / $TOTAL * 100)) ?>%</td>
+        <td class="num"><?= e($apiShare) ?>%</td>
       </tr>
       <tr>
         <td class="k">UI</td>
         <td>Web application front-end</td>
         <td>JavaScript / Node (npm)</td>
         <td class="num"><?= e($UI_PKGS) ?></td>
-        <td class="num"><?= e(round($UI_PKGS / $TOTAL * 100)) ?>%</td>
+        <td class="num"><?= e($uiShare) ?>%</td>
       </tr>
       <tr style="font-weight:700;">
         <td class="k">Total</td>
@@ -99,13 +106,13 @@ rpt_head([
   <table class="tight">
     <thead><tr><th>Function</th><th>Key Packages (version)</th></tr></thead>
     <tbody>
-      <tr><td class="k">Web Framework / Server</td><td>fastapi 0.137.2 · starlette 1.3.1 · uvicorn 0.49.0</td></tr>
-      <tr><td class="k">Data &amp; ORM</td><td>sqlalchemy 2.0.51 · alembic 1.18.4 · psycopg 3.3.4</td></tr>
-      <tr><td class="k">Validation &amp; Config</td><td>pydantic 2.13.4 · pydantic-settings 2.14.1</td></tr>
-      <tr><td class="k">Async Tasks / Messaging</td><td>celery 5.6.3 · kombu 5.6.2 · amqp 5.3.1 · redis 8.0.0</td></tr>
-      <tr><td class="k">HTTP Clients</td><td>httpx 0.28.1 · aiohttp 3.14.1 · requests 2.34.2</td></tr>
-      <tr><td class="k">Security &amp; Cryptography</td><td>cryptography 49.0.0 · bcrypt 5.0.0 · passlib 1.7.4</td></tr>
-      <tr><td class="k">Cloud / AWS</td><td>boto3 1.43.33</td></tr>
+      <tr><td class="k">Web Framework / Server</td><td><?= e(rf_ver($apiBy,'fastapi')) ?> · <?= e(rf_ver($apiBy,'starlette')) ?> · <?= e(rf_ver($apiBy,'uvicorn')) ?></td></tr>
+      <tr><td class="k">Data &amp; ORM</td><td><?= e(rf_ver($apiBy,'sqlalchemy')) ?> · <?= e(rf_ver($apiBy,'alembic')) ?> · <?= e(rf_ver($apiBy,'psycopg')) ?></td></tr>
+      <tr><td class="k">Validation &amp; Config</td><td><?= e(rf_ver($apiBy,'pydantic')) ?> · <?= e(rf_ver($apiBy,'pydantic-settings')) ?></td></tr>
+      <tr><td class="k">Async Tasks / Messaging</td><td><?= e(rf_ver($apiBy,'celery')) ?> · <?= e(rf_ver($apiBy,'kombu')) ?> · <?= e(rf_ver($apiBy,'amqp')) ?> · <?= e(rf_ver($apiBy,'redis')) ?></td></tr>
+      <tr><td class="k">HTTP Clients</td><td><?= e(rf_ver($apiBy,'httpx')) ?> · <?= e(rf_ver($apiBy,'aiohttp')) ?> · <?= e(rf_ver($apiBy,'requests')) ?></td></tr>
+      <tr><td class="k">Security &amp; Cryptography</td><td><?= e(rf_ver($apiBy,'cryptography')) ?> · <?= e(rf_ver($apiBy,'bcrypt')) ?> · <?= e(rf_ver($apiBy,'passlib')) ?></td></tr>
+      <tr><td class="k">Cloud / AWS</td><td><?= e(rf_ver($apiBy,'boto3')) ?></td></tr>
     </tbody>
   </table>
 
@@ -137,10 +144,10 @@ rpt_head([
   <table class="tight">
     <thead><tr><th>Function</th><th>Key Packages (version)</th></tr></thead>
     <tbody>
-      <tr><td class="k">UI Framework</td><td>react 19.2.7 · react-dom 19.2.7 · react-router-dom 7.17.0</td></tr>
-      <tr><td class="k">Build Tooling</td><td>vite 7.3.5 · esbuild 0.28.1 · rollup 4.61.1</td></tr>
-      <tr><td class="k">Styling</td><td>tailwindcss 4.3.0</td></tr>
-      <tr><td class="k">HTTP / Networking</td><td>axios 1.17.0</td></tr>
+      <tr><td class="k">UI Framework</td><td><?= e(rf_ver($uiBy,'react')) ?> · <?= e(rf_ver($uiBy,'react-dom')) ?> · <?= e(rf_ver($uiBy,'react-router-dom')) ?></td></tr>
+      <tr><td class="k">Build Tooling</td><td><?= e(rf_ver($uiBy,'vite')) ?> · <?= e(rf_ver($uiBy,'esbuild')) ?> · <?= e(rf_ver($uiBy,'rollup')) ?></td></tr>
+      <tr><td class="k">Styling</td><td><?= e(rf_ver($uiBy,'tailwindcss')) ?></td></tr>
+      <tr><td class="k">HTTP / Networking</td><td><?= e(rf_ver($uiBy,'axios')) ?></td></tr>
     </tbody>
   </table>
 
