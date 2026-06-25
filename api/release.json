@@ -45,6 +45,27 @@
         {
           "text": "[refactor] Jenkins bandit update.",
           "hash": "d0542a5"
+        },
+        {
+          "text": "[refactor] Jenkins bandit update + reporting.",
+          "hash": "81d21bd"
+        },
+        {
+          "text": "[refactor] Enhance logging for email handling: Updated SMTP error and success messages in onboarding, password change, and password reset email functions to include additional context for better traceability.",
+          "hash": "a761ebb"
+        },
+        {
+          "text": "Upgrade pydantic-settings to version 2.14.2 in pyproject.toml, requirements.txt, and uv.lock for improved functionality and compatibility.",
+          "hash": "2b3bfa8",
+          "type": "improvement"
+        },
+        {
+          "text": "[chores] Folder restructure.",
+          "hash": "0a1fe81"
+        },
+        {
+          "text": "[refactor] Remove VAPT report functionality and associated HTML template: Deleted the VAPT report endpoint and its corresponding HTML file to streamline the API and eliminate unused features.",
+          "hash": "3038ba0"
         }
       ]
     },
@@ -1270,5 +1291,5 @@
       ]
     }
   ],
-  "last_commit": "d0542a55f5059f17c451d6542945113d24b2c88c"
+  "last_commit": "3038ba0320a00f72172fb5affb234be7a5af40c5"
 }
