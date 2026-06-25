@@ -63,12 +63,10 @@ pipeline {
 
     options {
         timestamps()
-        ansiColor('xterm')
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '20'))
 
-        // Global safety net for the complete security pipeline.
-        timeout(time: 25, unit: 'MINUTES')
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     environment {
