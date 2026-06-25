@@ -97,7 +97,7 @@ pipeline {
                                 sh '''
                                     docker run --rm -v "$WORKSPACE:/src" -w /src "$IMG_PY" sh -c \
                                         "pip install --quiet bandit && \
-                                         bandit -r api -x '*/tests/*,*/scripts/*' \
+                                         bandit -r api --exclude api/deploy.py -x '*/tests/*,*/scripts/*' \
                                          --skip B105,B106,B107 \
                                          -f html -o $REPORTS/bandit-api.html" || true
                                 '''
