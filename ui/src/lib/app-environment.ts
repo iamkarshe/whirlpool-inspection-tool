@@ -1,14 +1,3 @@
-const BANNER_HEIGHT = "2.75rem";
-
-export function getAppTopBannerHeight(): string {
-  return BANNER_HEIGHT;
-}
-
-export function getAppTopBannerOffset(bannerCount: number): string {
-  if (bannerCount <= 0) return "0px";
-  return `calc(${BANNER_HEIGHT} * ${bannerCount})`;
-}
-
 export function normalizeAppOrigin(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;

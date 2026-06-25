@@ -1,8 +1,11 @@
+import { AppLoader } from "@/components/app-loader";
+
 export function PageLoader() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
-      Page is loading...
-    </div>
+    <AppLoader
+      variant="page"
+      label="Loading page"
+      description="Fetching the latest view. This may take a moment on slower connections."
+    />
   );
 }
-

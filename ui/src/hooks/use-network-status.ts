@@ -11,7 +11,7 @@ import {
 
 const SLOW_BANNER_DISMISSED_KEY = "whirlpool.network.slow_banner_dismissed";
 
-export type NetworkBannerKind = "offline" | "api_unreachable" | "slow" | null;
+export type NetworkStatusKind = "offline" | "api_unreachable" | "slow";
 
 export type NetworkStatusState = {
   online: boolean;
@@ -19,7 +19,7 @@ export type NetworkStatusState = {
   apiConfigured: boolean;
   slowNetwork: boolean;
   lastRttMs: number | null;
-  bannerKind: NetworkBannerKind;
+  connectivityIssue: Extract<NetworkStatusKind, "offline" | "api_unreachable"> | null;
   slowBannerDismissed: boolean;
   healthChecking: boolean;
   dismissSlowBanner: () => void;
@@ -161,13 +161,11 @@ export function useNetworkStatus(
     (browserHintSlow ||
       (lastRttMs !== null && isSlowNetworkRtt(lastRttMs)));
 
-  const bannerKind: NetworkBannerKind = !online
+  const connectivityIssue: NetworkStatusState["connectivityIssue"] = !online
     ? "offline"
-    : apiReachable === false
+    : apiReachable === false && apiConfigured
       ? "api_unreachable"
-      : slowNetwork && !slowBannerDismissed
-        ? "slow"
-        : null;
+      : null;
 
   const dismissSlowBanner = useCallback(() => {
     setSlowBannerDismissed(true);
@@ -180,7 +178,7 @@ export function useNetworkStatus(
     apiConfigured,
     slowNetwork,
     lastRttMs,
-    bannerKind,
+    connectivityIssue,
     slowBannerDismissed,
     healthChecking,
     dismissSlowBanner,
@@ -188,8 +186,8 @@ export function useNetworkStatus(
   };
 }
 
-export function networkBannerMessage(
-  kind: Exclude<NetworkBannerKind, null>,
+export function networkStatusMessage(
+  kind: NetworkStatusKind,
   opts?: { lastRttMs?: number | null },
 ): string {
   switch (kind) {

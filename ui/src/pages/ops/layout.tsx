@@ -282,7 +282,7 @@ export default function OpsLayout({ className }: OpsLayoutProps) {
         )}
         inert={!envGate.environmentReady ? true : undefined}
       >
-        <header className="relative sticky top-(--app-top-banner-offset,0px) z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
+        <header className="relative sticky top-0 z-20 border-b bg-background px-4 pb-2 pt-3 backdrop-blur_">
           <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4">
             <UatEnvironmentBadge className="pointer-events-auto" />
           </div>
