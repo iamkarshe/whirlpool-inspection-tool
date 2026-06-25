@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import random
+import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -228,7 +228,7 @@ def mark_task_failed(
 
 def retry_countdown_seconds(attempts: int) -> int:
     base = min(60 * (2 ** max(attempts - 1, 0)), 600)
-    jitter = random.randint(0, max(1, base // 4))
+    jitter = secrets.randbelow(max(1, base // 4) + 1)
     return base + jitter
 
 

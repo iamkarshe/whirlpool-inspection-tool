@@ -116,7 +116,7 @@ pipeline {
                     steps {
                         script {
                             try {
-                                timeout(time: 4, unit: 'MINUTES') {
+                                timeout(time: 10, unit: 'MINUTES') {
                                     sh '''
                                         set +e
 
@@ -158,7 +158,7 @@ EOF
                     steps {
                         script {
                             try {
-                                timeout(time: 4, unit: 'MINUTES') {
+                                timeout(time: 10, unit: 'MINUTES') {
                                     sh '''
                                         set +e
 
@@ -224,7 +224,6 @@ EOF
                                             --metrics=off \
                                             --config p/python \
                                             --config p/security-audit \
-                                            --exclude 'api/deploy.py' \
                                             --exclude '*/tests/*' \
                                             --exclude '*/__pycache__/*' \
                                             --sarif \
