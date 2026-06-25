@@ -517,65 +517,48 @@ EOF
 
     post {
         always {
-            script {
-                sh '''
-                    mkdir -p "$REPORTS"
+            sh '''
+                set +e
 
-                    echo "Security scan completed at $(date)" > "$REPORTS/pipeline-summary.txt"
-                    echo "" >> "$REPORTS/pipeline-summary.txt"
-                    echo "Scanned folders:" >> "$REPORTS/pipeline-summary.txt"
-                    echo "- api/" >> "$REPORTS/pipeline-summary.txt"
-                    echo "- ui/" >> "$REPORTS/pipeline-summary.txt"
-                    echo "" >> "$REPORTS/pipeline-summary.txt"
-                    echo "Timeout policy:" >> "$REPORTS/pipeline-summary.txt"
-                    echo "- Each scanner stage is allowed maximum 4 minutes." >> "$REPORTS/pipeline-summary.txt"
-                '''
-            }
+                mkdir -p "$REPORTS"
 
-            recordIssues(
-                enabledForFailure: true,
-                aggregatingResults: true,
-                tools: [
-                    sarif(
-                        id: 'gitleaks',
-                        name: 'Secrets — Gitleaks',
-                        pattern: 'reports/gitleaks-*.sarif'
-                    ),
-                    sarif(
-                        id: 'semgrep',
-                        name: 'SAST — Semgrep',
-                        pattern: 'reports/semgrep-*.sarif'
-                    ),
-                    sarif(
-                        id: 'trivy-sca',
-                        name: 'SCA — Trivy',
-                        pattern: 'reports/trivy-fs-*.sarif'
-                    )
-                ]
-            )
+                {
+                    echo "Security scan completed at $(date)"
+                    echo ""
+                    echo "Scanned folders:"
+                    echo "- api/              FastAPI API"
+                    echo "- vpn-provisioner/  Golang VPN provisioner"
+                    echo "- ui/               React UI"
+                    echo ""
+                    echo "Timeout policy:"
+                    echo "- Each scanner stage is allowed maximum 4 minutes."
+                    echo ""
+                    echo "Generated report files:"
+                    find "$REPORTS" -maxdepth 1 -type f | sort || true
+                } > "$REPORTS/pipeline-summary.txt"
 
-            publishHTML(target: [
-                reportName           : 'Bandit API Report',
-                reportDir            : 'reports',
-                reportFiles          : 'bandit-api.html',
-                keepAll              : true,
-                alwaysLinkToLastBuild: true,
-                allowMissing         : true
-            ])
-
-            publishHTML(target: [
-                reportName           : 'Security Assessment',
-                reportDir            : 'reports',
-                reportFiles          : 'summary.html',
-                keepAll              : true,
-                alwaysLinkToLastBuild: true,
-                allowMissing         : true
-            ])
+                echo ""
+                echo "Archived security reports:"
+                find "$REPORTS" -maxdepth 1 -type f | sort || true
+            '''
 
             archiveArtifacts(
                 artifacts: 'reports/**',
-                allowEmptyArchive: true
+                allowEmptyArchive: true,
+                fingerprint: true
             )
+        }
+
+        success {
+            echo 'Security pipeline completed successfully.'
+        }
+
+        unstable {
+            echo 'Security pipeline completed with unstable result.'
+        }
+
+        failure {
+            echo 'Security pipeline failed. Check reports/ artifacts and quality gate output.'
         }
     }
 }
